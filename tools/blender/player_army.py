@@ -33,7 +33,11 @@ if WHAT == "barracks":
     # control window; training, its fans turn, the strip over its door runs and its amber lamp sweeps (16 frames).
     FRAMES, TILES, MARGIN = 16, 3, 2.2
     # (Darker, a gunmetal warm grey: the pale tan roof read plain and flat at game scale, rated 2, the user, 2026-11-10.)
-    tan = lpkit.worn("tan", (0.2, 0.19, 0.165), metal=0.4, rough=0.55, seams=1.5, rivets=False)   # (seams 6 read as planks)
+    # (Darker again, 0.2.325, matte (a metal took the warm sky and read pale grey in game), its machinery box off the
+    # bright steel, its roof's small parts denser: "Too light/faded", rated 2 again, the user, 2026-11-11; its lit window,
+    # door strip, lamps and hazard edges are now what stand out.)
+    tan = lpkit.worn("tan", (0.085, 0.08, 0.07), metal=0.2, rough=0.72, seams=1.5, rivets=False)   # (seams 6 read as planks)
+    box = lpkit.worn("box", (0.11, 0.11, 0.115), metal=0.3, rough=0.65, seams=3, rivets=True, wear=0.3)
     rust = lpkit.worn("rust", (0.32, 0.17, 0.08), metal=0.2, rough=0.8, seams=8, rivets=False)
     P["strip"] = lpkit.mat("strip", (0.2, 0.15, 0.05), emit=(1.0, 0.65, 0.2), strength=0.0, grime=0.0)
     P["lamp"] = lpkit.mat("lamp", (0.4, 0.25, 0.05), emit=(1.0, 0.6, 0.1), strength=0.0, grime=0.0)
@@ -48,14 +52,14 @@ if WHAT == "barracks":
         k = bpy.context.object; k.scale = (1.0, 0.92, 1.0); k.data.materials.append(P["dark"])
         bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=1.52, depth=0.08, location=(0, 0.05, 0.97),
                                             rotation=(0, 0, math.pi / 8))
-        c = bpy.context.object; c.scale = (1.0, 0.92, 1.0); c.data.materials.append(P["steel"])
+        c = bpy.context.object; c.scale = (1.0, 0.92, 1.0); c.data.materials.append(box)
         # The roof: plated, its seams dark, a hazard edge to the south, a vent row; a raised machinery box to the north.
         for px_ in (-0.75, 0.0, 0.75):
             B(0.68, 1.15, 0.03, px_, -0.45, 1.0, P["dark"] if px_ == 0.0 else tan)
         B(2.3, 0.08, 0.04, 0, -1.08, 1.0, P["hazard"])
         for k2 in range(5):
             B(0.08, 0.32, 0.06, -0.55 + k2 * 0.12, -0.55, 1.03, P["steel"])
-        B(1.9, 0.9, 0.32, 0, 0.55, 1.0, P["steel"])
+        B(1.9, 0.9, 0.32, 0, 0.55, 1.0, box)
         B(1.92, 0.06, 0.05, 0, 0.1, 1.28, P["hazard"])
         for fx in (-0.5, 0.5):
             lpkit.cyl(0.36, 0.1, fx, 0.55, 1.32, P["dark"], verts=24)
@@ -101,7 +105,7 @@ if WHAT == "barracks":
         for z in (0.35, 0.6):
             lpkit.rod((-1.45, -0.6, z), (-1.45, 0.7, z), 0.025, P["dark"])
     model = group(build) + group(build_more)
-    model += lpkit.scatter(model, {tan, P["steel"]}, P["dark"], P["steel"], seed=12, density=3.5)
+    model += lpkit.scatter(model, {tan, box}, P["dark"], P["steel"], seed=12, density=8.0)   # (denser: its flat roof read plain)
     blades = group(build_fans)
     pivots = []
     for fx in (-0.5, 0.5):

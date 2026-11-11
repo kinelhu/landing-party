@@ -1,12 +1,13 @@
 {
  "north": {
-  "width": 220,
+  "width": 218,
   "height": 174,
   "shift": [
-   1.25,
+   1.234375,
    -0.8203125
   ],
-  "glow_frames": 8,
-  "line_length": 4
+  "glow_frames": 16,
+  "line_length": 4,
+  "body_frames": 16
  }
 }

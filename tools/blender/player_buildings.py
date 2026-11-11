@@ -60,6 +60,9 @@ def posts(x, y, z):
 
 
 # --- The buildings (1 tile: x, y in -0.5..0.5) ---------------------------------------------------------------------
+RB = 0.85
+
+
 def rally_beacon(f):
     # A terminal box on a footed plate; a mast with a pennant in the army's green; a rotating amber lamp on top.
     bevel(B(0.8, 0.8, 0.08, 0, 0, 0, DARK), 0.02)
@@ -71,8 +74,9 @@ def rally_beacon(f):
     for k in range(3):
         B(0.05, 0.01, 0.03, -0.1 + k * 0.1, -0.11, 0.26, AMBER if k == 1 else DARK, bevel=0.0)
     tips = posts(0, 0.18, 0.38)
-    rod((0.18, -0.1, 0.38), (0.18, -0.1, 1.75), 0.05, STEEL, verts=12)
-    for z in (0.7, 1.1):
+    # (Raised by RB, 0.2.325: the user's rating, "Raise it?": at 1.75 it stood as low as the combinators round it.)
+    rod((0.18, -0.1, 0.38), (0.18, -0.1, 1.75 + RB), 0.05, STEEL, verts=12)
+    for z in (0.7, 1.1, 1.5, 1.9):
         lpkit.torus(0.055, 0.015, 0.18, -0.1, z, DARK)
     rod((0.05, 0.0, 0.38), (0.16, -0.08, 0.6), 0.02, RUBBER, verts=6)
     cyl(0.06, 0.1, 0.18, -0.1, 0.38, DARK, verts=12)
@@ -84,25 +88,27 @@ def rally_beacon(f):
     bm.faces.new((v0, v1, v2))
     me = bpy.data.meshes.new("pennant"); bm.to_mesh(me); bm.free()
     o = bpy.data.objects.new("pennant", me); scene.collection.objects.link(o)
-    o.location = (0.21, -0.1, 1.55); o.rotation_euler = (0, 0, math.radians(-25))
+    o.location = (0.21, -0.1, 1.55 + RB); o.rotation_euler = (0, 0, math.radians(-25))
     sol = o.modifiers.new("t", "SOLIDIFY"); sol.thickness = 0.012
     me.materials.append(PENNANT)
-    B(0.06, 0.014, 0.24, 0.22, -0.1, 1.38, HAZ, bevel=0.0)
+    B(0.06, 0.014, 0.24, 0.22, -0.1, 1.38 + RB, HAZ, bevel=0.0)
     # Two loudspeaker horns on a crossbar under the lamp (the user's rating: "Perhaps we include a speaker?").
-    rod((0.0, -0.1, 1.3), (0.36, -0.1, 1.3), 0.018, STEEL, verts=6)
+    rod((0.0, -0.1, 1.3 + RB), (0.36, -0.1, 1.3 + RB), 0.018, STEEL, verts=6)
     for x, yaw in ((0.02, 35), (0.34, -35)):
-        bpy.ops.mesh.primitive_cone_add(vertices=20, radius1=0.035, radius2=0.12, depth=0.22, location=(x, -0.2, 1.25),
+        bpy.ops.mesh.primitive_cone_add(vertices=20, radius1=0.035, radius2=0.12, depth=0.22, location=(x, -0.2, 1.25 + RB),
                                         rotation=(math.radians(-80), 0, math.radians(yaw)), end_fill_type="NOTHING")
         o = bpy.context.object; o.modifiers.new("t", "SOLIDIFY").thickness = 0.015; o.data.materials.append(HAZ)
-        cyl(0.045, 0.08, x, -0.1, 1.21, DARK, verts=10)
+        cyl(0.045, 0.08, x, -0.1, 1.21 + RB, DARK, verts=10)
     # Its lamp: a cage, the lamp inside (lit, the glow's frames turn it).
-    cyl(0.07, 0.04, 0.18, -0.1, 1.74, DARK, verts=16)
-    lamp = sph(0.065, 0.18, -0.1, 1.86, AMBER)
+    cyl(0.07, 0.04, 0.18, -0.1, 1.74 + RB, DARK, verts=16)
+    lamp = sph(0.065, 0.18, -0.1, 1.86 + RB, AMBER)
     for k in range(4):
         a = k * math.pi / 2
-        rod((0.18 + math.cos(a) * 0.08, -0.1 + math.sin(a) * 0.08, 1.78), (0.18 + math.cos(a) * 0.08, -0.1 + math.sin(a) * 0.08, 1.95),
+        rod((0.18 + math.cos(a) * 0.08, -0.1 + math.sin(a) * 0.08, 1.78 + RB), (0.18 + math.cos(a) * 0.08, -0.1 + math.sin(a) * 0.08, 1.95 + RB),
             0.008, STEEL, verts=6)
-    cyl(0.085, 0.02, 0.18, -0.1, 1.95, DARK, verts=16)
+    cyl(0.085, 0.02, 0.18, -0.1, 1.95 + RB, DARK, verts=16)
+    for a in (0.6, 2.7, 4.8):
+        rod((0.18, -0.1, 1.2 + RB), (0.18 + math.cos(a) * 0.38, -0.1 + math.sin(a) * 0.38, 0.08), 0.006, RUBBER, verts=4)
     return tips
 
 
@@ -149,6 +155,9 @@ PENNANT = M("pennant", (0.62, 0.07, 0.04), 0.0, 0.7, grime=0.25)   # the rally b
 POLE = M("pole", (0.035, 0.035, 0.04), 0.7, 0.5)
 
 
+ANIM = {}   # name -> f(frame): a building whose body moves (each frame's body and shadow rendered)
+
+
 def lantern(x, y, z, m=AMBER):
     cyl(0.05, 0.03, x, y, z, DARK, verts=12)
     sph(0.045, x, y, z + 0.08, m)
@@ -156,61 +165,6 @@ def lantern(x, y, z, m=AMBER):
         a = k * math.pi / 2 + 0.4
         rod((x + math.cos(a) * 0.055, y + math.sin(a) * 0.055, z + 0.03), (x + math.cos(a) * 0.055, y + math.sin(a) * 0.055, z + 0.14), 0.006, STEEL, verts=5)
     cyl(0.06, 0.02, x, y, z + 0.14, DARK, verts=12)
-
-
-def border_stake(f):
-    # Kessler-Hayashi's survey stake: a driven pile, banded, a survey plate, a blinking blue light on top.
-    cyl(0.16, 0.06, 0, 0, 0, DARK, verts=16)
-    for k in range(6):
-        cyl(0.07, 0.2, 0, 0, 0.06 + k * 0.2, KHBLUE if k % 2 == 0 else WHITE, verts=16)
-    lpkit.torus(0.075, 0.015, 0, 0, 0.7, HAZ)
-    bevel(B(0.3, 0.02, 0.22, 0.1, -0.08, 0.55, KHBLUE), 0.01)
-    B(0.22, 0.022, 0.03, 0.1, -0.09, 0.7, HAZ, bevel=0.0)
-    B(0.18, 0.022, 0.08, 0.1, -0.09, 0.6, WHITE, bevel=0.0)
-    cyl(0.05, 0.05, 0, 0, 1.26, DARK, verts=12)
-    sph(0.05, 0, 0, 1.34, BLUE)
-    for a in (0.3, 2.4, 4.4):
-        rod((0, 0, 0.0), (math.cos(a) * 0.3, math.sin(a) * 0.3, 0.0), 0.01, DARK, verts=4)
-
-
-def awning(x0, x1, y0, y1, z0, z1, n, a, b):
-    """A striped canvas roof from (y0, z0) at its back down to (y1, z1) at its front, n stripes across x, a valance."""
-    L = math.hypot(y1 - y0, z1 - z0); tilt = math.atan2(z0 - z1, y0 - y1)
-    w = (x1 - x0) / n
-    for k in range(n):
-        o = B(w, L, 0.02, x0 + w * (k + 0.5), (y0 + y1) / 2, (z0 + z1) / 2 - 0.01, a if k % 2 == 0 else b, bevel=0.0)
-        o.rotation_euler = (-tilt, 0, 0)
-        # The valance: a short drop at the front edge, the stripe's colour, scalloped by alternate lengths.
-        B(w, 0.015, 0.09 if k % 2 == 0 else 0.07, x0 + w * (k + 0.5), y1, z1 - 0.09, a if k % 2 == 0 else b, bevel=0.0)
-
-
-def trade_post(f):
-    # Grubstake's trading stall: a dark plated counter under a striped awning on steel posts, goods stacked on it and
-    # beside it (crates, a drum, a sack), a lantern hung at the front, a price board on a pole. Its stripes are what
-    # reads: a stall, not a box.
-    bevel(B(0.96, 0.9, 0.05, 0, 0.02, 0, DARK), 0.01)
-    bevel(B(0.8, 0.34, 0.4, 0, 0.12, 0.05, RUST), 0.015)
-    bevel(B(0.86, 0.4, 0.04, 0, 0.1, 0.45, DARK), 0.01)
-    for k in range(4):
-        B(0.012, 0.012, 0.36, -0.38 + k * 0.253, -0.055, 0.06, DARK, bevel=0.0)
-    for x in (-0.44, 0.44):
-        rod((x, -0.3, 0.05), (x, -0.3, 0.95), 0.025, POLE, verts=8)
-        rod((x, 0.36, 0.05), (x, 0.36, 1.18), 0.025, POLE, verts=8)
-    awning(-0.5, 0.5, 0.42, -0.4, 1.2, 0.95, 6, FLAG, CANVAS)
-    # Goods on the counter: two crates, a drum, a sack.
-    bevel(B(0.2, 0.18, 0.16, -0.24, 0.12, 0.49, WOOD), 0.01)
-    bevel(B(0.14, 0.14, 0.12, -0.06, 0.16, 0.49, KHBLUE), 0.01)
-    cyl(0.07, 0.2, 0.2, 0.12, 0.49, HAZ, verts=16)
-    lpkit.torus(0.07, 0.01, 0.2, 0.12, 0.6, DARK)
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.09, location=(0.34, -0.2, 0.09), segments=16, ring_count=8)
-    o = bpy.context.object; o.scale = (1, 0.85, 1.0); o.data.materials.append(CANVAS)
-    bevel(B(0.18, 0.18, 0.18, -0.36, -0.28, 0.05, WOOD), 0.01)
-    lantern(0.36, -0.36, 0.78)
-    rod((0.36, -0.36, 0.95), (0.36, -0.36, 0.92), 0.006, STEEL, verts=4)
-    # The price board, Grubstake ochre on dark, beside the stall.
-    bevel(B(0.3, 0.025, 0.2, -0.3, -0.42, 1.0, DARK), 0.005)
-    for k in range(3):
-        B(0.2, 0.027, 0.02, -0.3, -0.42, 1.04 + k * 0.05, OCHRE, bevel=0.0)
 
 
 def claim_marker(f):
@@ -224,8 +178,8 @@ def claim_marker(f):
     import bmesh
     bm = bmesh.new()
     NX, NZ, W, H = 10, 4, 0.72, 0.46
-    grid = [[bm.verts.new((0.04 + W * i / NX, 0.05 * math.sin(i / NX * 2.6 * math.pi) * (i / NX), 1.95 - H * j / NZ))
-             for j in range(NZ + 1)] for i in range(NX + 1)]
+    NX = 14
+    grid = [[bm.verts.new((0.04 + W * i / NX, 0.0, 1.95 - H * j / NZ)) for j in range(NZ + 1)] for i in range(NX + 1)]
     for i in range(NX):
         for j in range(NZ):
             bm.faces.new((grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]))
@@ -233,6 +187,19 @@ def claim_marker(f):
     o = bpy.data.objects.new("flag", me); scene.collection.objects.link(o)
     o.rotation_euler = (0, 0, math.radians(-12)); o.modifiers.new("t", "SOLIDIFY").thickness = 0.014
     me.materials.append(FLAG)
+    # (Waving, 0.2.325: the user asked whether the flag flapped; its body was one frame. A travelling wave from the hoist
+    # out, growing to the fly, the fly's corner lifting and dropping, over the body's frames.)
+    def wave(fr):
+        ph = fr / GLOW_FRAMES * 2 * math.pi
+        for i in range(NX + 1):
+            u = i / NX
+            for j in range(NZ + 1):
+                v = me.vertices[i * (NZ + 1) + j]
+                v.co.y = 0.11 * u * math.sin(u * 2.4 * math.pi - ph) + 0.02 * u * math.sin(ph * 2 + j)
+                v.co.x = 0.04 + W * u * (1 - 0.06 * u * (0.5 + 0.5 * math.cos(u * 2.4 * math.pi - ph)))
+                v.co.z = 1.95 - H * j / NZ - 0.05 * u * u * (0.6 + 0.4 * math.sin(ph - u * 3))
+        me.update()
+    ANIM["claim-marker"] = wave
     B(0.07, 0.03, H, 0.05, 0.0, 1.95 - H, POLE, bevel=0.0).rotation_euler = (0, 0, math.radians(-12))
     lantern(0.12, -0.12, 0.1)
     for a in (0.8, 2.6, 4.6):
@@ -241,9 +208,10 @@ def claim_marker(f):
 
 
 def pact_breaker(f):
-    # A jamming dish: a dark tripod standing on a hazard-edged skid, an upturned dish tilted to the sky, the pacifier
-    # crystal glowing violet in a cage at its focus, a battery box with a red strobe and cables. A dish says broadcast;
-    # its violet says the pacifier's crystal.
+    # (Redone, 0.2.325; the user's rating, "What does this building do?": the upturned dish of 0.2.321 read as one more
+    # radar.) A jammer aimed down at the biters: a hazard-edged skid, a dark A-frame mast, at its head the pacifier
+    # crystal glowing violet in an armoured cage, three horn emitters hung under it pointing down and out at the
+    # ground, the jamming field a violet ring pulsing on the ground round it; a battery box, cables, a red strobe on top.
     bevel(B(0.92, 0.92, 0.06, 0, 0, 0, DARK), 0.01)
     for (sx, sy, w, d) in ((0, -0.45, 0.92, 0.04), (0, 0.45, 0.92, 0.04), (-0.45, 0, 0.04, 0.92), (0.45, 0, 0.04, 0.92)):
         for k in range(6):
@@ -251,33 +219,50 @@ def pact_breaker(f):
                 B(w / 6, d, 0.065, -0.46 + w / 6 * (k + 0.5), sy, 0, HAZ if k % 2 == 0 else POLE, bevel=0.0)
             else:
                 B(w, d / 6, 0.065, sx, -0.46 + d / 6 * (k + 0.5), 0, HAZ if k % 2 == 0 else POLE, bevel=0.0)
-    bevel(B(0.4, 0.26, 0.3, 0.16, 0.28, 0.06, DARK), 0.02)
-    B(0.3, 0.02, 0.05, 0.16, 0.14, 0.26, HAZ, bevel=0.0)
-    cyl(0.04, 0.04, 0.28, 0.28, 0.36, DARK, verts=10)
-    sph(0.04, 0.28, 0.28, 0.43, RED)
-    hub = V((-0.06, -0.02, 0.78))
-    for a in (1.9, 3.9, 5.9):
-        rod((math.cos(a) * 0.36, math.sin(a) * 0.36, 0.06), tuple(hub), 0.028, POLE, verts=8)
-    cyl(0.07, 0.1, hub.x, hub.y, hub.z - 0.05, STEEL, verts=12)
-    tilt = (math.radians(32), 0, 0)
-    bpy.ops.mesh.primitive_cone_add(vertices=32, radius1=0.08, radius2=0.44, depth=0.16, location=(hub.x, hub.y - 0.03, hub.z + 0.12),
-                                    rotation=tilt, end_fill_type="NOTHING")
-    d = bpy.context.object; d.modifiers.new("t", "SOLIDIFY").thickness = 0.025; d.data.materials.append(STEEL)
-    rim = lpkit.torus(0.44, 0.018, hub.x, hub.y - 0.075, hub.z + 0.19, DARK); rim.rotation_euler = tilt
-    # The crystal at the focus, in a cage on three feed arms.
-    focus = V((hub.x, hub.y - 0.24, hub.z + 0.42))
+    bevel(B(0.3, 0.22, 0.26, 0.28, 0.3, 0.06, DARK), 0.02)
+    B(0.22, 0.02, 0.05, 0.28, 0.18, 0.24, HAZ, bevel=0.0)
+    head = V((0, 0, 1.25))
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            rod((sx * 0.36, sy * 0.36, 0.06), (sx * 0.06, sy * 0.06, head.z - 0.05), 0.026, POLE, verts=8)
+    for z in (0.45, 0.8):
+        k = 1 - (z - 0.06) / (head.z - 0.11)
+        r = 0.06 + 0.3 * k
+        for (a, b) in (((-r, -r), (r, -r)), ((r, -r), (r, r)), ((r, r), (-r, r)), ((-r, r), (-r, -r))):
+            rod((a[0], a[1], z), (b[0], b[1], z), 0.012, POLE, verts=5)
+    # The crystal's housing: an armoured octagonal cage, the crystal showing violet through its slots.
+    bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=0.16, depth=0.08, location=(0, 0, head.z - 0.02))
+    bpy.context.object.data.materials.append(DARK)
     for k in range(5):
-        bpy.ops.mesh.primitive_cylinder_add(vertices=6, radius=0.05 - 0.006 * k, depth=0.2 + 0.06 * (k % 2),
-                                            location=(focus.x - 0.05 + (k % 3) * 0.05, focus.y + (k // 3) * 0.04, focus.z),
+        bpy.ops.mesh.primitive_cylinder_add(vertices=6, radius=0.055 - 0.006 * k, depth=0.22 + 0.06 * (k % 2),
+                                            location=(-0.05 + (k % 3) * 0.05, -0.02 + (k // 3) * 0.04, head.z + 0.14),
                                             rotation=(0.25 * (k - 2), 0.2 * (k - 2), 0))
         bpy.context.object.data.materials.append(VIOLET)
-    for a in (0.5, 2.6, 4.7):
-        p = V((hub.x + math.cos(a) * 0.4, hub.y - 0.075 + math.sin(a) * 0.4 * math.cos(tilt[0]), hub.z + 0.19 + math.sin(a) * 0.4 * math.sin(tilt[0])))
-        rod(tuple(p), tuple(focus), 0.012, STEEL, verts=5)
-    lpkit.torus(0.09, 0.012, focus.x, focus.y, focus.z + 0.12, DARK)
-    lpkit.torus(0.09, 0.012, focus.x, focus.y, focus.z - 0.1, DARK)
-    rod((0.16, 0.2, 0.36), tuple(hub), 0.02, RUBBER, verts=6)
-    rod((0.36, 0.28, 0.2), (0.5, 0.42, 0.0), 0.02, RUBBER, verts=6)
+    for k in range(8):
+        a = k * math.pi / 4 + math.pi / 8
+        rod((math.cos(a) * 0.15, math.sin(a) * 0.15, head.z + 0.02), (math.cos(a) * 0.12, math.sin(a) * 0.12, head.z + 0.3), 0.016, DARK, verts=5)
+    cyl(0.15, 0.03, 0, 0, head.z + 0.3, DARK, verts=8)
+    cyl(0.03, 0.06, 0, 0, head.z + 0.33, DARK, verts=8)
+    sph(0.045, 0, 0, head.z + 0.42, RED)
+    # Three horns hung under the head, pointing down and out at the ground: a jammer aimed at what is under it.
+    for a in (math.pi / 2 + 0.3, math.pi / 2 + 2.4, math.pi / 2 + 4.5):
+        out_ = V((math.cos(a), math.sin(a), 0))
+        root = head + V((0, 0, -0.1)) + out_ * 0.1
+        mouth = root + out_ * 0.22 + V((0, 0, -0.36))
+        d = mouth - root
+        bpy.ops.mesh.primitive_cone_add(vertices=20, radius1=0.035, radius2=0.13, depth=d.length, location=tuple((root + mouth) / 2),
+                                        end_fill_type="NOTHING")
+        o = bpy.context.object; o.rotation_mode = "QUATERNION"; o.rotation_quaternion = d.to_track_quat("Z", "Y")
+        o.modifiers.new("t", "SOLIDIFY").thickness = 0.015; o.data.materials.append(DARK)
+        rim = lpkit.torus(0.13, 0.014, *tuple(mouth), HAZ); rim.rotation_mode = "QUATERNION"; rim.rotation_quaternion = d.to_track_quat("Z", "Y")
+        # (Its throat lit violet: the emitter's mouth, seen from above.)
+        bpy.ops.mesh.primitive_circle_add(vertices=20, radius=0.11, fill_type="NGON", location=tuple(mouth - d.normalized() * 0.03))
+        c = bpy.context.object; c.rotation_mode = "QUATERNION"; c.rotation_quaternion = d.to_track_quat("Z", "Y"); c.data.materials.append(VIOLET)
+        rod(tuple(root), tuple(head + V((0, 0, -0.04))), 0.02, DARK, verts=6)
+    # The jamming field: a thin violet ring on the ground, round the skid.
+    ring = lpkit.torus(0.62, 0.018, 0, 0, 0.015, VIOLET); ring.scale = (1, 1, 0.3)
+    rod((0.28, 0.2, 0.32), (0.06, 0.06, head.z - 0.1), 0.02, RUBBER, verts=6)
+    rod((0.4, 0.38, 0.2), (0.5, 0.48, 0.0), 0.02, RUBBER, verts=6)
 
 
 def pheromone_bait(f):
@@ -294,11 +279,37 @@ def pheromone_bait(f):
     rod((0, 0, 0.82), (0.05, -0.1, 0.95), 0.02, DARK, verts=6)
     cyl(0.03, 0.05, 0.05, -0.1, 0.95, DARK, verts=8)
     cyl(0.08, 0.28, 0.24, 0.12, 0.0, HAZ, verts=16)
+    # (Its cloud, 0.2.325; the user's rating: "Needs a larger cloud or series of clouds": a train of puffs from the nozzle,
+    # each swelling and thinning as it drifts off downwind, over the body's frames; no shadow, a gas.)
+    puffs = []
+    N = 9
+    for k in range(N):
+        m = bpy.data.materials.new(f"mist{k}"); m.use_nodes = True
+        bsdf = m.node_tree.nodes["Principled BSDF"]
+        bsdf.inputs["Base Color"].default_value = (0.36, 0.42, 0.16, 1)
+        bsdf.inputs["Roughness"].default_value = 1.0
+        bsdf.inputs["Emission Color"].default_value = (0.55, 0.9, 0.2, 1)
+        bsdf.inputs["Emission Strength"].default_value = 0.04
+        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, radius=1, location=(0, 0, 0))
+        o = bpy.context.object; o.data.materials.append(m); o.visible_shadow = False
+        o.modifiers.new("d", "DISPLACE").strength = 0.18
+        tx = bpy.data.textures.new(f"mistn{k}", "CLOUDS"); tx.noise_scale = 0.6; o.modifiers["d"].texture = tx
+        puffs.append((o, bsdf))
+    def drift(fr):
+        t = fr / GLOW_FRAMES
+        for k, (o, bsdf) in enumerate(puffs):
+            p = (t + k / N) % 1.0
+            o.location = (0.05 + 1.0 * p, -0.1 - 0.3 * p, 1.0 + 0.6 * p - 0.2 * p * p)
+            r = 0.05 + 0.42 * p ** 0.8
+            o.scale = (r * 1.2, r, r * 0.8)
+            o.rotation_euler = (0, 0, k + p * 2)
+            bsdf.inputs["Alpha"].default_value = 0.42 * min(1.0, p * 5) * (1 - p) ** 1.5
+        bpy.context.view_layer.update()
+    ANIM["pheromone-bait"] = drift
 
 
 MODELS = {"rally-beacon": (rally_beacon, ["north", "east", "south", "west"]),
           "threat-scanner": (threat_scanner, ["north", "east", "south", "west"]),
-          "trade-post": (trade_post, ["north"]), "border-stake": (border_stake, ["north"]),
           "claim-marker": (claim_marker, ["north"]), "pact-breaker": (pact_breaker, ["north"]),
           "pheromone-bait": (pheromone_bait, ["north"])}
 # Each frame's glow: the beacon's lamp pulses round (a rotating beacon's flash), the scanner's sweep light pulses.
@@ -332,17 +343,26 @@ for name, (fn, dirs) in MODELS.items():
         bpy.context.view_layer.update()
         o = f"{out}/{name}/{d}"
         for k in ("body", "glow"): os.makedirs(f"{o}/{k}", exist_ok=True)
+        moving = name in ANIM
+        if moving: os.makedirs(f"{o}/shadow", exist_ok=True)
         for f in range(GLOW_FRAMES):
             glow(name, f)
-            if f == 0:
+            if moving: ANIM[name](f)
+            if f == 0 or moving:
                 ground.hide_render = True; sun.hide_render = False; bg.inputs[1].default_value = FILL
                 for m in model: m.is_holdout = False
-                lpkit.render(scene, f"{o}/body/000.png")
+                lpkit.render(scene, f"{o}/body/{f:03d}.png")
             ground.hide_render = True; sun.hide_render = True; bg.inputs[1].default_value = 0.0
             for m in model:
                 ms = [s.material for s in m.material_slots if s.material]
                 m.is_holdout = not any(x in GLOWING for x in ms)
             lpkit.render(scene, f"{o}/glow/{f:03d}.png")
+            if moving:
+                for m in model: m.is_holdout = False; m.visible_camera = False
+                sun.hide_render = False; bg.inputs[1].default_value = FILL; ground.hide_render = False
+                lpkit.render(scene, f"{o}/shadow/{f:03d}.png")
+                for m in model: m.visible_camera = True
+        if moving: ANIM[name](0)
         for m in model: m.is_holdout = False; m.visible_camera = False
         sun.hide_render = False; bg.inputs[1].default_value = FILL; ground.hide_render = False
         glow(name, 0)

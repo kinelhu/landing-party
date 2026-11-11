@@ -1,40 +1,40 @@
 {
  "east": {
-  "width": 174,
-  "height": 162,
+  "width": 238,
+  "height": 214,
   "shift": [
-   0.859375,
-   -0.6953125
+   1.328125,
+   -1.1015625
   ],
   "glow_frames": 8,
   "line_length": 4
  },
  "north": {
-  "width": 192,
-  "height": 164,
+  "width": 254,
+  "height": 220,
   "shift": [
-   1.0,
-   -0.7421875
+   1.484375,
+   -1.1640625
   ],
   "glow_frames": 8,
   "line_length": 4
  },
  "south": {
-  "width": 182,
-  "height": 180,
+  "width": 244,
+  "height": 234,
   "shift": [
-   0.71875,
-   -0.8359375
+   1.1875,
+   -1.2578125
   ],
   "glow_frames": 8,
   "line_length": 4
  },
  "west": {
-  "width": 188,
-  "height": 182,
+  "width": 250,
+  "height": 236,
   "shift": [
-   0.953125,
-   -0.8671875
+   1.4375,
+   -1.2890625
   ],
   "glow_frames": 8,
   "line_length": 4

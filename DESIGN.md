@@ -6666,6 +6666,22 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the hour. The scenario's only target was its indestructible furnace, which an aborted raid had cooled, and the
   planner held its raid there ("failed there lately", tactics.LADDER_HOLD). A collection is not held by that ladder now,
   and the scenario sets three assemblers by the furnace once one is called: 2 collections, 2 raids, one razed.
+- **Art round on the second ratings** (0.2.326; the user's ratings of 2026-11-11 on the 0.2.321 stills, Before/Now on
+  the rating page). Grubstake's gun nest (5 to 2, "Why is it transparent??") and flamer (2, "Transparent against base
+  plate?"): not transparency, every sprite opaque (interior alpha read, as at 0.2.308); the shield in the hull's ochre was
+  the grass's own olive-brown and the flamer's pedestal, mast and lance a bright metal taking the warm sky, the deck's
+  tone, so both read as holes onto what lay under them. Now a dark painted shield with an ochre top bar, a matte gunmetal
+  for the receiver, barrel, pintle, pedestal, mast and lance (a metal at 0.6 still read pale: 0.25). The barracks ("Too
+  light/faded", 2): matte walls near the skirt's dark (metal took the sky), its machinery box off bright steel, its small
+  parts denser. The rally beacon ("Raise it?", 2): its mast 0.85 taller, guyed. The claim marker's flag waves (16 body
+  frames; it had one, only the lamp pulsed); the bait puffs a train of drifting, swelling, thinning clouds (16 frames, no
+  shadow); a moving body is ANIM in player_buildings.py, packed by cannon_sheets.py as a sheet (body_frames in
+  sheets.lua, components.lua modelled() reads it). The pact breaker ("What does this building do?", 1): no dish, a
+  jammer aimed down at the biters, three dark horns hung under the crystal's armoured cage, violet in their throats and
+  a violet field ring on the ground, a strobe on top. Kessler-Hayashi's drill ("a percussion from the central pole
+  rising up slowly and hitting the ground fast", 2): a guide frame over the bore, a crosshead and lift cylinder, the ram
+  a hazard-banded block lifted over three quarters of the cycle and dropped in an eighth (32 frames, its shadow each
+  frame). Both factions' depots and launch pads were not re-rated: they still carry their first stars.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

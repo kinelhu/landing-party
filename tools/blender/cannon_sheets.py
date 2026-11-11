@@ -19,27 +19,43 @@ for d in sorted(os.listdir(src)):
     base = f"{src}/{d}"
     if not os.path.isdir(f"{base}/body"):
         continue
-    body = stretch(Image.open(f"{base}/body/000.png").convert("RGBA"))
+    # (A body of many frames, player_buildings.py's ANIM: the claim marker's flag, the bait's cloud; its shadow one a frame.)
+    bodies = [stretch(Image.open(f"{base}/body/{n}").convert("RGBA")) for n in sorted(os.listdir(f"{base}/body"))]
+    body = bodies[0]
     glows = [stretch(Image.open(f"{base}/glow/{n}").convert("RGBA")) for n in sorted(os.listdir(f"{base}/glow"))]
     # (The catcher's faint alpha over the whole plane cut before the stretch, and after it: stretched first, its ringing
     # read as shadow to the frame's edge and the crop took all of it.)
-    shadow = Image.open(f"{base}/shadow.png").convert("RGBA")
-    shadow.putalpha(shadow.split()[3].point(lambda v: v if v > 12 else 0))
-    shadow = stretch(shadow)
+    def shade(path):
+        im = Image.open(path).convert("RGBA")
+        im.putalpha(im.split()[3].point(lambda v: v if v > 12 else 0))
+        return stretch(im)
+    if os.path.isdir(f"{base}/shadow"):
+        shadows = [shade(f"{base}/shadow/{n}") for n in sorted(os.listdir(f"{base}/shadow"))]
+    else:
+        shadows = [shade(f"{base}/shadow.png")]
+    shadow = shadows[0]
     # (Full strength, as vanilla's shadow sprites are, alpha 255 where solid: the game draws every shadow at its own opacity. At
     # 0.55 of it, "vanilla's strength" as first assumed, ours drew at half of that, faint beside vanilla's, 0.2.321.)
-    shadow.putalpha(shadow.split()[3].point(lambda v: v if v > 12 else 0))
-    for im in [body] + glows:
+    for im in shadows:
+        im.putalpha(im.split()[3].point(lambda v: v if v > 12 else 0))
+    for im in bodies + glows:
         im.putalpha(im.split()[3].point(lambda v: v if v > 3 else 0))
     box = None
-    for im in [body, shadow] + glows:
+    for im in bodies + shadows + glows:
         b = im.getbbox()
         if b: box = b if not box else (min(box[0], b[0]), min(box[1], b[1]), max(box[2], b[2]), max(box[3], b[3]))
     # (Even, so the half-size glow's frame is exactly half.)
     box = (box[0] - 2, box[1] - 2, box[2] + 2 + (box[2] - box[0]) % 2, box[3] + 2 + (box[3] - box[1]) % 2)
     fw, fh = box[2] - box[0], box[3] - box[1]
-    body.crop(box).save(f"{out}/{d}-body.png", optimize=True)
-    shadow.crop(box).save(f"{out}/{d}-shadow.png", optimize=True)
+    def pack(frames, path):
+        if len(frames) == 1:
+            frames[0].crop(box).save(path, optimize=True); return
+        sh = Image.new("RGBA", (fw * LINE, fh * math.ceil(len(frames) / LINE)), (0, 0, 0, 0))
+        for i, im in enumerate(frames):
+            sh.paste(im.crop(box), ((i % LINE) * fw, (i // LINE) * fh))
+        sh.save(path, optimize=True)
+    pack(bodies, f"{out}/{d}-body.png")
+    pack(shadows if len(shadows) == len(bodies) else shadows[:1], f"{out}/{d}-shadow.png")
     gw, gh = fw // 2, fh // 2
     rows = math.ceil(len(glows) / LINE)
     sheet = Image.new("RGBA", (gw * LINE, gh * rows), (0, 0, 0, 0))
@@ -49,6 +65,7 @@ for d in sorted(os.listdir(src)):
     W, H = body.size
     cx, cy = (box[0] + box[2]) / 2 - W / 2, (box[1] + box[3]) / 2 - H / 2
     meta[d] = {"width": fw, "height": fh, "shift": [cx / 64, cy / 64], "glow_frames": len(glows), "line_length": LINE}
+    if len(bodies) > 1: meta[d]["body_frames"] = len(bodies)
     # The barrel: its own still, cropped to its own box (the script draws it over the body and slides it as it fires).
     if os.path.exists(f"{base}/barrel/000.png"):
         br = stretch(Image.open(f"{base}/barrel/000.png").convert("RGBA"))

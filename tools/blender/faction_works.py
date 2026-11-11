@@ -56,7 +56,12 @@ def palette(f):
         glass = lpkit.mat("gs-glass", (0.08, 0.06, 0.03), metal=0.1, rough=0.2, emit=(1.0, 0.55, 0.15), strength=0.0, grime=0.0)
     # Burlap for sandbags: a coarse cloth (rough, dull, a brick-bond seam for its weave), tan, dirtied.
     cloth = lpkit.worn(f + "-cloth", (0.3, 0.25, 0.16), metal=0.0, rough=0.95, seams=14, wear=0.3, streaks=0.6, rivets=False)
-    P = {"hull": hull, "trim": trim, "dark": W["dark"], "steel": W["steel"], "accent": accent, "light": light,
+    # (Gunmetal and a shield's dark paint, 0.2.325: Grubstake's gun nest and flamer read "transparent" at the game's zoom,
+    # the user's rating, 2026-11-11: the shield in the hull's ochre was the grass's own olive-brown and the pale steel
+    # pedestal and lance carried the deck's tone, so both read as holes onto what lay under them.)
+    gunmetal = lpkit.worn(f + "-gunmetal", (0.06, 0.06, 0.065), metal=0.25, rough=0.7, seams=3, rivets=False, wear=0.25)
+    shield = lpkit.worn(f + "-shield", (0.05, 0.045, 0.04), metal=0.45, rough=0.6, seams=4, rivets=True, wear=0.3)
+    P = {"gunmetal": gunmetal, "shield": shield, "hull": hull, "trim": trim, "dark": W["dark"], "steel": W["steel"], "accent": accent, "light": light,
          "glass": glass, "rubber": W["rubber"], "hazard": W["hazard"], "cloth": cloth}
     if CLAY:
         clay = lpkit.mat("clay", (0.5, 0.5, 0.5), metal=0.0, rough=0.7, grime=0.0)
@@ -704,19 +709,56 @@ def drill_kh():
         for k in range(4):
             a = k * math.pi / 2 + 0.3
             B(0.08, 0.24, 0.05, math.cos(a) * 0.5, math.sin(a) * 0.5, 1.4, P["dark"], rot=a, bevel=0.005)
+    # The percussion ram (0.2.325; the user's rating, 2026-11-11: "a little more complicated ... a percussion from the
+    # central pole rising up slowly and hitting the ground fast"): a guide frame of two columns over the bore tower, a
+    # crosshead and its hydraulic lift cylinder, the ram a heavy hazard-banded block on the anvil, lifted slowly and let
+    # fall.
+    def build_frame():
+        for sx in (-1, 1):
+            B(0.09, 0.12, 1.55, sx * 0.4, 0, 1.6, P["dark"], bevel=0.01)
+            B(0.16, 0.2, 0.08, sx * 0.4, 0, 1.6, P["trim"], bevel=0.01)
+            rod((sx * 0.4, 0.0, 2.2), (sx * 0.4, 0.0, 1.66), 0.012, P["steel"])
+        B(1.0, 0.24, 0.16, 0, 0, 3.15, P["hull"], bevel=0.02)
+        B(1.02, 0.05, 0.04, 0, -0.12, 3.2, P["accent"], bevel=0.0)
+        cyl(0.13, 0.5, 0, 0, 2.65, P["trim"], verts=16)                      # the lift cylinder, under the crosshead
+        cyl(0.15, 0.05, 0, 0, 2.65, P["dark"], verts=16)
+        for sx in (-1, 1):
+            pipe([(sx * 0.12, 0.08, 3.05), (sx * 0.3, 0.15, 3.0), (sx * 0.45, 0.2, 2.0), (sx * 0.55, 0.3, 0.75)], 0.022, P["rubber"])
+        cyl(0.09, 0.3, 0, 0, 1.66, P["steel"], verts=16)                      # the anvil, on the bore's spindle
+        cyl(0.05, 0.06, 0.4, -0.08, 3.23, P["light"], verts=10)               # a beacon on the crosshead
+    def build_ram():
+        octa(0.26, 0.36, 0, 0, 1.96, P["gunmetal"])
+        for z in (2.02, 2.2):
+            octa(0.265, 0.06, 0, 0, z, P["accent"])
+        cyl(0.06, 0.4, 0, 0, 2.32, P["steel"], verts=12)                      # the piston rod, up into the cylinder
+        for sx in (-1, 1):
+            B(0.14, 0.1, 0.12, sx * 0.3, 0, 2.1, P["dark"], bevel=0.01)       # the guide shoes on the columns
     model = group(build)
     collar = group(build_collar)
+    model += group(build_frame)
+    ram = group(build_ram)
     bpy.ops.object.empty_add(location=(0, 0, 0)); pv = bpy.context.object
     for o in collar:
         o.parent = pv; o.matrix_parent_inverse = pv.matrix_world.inverted()
+    bpy.ops.object.empty_add(location=(0, 0, 0)); lift = bpy.context.object
+    for o in ram:
+        o.parent = lift; o.matrix_parent_inverse = lift.matrix_world.inverted()
     model += scatter(model, {P["hull"], P["trim"]}, P["dark"], P["steel"], 8, density=9.0)
+    def ram_height(t):
+        """Up slowly over three quarters of the cycle (eased), down in an eighth (falling), resting on the anvil after."""
+        if t < 0.75:
+            u = t / 0.75; return 0.55 * (u * u * (3 - 2 * u))
+        if t < 0.875:
+            u = (t - 0.75) / 0.125; return 0.55 * (1 - u * u)
+        return 0.0
     def set_frame(f, frames):
         t = f / frames
+        lift.location.z = ram_height(t)
         pv.rotation_euler = (0, 0, t * math.pi / 4)
         lpkit.emission(P["glass"], 0.45 + 0.25 * math.sin(t * 4 * math.pi))
         lpkit.emission(P["light"], 3.0 if (f % 4) < 2 else 1.2)
         bpy.context.view_layer.update()
-    return model + collar, set_frame
+    return model + collar + ram, set_frame
 
 
 def pylon_kh():
@@ -1745,10 +1787,10 @@ def concept(name):
             # and flash hider, an ammo can and its belt, spade grips; a shield of two plates welded at an angle, a
             # slit between them, bolts along their edges.
             cyl(0.2, 0.1, 0, 0, 0.44, P["steel"], verts=12)
-            cyl(0.08, 0.75, 0, 0, 0.54, P["steel"], verts=12)
+            cyl(0.08, 0.75, 0, 0, 0.54, P["gunmetal"], verts=12)
             B(0.3, 0.34, 0.1, 0, 0, 1.25, P["dark"], bevel=0.02)
-            B(0.22, 0.62, 0.22, 0, -0.02, 1.33, P["trim"], bevel=0.04)
-            lie(0.065, 0.85, 0, 0.7, 1.44, P["steel"], "y", 12)
+            B(0.22, 0.62, 0.22, 0, -0.02, 1.33, P["gunmetal"], bevel=0.04)
+            lie(0.065, 0.85, 0, 0.7, 1.44, P["gunmetal"], "y", 12)
             for k in range(6):
                 tor(0.07, 0.016, 0, 0.36 + k * 0.1, 1.44, P["dark"]).rotation_euler = (math.pi / 2, 0, 0)
             lie(0.075, 0.12, 0, 1.15, 1.44, P["dark"], "y", 12)
@@ -1759,7 +1801,10 @@ def concept(name):
             for sx in (-1, 1):
                 rod((sx * 0.08, -0.32, 1.42), (sx * 0.12, -0.5, 1.4), 0.022, P["steel"])
             for sx in (-1, 1):
-                o = B(0.46, 0.05, 0.5, sx * 0.24, 0.36, 1.12, P["hull"], bevel=0.01)
+                o = B(0.46, 0.05, 0.5, sx * 0.24, 0.36, 1.12, P["shield"], bevel=0.01)
+                o.rotation_euler = (math.radians(-8), 0, sx * math.radians(18))
+                # (Its top edge a welded flat bar in Grubstake's ochre: the one bright line, the plates under it dark.)
+                o = B(0.48, 0.07, 0.04, sx * 0.24, 0.39, 1.6, P["hull"], bevel=0.005)
                 o.rotation_euler = (math.radians(-8), 0, sx * math.radians(18))
                 for k in range(4):
                     cyl(0.02, 0.03, sx * (0.06 + k * 0.12), 0.33, 1.57, P["steel"], verts=6)
@@ -1828,18 +1873,18 @@ def fconcept(name):
                 B(0.2, 2.4, 0.12, sx * 0.6, 0, 0, P["dark"])
             B(1.3, 2.2, 0.08, 0, 0, 0.12, P["trim"])
             for k, x in enumerate((-0.42, 0.0, 0.42)):
-                cyl(0.19, 0.48, x, -0.7, 0.2, (P["accent"], P["hull"], P["steel"])[k], verts=20, bevel=0.02)
+                cyl(0.19, 0.48, x, -0.7, 0.2, (P["accent"], P["hull"], P["trim"])[k], verts=20, bevel=0.02)
                 for z in (0.32, 0.6):
                     tor(0.19, 0.018, x, -0.7, z, P["dark"])
                 pipe([(x, -0.6, 0.68), (x * 0.6, -0.3, 0.7), (x * 0.2, -0.06, 0.9), (x * 0.15, -0.06, 1.3)], 0.03, P["rubber"])
             rod((-0.65, -0.92, 0.6), (0.65, -0.92, 0.6), 0.014, P["rubber"])
             for x in (-0.5, 0.5):
                 lie(0.09, 0.25, x, -1.05, 0.22, P["steel"], "y", 12)
-            cyl(0.3, 0.3, 0, 0.0, 0.2, P["steel"], verts=14)
+            cyl(0.3, 0.3, 0, 0.0, 0.2, P["gunmetal"], verts=14)
             # (A pipe mast for its neck, braced, the boom's ring on top.)
-            cyl(0.1, 0.9, 0, 0.0, 0.5, P["steel"], verts=12)
+            cyl(0.1, 0.9, 0, 0.0, 0.5, P["gunmetal"], verts=12)
             for a in (0.8, 2.9, 5.0):
-                rod((math.cos(a) * 0.35, math.sin(a) * 0.35, 0.5), (0, 0, 1.1), 0.025, P["steel"])
+                rod((math.cos(a) * 0.35, math.sin(a) * 0.35, 0.5), (0, 0, 1.1), 0.025, P["gunmetal"])
             cyl(0.26, 0.05, 0, 0.0, 1.38, P["dark"], verts=14)
             B(0.12, 0.12, 0.35, 0.5, 0.5, 0.2, P["steel"], bevel=0.01)
             rod((0.5, 0.5, 0.55), (0.62, 0.62, 0.7), 0.02, P["steel"])
@@ -1874,15 +1919,15 @@ def fconcept(name):
             # welded tip, the igniter lit, a rubber hose taped along it, a crank wheel.
             cyl(0.26, 0.3, 0, 0.05, 0.6, P["hull"], verts=10, bevel=0.01)
             B(0.3, 0.3, 0.2, 0, -0.25, 0.65, P["accent"], bevel=0.01)
-            o = B(0.18, 0.18, 0.7, 0, 0.12, 0.85, P["steel"], bevel=0.01); o.rotation_euler.x = math.radians(-30)
+            o = B(0.18, 0.18, 0.7, 0, 0.12, 0.85, P["gunmetal"], bevel=0.01); o.rotation_euler.x = math.radians(-30)
             B(0.26, 0.3, 0.22, 0, 0.47, 1.32, P["trim"], bevel=0.01)
             lie(0.11, 0.35, 0, 0.75, 1.42, P["hull"], "y", 10)
-            lie(0.055, 0.8, 0, 0.85, 1.42, P["steel"], "y", 10)
+            lie(0.055, 0.8, 0, 0.85, 1.42, P["gunmetal"], "y", 10)
             lie(0.08, 0.1, 0, 1.28, 1.42, P["dark"], "y", 10)
             sph(0.05, 0, 1.32, 1.32, P["glass"])
             pipe([(0.12, 0.0, 0.7), (0.12, 0.3, 1.2), (0.08, 0.7, 1.48), (0.05, 1.1, 1.48)], 0.03, P["rubber"])
             tor(0.12, 0.02, -0.2, 0.05, 0.8, P["steel"]).rotation_euler = (0, math.pi / 2, 0)
-            o = B(0.4, 0.04, 0.3, 0, 0.6, 1.2, P["accent"], bevel=0.01); o.rotation_euler.x = math.radians(-20)
+            o = B(0.4, 0.04, 0.3, 0, 0.6, 1.2, P["shield"], bevel=0.01); o.rotation_euler.x = math.radians(-20)
         elif name == "gs-flame-lance":
             # A tall pintle with a flame lance on it, a shield plate, a pressure bottle strapped to the pintle, the
             # igniter lit.
@@ -2045,7 +2090,7 @@ if WHAT == "drill":
         rig.rotation_euler = (0, 0, math.radians(yaw)); bpy.context.view_layer.update()
         for o in objs: o.visible_camera = True        # (passes hides the model for its shadow and leaves it hidden)
         lpkit.passes(scene, f"{out}/{d}", FRAMES, lambda f: set_frame(f, FRAMES), objs, {P["light"], P["glass"]}, ground, sun,
-                     world)
+                     world, shadow_each=(F == "kh"))   # (KH's ram rises and falls: its shadow with it)
 else:
     lpkit.passes(scene, out, FRAMES, lambda f: set_frame(f, FRAMES), objs, {P["light"], P["glass"]}, ground, sun, world,
                  shadow_each=TURNS)
