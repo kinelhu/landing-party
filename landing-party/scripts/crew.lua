@@ -422,9 +422,12 @@ function crew.rebuild(b, job)
   if not corp_crews(b) or storage.crews_off or in_yard(b, job.pos) then return nil end
   job.crew_wait = true
   if out(b, true) >= MAX_MEND then return true end
+  -- A clearance saving for its parts (siege.lua): only its turrets and what makes parts go out until it can pay.
+  if base.saving_holds(b, job.name) then return true end
   local jobs, bill = {}, 0
   for _, r in ipairs(b.rebuild) do
-    if game.tick >= r.due and not r.occupied and (r.pos[1] - job.pos[1]) ^ 2 + (r.pos[2] - job.pos[2]) ^ 2 <= REBUILD_AREA ^ 2 then
+    if game.tick >= r.due and not r.occupied and not base.saving_holds(b, r.name)
+      and (r.pos[1] - job.pos[1]) ^ 2 + (r.pos[2] - job.pos[2]) ^ 2 <= REBUILD_AREA ^ 2 then
       table.insert(jobs, r)
       bill = bill + (shared.cost[r.name] or 0)
     end

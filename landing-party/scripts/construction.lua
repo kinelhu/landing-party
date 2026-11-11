@@ -159,19 +159,34 @@ local ECONOMY = {["lp-generator"] = true, ["lp-fabricator"] = true, ["lp-drill"]
 -- raid, 2026-10-24). Economy jobs still build below it. (One of every economy kind, 57, held a camp landed with 60 from
 -- anything else: Kessler-Hayashi on seed 4242.)
 local FLOOR = (shared.cost["lp-fabricator"] or 0) + (shared.cost["lp-pylon"] or 0)
-function base.reserve(b)
+-- `name`, what is to be built with the parts: a clearance saving for its parts (siege.lua, b.hazard_save) holds them from
+-- everything but what makes parts and power, and its railgunners (the hazard at 0.2.324: walls, gates and radars
+-- rebuilt as the waves broke them, and the last nest waited "parts 2 of 220" for the rest of the hour; its turrets kept
+-- out of the saving, their rebuilds at 15 parts a drone took every part as it came, and it never passed 143).
+local SAVE_EXEMPT = {["lp-railgunner"] = true}
+-- Whether a clearance's saving holds the parts from `name` (crew.rebuild asks: a camp's drones rebuild its walls).
+function base.saving_holds(b, name)
+  local hs = b.hazard_save
+  if not (hs and game.tick < hs.till) then return false end
+  local k = name and shared.kind_of(name)
+  return not (k and (ECONOMY[k] or SAVE_EXEMPT[k]))
+end
+
+function base.reserve(b, name)
   local reserve = 0
   for _, job in ipairs(b.rebuild) do
     if ECONOMY[shared.kind_of(job.name)] then reserve = reserve + (shared.cost[job.name] or 0) end
   end
-  return math.max(reserve, FLOOR)
+  reserve = math.max(reserve, FLOOR)
+  if base.saving_holds(b, name) then reserve = math.max(reserve, b.hazard_save.need) end
+  return reserve
 end
 army.reserve = base.reserve
 
 local function rebuild(b)
   local surface = game.surfaces[b.surface]
-  local reserve = base.reserve(b)
   for i, job in ipairs(b.rebuild) do
+    local reserve = base.reserve(b, job.name)
     if game.tick < job.due then
       -- still on its way
     elseif base.footing and not base.footing(b, job) then
@@ -229,7 +244,7 @@ local function build(b)
   if base.crew_take and base.crew_take(b, job) then return end
   local cost = shared.cost[job.name] or 0
   -- (What makes parts and power builds below the reserve: the reserve is for it.)
-  local held = ECONOMY[shared.kind_of(job.name or "")] and 0 or base.reserve(b)
+  local held = ECONOMY[shared.kind_of(job.name or "")] and 0 or base.reserve(b, job.name)
   if b.parts < cost + held then
     -- What makes parts and power goes past a job waiting for parts: behind a turret or a launch pad the camp could
     -- not pay for, its first fabricator and its pylon waited for good (parked, grow; 2026-10-24).

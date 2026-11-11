@@ -6689,6 +6689,20 @@ Bugs and surprises the headless runs caught, each kept as a check:
   Kessler-Hayashi lost 68 to the hazard's waves and cleared all six nests; now 610 (117 gun turrets, 76 lasers, 213
   walls), its parts spent on rebuilds, and the last nest "waits (parts 2 of 220)" for the rest of the run. Its turrets'
   prepare range is vanilla's. Open: a balance call (KH's turrets as slow as the player's, or a faction trait).
+- **A clearance saves for its parts** (0.2.327; the user, of the hazard bisected to 0.2.324: "We used to have vanilla
+  turrets before, no?"). Yes: until 0.2.303 the turrets were vanilla's copies at vanilla's times, and `hazard` passed
+  there. Bisected again with vanilla times forced (a data-final-fixes patch, seen failing at 0.2.323 and passing at
+  0.2.310): 0.2.311 passes, 0.2.312 fails (veterancy's batched rewiring); the runs part at minute 9, before any
+  promotion, at which nest the first clearance takes: a tipping point the fast turrets hid from 0.2.312 to 0.2.323, not
+  a fault of that commit. The flaw it shows: a camp worn down by a nest spent every part on rebuilds and never saved the
+  220 its clearance costs ("waits (parts 2 of 220)" for an hour). Now a clearance short of parts sets b.hazard_save (45
+  minutes, past its next retry) and base.reserve holds the parts from all but its economy and its railgunners, crews'
+  rebuilds too (base.saving_holds). Tried first and withdrawn: a 10-minute saving (lapsed before every retry), turrets
+  kept out of it (their rebuilds, 15 parts a drone, took every part as it came; it never passed 143). `hazard` passes
+  (5 clearances, 0 nests left). Still failing, the same KH weaker against biters: `hazard worm` (its howitzer broken at
+  the site by biters, 30 minutes for the next, its guards not holding) and `hazard research` (never exports, so never
+  funds railguns). Flamers beyond the gates considered and set aside with the user (their fixed arc, fire on its own
+  sorties). Quick regression: 42 of 42.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

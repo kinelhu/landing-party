@@ -200,7 +200,7 @@ local function produce(b, trace)
   end
   b.next_unit = name
   local cost = shared.unit_cost(b.corp, name)
-  if b.parts < cost + (army.reserve and army.reserve(b) or 0) then return end
+  if b.parts < cost + (army.reserve and army.reserve(b, name) or 0) then return end
   local yards = {}
   for _, d in ipairs(b.depots) do if d.valid then table.insert(yards, d) end end
   if #yards == 0 and b.lander and b.lander.valid then yards = {b.lander} end

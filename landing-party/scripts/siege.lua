@@ -897,7 +897,14 @@ function ops.clearance(b, near, trace, army, toward)
     trace(b, string.format("clearance: the nest at %.0f,%.0f outranges even the howitzer", near.position.x, near.position.y))
     return false, "out of reach"
   end
-  if (b.parts or 0) < SIEGE_TIERS[2].cost then return false, string.format("parts %d of %d", b.parts or 0, SIEGE_TIERS[2].cost) end
+  -- Short of parts: it saves for them (base.reserve holds all but its economy and its railgunners; the
+  -- hazard at 0.2.324: rebuilding walls and gates as the waves broke them, a camp waited "parts 2 of 220" for an hour).
+  if (b.parts or 0) < SIEGE_TIERS[2].cost then
+    b.hazard_save = {need = SIEGE_TIERS[2].cost, till = game.tick + 45 * 3600}   -- (past the next retry: its losses' window refills
+    -- in 12 to 20 minutes, and a 10-minute saving had lapsed before every one, 0.2.326)
+    return false, string.format("parts %d of %d", b.parts or 0, SIEGE_TIERS[2].cost)
+  end
+  b.hazard_save = nil
   -- Railgunners to hold the site: the nest's defenders came out at the first shells and broke the mortars of eight Line
   -- troopers in 35 s (visit b - rocket). Until it has CLEAR_RAILS at home, it asks for them (army.produce) and waits.
   local rails = 0
