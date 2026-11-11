@@ -32,9 +32,11 @@ RUNS=(
 FORKED=" cut raid occupy defend army train siege "
 # --quick: one or two a layer of the AI graph (docs/ai-graph.md) and the day's mechanics, for iterating (a few minutes);
 # the whole list before committing a batch, --full before one that touches growth, landings or the fall.
+# (clearing, evolution, arcflamer, cards: 2026-11-12, after clearing failed unseen for six versions outside it; each 1 to 3 minutes.)
 QUICK=" ops| mended| mended|LP_MIX=serenity sneak| crew|LP_MIX=answered snatch| line|LP_MIX=turret remembered|
   gates| blockexit| fortress| fortress|LP_MIX=howitzer leader|LP_MIX=haul blackout| strangle| strangle|LP_MIX=ore pool| levers| scanner| scanresponse| roads| muster| podland| jumper| tap| prospect|LP_MIX=truck strip| cordon|
-  standing| temper| nests| country| bombard| siegetier|LP_MIX=2 arms| dev| chart| heist| herd| herd|LP_MIX=scout farm| creep| "
+  standing| temper| nests| country| bombard| siegetier|LP_MIX=2 arms| dev| chart| heist| herd| herd|LP_MIX=scout farm| creep|
+  clearing| evolution| arcflamer| cards| "
 if [ "$FULL" = "--quick" ]; then
   QUICK=" $(echo $QUICK) "
   kept=()
