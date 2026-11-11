@@ -6784,6 +6784,23 @@ Bugs and surprises the headless runs caught, each kept as a check:
   Railgunners are anti-armour: more of them do not hold a site against a swarm. The next lever is what guards the deploy
   (the dig-in first, pillboxes by evolution, an anti-swarm escort), not their count. hazard research fails as before
   (no exports, no railgun research). hazard, norails, pay and unpaid pass.
+- **Grubstake's flamer, its oil abstracted** (0.2.336; the user, 2026-11-11: "The grubstake flamer also has weird
+  disconnected bits of pipe on its base. We can remove those if oil can be abstracted"). The script topped it up with
+  100 light oil for nothing, so the oil bought nothing in play; its fluid box drew vanilla's flamethrower pipe stubs
+  loose beside the skid. Now an electric turret on no power, as the arc flamer is, with the oil flamer's attack (forward
+  arc of a third, range 30, orange fire): no fluid box, no pipes, no top-up. An engine question answered by scenario
+  arcflamer: an electric turret's forward arc follows the way it is built facing (built east, it burns a worm 15 tiles
+  east and spares one 15 tiles west; seen failing first on the fluid turret, 2 fluid storages). Its base still turns
+  with it (corps.lua: by its arc, not its type; a base visualisation is a 4-way for any turret). **Found and fixed on
+  the way:** intel weighed turrets by type, so the corporations' flamers, electric since 0.2.331 for the arc flamer, were
+  weighed as lasers (1.5, laser damage) and plated against as lasers; weighed as flamers now (2.5, fire). The oil
+  flamer still loses to six medium biters (5 left, destroyed; 6 left before the change). Not yet seen in game.
+  **Also measured (the user: "What do you mean you don't know?"):** whether the non-turret buildings' own shadows darken
+  their bodies as the turret bases' did. No: registered onto the rating stills, a body's in-game brightness over its
+  sprite's, where its own shadow is densest, is 1.01 (KH generator), 1.00 (both fabricators), 1.02 (Grubstake generator);
+  the same measure reads 0.51 on the gun nest's base before 0.2.335 and 1.00 after (the method's control). The KH radar
+  reads 0.8 shadowed or not (a uniform difference, not its shadow). Other buildings' stills did not register well
+  enough to read.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

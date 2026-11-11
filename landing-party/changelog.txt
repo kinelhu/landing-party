@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.2.335
+Version: 0.2.336
 Date: 2026-11-11
   Features:
     - Its own icons for every item, technology and unit, the rivals' too; the threat scanner's signals show the units they count.

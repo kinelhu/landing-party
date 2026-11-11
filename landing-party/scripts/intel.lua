@@ -30,7 +30,11 @@ local DEALS = {["ammo-turret"] = "physical", ["electric-turret"] = "laser", ["fl
 function ops.weigh(surface, pos, forces, r, corp)
   local w, by = 0, {}
   for _, e in pairs(surface.find_entities_filtered{position = pos, radius = r or DEFENCE_RADIUS, force = forces, type = TURRETS}) do
-    local k = WEIGHT[e.type]
+    local kind = e.type
+    -- (The corporations' flamers are electric turrets burning nothing, 2026-11-11: weighed and answered as flamers, not
+    -- lasers.)
+    if kind == "electric-turret" and shared.kind_of(e.name) == "lp-flamer" then kind = "fluid-turret" end
+    local k = WEIGHT[kind]
     local learned = corp and know.price(corp, e.force.name, e.name)
     -- Firepower: damage times rate of fire (defend's guns, bullet damage +0.8 and shooting speed +0.6: 2.88 each; three
     -- of them killed about 15 units whatever the raid's size, so 21 and 23 lost and 30 is what wins). Corporate
@@ -41,7 +45,7 @@ function ops.weigh(surface, pos, forces, r, corp)
       local x = learned and learned / ops.PER_TURRET
         or k[1] * (1 + (k[2] and f.get_ammo_damage_modifier(k[2]) or 0)) * (1 + (k[2] and f.get_gun_speed_modifier(k[2]) or 0))
       w = w + x
-      local dmg = DEALS[e.type]
+      local dmg = DEALS[kind]
       if dmg then by[dmg] = (by[dmg] or 0) + x end
     end
   end

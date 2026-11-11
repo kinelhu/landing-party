@@ -41,7 +41,7 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n892 lines", width=1.79, fillcolor="#eef2f7"];
+    "base" [label="base\n889 lines", width=1.79, fillcolor="#eef2f7"];
     "construction" [label="construction\n398 lines", width=1.24, fillcolor="#d9f0d9"];
     "planner" [label="planner\n338 lines", width=1.18, fillcolor="#eef2f7"];
     "layout" [label="layout\n1747 lines", width=2.74, fillcolor="#f7dede"];
@@ -62,10 +62,10 @@ digraph ai {
     "army" [label="army\n1055 lines", width=1.97, fillcolor="#f7dede"];
     "ops" [label="ops\n2185 lines", width=3.23, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
-    "intel" [label="intel\n291 lines", width=1.12, fillcolor="#eef2f7"];
+    "intel" [label="intel\n295 lines", width=1.13, fillcolor="#eef2f7"];
     "airraid" [label="airraid\n127 lines", width=0.94, fillcolor="#eef2f7"];
     "cannon" [label="cannon\n333 lines", width=1.17, fillcolor="#eef2f7"];
-    "siege" [label="siege\n2133 lines", width=3.17, fillcolor="#f7dede"];
+    "siege" [label="siege\n2132 lines", width=3.17, fillcolor="#f7dede"];
     "assault" [label="assault\n142 lines", width=0.96, fillcolor="#eef2f7"];
     "strip" [label="strip\n238 lines", width=1.06, fillcolor="#eef2f7"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];

@@ -36,9 +36,11 @@ for ty, ref in VANILLA.items():
             continue
         tp, tf = times(p)
         r, (rp, rf) = ref, (vp, vf)
-        if n in BY_NAME:
-            r = BY_NAME[n][1]
-            rp, rf = times(d[BY_NAME[n][0]][r])
+        # (Every flamer, each corporation's and the oil one, by kind: all electric turrets, all deploying as the flamethrower.)
+        k = "lp-flamer" if (n.endswith("-flamer") or n.endswith("-flamer-oil")) else n
+        if k in BY_NAME:
+            r = BY_NAME[k][1]
+            rp, rf = times(d[BY_NAME[k][0]][r])
         if tp < 0.9 * rp or tf < 0.9 * rf:
             bad.append(f"{n}: deploys in {tp:.0f} ticks and folds in {tf:.0f}, {r} {rp:.0f} and {rf:.0f}")
 if bad:

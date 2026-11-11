@@ -442,10 +442,7 @@ local function economy(b)
   end
   b.parts = b.parts + made
   b.made = b.made + made
-  -- Oil flamers (Grubstake's) are kept in light oil; Kessler-Hayashi's arc flamers burn nothing.
-  for _, t in ipairs(b.flamers or {}) do
-    if t.valid and t.type == "fluid-turret" and t.get_fluid_count() < 50 then t.insert_fluid{name = "light-oil", amount = 100} end
-  end
+  -- (Flamers burn nothing: Grubstake's oil flamer was kept in light oil here until its oil was abstracted, 2026-11-11.)
   -- Gun turrets (a corporation's choice instead of lasers) are kept in ammunition: uranium rounds once the biters have
   -- evolved to 0.6, as a player's turrets would be by then, at 5 parts a refill of 20 (piercing when it cannot pay; the
   -- user, 2026-11-11: KH's strength scaled to the biters' evolution, by what it brings).

@@ -360,7 +360,7 @@ data:extend({parked_howitzer})
 -- A gun turret (a corporation may build these instead of lasers: shared.CORPS bases; fed by script) and a gate.
 local gun_turret = copy("ammo-turret", "gun-turret", "lp-gun-turret")
 local gate = copy("gate", "gate", "lp-gate")
--- A flamethrower turret covering a gate (Serenity), kept in light oil by script.
+-- A flamethrower turret covering a gate (Grubstake's below: its stream, fire and sticker are the arc flamer's too).
 local flamer = copy("fluid-turret", "flamethrower-turret", "lp-flamer")
 -- No circuit network (2.1 gave the flamethrower turret 8 connectors where a copy takes 4).
 flamer.circuit_connector = nil
@@ -405,6 +405,34 @@ flamer.attack_parameters.ammo_type.action.action_delivery.stream = "lp-flamer-st
 -- The flamers split (the user, 2026-11-11: "Split the flamers"): this oil flamer, its forward arc and orange fire, is
 -- Grubstake's (shared.CORPS.grubstake.bases); Kessler-Hayashi's own lp-flamer is the arc flamer below.
 flamer.name = "lp-flamer-oil"
+-- Its oil abstracted (the user, 2026-11-11: "weird disconnected bits of pipe on its base. We can remove those if oil can
+-- be abstracted"): the script had filled it with light oil for nothing, so the oil bought nothing but the fluid box, whose
+-- pipe stubs stood loose beside the skid. An electric turret on no power, as the arc flamer is, with the oil flamer's
+-- attack: its forward arc kept (it follows the way it is built facing: scenario arcflamer), its range, its orange fire.
+do
+  local oil = copy("electric-turret", "laser-turret", "lp-flamer-oil")
+  oil.energy_source = {type = "void"}
+  oil.circuit_connector = nil
+  for _, k in ipairs({"max_health", "resistances", "rotation_speed", "preparing_speed", "folding_speed", "prepare_range",
+      "corpse", "dying_explosion", "collision_box", "selection_box", "call_for_help_radius", "alert_when_attacking",
+      "minable", "loot"}) do
+    oil[k] = table.deepcopy(flamer[k])
+  end
+  -- (An electric turret's animations take one head, not the fluid turret's eight-way set: north's; corps.lua's model
+  -- replaces them for Grubstake's own.)
+  for _, k in ipairs({"folded_animation", "preparing_animation", "prepared_animation", "attacking_animation",
+      "ending_attack_animation", "folding_animation"}) do
+    local v = flamer[k]
+    oil[k] = v and table.deepcopy(v.north or v) or nil
+  end
+  oil.graphics_set = table.deepcopy(flamer.graphics_set)
+  local oap = table.deepcopy(flamer.attack_parameters)
+  oap.fluids, oap.fluid_consumption = nil, nil
+  oap.ammo_category = "lp-oil-flame"
+  oap.ammo_type.energy_consumption = "1J"
+  oil.attack_parameters = oap
+  flamer = oil
+end
 
 -- Kessler-Hayashi's arc flamer (the user, 2026-11-11: "a flamer turret for KH too. Perhaps with blue flames with short
 -- duration but high damage ... a 360 degrees turret, and KH units could be immune to their own formulation"; "Go with
@@ -459,7 +487,7 @@ for _, a in ipairs(arc_stream.action) do
   end
 end
 for _, p in ipairs({arc_stream, arc_fire, arc_sticker}) do blued(p) end
-data:extend{{type = "ammo-category", name = "lp-arc-flame", hidden = true}, arc, arc_stream, arc_fire, arc_sticker}
+data:extend{{type = "ammo-category", name = "lp-arc-flame", hidden = true}, {type = "ammo-category", name = "lp-oil-flame", hidden = true}, arc, arc_stream, arc_fire, arc_sticker}
 
 local wall = copy("wall", "stone-wall", "lp-wall")
 wall.max_health = 450

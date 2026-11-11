@@ -1327,7 +1327,6 @@ function ops.dig_in(b, op, trace)
     local p = s.find_non_colliding_position(name, {op.site[1] + math.cos(toward) * 2.5, op.site[2] + math.sin(toward) * 2.5}, 4, 0.5)
     local f = p and s.create_entity{name = name, position = p, force = force}
     if f then
-      if f.type == "fluid-turret" then f.insert_fluid{name = "light-oil", amount = 1000} end
       table.insert(op.works, f)
       op.site_flamer = f
       b.site_flamers = (b.site_flamers or 0) + 1

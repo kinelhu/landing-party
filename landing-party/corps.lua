@@ -252,8 +252,10 @@ MODELLED["lp-flamer"] = {dir = "flamer", head = true, apply = function(p, key)
     end
     four[d] = {layers = {base("body"), base("glow", {draw_as_glow = true, blend_mode = "additive"}), base("shadow", {draw_as_shadow = true})}}
   end
-  -- (The arc flamer's base one picture, north's: an electric turret's base has no direction.)
-  p.graphics_set = {base_visualisation = {animation = p.type == "fluid-turret" and four or four.north}}
+  -- (A flamer with a forward arc, Grubstake's, turns its base the way it faces; the arc flamer's whole circle takes north's.
+  -- Both electric turrets since 2026-11-11: the base's animation is an Animation4Way for any turret.)
+  local arc = p.attack_parameters.turn_range and p.attack_parameters.turn_range < 1
+  p.graphics_set = {base_visualisation = {animation = arc and four or four.north}}
 end}
 -- The depot and the launch pad: containers, one picture each (faction_works.py depot and launchpad: KH a sealed
 -- landing pad and an electromagnetic launch tube, Grubstake a plated pad on drum stilts and a derrick over a pit).
