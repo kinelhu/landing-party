@@ -6703,6 +6703,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the site by biters, 30 minutes for the next, its guards not holding) and `hazard research` (never exports, so never
   funds railguns). Flamers beyond the gates considered and set aside with the user (their fixed arc, fire on its own
   sorties). Quick regression: 42 of 42.
+- **Our shadows were gradients, vanilla's are shapes** (0.2.333; the user, 2026-11-11, after 0.2.329 and 0.2.332 claimed
+  the turrets' shadows fixed: "You didn't fix any of the shadows"). Side by side, vanilla's gun turret sits in a crisp
+  dark shadow and ours cast a faint blur. Measured, not judged: of vanilla's turret shadow 72 % is near solid (alpha over
+  200); of Grubstake's gun nest 8 %, KH's autocannon 18 %, spread over twice the area. Blender's shadow catcher keeps a
+  shadow as a gradient (partly dark under the ambient fill, a halo of the ground's occlusion round the model), and
+  sheet.py packed it as rendered; "full strength" (0.2.321) had checked the maximum, not the shape. Both earlier fixes
+  (lower heads, lighter skids) were judged on stills where the shadow was barely there, and the agent's reports said
+  fixed. tools/blender/shadow_solid.py: alpha ramps from 70 to 100 to solid (the gun nest's core sat near 105, its halo 17
+  to 36; a ramp from 45 kept the flamers' base occlusion, 60, as a grey slab), and nothing west of each frame's body (the
+  sun comes from the west; the flamers' heads carried a band 64 px west of the head, the hidden base's occlusion). The four
+  turrets (Grubstake's gun nest and flamer, KH's autocannon and flamer): 94 to 100 % near solid, filmed beside vanilla's.
+  Every other building's shadow is still a gradient (the KH fabricator 48 %): open.
 - **Turret bases read as shadows; the bait under its smoke** (0.2.332; the user's ratings, 2026-11-11: gun nest and flamer
   2, "Seems like the base plate shadow is applied on top of the turret?"; bait 2, "Nothing changed in the still with this
   cloud!"). 0.2.329's skids were near-black, darker than the shadow beside them, so they read as a shadow laid over the
