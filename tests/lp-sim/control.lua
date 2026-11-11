@@ -8206,6 +8206,14 @@ scenarios.hazard = function()
       end)
     end
   end
+  -- When the first hazard was raised, read every 10 s (0.2.322: read only as each wave went out, every 3 minutes, a
+  -- clearance launched just after one wave that had cleared every nest before the next left it unread: norails failed
+  -- with "first seen at minute -" on a run that made its railgunners and cleared at minute 13).
+  for t = 600, END, 600 do
+    schedule(t, function()
+      if not S.first_hazard and ((lp("stats", storage.id).ops or {}).hazards or 0) > 0 then S.first_hazard = game.tick end
+    end)
+  end
   for t = 2 * 3600 + 600, END - 600, 3 * 3600 do
     schedule(t, function()
       local from

@@ -6616,6 +6616,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   scheduled from minute 12 to the end, never went: run the prep with the visit's real length, or set its params'
   minutes); a film on a visit profile without LP_FILM_SIM removes the harness mod from it; the Studio's Homebrew ffmpeg
   no longer loads (libx265 missing after an update), the clips encoded with imageio-ffmpeg's static build.
+- **Full regression at 0.2.322** (320 runs, 56 minutes, LP_JOBS 4 on the laptop): 317 pass. Open for the user: herd
+  ranks-mend (10 of 37 left outside when through: may one rank trail?) and farm siege (2 mines of 13 left at the breach:
+  the sweep's balance). The third, hazard norails, was the harness: it read the first hazard only as each wave went out
+  (every 3 minutes), and the clearance launched after one wave and had cleared every nest by the next, so "first seen
+  at minute -" on a run that made its 8 railgunners and cleared at minute 13. Now read every 10 s; it passes (first
+  seen at minute 12).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
