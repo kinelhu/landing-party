@@ -20,7 +20,6 @@ function siege.install(ops, K)
 local ASSAULT_IDLE = K.ASSAULT_IDLE
 local CELL = K.CELL
 local CLEAR_GUARD = K.CLEAR_GUARD
-local CLEAR_RAILS = K.CLEAR_RAILS
 local COOL_TICKS = K.COOL_TICKS
 local DEFENCE_RADIUS = K.DEFENCE_RADIUS
 local DEPLOY_TICKS = K.DEPLOY_TICKS
@@ -906,17 +905,18 @@ function ops.clearance(b, near, trace, army, toward)
   end
   b.hazard_save = nil
   -- Railgunners to hold the site: the nest's defenders came out at the first shells and broke the mortars of eight Line
-  -- troopers in 35 s (visit b - rocket). Until it has CLEAR_RAILS at home, it asks for them (army.produce) and waits.
+  -- troopers in 35 s (visit b - rocket). Until it has ops.clear_rails at home, it asks for them (army.produce) and waits.
   local rails = 0
   for _, u in ipairs(b.garrison) do if u.valid and shared.kind_of(u.name) == "lp-railgunner" then rails = rails + 1 end end
-  b.want_rails = rails < CLEAR_RAILS * 2
-  b.rails_short = rails < CLEAR_RAILS and CLEAR_RAILS or nil   -- what it waits for (army.produce makes them over the cap)
-  if rails < CLEAR_RAILS then
+  local need = ops.clear_rails(s, piece)   -- (more as the biters evolve, and with a howitzer)
+  b.want_rails = rails < need * 2
+  b.rails_short = rails < need and need or nil   -- what it waits for (army.produce makes them over the cap)
+  if rails < need then
     if not b.rails_traced then
       b.rails_traced = true
-      trace(b, string.format("clearance: waits for railgunners (%d of %d)", rails, CLEAR_RAILS))
+      trace(b, string.format("clearance: waits for railgunners (%d of %d)", rails, need))
     end
-    return false, string.format("railgunners %d of %d", rails, CLEAR_RAILS)
+    return false, string.format("railgunners %d of %d", rails, need)
   end
   b.rails_traced = nil
   b.rails_short = nil

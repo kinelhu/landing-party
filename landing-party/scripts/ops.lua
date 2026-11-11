@@ -83,6 +83,15 @@ local CLEAR_RAILS = 8             -- railgunners a clearance waits for (its only
 -- A clearance's guards shoot biters this near its pieces, and its site is out of every worm's reach by this more (at 24
 -- round a site just out of reach, guards met the worms).
 local CLEAR_GUARD = 12
+-- The railgunners a clearance waits for, by the biters' evolution on its surface (the user, 2026-11-11: "some scaling to
+-- KH strength based on biter evolution"): what it brings, never hidden health or damage (tiers' damage went as "a hidden
+-- evolution factor by another name", 2026-10-13). CLEAR_RAILS, 6 more at full evolution, 4 more with a howitzer (a big
+-- worm's nest; hazard worm: the waves broke its howitzer at the site and it waited half an hour for the next).
+function ops.clear_rails(surface, piece)
+  local f = game.forces.enemy
+  local evo = f and f.get_evolution_factor(surface) or 0
+  return CLEAR_RAILS + math.floor(6 * evo + 0.5) + (piece == "lp-howitzer" and 4 or 0)
+end
 local SIEGE_MAX_TICKS = 15 * 60 * 60
 -- Siege tiers (docs/reviews/2026-10-14-operations-depth-consult.md): by the corporation's level, held to the target
 -- player's era + 1, one up for a grudge. Mortars, shells each, guards, parts; resupply convoys (a hauler with

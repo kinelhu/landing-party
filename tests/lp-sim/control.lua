@@ -4096,6 +4096,34 @@ scenarios.evolution = function()
       tostring(S.enabled), tostring(S.factor), S.b1, S.a1, S.a2))
     S.corp_delta, S.player_delta = S.a1 - S.b1, S.a2 - S.a1
   end)
+  -- What a corporation brings against biters grows with their evolution (the user, 2026-11-11): a clearance's railgunners
+  -- (8 at none, 14 at full, 4 more with a howitzer), and its gun turrets' uranium rounds from 0.6, at a price in parts.
+  schedule(70, function()
+    game.forces.enemy.set_evolution_factor(0, surface())
+    S.rails0 = lp("clear_rails", "lp-mortar")
+    game.forces.enemy.set_evolution_factor(1, surface())
+    S.rails1, S.railsh = lp("clear_rails", "lp-mortar"), lp("clear_rails", "lp-howitzer")
+    game.forces.enemy.set_evolution_factor(0.7, surface())
+  end)
+  schedule(END - 300, function()
+    -- (Its camp's gun turrets emptied: they are refilled only below 20 rounds, and nothing shoots here. Parts to pay for
+    -- uranium: with 4 left it loaded one turret so and the others with piercing, as it should.)
+    lp("debug_depot", storage.id, 3000)
+    S.emptied = 0
+    for _, t in ipairs(surface().find_entities_filtered{type = "ammo-turret", force = "lp-serenity"}) do
+      t.get_inventory(defines.inventory.turret_ammo).clear()
+      S.emptied = S.emptied + 1
+    end
+  end)
+  schedule(130, function()
+    check("evolution: a clearance's railgunners grow with it", S.rails0 == 8 and S.rails1 == 14 and S.railsh == 18,
+      string.format("%s at 0, %s at 1, %s with a howitzer", tostring(S.rails0), tostring(S.rails1), tostring(S.railsh)))
+  end)
+  schedule(END - 30, function()
+    local st = lp("stats", storage.id)
+    check("evolution: its gun turrets load uranium rounds at 0.7", st and st.uranium_refills >= S.emptied and S.emptied > 0,
+      string.format("%s refills, %d turrets emptied", tostring(st and st.uranium_refills), S.emptied))
+  end)
   schedule(120, function()
     check("evolution: a player's kill raises it", S.player_delta > 0, string.format("%.5f", S.player_delta))
     check("evolution: a corporation's kill does not", math.abs(S.corp_delta) < 1e-6, string.format("%.7f", S.corp_delta))

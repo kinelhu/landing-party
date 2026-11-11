@@ -1174,6 +1174,7 @@ remote.add_interface("landing-party", {
   end,
   debug_bill = function(id, owner, cost) local b = storage.bases[id]; return b and ledger.debug(b, owner, cost) end,
   -- Tests and screenshots: its open bill overdue now, a collection called.
+  clear_rails = function(piece) return ops.clear_rails(1, piece) end,
   debug_overdue = function(id) local b = storage.bases[id]; if b and b.ledger then ledger.collect(b, b.ledger) return true end end,
   ledger = function(id) local b = storage.bases[id]; return b and ledger.stats(b) end,
   next_ore = function(id) local b = storage.bases[id]; return b and {at = b.next_ore, targets = b.ore_targets or 0} end,

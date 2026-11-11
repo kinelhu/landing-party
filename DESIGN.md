@@ -6703,6 +6703,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the site by biters, 30 minutes for the next, its guards not holding) and `hazard research` (never exports, so never
   funds railguns). Flamers beyond the gates considered and set aside with the user (their fixed arc, fire on its own
   sorties). Quick regression: 42 of 42.
+- **Strength against biters by their evolution** (0.2.328; the user, 2026-11-11: "Could we perhaps add some scaling to
+  KH strength based on biter evolution?"). What it brings, never hidden health or damage (the tiers' damage went as "a
+  hidden evolution factor by another name", 2026-10-13): a clearance waits for `ops.clear_rails` railgunners, 8 at none
+  to 14 at full evolution, 4 more with a howitzer; gun turrets reload with uranium rounds from 0.6 at 5 parts a refill of
+  20, piercing when it cannot pay (every corporation with gun turrets). Checked in scenario evolution (8, 14, 18; three
+  uranium refills at 0.7, seen failing with the threshold at 0.8). **Found, not fixed:** hazard worm still fails (3 nests
+  left): 15 railgunners went with the howitzer and medium and big biters killed 10 of them within 45 s at the site, while
+  deploying, before it dug in (the wall ring and pillboxes come once the guns are up); the howitzer fell 1 min later.
+  Railgunners are anti-armour: more of them do not hold a site against a swarm. The next lever is what guards the deploy
+  (the dig-in first, pillboxes by evolution, an anti-swarm escort), not their count. hazard research fails as before
+  (no exports, no railgun research). hazard, norails, pay and unpaid pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
