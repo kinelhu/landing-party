@@ -6703,6 +6703,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the site by biters, 30 minutes for the next, its guards not holding) and `hazard research` (never exports, so never
   funds railguns). Flamers beyond the gates considered and set aside with the user (their fixed arc, fire on its own
   sorties). Quick regression: 42 of 42.
+- **Grubstake's turrets read transparent, the third time** (0.2.329; the user, on the rating page after 0.2.326: "still
+  got transparent turrets"). 0.2.326 had repainted the gun nest's shield and called it fixed; Before and Now were nearly
+  the same. The cause was their shadows: the heads sat high on thin posts (the gun at 1.44 on a pintle, the flame boom
+  near 2.2 on a 0.9 mast), so under vanilla's sun their shadows fell 1.5 to 2.4 tiles east, apart from the turret, and
+  the bases (a 0.06 plate, a 0.2 skid) cast nothing past their edges: a decal on the grass beside vanilla's turret in its
+  solid shadow. Shadow strength (alpha 255), shifts and sun were right. The gun 0.5 lower on a short thick post, the plate
+  a 0.2 skid with the sandbags on it (GS_SKID), Grubstake's flame boom on its drum stand (no mast); filmed: both shadows
+  join their bases at every heading. Kessler-Hayashi's gun turret and flamer float the same way, not yet fixed.
 - **Strength against biters by their evolution** (0.2.328; the user, 2026-11-11: "Could we perhaps add some scaling to
   KH strength based on biter evolution?"). What it brings, never hidden health or damage (the tiers' damage went as "a
   hidden evolution factor by another name", 2026-10-13): a clearance waits for `ops.clear_rails` railgunners, 8 at none

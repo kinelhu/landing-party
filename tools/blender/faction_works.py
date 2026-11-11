@@ -1660,7 +1660,10 @@ def gs_base_sandbags():
     an ammo crate and a drum inside."""
     import random as _r
     rr = _r.Random(21)
-    B(1.7, 1.7, 0.06, 0, 0, 0, P["dark"])
+    # (A skid 0.2 deep, its load lifted onto it after: at 0.06 the plate cast nothing past its edge and showed no side, and
+    # the nest read as a decal on the grass, "transparent", the user, 2026-11-11.)
+    plate = B(1.7, 1.7, 0.2, 0, 0, 0, P["dark"])
+    before = set(scene.objects)
     cyl(0.46, 0.38, 0, 0, 0.06, P["trim"], verts=10)
     for course, (R, z, n, off) in enumerate(((0.74, 0.06, 13, 0.0), (0.72, 0.19, 12, 0.5), (0.7, 0.32, 12, 0.0))):
         for k in range(n):
@@ -1675,6 +1678,9 @@ def gs_base_sandbags():
                 z + 0.07, P["rubber"]).rotation_euler = (math.pi / 2, 0, a + math.pi / 2)
     B(0.3, 0.2, 0.18, 0.35, -0.45, 0.06, P["trim"], rot=0.3, bevel=0.01)
     cyl(0.12, 0.3, -0.42, -0.4, 0.06, P["accent"], verts=14)
+    for o in scene.objects:
+        if o not in before and o.parent is None: o.location.z += GS_SKID
+GS_SKID = 0.14   # (what Grubstake's sandbag nest stands on lifts it, and its gun with it: concept)
 
 
 def concept(name):
@@ -1785,29 +1791,31 @@ def concept(name):
         elif name == "gs-pintle":
             # A salvaged heavy machine gun on a tall pintle post: its cradle, the receiver, a perforated barrel jacket
             # and flash hider, an ammo can and its belt, spade grips; a shield of two plates welded at an angle, a
-            # slit between them, bolts along their edges.
+            # slit between them, bolts along their edges. (Its gun at 0.94, on a short thick post: at 1.44 on a thin one, under
+            # vanilla's sun its shadow fell 1.6 tiles east, apart from the turret's, and the nest read as a flat decal,
+            # "transparent", the user, 2026-11-11; now it falls over the sandbags' own.)
             cyl(0.2, 0.1, 0, 0, 0.44, P["steel"], verts=12)
-            cyl(0.08, 0.75, 0, 0, 0.54, P["gunmetal"], verts=12)
-            B(0.3, 0.34, 0.1, 0, 0, 1.25, P["dark"], bevel=0.02)
-            B(0.22, 0.62, 0.22, 0, -0.02, 1.33, P["gunmetal"], bevel=0.04)
-            lie(0.065, 0.85, 0, 0.7, 1.44, P["gunmetal"], "y", 12)
+            cyl(0.13, 0.25, 0, 0, 0.54, P["gunmetal"], verts=12)
+            B(0.3, 0.34, 0.1, 0, 0, 0.75, P["dark"], bevel=0.02)
+            B(0.22, 0.62, 0.22, 0, -0.02, 0.83, P["gunmetal"], bevel=0.04)
+            lie(0.065, 0.85, 0, 0.7, 0.94, P["gunmetal"], "y", 12)
             for k in range(6):
-                tor(0.07, 0.016, 0, 0.36 + k * 0.1, 1.44, P["dark"]).rotation_euler = (math.pi / 2, 0, 0)
-            lie(0.075, 0.12, 0, 1.15, 1.44, P["dark"], "y", 12)
-            B(0.2, 0.26, 0.2, 0.24, -0.08, 1.24, P["accent"], bevel=0.02)
+                tor(0.07, 0.016, 0, 0.36 + k * 0.1, 0.94, P["dark"]).rotation_euler = (math.pi / 2, 0, 0)
+            lie(0.075, 0.12, 0, 1.15, 0.94, P["dark"], "y", 12)
+            B(0.2, 0.26, 0.2, 0.24, -0.08, 0.74, P["accent"], bevel=0.02)
             for k in range(6):
                 t = k / 5
-                B(0.06, 0.05, 0.025, 0.2 - t * 0.12, -0.05 + t * 0.12, 1.45 + math.sin(t * math.pi) * 0.06, P["steel"], bevel=0.0)
+                B(0.06, 0.05, 0.025, 0.2 - t * 0.12, -0.05 + t * 0.12, 0.95 + math.sin(t * math.pi) * 0.06, P["steel"], bevel=0.0)
             for sx in (-1, 1):
-                rod((sx * 0.08, -0.32, 1.42), (sx * 0.12, -0.5, 1.4), 0.022, P["steel"])
+                rod((sx * 0.08, -0.32, 0.92), (sx * 0.12, -0.5, 0.9), 0.022, P["steel"])
             for sx in (-1, 1):
-                o = B(0.46, 0.05, 0.5, sx * 0.24, 0.36, 1.12, P["shield"], bevel=0.01)
+                o = B(0.46, 0.05, 0.5, sx * 0.24, 0.36, 0.62, P["shield"], bevel=0.01)
                 o.rotation_euler = (math.radians(-8), 0, sx * math.radians(18))
                 # (Its top edge a welded flat bar in Grubstake's ochre: the one bright line, the plates under it dark.)
-                o = B(0.48, 0.07, 0.04, sx * 0.24, 0.39, 1.6, P["hull"], bevel=0.005)
+                o = B(0.48, 0.07, 0.04, sx * 0.24, 0.39, 1.1, P["hull"], bevel=0.005)
                 o.rotation_euler = (math.radians(-8), 0, sx * math.radians(18))
                 for k in range(4):
-                    cyl(0.02, 0.03, sx * (0.06 + k * 0.12), 0.33, 1.57, P["steel"], verts=6)
+                    cyl(0.02, 0.03, sx * (0.06 + k * 0.12), 0.33, 1.07, P["steel"], verts=6)
         elif name == "gs-twin-seat":
             # Two machine guns side by side on a tractor-seat mount, a bent shield over them, a box of belts.
             cyl(0.32, 0.12, 0, 0, 0.44, P["steel"], verts=12)
@@ -1832,6 +1840,9 @@ def concept(name):
             cyl(0.17, 0.08, 0, -0.08, 1.1, P["accent"], verts=20)
             o = B(0.55, 0.04, 0.45, 0, 0.3, 0.75, P["trim"], bevel=0.01); o.rotation_euler.x = math.radians(-10)
     head = group(h)
+    if not name.startswith("kh-"):
+        for o in head:
+            if o.parent is None: o.location.z += GS_SKID
     return base, head
 
 
@@ -1876,16 +1887,15 @@ def fconcept(name):
                 cyl(0.19, 0.48, x, -0.7, 0.2, (P["accent"], P["hull"], P["trim"])[k], verts=20, bevel=0.02)
                 for z in (0.32, 0.6):
                     tor(0.19, 0.018, x, -0.7, z, P["dark"])
-                pipe([(x, -0.6, 0.68), (x * 0.6, -0.3, 0.7), (x * 0.2, -0.06, 0.9), (x * 0.15, -0.06, 1.3)], 0.03, P["rubber"])
+                pipe([(x, -0.6, 0.68), (x * 0.6, -0.3, 0.7), (x * 0.2, -0.06, 0.66), (x * 0.15, -0.06, 0.6)], 0.03, P["rubber"])
             rod((-0.65, -0.92, 0.6), (0.65, -0.92, 0.6), 0.014, P["rubber"])
             for x in (-0.5, 0.5):
                 lie(0.09, 0.25, x, -1.05, 0.22, P["steel"], "y", 12)
             cyl(0.3, 0.3, 0, 0.0, 0.2, P["gunmetal"], verts=14)
-            # (A pipe mast for its neck, braced, the boom's ring on top.)
-            cyl(0.1, 0.9, 0, 0.0, 0.5, P["gunmetal"], verts=12)
-            for a in (0.8, 2.9, 5.0):
-                rod((math.cos(a) * 0.35, math.sin(a) * 0.35, 0.5), (0, 0, 1.1), 0.025, P["gunmetal"])
-            cyl(0.26, 0.05, 0, 0.0, 1.38, P["dark"], verts=14)
+            # (The boom's ring on the drum stand itself: on a 0.9 pipe mast its boom stood at 2.2, its shadow 2.4 tiles
+            # east under vanilla's sun, apart from the skid's, and the flamer read as a flat decal, "transparent", the
+            # user, 2026-11-11.)
+            cyl(0.26, 0.1, 0, 0.0, 0.5, P["dark"], verts=14)
             B(0.12, 0.12, 0.35, 0.5, 0.5, 0.2, P["steel"], bevel=0.01)
             rod((0.5, 0.5, 0.55), (0.62, 0.62, 0.7), 0.02, P["steel"])
     def head():
@@ -1940,7 +1950,7 @@ def fconcept(name):
             pipe([(0.15, -0.1, 1.1), (0.1, 0.0, 1.3)], 0.025, P["rubber"])
     b = group(base); h = group(head)
     # (The arms on the neck's top: built from the ring at 0.6, raised to the neck's 1.4.)
-    if name.endswith("-arm"):
+    if name == "kh-flame-arm":
         for o in h: o.location.z += 0.8
     return b, h
 
