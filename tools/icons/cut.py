@@ -138,14 +138,27 @@ canvas.alpha_composite(br, (bx, by))
 cb = canvas.getbbox()
 canvas = canvas.crop((cb[0], cb[1] + int((cb[3] - cb[1]) * 0.38), cb[2], cb[3]))
 write("lp-orbital-cannon", canvas); done.append("lp-orbital-cannon")
-# Modelled buildings (tools/blender/player_buildings.py): their north sprite, not the film's old vanilla one.
+# Modelled buildings (tools/blender/player_buildings.py): their north sprite, not the film's old vanilla one; an
+# animated one's first frame (the claim marker's flag and the bait, 16 frames a sheet since 0.2.326: their icons were
+# the whole sheet, 16 small copies in a grid, until 0.2.337).
+def north(key):
+    d = os.path.join(REPO, "landing-party", "graphics", "player", key)
+    im = Image.open(os.path.join(d, "north-body.png")).convert("RGBA")
+    n = json.load(open(os.path.join(d, "dirs.json")))["north"]
+    if n.get("body_frames", 1) > 1:
+        im = im.crop((0, 0, n["width"], n["height"]))
+    return im
+
+
 for item, key in (("lp-rally-beacon", "rally-beacon"), ("lp-threat-scanner", "threat-scanner"),
                   ("lp-claim-marker", "claim-marker"), ("lp-pact-breaker", "pact-breaker")):
-    write(item, Image.open(os.path.join(REPO, "landing-party", "graphics", "player", key, "north-body.png")).convert("RGBA"), thr=120)
+    write(item, north(key), thr=120)
 # The muster point: its mast and floodlight are thin and dark, and the film's matte lost the mast (a light floating free
 # of a box, 0.2.322): its own sprite, as the small modelled buildings above.
 write("lp-muster-point", Image.open(os.path.join(REPO, "landing-party", "graphics", "player", "muster", "body.png")).convert("RGBA"), thr=120)
-write("lp-bait", Image.open(os.path.join(REPO, "landing-party", "graphics", "player", "pheromone-bait", "north-body.png")).convert("RGBA"), thr=120)
+# (Since 0.2.326 its sheet carries its gas puff in every frame, solid at its core: a smudge beside the icon that no
+# frame or alpha cut removes. The icon of 0.2.322, the same model without the puff, kept: not installed from here.)
+write("lp-bait", north("pheromone-bait"), thr=120)
 done.append("lp-bait")
 # Stand-ins: the bait was a splat on the ground (its item: the gland it is made of); the retired strike beacon's sprite is
 # its charge's sparks (its item: the orbital beacon it was built round).

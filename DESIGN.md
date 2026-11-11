@@ -6812,6 +6812,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   same scenario and seed from two trees at once share one sim profile and its mod link, so the second tree's run
   re-links the mod under the first: a "pass" of clearing locally was 0.2.327's code (no uranium_refills in its
   results). Compare versions one after the other, never side by side.
+- **Icons re-cut at 0.2.337** (0.2.338; the user: "we need to refilm all portraits for manual and icons"). The icon
+  film regenerated from the dump (13 buildings: the border stake and trade post gone with the truces) and refilmed on
+  the Studio (its fresh save re-saved first: the migrated-content dialog stalled it, and the film's stall guard said
+  so); cut by tools/icons/cut.py and judged side by side at 4x before installing. 9 building icons changed: the flak
+  turret and player mortar now cut from bases no longer darkened by their own shadow (0.2.335), the pact breaker's
+  icon its remodelled self (the old one still showed the dish it lost in 0.2.326). **Caught:** the claim marker's and
+  the bait's sprites have been 16-frame sheets since 0.2.326 and cut.py read the whole sheet, an icon of 16 small
+  copies in a grid; it takes the first frame now. The bait's sheet also carries its gas puff, solid at its core and in
+  every frame: no frame or alpha cut removes it, so the bait keeps its 0.2.322 icon (the same model without the puff).
+  The technology icons recomposed from the new sources: 11 changed (the claims register composed without the trade
+  post and stake).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
