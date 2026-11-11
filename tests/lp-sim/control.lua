@@ -4164,6 +4164,11 @@ scenarios.cards = function()
   local function make(name, n, x0, y)
     for i = 1, n do surface().create_entity{name = name, position = {x0 + i * 2, y}, force = "player"} end
   end
+  local function put(name, x, y)
+    local e = surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+    if e and e.name == "electric-energy-interface" then e.power_production, e.electric_buffer_size = 1e9, 1e9 end
+    return e
+  end
   schedule(60, function()
     lp("debug_tune", {raids_off = true})
     flatten(-12, 1185, 72, 1235)
@@ -4252,6 +4257,52 @@ scenarios.cards = function()
     lp("dev", {"squad", "30"}, {0, 1300})
     local q = lp("debug_cards")
     S.squad = {n = q.n, grouped = q.grouped, cards = #q.cards, bars = q.bars}
+  end)
+  -- A move's formation: 16 troopers sent to one point stand each at its own slot (they had stood in a heap round it).
+  -- (A clean army under its cap: two powered relays carry 20, and every other unit gone; over it, units are offline
+  -- and take no orders.)
+  schedule(440, function()
+    for _, u in ipairs(surface().find_entities_filtered{force = "player", type = "unit"}) do u.destroy() end
+    flatten(-12, 1330, 80, 1400)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    put("electric-energy-interface", 4, 1336)
+    put("medium-electric-pole", 6.5, 1336.5)
+    put("lp-command-relay", 9.5, 1334.5)
+    put("lp-command-relay", 9.5, 1338.5)
+    make("lp-trooper", 16, 0, 1350)
+    lp("debug_enlist", {{-10, 1340}, {50, 1360}})
+  end)
+  schedule(700, function()
+    S.form_sel = lp("debug_select_army", false)
+    S.form_n = lp("debug_order", {{40, 1375}, {40, 1375}}, false)
+  end)
+  schedule(700 + 25 * 60, function()
+    local us = surface().find_entities_filtered{area = {{-12, 1330}, {100, 1420}}, force = "player", type = "unit"}
+    local near, minpair, in2 = 0, math.huge, 0
+    for i, u in ipairs(us) do
+      local d = math.sqrt((u.position.x - 40) ^ 2 + (u.position.y - 1375) ^ 2)
+      if d < 8 then near = near + 1 end
+      if d < 1.5 then in2 = in2 + 1 end
+      for j = i + 1, #us do
+        local v = us[j]
+        minpair = math.min(minpair, math.sqrt((u.position.x - v.position.x) ^ 2 + (u.position.y - v.position.y) ^ 2))
+      end
+    end
+    local off, slots = 0, {}
+    for _, u in ipairs(us) do
+      local at = lp("debug_order_pos", u.unit_number)
+      if at then
+        off = off + math.sqrt((u.position.x - at.x) ^ 2 + (u.position.y - at.y) ^ 2)
+        slots[string.format("%.1f,%.1f", at.x, at.y)] = true
+      end
+    end
+    local distinct = 0
+    for _ in pairs(slots) do distinct = distinct + 1 end
+    S.form = {near = near, of = #us, minpair = minpair, in2 = in2, sel = S.form_sel, ordered = S.form_n,
+      off = #us > 0 and off / #us or 99, distinct = distinct}
+    check("cards: a move's formation, all arrived round the point", S.form.of == 16 and S.form.near >= 15, serpent.line(S.form))
+    check("cards: a move's formation, a slot each, each at its own", S.form.distinct == 16 and S.form.off < 1.2,
+      serpent.line(S.form))
   end)
   schedule(430, function()
     check("cards: All selects the army, Idle leaves out what has orders", S.all == 37 and S.idle0 == 37 and S.idle == 0,

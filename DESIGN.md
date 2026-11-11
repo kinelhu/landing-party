@@ -6857,6 +6857,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   **0.2.340:** a selected unit's bar moves on the hit itself (the player's unit names in the damage event's filter, so
   no other unit's hits come through; seen failing with the hook off: 1 for 0.68). The army panel's All and Idle
   buttons select every unit, or those with no order and no squad (37 and 37, then 0 idle after an order to all).
+  **0.2.341, a move's formation:** a move or attack-move had sent every selected unit to the one point (radius 3,
+  then wandering 5 round it), so thirty stood in a heap. Now a slot each on a square grid round the point, spaced by
+  the largest unit's size, filled from the middle out, each unit given the free slot nearest its own place in the
+  group moved to the point (so the group keeps its shape and nobody crosses it), each sent to its slot at radius 1
+  and wandering 1.5. An attack on a target is unchanged. Checked, scenario cards: 16 troopers sent to one point all
+  arrive, each at its own slot (16 distinct, 0.9 tiles off on average); seen failing with every slot the point (one
+  slot, 4.2 tiles off). Not yet seen in game.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

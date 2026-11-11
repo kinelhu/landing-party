@@ -101,7 +101,7 @@ digraph ai {
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_9 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "command" [label="command\n908 lines", width=1.81, fillcolor="#d9f0d9"];
+    "command" [label="command\n968 lines", width=1.88, fillcolor="#d9f0d9"];
     "cards" [label="cards\n406 lines", width=1.25, fillcolor="#eef2f7"];
     "scanner" [label="scanner\n98 lines", width=0.91, fillcolor="#eef2f7"];
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
@@ -109,7 +109,7 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1241 lines", width=2.18, fillcolor="#f7dede"];
+    "control" [label="control\n1246 lines", width=2.18, fillcolor="#f7dede"];
     "dev" [label="dev\n595 lines", width=1.46, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n188 lines", width=1.01, fillcolor="#eef2f7"];

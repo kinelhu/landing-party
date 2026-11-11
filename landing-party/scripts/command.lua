@@ -447,14 +447,16 @@ local function manual(t)
     end
     m.kind = "hold"
   end
+  -- (In a formation, each to its own slot and close: radius 1, wandering 1.5, where a heap at one point took 3 and 5.)
+  local r, w = m.slotted and 1 or 3, m.slotted and 1.5 or 5
   if m.kind == "move" then
     order(t, {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = {
-      {type = defines.command.go_to_location, destination = m.pos, radius = 3, distraction = defines.distraction.none},
-      {type = defines.command.wander, radius = 5, distraction = defines.distraction.by_enemy}}}, key)
+      {type = defines.command.go_to_location, destination = m.pos, radius = r, distraction = defines.distraction.none},
+      {type = defines.command.wander, radius = w, distraction = defines.distraction.by_enemy}}}, key)
   elseif m.kind == "attackmove" then
     order(t, {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = {
-      {type = defines.command.go_to_location, destination = m.pos, radius = 3, distraction = defines.distraction.by_anything},
-      {type = defines.command.wander, radius = 6, distraction = defines.distraction.by_enemy}}}, key)
+      {type = defines.command.go_to_location, destination = m.pos, radius = r, distraction = defines.distraction.by_anything},
+      {type = defines.command.wander, radius = m.slotted and 2 or 6, distraction = defines.distraction.by_enemy}}}, key)
   else
     order(t, stay(m.pos, 5, defines.distraction.by_enemy), key .. "h")
   end
@@ -627,8 +629,58 @@ function command.release(player_index, units)
   return n
 end
 
+-- A move's formation (2026-11-12, with the selection's cards: every unit had the one point, radius 3, then wandered 5
+-- round it, so thirty of them stood in a heap): a slot each on a square grid round the point, spaced by the largest
+-- unit's size, filled from the middle out, and each unit given the free slot nearest where it stands in the group (its
+-- place relative to the group's middle, moved to the point), so the group keeps its shape and nobody crosses it.
+local function formation(units, pos)
+  local n = #units
+  if n == 0 then return {} end
+  local cx, cy, size = 0, 0, 1
+  for _, u in ipairs(units) do
+    cx, cy = cx + u.position.x, cy + u.position.y
+    local sb = u.prototype.selection_box
+    size = math.max(size, (sb.right_bottom.x or sb.right_bottom[1]) - (sb.left_top.x or sb.left_top[1]))
+  end
+  cx, cy = cx / n, cy / n
+  local gap = size + 0.6
+  local side = math.ceil(math.sqrt(n))
+  local slots = {}
+  for i = 0, side - 1 do
+    for j = 0, side - 1 do
+      slots[#slots + 1] = {x = pos.x + (i - (side - 1) / 2) * gap, y = pos.y + (j - (side - 1) / 2) * gap}
+    end
+  end
+  table.sort(slots, function(a, b)
+    local da, db = (a.x - pos.x) ^ 2 + (a.y - pos.y) ^ 2, (b.x - pos.x) ^ 2 + (b.y - pos.y) ^ 2
+    if da ~= db then return da < db end
+    if a.x ~= b.x then return a.x < b.x end
+    return a.y < b.y
+  end)
+  local out, taken = {}, {}
+  -- (Units nearest the group's middle first: the middle slots go to the middle units.)
+  local order_ = {}
+  for i, u in ipairs(units) do order_[i] = {u = u, d = (u.position.x - cx) ^ 2 + (u.position.y - cy) ^ 2} end
+  table.sort(order_, function(a, b) if a.d ~= b.d then return a.d < b.d end return a.u.unit_number < b.u.unit_number end)
+  for _, o in ipairs(order_) do
+    local u = o.u
+    local wx, wy = pos.x + (u.position.x - cx), pos.y + (u.position.y - cy)
+    local best, bd
+    for k = 1, n do
+      if not taken[k] then
+        local d = (slots[k].x - wx) ^ 2 + (slots[k].y - wy) ^ 2
+        if not bd or d < bd then best, bd = k, d end
+      end
+    end
+    taken[best] = true
+    out[u.unit_number] = slots[best]
+  end
+  return out
+end
+command.formation = formation
+
 -- An order for the selection: on a faction entity, attack it; elsewhere, move (or attack-move) to the middle
--- of the area clicked or dragged.
+-- of the area clicked or dragged, each to its slot of a formation.
 function command.order(player_index, surface, area, attackmove)
   storage.cmd.selected = storage.cmd.selected or {}
   local sel = storage.cmd.selected[player_index] or {}
@@ -639,11 +691,19 @@ function command.order(player_index, surface, area, attackmove)
       "electric-energy-interface", "radar", "assembling-machine", "mining-drill", "generator"}, limit = 1}[1]
   storage.cmd.seq = (storage.cmd.seq or 0) + 1
   local n = 0
+  local units = {}
+  for un in pairs(sel) do
+    local t = storage.cmd.troopers[un]
+    if t and t.unit.valid then units[#units + 1] = t.unit end
+  end
+  table.sort(units, function(a, b) return a.unit_number < b.unit_number end)
+  local slots = target and {} or formation(units, pos)
   for un in pairs(sel) do
     local t = storage.cmd.troopers[un]
     if t and t.unit.valid then
-      t.manual = {kind = target and "attack" or (attackmove and "attackmove" or "move"), pos = pos, target = target,
-        seq = storage.cmd.seq}
+      local at = slots[un] or pos
+      t.manual = {kind = target and "attack" or (attackmove and "attackmove" or "move"), pos = {x = at.x, y = at.y},
+        target = target, seq = storage.cmd.seq, slotted = slots[un] ~= nil}
       t.key = nil
       manual(t)
       n = n + 1

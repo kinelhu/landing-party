@@ -962,6 +962,11 @@ remote.add_interface("landing-party", {
   end,
   debug_group_keep = function(n) return cards.keep_group(1, n) end,
   debug_select_army = function(idle) return cards.select_army(1, idle) end,
+  -- Where a unit's order sends it (a formation's slot, or the point clicked).
+  debug_order_pos = function(un)
+    local t = storage.cmd.troopers[un]
+    return t and t.manual and t.manual.pos
+  end,
   debug_bar_share = function(un)
     local b = storage.cards and storage.cards.bars and storage.cards.bars[1] and storage.cards.bars[1][un]
     return b and b.share
