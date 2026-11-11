@@ -4063,6 +4063,80 @@ scenarios.develop = function()
 end
 
 -- Evolution (spike): does a spawner destroyed by a corporation raise the biters' spawner-kill evolution?
+-- Kessler-Hayashi's arc flamer (the user, 2026-11-11: blue flames, short and hard, 360 degrees, its own side immune;
+-- electric, no fuel). A spike's first full-circle turrets turned too slowly and lost biters at their sides inside the
+-- flame's 6-tile minimum: they hit only what stood in front. Checked: it hits a biter on each side; a Kessler-Hayashi
+-- unit standing where it burns is spared; against six medium biters, how long it takes beside the oil flamer.
+scenarios.arcflamer = function()
+  local DIRS = {N = {0, -65}, W = {-65, 0}, S = {0, 65}, E = {65, 0}}
+  S.r = {}
+  schedule(30, function()
+    flatten(-500, 920, 500, 1080)
+    local x = -400
+    for k, o in pairs(DIRS) do
+      local t = surface().create_entity{name = "lp-flamer", position = {x, 1000}, force = "lp-serenity"}
+      S.r[#S.r + 1] = {t = t, k = k, o = o}
+      x = x + 100
+    end
+    -- (Diagnosis: the same turret on the player's force, a biter to its west.)
+    local t = surface().create_entity{name = "lp-flamer", position = {x, 1000}, force = "player"}
+    S.r[#S.r + 1] = {t = t, k = "W (player force)", o = {-65, 0}}
+    x = x + 100
+    -- A unit of its own beside the turret, in the fire's way (it burns the ground round what it hits).
+    S.own = surface().create_entity{name = "lp-infantry", position = {-400 + 1.5, 1000 - 6}, force = "lp-serenity"}
+    S.own_hp = S.own and S.own.health
+    S.groups = {}
+    for _, kind in ipairs({"lp-flamer", "lp-grubstake-flamer"}) do
+      local t = surface().create_entity{name = kind, position = {x, 1000}, force = "lp-serenity"}
+      if t.type == "fluid-turret" then t.insert_fluid{name = "light-oil", amount = 1000} end
+      S.groups[#S.groups + 1] = {t = t, kind = kind}
+      x = x + 100
+    end
+  end)
+  schedule(400, function()
+    for _, r in ipairs(S.r) do
+      r.b = surface().create_entity{name = "small-biter", position = {r.t.position.x + r.o[1], 1000 + r.o[2]}, force = "enemy"}
+      r.hp = r.b.health
+      -- (Sent at it, as a wave comes: idle at 45 tiles they never came.)
+      r.b.commandable.set_command{type = defines.command.attack, target = r.t, distraction = defines.distraction.none}
+    end
+    for _, g in ipairs(S.groups) do
+      g.b = {}
+      for i = 1, 6 do
+        g.b[i] = surface().create_entity{name = "medium-biter", position = {g.t.position.x - 5 + 2 * i, 1000 - 65}, force = "enemy"}
+        g.b[i].commandable.set_command{type = defines.command.attack, target = g.t, distraction = defines.distraction.none}
+      end
+    end
+  end)
+  for tick = 401, 1600 do
+    schedule(tick, function()
+      for _, r in ipairs(S.r) do
+        if r.b and not r.hit and (not r.b.valid or r.b.health < r.hp) then r.hit = tick - 400 end
+      end
+      for _, g in ipairs(S.groups) do
+        if g.b and not g.done then
+          local left = 0
+          for _, b in ipairs(g.b) do if b.valid then left = left + 1 end end
+          if left == 0 then g.done = tick - 400 end
+        end
+      end
+    end)
+  end
+  schedule(1602, function()
+    for _, r in ipairs(S.r) do check("arcflamer: it hits a biter to the " .. r.k, r.hit ~= nil, r.hit and (r.hit .. " ticks") or "never") end
+    check("arcflamer: its own unit in its fire is spared", S.own and S.own.valid and S.own.health >= S.own_hp,
+      tostring(S.own and S.own.valid and S.own.health) .. " of " .. tostring(S.own_hp))
+    for _, g in ipairs(S.groups) do
+      local left, hp = 0, 0
+      for _, b in ipairs(g.b) do if b.valid then left, hp = left + 1, hp + b.health end end
+      info(string.format("arcflamer: %s against six medium biters: %s, %d left (%.0f health), turret %s", g.kind,
+        g.done and (g.done .. " ticks") or "not done", left, hp, g.t.valid and string.format("%.0f", g.t.health) or "destroyed"))
+    end
+    local arc = S.groups[1]
+    check("arcflamer: it kills six medium biters", arc.done ~= nil, tostring(arc.done))
+  end)
+end
+
 scenarios.evolution = function()
   schedule(50, function()
     game.map_settings.enemy_evolution.enabled = true
@@ -8346,6 +8420,8 @@ scenarios.hazard = function()
     -- Its clearances dig in as they arrive, before their guns go up (the user, 2026-11-11, "dig in first": worm's
     -- railgunners died while deploying, before the ring went up with the guns).
     check("hazard: its clearances dug in before their guns", (st.dug_early or 0) >= 1, tostring(st.dug_early))
+    -- At 0.5 its dug-in sites carry an arc flamer (from 0.4; the user, 2026-11-11).
+    check("hazard: its dug-in sites carry a flamer", (st.site_flamers or 0) >= 1, tostring(st.site_flamers))
     -- Every nest gone died where the harness saw it (on_entity_died): none taken off the map by script.
     check("hazard: each nest gone was a death the harness saw", (S.nest_deaths or 0) == #S.nests - left,
       string.format("%d deaths seen, %d nests gone", S.nest_deaths or 0, #S.nests - left))

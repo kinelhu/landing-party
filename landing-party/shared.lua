@@ -27,7 +27,7 @@ shared.CORPS = {
     icon = "signal-mining", motto = "Resources in the right hands.",
     -- Architecture (docs/corporations.md): sprawl, gun turrets fed with ammunition instead of lasers, walls
     -- that are fences (half health); infantry, buggies and harriers, no tanks.
-    doctrines = {sprawl = 1}, bases = {["lp-turret"] = "lp-gun-turret", ["lp-infantry"] = "lp-shotgun-hand"},
+    doctrines = {sprawl = 1}, bases = {["lp-turret"] = "lp-gun-turret", ["lp-infantry"] = "lp-shotgun-hand", ["lp-flamer"] = "lp-flamer-oil"},
     props = {["lp-wall"] = {max_health = 225}},
     -- Its own names for kinds (entity-name.<name>): the Shotgun hand.
     names = {["lp-infantry"] = "lp-shotgun-hand", ["lp-turret"] = "lp-gun-turret"},

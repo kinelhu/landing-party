@@ -1320,10 +1320,23 @@ function ops.dig_in(b, op, trace)
       table.insert(op.works, g)
     end
   end
+  -- From 0.4, a flamer in the middle of the site (the user, 2026-11-11: Kessler-Hayashi's arc flamer, its whole circle and
+  -- its own side spared, an anti-swarm guard ringed by its own units; Grubstake's variant is its oil flamer, fed here).
+  if evo >= 0.4 then
+    local name = shared.variant(b.corp, "lp-flamer")
+    local p = s.find_non_colliding_position(name, {op.site[1] + math.cos(toward) * 2.5, op.site[2] + math.sin(toward) * 2.5}, 4, 0.5)
+    local f = p and s.create_entity{name = name, position = p, force = force}
+    if f then
+      if f.type == "fluid-turret" then f.insert_fluid{name = "light-oil", amount = 1000} end
+      table.insert(op.works, f)
+      op.site_flamer = f
+      b.site_flamers = (b.site_flamers or 0) + 1
+    end
+  end
   op.dug_in = game.tick
   -- (Before its guns: what hazard checks.)
   if not (op.mortars and #op.mortars > 0) and not (op.howitzer and op.howitzer.valid) then b.dug_early = (b.dug_early or 0) + 1 end
-  trace(b, string.format("siege: the site dug in (%d pieces, %d pillboxes)", #op.works, boxes))
+  trace(b, string.format("siege: the site dug in (%d pieces, %d pillboxes%s)", #op.works, boxes, op.site_flamer and ", a flamer" or ""))
 end
 
 local function siege_step(b, trace, army)

@@ -234,8 +234,13 @@ MODELLED["lp-flamer"] = {dir = "flamer", head = true, apply = function(p, key)
   end
   local h = {layers = {head("body"), head("glow", {draw_as_glow = true, blend_mode = "additive"}), head("shadow", {draw_as_shadow = true})}}
   keep_timing(p, "preparing_animation", "folding_animation")
-  local eight = {}
-  for _, d in ipairs({"north", "north_east", "east", "south_east", "south", "south_west", "west", "north_west"}) do eight[d] = h end
+  -- (Kessler-Hayashi's arc flamer is an electric turret: its animations take one head of 64 directions, not an 8-way
+  -- set of it, 2026-11-11.)
+  local eight = h
+  if p.type == "fluid-turret" then
+    eight = {}
+    for _, d in ipairs({"north", "north_east", "east", "south_east", "south", "south_west", "west", "north_west"}) do eight[d] = h end
+  end
   for _, k in ipairs({"folded_animation", "preparing_animation", "prepared_animation", "attacking_animation",
       "ending_attack_animation", "folding_animation"}) do
     if p[k] then p[k] = eight end
@@ -247,7 +252,8 @@ MODELLED["lp-flamer"] = {dir = "flamer", head = true, apply = function(p, key)
     end
     four[d] = {layers = {base("body"), base("glow", {draw_as_glow = true, blend_mode = "additive"}), base("shadow", {draw_as_shadow = true})}}
   end
-  p.graphics_set = {base_visualisation = {animation = four}}
+  -- (The arc flamer's base one picture, north's: an electric turret's base has no direction.)
+  p.graphics_set = {base_visualisation = {animation = p.type == "fluid-turret" and four or four.north}}
 end}
 -- The depot and the launch pad: containers, one picture each (faction_works.py depot and launchpad: KH a sealed
 -- landing pad and an electromagnetic launch tube, Grubstake a plated pad on drum stilts and a derrick over a pit).

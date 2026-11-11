@@ -442,9 +442,9 @@ local function economy(b)
   end
   b.parts = b.parts + made
   b.made = b.made + made
-  -- Flamethrowers (Serenity's gates) are kept in light oil.
+  -- Oil flamers (Grubstake's) are kept in light oil; Kessler-Hayashi's arc flamers burn nothing.
   for _, t in ipairs(b.flamers or {}) do
-    if t.valid and t.get_fluid_count() < 50 then t.insert_fluid{name = "light-oil", amount = 100} end
+    if t.valid and t.type == "fluid-turret" and t.get_fluid_count() < 50 then t.insert_fluid{name = "light-oil", amount = 100} end
   end
   -- Gun turrets (a corporation's choice instead of lasers) are kept in ammunition: uranium rounds once the biters have
   -- evolved to 0.6, as a player's turrets would be by then, at 5 parts a refill of 20 (piercing when it cannot pay; the
@@ -863,7 +863,7 @@ function base.stats(b)
     launchpads = #b.launchpads, built_by = b.built_by, uplink = b.uplink and b.uplink.valid or false, hq = b.hq,
     lander_health = b.lander.valid and b.lander.health / b.lander.max_health or 0, hull_up = b.lander.valid and not b.lander.destructible,
     setbacks = b.setbacks or 0, held_home = b.held_home or 0,
-    turrets_n = #b.turrets, uranium_refills = b.uranium_refills or 0, dug_early = b.dug_early or 0, fortress_planned = b.fortress_planned, captured = b.captured or 0, refused_by = b.refused_by,
+    turrets_n = #b.turrets, uranium_refills = b.uranium_refills or 0, dug_early = b.dug_early or 0, site_flamers = b.site_flamers or 0, fortress_planned = b.fortress_planned, captured = b.captured or 0, refused_by = b.refused_by,
     patrol = #(b.patrol or {}), patrol_loops = b.patrol_legs or 0, route = b.route,
     convoys_sent = b.convoys_sent or 0, convoys_delivered = b.convoys_delivered or 0, convoys_stuck = b.convoys_stuck or 0,
     convoys_lost = b.convoys_lost or 0, cargo_lost = b.cargo_lost or 0, intercepts = b.intercepts or 0,

@@ -9,6 +9,9 @@ import json, sys
 
 d = json.load(open(sys.argv[1]))
 VANILLA = {"ammo-turret": "gun-turret", "electric-turret": "laser-turret", "fluid-turret": "flamethrower-turret"}
+# A turret whose nearest vanilla kind is not its type's: Kessler-Hayashi's arc flamer, an electric turret firing a flame
+# stream, deploys as vanilla's flamethrower turret does (2026-11-11).
+BY_NAME = {"lp-flamer": ("fluid-turret", "flamethrower-turret")}
 
 
 def frames(a):
@@ -32,8 +35,12 @@ for ty, ref in VANILLA.items():
         if not n.startswith("lp-"):
             continue
         tp, tf = times(p)
-        if tp < 0.9 * vp or tf < 0.9 * vf:
-            bad.append(f"{n}: deploys in {tp:.0f} ticks and folds in {tf:.0f}, {ref} {vp:.0f} and {vf:.0f}")
+        r, (rp, rf) = ref, (vp, vf)
+        if n in BY_NAME:
+            r = BY_NAME[n][1]
+            rp, rf = times(d[BY_NAME[n][0]][r])
+        if tp < 0.9 * rp or tf < 0.9 * rf:
+            bad.append(f"{n}: deploys in {tp:.0f} ticks and folds in {tf:.0f}, {r} {rp:.0f} and {rf:.0f}")
 if bad:
     print("TURRET LINT FAILED: a turret faster to deploy than vanilla's (slow its speeds by the frames its animation lost)")
     for b in bad:

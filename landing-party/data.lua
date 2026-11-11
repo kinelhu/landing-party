@@ -402,6 +402,64 @@ for _, a in ipairs(flamer_stream.action) do
   end
 end
 flamer.attack_parameters.ammo_type.action.action_delivery.stream = "lp-flamer-stream"
+-- The flamers split (the user, 2026-11-11: "Split the flamers"): this oil flamer, its forward arc and orange fire, is
+-- Grubstake's (shared.CORPS.grubstake.bases); Kessler-Hayashi's own lp-flamer is the arc flamer below.
+flamer.name = "lp-flamer-oil"
+
+-- Kessler-Hayashi's arc flamer (the user, 2026-11-11: "a flamer turret for KH too. Perhaps with blue flames with short
+-- duration but high damage ... a 360 degrees turret, and KH units could be immune to their own formulation"; "Go with
+-- the electric version if the engine allows it"). An electric turret firing a stream, on no power at all (its fuel
+-- abstracted: "Is fuel entirely necessary?"). Its whole circle: a spike's turrets turned to biters at their sides and
+-- behind but too slowly, and lost them inside the flame's 6-tile minimum; at 2 tiles and four times the laser's turn, they
+-- hit north, west and south (2026-11-11). Its stream, ground fire and sticker spare its own side as the oil flamer's do.
+-- Blue, a hard short burn: 8 a hit (3), 150 a second for 3 s on what it lights (100 for 30 s), ground fire of 2 s.
+local arc = copy("electric-turret", "laser-turret", "lp-flamer")
+arc.energy_source = {type = "void"}
+arc.rotation_speed = 0.04
+-- It unfolds as enemies come within 70 (vanilla's flamethrower at 35 for its 30; waves come from further), so its laser-turret deploy (5 s,
+-- lint_turrets) is done before they reach it: unfolding only once they were in reach, it was still deploying when a
+-- biter stood at its foot, inside the flame's minimum, and it fired only north (scenario arcflamer, 2026-11-11).
+arc.prepare_range = 70
+-- (And it deploys as vanilla's flamethrower turret, 188 ticks, not the laser turret it was copied from, 300: corps.lua
+-- keep_timing reads these before its head replaces them.)
+arc.preparing_animation, arc.preparing_speed = table.deepcopy(flamer.preparing_animation), flamer.preparing_speed
+arc.folding_animation, arc.folding_speed = table.deepcopy(flamer.folding_animation), flamer.folding_speed
+arc.circuit_connector = nil
+local ap = table.deepcopy(flamer.attack_parameters)
+ap.fluids, ap.fluid_consumption = nil, nil
+ap.ammo_category = "lp-arc-flame"
+ap.turn_range = 1
+ap.min_range = 2
+ap.ammo_type.energy_consumption = "1J"
+ap.ammo_type.action.action_delivery.stream = "lp-arc-stream"
+arc.attack_parameters = ap
+local BLUE = {r = 0.45, g = 0.75, b = 1, a = 1}
+local function blued(t)
+  if type(t) ~= "table" then return end
+  if t.filename or t.filenames or t.stripes then t.tint = BLUE end
+  for _, v in pairs(t) do blued(v) end
+end
+local arc_stream = table.deepcopy(flamer_stream)
+arc_stream.name = "lp-arc-stream"
+local arc_fire = table.deepcopy(flamer_fire)
+arc_fire.name = "lp-arc-fire"
+arc_fire.initial_lifetime, arc_fire.lifetime_increase_by, arc_fire.maximum_lifetime = 30, 30, 120
+arc_fire.spawn_entity = nil
+arc_fire.on_damage_tick_effect.action_delivery.target_effects[1].damage = {amount = 0.5, type = "fire"}
+local arc_sticker = table.deepcopy(sticker)
+arc_sticker.name = "lp-arc-sticker"
+arc_sticker.duration_in_ticks = 180
+arc_sticker.damage_per_tick = {amount = 25, type = "fire"}
+arc_sticker.spread_fire_entity = nil
+for _, a in ipairs(arc_stream.action) do
+  for _, e in ipairs(a.action_delivery.target_effects or {}) do
+    if e.type == "create-fire" then e.entity_name = "lp-arc-fire" end
+    if e.type == "create-sticker" then e.sticker = "lp-arc-sticker" end
+    if e.type == "damage" then e.damage = {amount = 8, type = "fire"} end
+  end
+end
+for _, p in ipairs({arc_stream, arc_fire, arc_sticker}) do blued(p) end
+data:extend{{type = "ammo-category", name = "lp-arc-flame", hidden = true}, arc, arc_stream, arc_fire, arc_sticker}
 
 local wall = copy("wall", "stone-wall", "lp-wall")
 wall.max_health = 450
@@ -810,12 +868,15 @@ data:extend({wreck})
 -- flare canister's until the flare was retired, 2026-10-22).
 local flare_smoke = table.deepcopy(data.raw["trivial-smoke"]["smoke"])
 flare_smoke.name = "lp-flare-smoke"
-flare_smoke.color = {r = 1, g = 0.45, b = 0.1, a = 0.7}
-flare_smoke.duration = 360
-flare_smoke.fade_away_duration = 120
-flare_smoke.start_scale = 0.6
-flare_smoke.end_scale = 3
-flare_smoke.affected_by_wind = false
+-- (Thinner, smaller and carried off by the wind as a plume: at 0.7 alpha, swelling to 3 where it was lit, every puff on the
+-- bait itself, it hid the building under one orange blob, "Nothing changed in the still with this cloud!", the user's
+-- rating, 2026-11-11.)
+flare_smoke.color = {r = 1, g = 0.5, b = 0.15, a = 0.4}
+flare_smoke.duration = 300
+flare_smoke.fade_away_duration = 150
+flare_smoke.start_scale = 0.35
+flare_smoke.end_scale = 1.8
+flare_smoke.affected_by_wind = true
 flare_smoke.movement_slow_down_factor = 0
 flare_smoke.cyclic = true
 data:extend({flare_smoke})

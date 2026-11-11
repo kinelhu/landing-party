@@ -6703,6 +6703,24 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the site by biters, 30 minutes for the next, its guards not holding) and `hazard research` (never exports, so never
   funds railguns). Flamers beyond the gates considered and set aside with the user (their fixed arc, fire on its own
   sorties). Quick regression: 42 of 42.
+- **Kessler-Hayashi's arc flamer; the flamers split** (0.2.331; the user, 2026-11-11: "a flamer turret for KH too.
+  Perhaps with blue flames with short duration but high damage ... a 360 degrees turret, and KH units could be immune to
+  their own formulation?", "Is fuel entirely necessary?", "Go with the electric version if the engine allows it", "Split
+  the flamers yes"). `lp-flamer` is now an electric turret on void power firing a flame stream: its whole circle
+  (turn_range 1, min_range 2, rotation 0.04), blue, 8 a hit, 150 a second for 3 s on what it lights, ground fire of 2 s
+  (vanilla's 3, 100 for 30 s, up to 30 s); its stream, fire and sticker spare its own side as the old flamer's did.
+  Grubstake's variant is based on `lp-flamer-oil` (the old flamer, forward arc, orange, light oil by script; CORPS bases).
+  A clearance's dug-in site carries one from evolution 0.4. **Engine findings (spikes, 2026-11-11):** an electric turret
+  takes a stream attack (it needs an ammo_category; ours `lp-arc-flame`) and fires it on void power. A full circle is
+  honoured: the first full-circle turrets seemed to fire only north, but logging `shooting_target` and `orientation`
+  showed them turn to biters at their sides and behind too slowly, losing them inside the flame's 6-tile minimum. With
+  the model on, it hit only north again until the deploy time was fixed: it had the laser turret's 5 s (300 ticks, the
+  turret lint's reference for its type) and unfolded only once biters were in reach; now it deploys in the flamethrower
+  turret's 188 ticks (lint_turrets compares it by name) and unfolds at 70 tiles. Scenario arcflamer: it hits a biter
+  charging from each side (these failed on every earlier version), its own unit in its fire is spared, and it kills six
+  medium biters in about 290 ticks keeping nearly all its health where Grubstake's oil flamer was destroyed with all six
+  alive: strong, to watch in the clearances. hazard, worm (its site dug in with 3 pillboxes and a flamer), norails and
+  unpaid pass. Its own model is still the old flamer's; only its fire is blue.
 - **Dig in first** (0.2.330; the user, 2026-11-11, of hazard worm's railgunners dying while they deployed: "Dig in first,
   go with option 1"). A clearance's site digs in the moment it arrives (`ops.dig_in`: the wall ring open towards home and
   gun pillboxes in an arc facing the nest, 2 at no evolution to 4 at full, uranium rounds from 0.6 at 5 parts a pillbox),

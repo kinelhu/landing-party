@@ -65,7 +65,7 @@ digraph ai {
     "intel" [label="intel\n291 lines", width=1.12, fillcolor="#eef2f7"];
     "airraid" [label="airraid\n127 lines", width=0.94, fillcolor="#eef2f7"];
     "cannon" [label="cannon\n333 lines", width=1.17, fillcolor="#eef2f7"];
-    "siege" [label="siege\n2120 lines", width=3.16, fillcolor="#f7dede"];
+    "siege" [label="siege\n2133 lines", width=3.17, fillcolor="#f7dede"];
     "assault" [label="assault\n142 lines", width=0.96, fillcolor="#eef2f7"];
     "strip" [label="strip\n238 lines", width=1.06, fillcolor="#eef2f7"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
