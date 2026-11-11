@@ -6629,6 +6629,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   vanilla's tank and car at 255. Their raw renders are gone, so tools/blender/shadow_full.py inverts the old packing
   (round(a / 0.55): 7..140 back to 13..255, within one level of a repack) and refuses a sheet already full (seen: a
   second run skipped). Filmed beside vanilla's tank and car (docs/review/stills-unitshadows.lua): as dark as theirs.
+- **The trailer's herd breaks its outpost's wall withdrawing, open** (2026-11-11; trailer 12345 at 0.2.322: 4 pieces
+  broken from inside, its gap open; 26 of 195 walked out before its push on). Not a herd regression: bisected on the Mac
+  Studio from 0.2.247 (passing, 0 pieces) to 0.2.268, a drop siege's guards (siege.lua), the herd's code the same; the
+  steps on either side swung between 0 and 3 pieces, the fight's course tipped as the Tesla's hold did (0.2.248). The
+  flaw it shows is real: as the wave withdraws its group goes out by its gap and on home leg by leg, and the few left
+  inside (4 at the far wall, y -339) follow it by the engine's path, which runs through enemy walls (no command or
+  pathfind flag forbids it), or are sent home by_enemy when the wave is counted home with them still inside. Tried and
+  reverted: stragglers sent on their own to the gap, out to the breach, then on (out_by_gap). Read inside by a wall on
+  the line to the breach alone, those outside past a corner were sent back and broke 13; by a wall on that line and on
+  the line to the group, still 4, two beside the gap by stragglers sent to it. Next: hold the group past the gap until
+  its members are out (as hold_rush holds a rush until its herd is through), not orders to each.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
