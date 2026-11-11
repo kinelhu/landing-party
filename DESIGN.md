@@ -130,7 +130,7 @@ document still says Serenity where it records history.
 | Beacon report on the circuit network: S squad, E enemy units, T turrets in reach | built | `circuit` |
 | Field repair: 2% health a second within 30 tiles of a powered barracks | built | `circuit` |
 | Command tool: box-select, move, attack, attack-move, release to beacons | built, tried in game | `control` |
-| Selection cards: health bars over the selected, a card a unit (a card a kind past 24) with health and rank, a unit's own card, control groups (CONTROL/ALT + 1-9) | built, seen in stills, not yet played | `cards` |
+| Selection cards: health bars over the selected, a card a unit (a card a kind past 24) with health and rank, a unit's own card, control groups (CONTROL/ALT + 1-9), All/Idle buttons | built, seen in stills, not yet played | `cards` |
 | Player units: trooper, breacher (charges for walls), rocket trooper (anti-armour, 2 bandwidth), battle tank (6 bandwidth); barracks picks its recipe | built | `siege` (`LP_MIX`), arena |
 | Fought capture against live defences | in progress: no squad wins yet | `siege`, `duel` |
 | Corporations as forces (Grubstake, Serenity): own force, colour, intel; they raid each other | built (first step) | `rivals` |
@@ -6853,7 +6853,10 @@ Bugs and surprises the headless runs caught, each kept as a check:
   it out of its row (now a chevron sprite inside the button); a promoted unit stood without its selection ring (rings
   now redrawn when the selection's unit numbers change). **Not yet:** played by hand (the clicks, the keys, remote view
   following, a multiplayer selection each its own); the bars only every 10 ticks, so a unit's bar trails a hit by up
-  to a sixth of a second.
+  to a sixth of a second (0.2.340: on the hit, below).
+  **0.2.340:** a selected unit's bar moves on the hit itself (the player's unit names in the damage event's filter, so
+  no other unit's hits come through; seen failing with the hook off: 1 for 0.68). The army panel's All and Idle
+  buttons select every unit, or those with no order and no squad (37 and 37, then 0 idle after an order to all).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

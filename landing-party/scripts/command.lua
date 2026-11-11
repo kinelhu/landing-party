@@ -839,6 +839,13 @@ function command.gui_tick()
         frame.style.padding = 4
         frame.add{type = "label", name = "lp_army_units", style = "caption_label"}
         frame.add{type = "button", name = "lp_army_retire", style = "tool_button"}
+        -- (Selecting the army without a drag: scripts/cards.lua's select_army, 2026-11-12.)
+        local all = frame.add{type = "button", name = "lp_army_all", style = "tool_button", caption = {"lp.army-all"},
+          tooltip = {"lp.army-all-tooltip"}}
+        all.style.width = 60
+        local idle = frame.add{type = "button", name = "lp_army_idle", style = "tool_button", caption = {"lp.army-idle"},
+          tooltip = {"lp.army-idle-tooltip"}}
+        idle.style.width = 60
       end
       local units = frame.lp_army_units
       units.caption = r.offline > 0 and {"lp.army-units-offline", r.units, r.cap, r.offline} or {"lp.army-units", r.units, r.cap}

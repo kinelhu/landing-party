@@ -180,8 +180,11 @@ for _, t in ipairs({"unit", "wall"}) do
   table.insert(BUILDINGS, {filter = "type", type = t})
   table.insert(BUILDINGS, {filter = "damage-type", type = "electric", mode = "and"})
 end
+-- The player's own units, every hit: a selected one's bar moves on the hit (scripts/cards.lua), not up to a refresh later.
+for _, name in pairs(shared.ORDERS) do table.insert(BUILDINGS, {filter = "name", name = name}) end
 script.on_event(defines.events.on_entity_damaged, function(e)
   local et = e.entity.type
+  if et == "unit" and e.entity.force.name == "player" then cards.on_hit(e.entity) end
   if et == "unit" or et == "wall" then
     if e.damage_type and e.damage_type.name == "electric" then
       if et == "unit" then stun.on_hit(e) end
@@ -243,6 +246,9 @@ script.on_event("lp-retire", function(e) command.retire(e.player_index); command
 script.on_event(defines.events.on_gui_click, function(e)
   if e.element and e.element.valid and e.element.name == "lp_army_retire" then command.retire(e.player_index); command.gui_tick() end
   if cards.on_click(e) then command.gui_tick() end
+  if e.element and e.element.valid and (e.element.name == "lp_army_all" or e.element.name == "lp_army_idle") then
+    cards.select_army(e.player_index, e.element.name == "lp_army_idle"); cards.refresh(e.player_index); command.gui_tick()
+  end
 end)
 -- The selection's cards and control groups (scripts/cards.lua).
 cards.on_select = function(pi) command.rings(pi) end
@@ -955,6 +961,11 @@ remote.add_interface("landing-party", {
     return n
   end,
   debug_group_keep = function(n) return cards.keep_group(1, n) end,
+  debug_select_army = function(idle) return cards.select_army(1, idle) end,
+  debug_bar_share = function(un)
+    local b = storage.cards and storage.cards.bars and storage.cards.bars[1] and storage.cards.bars[1][un]
+    return b and b.share
+  end,
   debug_group_recall = function(n, tick) return cards.recall_group(1, n, tick) end,
   debug_pick = function(key, drop) return cards.pick(1, key, drop) end,
   cannon_readout = function() return cannon.readout(game.forces.player) end,

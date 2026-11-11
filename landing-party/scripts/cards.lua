@@ -112,6 +112,19 @@ function cards.pick(player_index, key, drop)
   return #keep
 end
 
+-- The army panel's buttons (command.lua): every unit of the player's force, or the idle ones (no order by hand, no
+-- squad: standing about).
+function cards.select_army(player_index, idle_only)
+  local p = game.get_player(player_index)
+  local force = p and p.force or game.forces.player
+  local units = {}
+  for _, t in pairs(cmd().troopers) do
+    if t.unit.valid and t.unit.force == force and not (idle_only and (t.manual or t.key)) then units[#units + 1] = t.unit end
+  end
+  set_selection(player_index, units)
+  return #units
+end
+
 -- Control groups.
 function cards.keep_group(player_index, n)
   local c = cmd()
@@ -205,6 +218,24 @@ local function bars_for(player_index, units)
   return mine
 end
 cards.bars_for = bars_for
+
+-- A hit on one of the player's units: its bar now, for each player who has it selected (control.lua's damage handler).
+function cards.on_hit(u)
+  local c = storage.cmd
+  local bars = storage.cards and storage.cards.bars
+  if not (c and c.selected and bars) then return end
+  local un = u.unit_number
+  for pi, sel in pairs(c.selected) do
+    local b = sel[un] and bars[pi] and bars[pi][un]
+    if b and b.fg.valid and b.unit == u then
+      local w, top = bar_geometry(u)
+      local s = share(u)
+      b.fg.right_bottom = {entity = u, offset = {-w / 2 + w * s, top + BAR_H}}
+      b.fg.color = hp_colour(s)
+      b.share = s
+    end
+  end
+end
 
 -- The panel.
 local function rank_text(r)

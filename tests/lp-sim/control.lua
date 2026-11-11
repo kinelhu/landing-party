@@ -4179,6 +4179,11 @@ scenarios.cards = function()
       if not S.hurt then S.hurt = u; u.health = u.max_health / 2 end
     end
     S.kept = lp("debug_group_keep", 1)
+    -- A hit moves its bar at once, before any refresh (the damage handler).
+    lp("debug_cards")
+    local tank = surface().find_entities_filtered{area = A, name = "lp-battle-tank"}[1]
+    tank.damage(tank.max_health * 0.4, "enemy", "physical")
+    S.hit_share, S.hit_true = lp("debug_bar_share", tank.unit_number), tank.health / tank.max_health
   end)
   schedule(80, function()
     local m = lp("debug_cards")
@@ -4224,6 +4229,8 @@ scenarios.cards = function()
       serpent.line(S.first) .. ", enlisted " .. tostring(S.enlisted))
     check("cards: the bar and the card read its health", S.hurt_share and math.abs(S.hurt_share - 0.5) < 0.01
       and S.hurt_card and math.abs(S.hurt_card - 0.5) < 0.01, tostring(S.hurt_share) .. ", card " .. tostring(S.hurt_card))
+    check("cards: a hit moves its bar at once", S.hit_share and math.abs(S.hit_share - S.hit_true) < 0.01 and S.hit_true < 0.95,
+      tostring(S.hit_share) .. " for " .. tostring(S.hit_true))
     check("cards: a click narrows the selection to its kind", S.tanks == 2 and S.after_pick == 2, S.tanks .. ", " .. S.after_pick)
     check("cards: a group recalls its units", S.kept == 8 and S.recalled == 8, S.kept .. " kept, " .. S.recalled .. " recalled")
     check("cards: SHIFT drops a kind, a click narrows to one unit", S.dropped == 6 and S.one == 1, S.dropped .. ", " .. S.one)
@@ -4234,6 +4241,12 @@ scenarios.cards = function()
     check("cards: past 24 units, a card a kind", S.grouped.grouped and S.grouped.cards == 2 and S.grouped.troopers == 35,
       serpent.line(S.grouped))
     check("cards: released, no cards and no bars", S.released.n == 0 and S.released.bars == 0, serpent.line(S.released))
+    -- The army panel's buttons: all of them (the 37 here), and the idle (all 37: no orders, no squads).
+    S.all = lp("debug_select_army", false)
+    S.idle0 = lp("debug_select_army", true)
+    lp("debug_select_army", false)
+    lp("debug_order", {{0, 1240}, {2, 1242}}, false)
+    S.idle = lp("debug_select_army", true)
     -- The look's verb, /lp squad: 30 units east, enlisted and selected, grouped by kind (5 kinds).
     flatten(-12, 1290, 100, 1320)
     lp("dev", {"squad", "30"}, {0, 1300})
@@ -4241,6 +4254,8 @@ scenarios.cards = function()
     S.squad = {n = q.n, grouped = q.grouped, cards = #q.cards, bars = q.bars}
   end)
   schedule(430, function()
+    check("cards: All selects the army, Idle leaves out what has orders", S.all == 37 and S.idle0 == 37 and S.idle == 0,
+      S.all .. " all, " .. S.idle0 .. " idle, " .. S.idle .. " idle after an order to all")
     check("cards: /lp squad selects its units, a card a kind", S.squad.n == 30 and S.squad.grouped and S.squad.cards == 5
       and S.squad.bars == 30, serpent.line(S.squad))
   end)
