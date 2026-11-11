@@ -8343,6 +8343,9 @@ scenarios.hazard = function()
       return
     end
     check("hazard: its losses to biters made it clear the nests", (st.ops.hazards or 0) >= 1 and left == 0, string.format("%d hazards, %d left", st.ops.hazards or 0, left))
+    -- Its clearances dig in as they arrive, before their guns go up (the user, 2026-11-11, "dig in first": worm's
+    -- railgunners died while deploying, before the ring went up with the guns).
+    check("hazard: its clearances dug in before their guns", (st.dug_early or 0) >= 1, tostring(st.dug_early))
     -- Every nest gone died where the harness saw it (on_entity_died): none taken off the map by script.
     check("hazard: each nest gone was a death the harness saw", (S.nest_deaths or 0) == #S.nests - left,
       string.format("%d deaths seen, %d nests gone", S.nest_deaths or 0, #S.nests - left))
@@ -18079,3 +18082,4 @@ if params.scenario == "dev" then
     end
   end, {{filter = "type", type = "wall"}})
 end
+

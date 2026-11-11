@@ -1281,6 +1281,51 @@ local function guard_duty(b, op)
   end
 end
 
+-- The site dug in: a ring of wall open towards home and gun pillboxes facing the target, cleared when the siege ends
+-- (op.works). Hardened sieges (Serenity) once their guns are up; a clearance the moment it arrives (the user, 2026-11-11,
+-- "dig in first": hazard worm's railgunners died to medium and big biters while deploying, 10 of 15 in 45 s, before the
+-- ring went up with the guns). By the biters' evolution (what it brings, not hidden strength): 2 pillboxes at none, 4 at
+-- full, uranium rounds from 0.6 at 5 parts a pillbox (piercing when it cannot pay).
+function ops.dig_in(b, op, trace)
+  local s, force = game.surfaces[b.surface], game.forces[b.force]
+  op.works = {}
+  local h = home(b)
+  local away = h and math.atan2(h.position.y - op.site[2], h.position.x - op.site[1]) or 0
+  for k = 0, 35 do
+    local a = 2 * math.pi * k / 36
+    local d = math.abs(((a - away + math.pi) % (2 * math.pi)) - math.pi)
+    if d > 0.5 then
+      local p = {op.site[1] + math.cos(a) * 7, op.site[2] + math.sin(a) * 7}
+      local w = s.can_place_entity{name = shared.variant(b.corp, "lp-wall"), position = p, force = force}
+        and s.create_entity{name = shared.variant(b.corp, "lp-wall"), position = p, force = force}
+      if w then table.insert(op.works, w) end
+    end
+  end
+  local evo = game.forces.enemy and game.forces.enemy.get_evolution_factor(s) or 0
+  local boxes = 2 + math.floor(2 * evo + 0.5)
+  local t = b.intel.targets[op.target]
+  local toward = t and t.pos and math.atan2(t.pos[2] - op.site[2], t.pos[1] - op.site[1]) or away + math.pi
+  for k = 1, boxes do
+    local a = toward + (k - (boxes + 1) / 2) * 0.7          -- an arc facing the target
+    local p = s.find_non_colliding_position("lp-gun-turret", {op.site[1] + math.cos(a) * 4, op.site[2] + math.sin(a) * 4}, 4, 0.5)
+    local g = p and s.create_entity{name = "lp-gun-turret", position = p, force = force}
+    if g then
+      if evo >= 0.6 and (b.parts or 0) >= 5 then
+        b.parts = b.parts - 5
+        b.uranium_refills = (b.uranium_refills or 0) + 1
+        g.insert{name = "uranium-rounds-magazine", count = 50}
+      else
+        g.insert{name = "piercing-rounds-magazine", count = 50}
+      end
+      table.insert(op.works, g)
+    end
+  end
+  op.dug_in = game.tick
+  -- (Before its guns: what hazard checks.)
+  if not (op.mortars and #op.mortars > 0) and not (op.howitzer and op.howitzer.valid) then b.dug_early = (b.dug_early or 0) + 1 end
+  trace(b, string.format("siege: the site dug in (%d pieces, %d pillboxes)", #op.works, boxes))
+end
+
 local function siege_step(b, trace, army)
   local op = b.op
   local n = alive(op)
@@ -1306,6 +1351,8 @@ local function siege_step(b, trace, army)
     if not hp then return end
     if d2 == 0 then
       op.phase, op.phase_at = "deploy", game.tick
+      -- (Dig in first, as a hauled clearance does: a drop's railgunners died while its pods came down, worm.)
+      if op.clearance and not op.works then ops.dig_in(b, op, trace) end
       local s = game.surfaces[b.surface]
       local spec = SIEGE_TIERS[op.tier or 1]
       local guns = op.piece == "lp-howitzer" and 1 or (op.carry and #op.carry or spec.mortars)
@@ -1453,6 +1500,7 @@ local function siege_step(b, trace, army)
       op.label = rendering.draw_text{text = {"lp.siege-deploying"}, surface = op.hauler.surface,
         target = {entity = op.hauler, offset = {0, -2}}, color = {1, 0.6, 0.3}, scale = 1.5, alignment = "center"}
       trace(b, string.format("siege: deploying at %.0f,%.0f", op.site[1], op.site[2]))
+      if op.clearance and not op.works then ops.dig_in(b, op, trace) end   -- (dig in first: before its guns go up)
     end
   elseif op.phase == "deploy" then
     -- (A clearance's too: its guards stood while biters killed its railgunners 8 to 11 tiles from the site and its mortars
@@ -1594,30 +1642,7 @@ local function siege_step(b, trace, army)
       if op.standing and ops.site_dome then ops.site_dome(b, op) end
       -- Hardened siege (Serenity): the site digs in, a ring of wall open towards home and two gun pillboxes, cleared
       -- when the siege ends (op.works).
-      if (rd.has(b.corp, "hardened") or op.clearance) and not op.works then
-        op.works = {}
-        local h = home(b)
-        local away = h and math.atan2(h.position.y - op.site[2], h.position.x - op.site[1]) or 0
-        for k = 0, 35 do
-          local a = 2 * math.pi * k / 36
-          local d = math.abs(((a - away + math.pi) % (2 * math.pi)) - math.pi)
-          if d > 0.5 then
-            local p = {op.site[1] + math.cos(a) * 7, op.site[2] + math.sin(a) * 7}
-            local w = s.can_place_entity{name = shared.variant(b.corp, "lp-wall"), position = p, force = force}
-              and s.create_entity{name = shared.variant(b.corp, "lp-wall"), position = p, force = force}
-            if w then table.insert(op.works, w) end
-          end
-        end
-        for _, dx in ipairs({-3, 3}) do
-          local p = s.find_non_colliding_position("lp-gun-turret", {op.site[1] + dx, op.site[2] + 3}, 4, 0.5)
-          local g = p and s.create_entity{name = "lp-gun-turret", position = p, force = force}
-          if g then
-            g.insert{name = "piercing-rounds-magazine", count = 50}
-            table.insert(op.works, g)
-          end
-        end
-        trace(b, string.format("siege: the site dug in (%d pieces)", #op.works))
-      end
+      if (rd.has(b.corp, "hardened") or op.clearance) and not op.works then ops.dig_in(b, op, trace) end
     end
   elseif op.phase == "bombard" or op.phase == "assault" then
     -- Guard duty (a clearance): biters that come for the mortars are shot, and the guards go back to the site. Told to

@@ -6703,6 +6703,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the site by biters, 30 minutes for the next, its guards not holding) and `hazard research` (never exports, so never
   funds railguns). Flamers beyond the gates considered and set aside with the user (their fixed arc, fire on its own
   sorties). Quick regression: 42 of 42.
+- **Dig in first** (0.2.330; the user, 2026-11-11, of hazard worm's railgunners dying while they deployed: "Dig in first,
+  go with option 1"). A clearance's site digs in the moment it arrives (`ops.dig_in`: the wall ring open towards home and
+  gun pillboxes in an arc facing the nest, 2 at no evolution to 4 at full, uranium rounds from 0.6 at 5 parts a pillbox),
+  before its guns go up; a hardened siege still digs in once its guns are up. Clearances come by drop pods, and the first
+  try dug in only on the hauled arrival: hazard's new check ("its clearances dug in before their guns", `dug_early`) failed
+  on that run (0), as did worm (3 nests left). With the drop path too: hazard worm passes (the howitzer's site dug in with
+  3 pillboxes 1,300 ticks after it went, every nest cleared), hazard and norails pass; hazard research fails as before.
 - **Grubstake's turrets read transparent, the third time** (0.2.329; the user, on the rating page after 0.2.326: "still
   got transparent turrets"). 0.2.326 had repainted the gun nest's shield and called it fixed; Before and Now were nearly
   the same. The cause was their shadows: the heads sat high on thin posts (the gun at 1.44 on a pintle, the flame boom
