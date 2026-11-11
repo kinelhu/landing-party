@@ -24,7 +24,7 @@ return {name = "showcase", resolution = {1920, 1080}, anti_alias = true, speed =
     {tick = T + 2080, args = {"flak", "4"}, at = {60, 180}},
   },
   -- (Refilm: the moves named in ONLY; nil for all.)
-  moves = (function(all) local ONLY = {bombers = true, flak = true}; local out = {}
+  moves = (function(all) local ONLY = nil; local out = {}
     for _, m in ipairs(all) do if not ONLY or ONLY[m.name] then out[#out + 1] = m end end; return out end)({
     shot("tesla", T + 30, 480, 1.9, 2.0),
     -- (Fixed, gliding south with the squad's march: tracked on the fight's eased middle, the camera jittered as units fell,

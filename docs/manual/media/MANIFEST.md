@@ -5,6 +5,16 @@ book: "some screenshots are reused a lot it seems? And not extra clear". Everyth
 (daytime 0.02, clouds hidden), two to three times closer than the trailer's frames, and cut at print size (an A5 page
 is about 1750 px wide at 300 dpi). Each file is under 1 MB.
 
+**Refilmed 2026-11-12, at 0.2.339, on the laptop** (the faction buildings remodelled since 0.2.298): the Kessler-Hayashi
+camp plan (`m-khcamp.lua`, positions unchanged), the Grubstake hero (`m-strip.lua`, now `strip-z12-13800`, box moved
+onto the camp at the patch's north edge), the claim plan (`m-claim.lua`; its drill callout "Drills", the bins under
+them), the landing strip and still (`m-landing.lua`; the lander now comes down south-east of the old spot, boxes moved
+onto it), the army hero and the Kessler-Hayashi assault (`m-trailer.lua` on a fresh trailer fork; the same ticks hold),
+and a new still, `stills/selection-panel.jpg` (`m-cards.lua`, the screen GUI shown). Not refilmed: the Kessler-Hayashi
+hero, the siege plan and the orbital strike strip (nw-khwall's siege no longer deploys at current code: 50,000 ticks of
+march), the Grubstake column (the fortress fork's column stays bunched at its yard), and the Synthexis pictures (no
+change to show). `CUT_ONLY=out1,out2` cuts only those.
+
 How they are made:
 
 - **Films**: one params file each in `docs/manual/shots/m-*.lua` (its header gives the save, the fork and the

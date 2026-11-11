@@ -231,6 +231,6 @@ settings:
   high: "1.5"
   very_high: "2"
 mod:
-  version: "0.2.340"
+  version: "0.2.343"
   factorio: "2.1"
   needs: "base, space-age"

@@ -6893,6 +6893,37 @@ Bugs and surprises the headless runs caught, each kept as a check:
   - **The film toolkit's build-once bug** (found on the way): a save made with the helper loaded kept storage.built,
     and every gallery film from it skipped its own build (this film's first stills: black, unbuilt ground). It
     rebuilds now whenever the film's name is not the one it built for.
+- **The manual and the mod page brought up to 0.2.343** (2026-11-12, overnight; the user: "update the manual and
+  modpage, including gifs, screenshots, tech diagrams"). Text: the generated data had last run at 0.2.285, so the
+  trade post, border stake and truce went with it, and the invoice post's collection and the rally beacon's wiring came
+  in. A locale `\n` now prints as a space (the rally beacon's row had a literal "\n"). Veterancy's ranks (vet.*) and
+  the cards' threshold (army.cards_max) are now variables.
+  - New in the chapters: veterancy ("Ranks", army; it was in no chapter), the selection panel and control groups, KH's
+    flamethrowers as arcs that spare its own side, its nest clearances (railgunners by evolution, the dig-in, uranium
+    rounds), Grubstake's fliers stealing and its uranium rounds, two tips.
+  - The tech trees are drawn from lp-data.json, current once regenerated: read in the PDF, no removed technology in
+    them.
+  - Pictures refilmed on the laptop (media/MANIFEST.md): the KH camp plan, the Grubstake hero, the claim plan, the
+    landing strip and still, the army hero, the KH assault, and a new selection-panel still (shots/m-cards.lua).
+  - Mod page: veterancy, selection cards and arc flamers in the text; gallery frames 1 (the fortress) and 2 (the army)
+    replaced; its four loops refilmed and re-cut (media/release/loops, the old ones in loops-pre-0.2.339). The flak
+    loop is Grubstake's flak buggies against scout drones, not the turret.
+  - PDF: 100 pages, its blanks the template's.
+
+  **Found:**
+  - Re-saving a film save headless needs the film mods off in its mod-list. Otherwise the save keeps the film's state
+    and the next film "stops after 400 ticks, 266 of 4 taken".
+  - It also needs a full server-settings file with auto_pause. Otherwise the clock runs about 3,000 ticks and a film's
+    absolute stills fall before the save's tick.
+  - film_fork.sh reuses a sim dir's fork.zip whatever code made it (the trailer's and Grubstake fortress's were from
+    2026-11-04/05, and the first opened on the migrated-content dialog); moved aside and rebuilt.
+
+  **Not done:**
+  - The KH hero, siege plan and orbital-strike strip: nw-khwall's siege marched and never deployed in 50,000 ticks at
+    current code. That needs looking at as a behaviour change too.
+  - The Grubstake column: the fortress fork's column stayed bunched at its yard through the march stills.
+  - Synthexis's pictures: nothing in them changed.
+  - Not changed: the locale names both corporations' flamers "Flamethrower turret", and the manual follows it.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
