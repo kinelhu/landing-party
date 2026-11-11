@@ -6,9 +6,11 @@
 --     docs/trailer/clip-landing.lua      then scripts/clip.sh docs/sim/film-clip-landing media/trailer/landing-fx.mp4
 local T0 = 12044000
 local shots = {}
-local AT, FROM, TO, EVERY = {-2, -684}, 60, 900, 2   -- (its lander at -3,-690, down about 470 ticks after the call)
+-- (Re-made at 0.2.320: a second Kessler-Hayashi fortress landed at -11,-647 at minute 7, and Grubstake, settlement 3 now,
+-- comes down at 536,-613, 291 ticks after the call; framed on it as before, a tile east and six south of its lander.)
+local AT, FROM, TO, EVERY = {537, -607}, 60, 900, 2
 for dt = FROM, TO, EVERY do
   shots[#shots + 1] = {name = string.format("f-%05d", dt), tick = T0 + dt, pos = AT, zoom = 0.4, daytime = 0.15}
 end
-return {name = "clip-landing", base = 2, resolution = {1280, 720}, anti_alias = false, speed = 8, fast_until = T0 - 200,
+return {name = "clip-landing", base = 3, resolution = {1280, 720}, anti_alias = false, speed = 8, fast_until = T0 - 200,
   dev = {{tick = T0, args = {"land", "grubstake", "654"}, at = {0, 0}}}, shots = shots}

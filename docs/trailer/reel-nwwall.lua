@@ -18,8 +18,11 @@
 return {name = "reel-nwwall", base = 1, waves = true, resolution = {1920, 1080}, anti_alias = true, speed = 8,
   fast_until = "wave:march", moves = {
   -- The herd crossing open ground, tracked, the camera leading it south till the wall comes into the bottom of the frame.
-  {name = "w1-march", after = "wave:march", dt = 2400, frames = 300, track = true,
-    from = {pos = "wave", zoom = 0.55, daytime = 0.3}, to = {off = {0, 30}, daytime = 0.31}},
+  -- (A pan along the herd's own way on 0.2.320's save, not a track: its group point ran about 22 tiles ahead of it, and
+  -- tracked, with a lead or without, the herd sat on the frame's top edge and left it; the scouting takes. The camera
+  -- there went 31,-594 to 15,-496 in the shot: the herd 22 tiles behind.)
+  {name = "w1-march", after = "wave:march", dt = 2400, frames = 300,
+    from = {pos = {33, -616}, zoom = 0.55, daytime = 0.3}, to = {pos = {15, -518}, daytime = 0.31}},
   -- Locked on the breach from its first tick: the big bursters at the wall, the gap, the rush, the flamethrowers.
   {name = "w2-breach", after = "wave:breach", dt = 0, frames = 600,
     from = {pos = "breach", zoom = 0.7, daytime = 0.31}, to = {off = {0, 4}, daytime = 0.33}},
