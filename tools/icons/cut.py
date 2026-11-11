@@ -142,6 +142,9 @@ write("lp-orbital-cannon", canvas); done.append("lp-orbital-cannon")
 for item, key in (("lp-rally-beacon", "rally-beacon"), ("lp-threat-scanner", "threat-scanner"), ("lp-trade-post", "trade-post"),
                   ("lp-border-stake", "border-stake"), ("lp-claim-marker", "claim-marker"), ("lp-pact-breaker", "pact-breaker")):
     write(item, Image.open(os.path.join(REPO, "landing-party", "graphics", "player", key, "north-body.png")).convert("RGBA"), thr=120)
+# The muster point: its mast and floodlight are thin and dark, and the film's matte lost the mast (a light floating free
+# of a box, 0.2.322): its own sprite, as the small modelled buildings above.
+write("lp-muster-point", Image.open(os.path.join(REPO, "landing-party", "graphics", "player", "muster", "body.png")).convert("RGBA"), thr=120)
 write("lp-bait", Image.open(os.path.join(REPO, "landing-party", "graphics", "player", "pheromone-bait", "north-body.png")).convert("RGBA"), thr=120)
 done.append("lp-bait")
 # Stand-ins: the bait was a splat on the ground (its item: the gland it is made of); the retired strike beacon's sprite is

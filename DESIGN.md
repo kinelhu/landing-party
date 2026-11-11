@@ -6592,6 +6592,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
     steel girders now, dark I-sections flanged in steel, hazard bands at the feet, riveted gussets, hazard chevrons on
     the front beam. Grubstake's flamer (3, "darken the bright metal of the cannon"): its barrel dark, a worn ring at
     the muzzle.
+- **Icons re-cut after the redo round** (0.2.322; the user, 2026-11-10: "regenerate building icons since a lot will
+  change"). The icon film (docs/release/icons-film.lua, unchanged: no building came or went) refilmed at 0.2.321 and
+  cut again: 16 building icons changed (the redone models, the full-strength shadows dropped as before), the orders' and
+  components' icons byte for byte the same, and the technologies' icons recomposed from the new sources. Caught: the
+  muster point's new mast and floodlight are thin and dark, and the film's difference matte lost the mast, leaving a
+  light floating over a box; its icon now comes from its own sprite, as the small modelled buildings' do.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
