@@ -84,6 +84,11 @@ do
     return l
   end
   local head = {layers = {part("head"), shadow("head")}}
+  -- Its time to deploy and to fold the laser turret's, as the factions' modelled turrets keep theirs (corps.lua
+  -- keep_timing): the speeds slowed by the frames its one-frame head lost (it was ready in a fifteenth of the time).
+  local function frames(a) local l = a and (a.layers and a.layers[1] or a) or {}; return l.frame_count or 1 end
+  t.preparing_speed = t.preparing_speed / frames(t.preparing_animation)
+  t.folding_speed = t.folding_speed / frames(t.folding_animation)
   t.folded_animation, t.preparing_animation, t.prepared_animation, t.folding_animation = head, head, head, head
   t.energy_glow_animation = nil
   t.graphics_set = {base_visualisation = {animation = {layers = {part("base"), shadow("base")}}}}

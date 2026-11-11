@@ -6640,6 +6640,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the line to the breach alone, those outside past a corner were sent back and broke 13; by a wall on that line and on
   the line to the group, still 4, two beside the gap by stragglers sent to it. Next: hold the group past the gap until
   its members are out (as hold_rush holds a rush until its herd is through), not orders to each.
+- **The modelled turrets deployed in a fifth to a fifteenth of vanilla's time** (0.2.324; found on the user's "Look at
+  the turrets", the trailer's battle breaking 1 of Grubstake's turrets where it had broken 10 to 15). A turret state's
+  time is its animation's frames over its speed; the modelled heads are one frame on the vanilla speeds, so from 0.2.304
+  (0.2.305 the flamers, 0.2.291 the flak turret) the gun turrets were ready in 12 ticks (vanilla 62), the lasers and the
+  flak turret in 20 (300), the flamers in 12 (188). corps.lua keep_timing and studies.lua slow the speeds by the frames
+  lost; scripts/lint_turrets.py (in check.sh) fails any lp- turret quicker to deploy or fold than vanilla's of its type,
+  seen failing on all six without the fix. Not what tipped the battle: with the fix it still broke 1. The bisect (0.2.247
+  passing, 0.2.304 to 0.2.309 crashing in army.settle on a promoted unit, fixed by 0.2.310) put it on the factions'
+  turret models, and the model of Grubstake's turret alone flips it (without it 10), its head alone or its base alone too:
+  a picture, which the simulation never reads. Four seeds, with the model and without: 12345 1 and 10, 777 4 and 5, 4242
+  2 and 2, 101 15 and 6. No side: the trailer's battle on seed 12345 is on a knife's edge that any change to that
+  prototype tips (how a picture reaches the simulation unexplained). Veterancy cleared too (off: 1).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

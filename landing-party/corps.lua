@@ -161,9 +161,25 @@ local MODELLED = {
       turn("shadow", {draw_as_shadow = true})}}
   end},
 }
+-- A turret's time to unfold and to fold kept as its prototype's: the engine steps a state's animation by its speed a
+-- tick, so a head of one frame where the original had 5 made it ready to fire in a fifth of the time (12 ticks, not 62:
+-- every modelled turret of the factions woke early from 0.2.304; the trailer's battle, its player's army breaking 1 of
+-- Grubstake's turrets where it had broken 10 to 15, 2026-11-11). Read before the animations are replaced.
+local function frames_of(a)
+  if not a then return 1 end
+  local l = a.layers and a.layers[1] or a.north or a
+  if l.layers then l = l.layers[1] end
+  return l.frame_count or 1
+end
+local function keep_timing(p, prep, fold)
+  local fp, ff = frames_of(p[prep]), frames_of(p[fold])
+  if p.preparing_speed and fp > 1 then p.preparing_speed = p.preparing_speed / fp end
+  if p.folding_speed and ff > 1 then p.folding_speed = p.folding_speed / ff end
+end
 -- Turrets: the base once, the head in 64 directions for every state (it does not rise out of the ground as vanilla's
 -- laser turret does), its lights a glow layer of it.
 local function turret(p, key)
+  keep_timing(p, "preparing_animation", "folding_animation")
   local function head(file, extra)
     local l = sheet_layer(key .. "/head", file, extra)
     l.direction_count, l.frame_count = l.frame_count, nil
@@ -217,6 +233,7 @@ MODELLED["lp-flamer"] = {dir = "flamer", head = true, apply = function(p, key)
     return l
   end
   local h = {layers = {head("body"), head("glow", {draw_as_glow = true, blend_mode = "additive"}), head("shadow", {draw_as_shadow = true})}}
+  keep_timing(p, "preparing_animation", "folding_animation")
   local eight = {}
   for _, d in ipairs({"north", "north_east", "east", "south_east", "south", "south_west", "west", "north_west"}) do eight[d] = h end
   for _, k in ipairs({"folded_animation", "preparing_animation", "prepared_animation", "attacking_animation",
