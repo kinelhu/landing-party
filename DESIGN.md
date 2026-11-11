@@ -6598,6 +6598,24 @@ Bugs and surprises the headless runs caught, each kept as a check:
   components' icons byte for byte the same, and the technologies' icons recomposed from the new sources. Caught: the
   muster point's new mast and floodlight are thin and dark, and the film's difference matte lost the mast, leaving a
   light floating over a box; its icon now comes from its own sprite, as the small modelled buildings' do.
+- **The trailer reshot at 0.2.321** (2026-11-11, overnight; the user: "And reshoot the trailer"). Every source re-made at
+  current code on the Mac Studio: the seven scenario forks (trailer, grow, farm growth and bigpens, herd megaburst, dome
+  ring, warfinale), the scenes stage (showcase.sh), and the nw visits replayed from their save copies (visit_saves.sh:
+  khwall at 15, nwwallheavy at 13, the trailer visit at 9, 16, 19 and 38). The edit (cut.json, 35 cuts, 53 bars) and the
+  score's config unchanged; media/trailer/rough-cut.mp4, 106 s, the old clips kept in media/trailer/pre-0.2.321/. Framings
+  re-read from rehearsals (FILM_REHEARSE) and scouting takes, and changed where the action had moved: the trailer fork's
+  herd breaches at 65112 and the armed camp's strike falls at 68920 (600 ticks later than before); stage-herd's breach
+  shot later and 10 tiles north; clip-landing on Grubstake's new landing (536,-613, settlement 3: a second
+  Kessler-Hayashi fortress took the old spot at minute 7); reel-nwwall's march panned along the herd's way (tracked, the
+  wave's group point ran 22 tiles ahead of the herd and it left the frame). The khwall save's beats were identical to the
+  old. Shot 1 (the factory before any corporation) kept as it was: its save loads and never ticks in a film window (no
+  error in the log; a paused save, likely), and it shows nothing of the mod. Found on the way, not fixed (the trailer's
+  own scenario, 20 minutes, 0.2.320): its Synthexis wave walked back out of its gap (26 of 195) and broke 4 wall pieces
+  from inside withdrawing (the user's complaint of cut 6, 0.2.209, back), and Grubstake fields 1 turret where the check
+  wants more. Also: a visit prepared with a one-minute visit.sh ends its harness at minute 1 (nwwallheavy's wave,
+  scheduled from minute 12 to the end, never went: run the prep with the visit's real length, or set its params'
+  minutes); a film on a visit profile without LP_FILM_SIM removes the harness mod from it; the Studio's Homebrew ffmpeg
+  no longer loads (libx265 missing after an update), the clips encoded with imageio-ffmpeg's static build.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
