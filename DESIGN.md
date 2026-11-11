@@ -6823,6 +6823,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   every frame: no frame or alpha cut removes it, so the bait keeps its 0.2.322 icon (the same model without the puff).
   The technology icons recomposed from the new sources: 11 changed (the claims register composed without the trade
   post and stake).
+- **The manual's portraits refilmed at 0.2.338** (the same request). The matte film (portraits-matte.lua, 1,928 stills)
+  on the Studio, cut by matte.py and portraits.py as before: 14 cards changed, the vehicles' and drones' (their
+  shadows at full strength since 0.2.321, the old cards made before); 12 more differed in bytes only (mean pixel
+  difference 0.00: the biters, sweeper, railgunner and battle tank) and were kept as they were. Open, as before: the
+  laser drone's shadow runs off its card's right edge.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
