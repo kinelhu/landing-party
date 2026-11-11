@@ -52,6 +52,8 @@ local orbital = require("__landing-party__.scripts.orbital")
 local ram = require("__landing-party__.scripts.ram")
 local stun = require("__landing-party__.scripts.stun")
 local command = require("__landing-party__.scripts.command")
+local cards = require("__landing-party__.scripts.cards")
+local veterancy = require("__landing-party__.scripts.veterancy")
 local cannon = require("__landing-party__.scripts.cannon")
 
 local dev = {}
@@ -234,6 +236,33 @@ function dev.run(player, args)
       u.destroy(); n = n + 1
     end
     player.print(string.format("%d units cleared within %d", n, r))
+  elseif what == "squad" then
+    -- /lp squad [n]: n of your units (default 12; troopers, rocket and flame troopers, breachers, battle tanks in turn)
+    -- in rows east of you, enlisted as trained ones are and selected: every third hurt (to a third, half or most of its
+    -- health), every fifth earning a rank. The selection's cards and bars to look at (scripts/cards.lua); past 24, a
+    -- card a kind.
+    local KINDS = {"lp-trooper", "lp-trooper", "lp-rocket-trooper", "lp-flame-trooper", "lp-breacher", "lp-battle-tank"}
+    local n = math.max(1, math.min(200, tonumber(args[2]) or 12))
+    local s, made = player.surface, {}
+    for i = 1, n do
+      local kind = KINDS[(i - 1) % #KINDS + 1]
+      local x, y = player.position.x + 6 + ((i - 1) % 8) * 2.5, player.position.y - 4 + math.floor((i - 1) / 8) * 2.5
+      local p = s.find_non_colliding_position(kind, {x, y}, 4, 0.5)
+      local u = p and s.create_entity{name = kind, position = p, force = player.force}
+      if u then
+        command.enlist(u)
+        if i % 3 == 0 then u.health = u.max_health * ({0.3, 0.55, 0.85})[(i / 3 - 1) % 3 + 1] end
+        made[#made + 1] = u
+      end
+    end
+    local pi = player.index or 1
+    command.select(pi, made)
+    storage.merit = storage.merit or {}
+    for i, u in ipairs(made) do
+      if i % 5 == 0 then storage.merit[u.unit_number] = veterancy.RANKS[(i / 5 - 1) % 3 + 1].merit; veterancy.check(u) end
+    end
+    cards.refresh(pi)
+    player.print(string.format("%d units east of you, selected (every third hurt, every fifth ranked: in a moment)", #made))
   elseif what == "parade" then
     -- Each infantry kind walking each of the 8 ways, a row a kind east of you, all yours (the user, 2026-11-08: troopers
     -- "moonskating ... their model is turned to the left"): a still mid-walk shows each body facing where it goes.
@@ -543,7 +572,7 @@ function dev.run(player, args)
     storage.trace = not storage.trace
     player.print("trace to script-output/landing-party/decisions.txt: " .. tostring(storage.trace))
   else
-    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | stun [r] | kill <unit> [n] | chartcheck | clear [r] | parade | dozers [n] | bombers [n] | prism [n] | flak [n] | spread | ranks | provoke | era <n> | trace")
+    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | stun [r] | kill <unit> [n] | chartcheck | clear [r] | parade | squad [n] | dozers [n] | bombers [n] | prism [n] | flak [n] | spread | ranks | provoke | era <n> | trace")
   end
 end
 

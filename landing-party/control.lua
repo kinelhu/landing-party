@@ -5,6 +5,7 @@ local rng = require("scripts.rng")
 local faction = require("scripts.faction")
 local achievements = require("__landing-party__.scripts.achievements")
 local command = require("scripts.command")
+local cards = require("scripts.cards")
 local phases = require("__landing-party__.scripts.phases")
 local biters = require("__landing-party__.scripts.biters")
 faction.on_trigger = phases.on_launch
@@ -118,7 +119,7 @@ local WATCH_DEPS = {
 script.on_event(defines.events.on_tick, function(e)
   -- (First: a promotion swaps a unit before any module walks its lists this tick.)
   veterancy.tick(e.tick)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); road.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); separate.tick(e.tick); ram.tick(e.tick); ram.charge_tick(e.tick); cannon.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); cards.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); road.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); separate.tick(e.tick); ram.tick(e.tick); ram.charge_tick(e.tick); cannon.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
   oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
 end)
@@ -224,11 +225,11 @@ local function remote_fire(e)
   cannon.fire(p.force, e.surface, {x = (a.left_top.x + a.right_bottom.x) / 2, y = (a.left_top.y + a.right_bottom.y) / 2}, p)
 end
 script.on_event(defines.events.on_player_selected_area, function(e)
-  if e.item == TOOL then command.select(e.player_index, e.entities) end
+  if e.item == TOOL then command.select(e.player_index, e.entities); cards.refresh(e.player_index) end
   if e.item == "lp-orbital-remote" then remote_fire(e) end
 end)
 script.on_event(defines.events.on_player_alt_selected_area, function(e)
-  if e.item == TOOL then command.release(e.player_index, e.entities) end
+  if e.item == TOOL then command.release(e.player_index, e.entities); cards.refresh(e.player_index) end
   if e.item == "lp-orbital-remote" then remote_fire(e) end
 end)
 script.on_event(defines.events.on_player_reverse_selected_area, function(e)
@@ -241,7 +242,22 @@ end)
 script.on_event("lp-retire", function(e) command.retire(e.player_index); command.gui_tick() end)
 script.on_event(defines.events.on_gui_click, function(e)
   if e.element and e.element.valid and e.element.name == "lp_army_retire" then command.retire(e.player_index); command.gui_tick() end
+  if cards.on_click(e) then command.gui_tick() end
 end)
+-- The selection's cards and control groups (scripts/cards.lua).
+cards.on_select = function(pi) command.rings(pi) end
+for n = 1, cards.GROUPS do
+  script.on_event("lp-group-keep-" .. n, function(e)
+    local k = cards.keep_group(e.player_index, n)
+    local p = game.get_player(e.player_index)
+    if p and k > 0 then p.create_local_flying_text{text = {"lp.group-kept", n, k}, create_at_cursor = true} end
+  end)
+  script.on_event("lp-group-" .. n, function(e)
+    if cards.recall_group(e.player_index, n, e.tick) > 0 then cards.refresh(e.player_index); command.gui_tick() end
+  end)
+end
+script.on_event({defines.events.on_player_display_resolution_changed, defines.events.on_player_display_scale_changed},
+  function(e) cards.on_display_changed(e) end)
 
 -- Deaths: the faction's buildings are queued for rebuild, its units counted lost, and what its units
 -- destroy is counted razed (attributed through the unit that did it).
@@ -915,6 +931,32 @@ remote.add_interface("landing-party", {
   end,
   debug_order = function(area, attackmove) return command.order(1, game.surfaces[1], area, attackmove) end,
   debug_retire = function() return command.retire(1) end,
+  -- The selection's cards (scripts/cards.lua), headless: the model in plain numbers, the bars' shares, groups, picks.
+  debug_cards = function()
+    local m = cards.refresh(1)
+    local out = {n = m.n, grouped = m.grouped, cards = {}, bars = 0, single = m.single and {name = m.single.unit.name,
+      rank = m.single.rank, order = m.single.order} or nil}
+    for _, c in ipairs(m.cards) do
+      out.cards[#out.cards + 1] = {kind = c.kind, name = c.name, count = c.count, share = c.share, rank = c.rank,
+        unit_number = c.unit_number}
+    end
+    local bars = storage.cards and storage.cards.bars and storage.cards.bars[1] or {}
+    out.bar_share = {}
+    for un, b in pairs(bars) do
+      if b.bg.valid and b.fg.valid then out.bars = out.bars + 1; out.bar_share[un] = b.share end
+    end
+    return out
+  end,
+  debug_enlist = function(area)
+    local n = 0
+    for _, u in ipairs(game.surfaces[1].find_entities_filtered{area = area, force = "player", type = "unit"}) do
+      command.enlist(u); n = n + 1
+    end
+    return n
+  end,
+  debug_group_keep = function(n) return cards.keep_group(1, n) end,
+  debug_group_recall = function(n, tick) return cards.recall_group(1, n, tick) end,
+  debug_pick = function(key, drop) return cards.pick(1, key, drop) end,
   cannon_readout = function() return cannon.readout(game.forces.player) end,
   cannon_stats = function() return cannon.stats() end,
   -- Tests only: a strike called at pos (as the remote), and why not.

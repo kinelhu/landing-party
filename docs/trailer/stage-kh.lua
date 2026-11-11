@@ -7,8 +7,11 @@
 -- (Re-timed 2026-11-11 for the reshoot at 0.2.320, from the fork's rehearsal (FILM_REHEARSE, trace on, settlements 1
 -- and 4): its herd breaches at 65112 (-38,-270), its gap open 65411 (-38,-288), its rush 65635; the drop's assault 49000;
 -- the armed camp deploys 66400, paints 68200, its lances fall 68920.)
+-- (Re-timed 2026-11-12 for the reshoot at 0.2.338, from the fork's rehearsal (FILM_REHEARSE, trace on): the drop's pods
+-- at 45100 and its assault 49300, the armed camp's pods 66700, its strike painted 68500 and falling 69220, each 300 ticks
+-- after 0.2.321's; the herd's way in now at 3,-300 (no wall) at 64997, its gap open 65692 at -38,-312.)
 return {name = "stage-kh", base = 1, army = true, waves = true, resolution = {1920, 1080}, anti_alias = true, speed = 8,
   fast_until = 44600, moves = {
-  {name = "c1-drop", tick = 44750, frames = 180, every = 3, from = {pos = {-548, 31}, zoom = 0.7, daytime = 0.25}, to = {pos = {-550, 31}, zoom = 0.72, daytime = 0.25}},
-  {name = "k2-strike", tick = 68300, frames = 1000, from = {pos = {-29, 247}, zoom = 0.55, daytime = 0.3}, to = {pos = {-28, 241}, zoom = 0.75, daytime = 0.31}},
+  {name = "c1-drop", tick = 45050, frames = 180, every = 3, from = {pos = {-548, 31}, zoom = 0.7, daytime = 0.25}, to = {pos = {-550, 31}, zoom = 0.72, daytime = 0.25}},
+  {name = "k2-strike", tick = 68600, frames = 1000, from = {pos = {-29, 247}, zoom = 0.55, daytime = 0.3}, to = {pos = {-28, 241}, zoom = 0.75, daytime = 0.31}},
 }}

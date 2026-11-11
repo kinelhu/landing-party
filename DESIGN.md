@@ -130,6 +130,7 @@ document still says Serenity where it records history.
 | Beacon report on the circuit network: S squad, E enemy units, T turrets in reach | built | `circuit` |
 | Field repair: 2% health a second within 30 tiles of a powered barracks | built | `circuit` |
 | Command tool: box-select, move, attack, attack-move, release to beacons | built, tried in game | `control` |
+| Selection cards: health bars over the selected, a card a unit (a card a kind past 24) with health and rank, a unit's own card, control groups (CONTROL/ALT + 1-9) | built, seen in stills, not yet played | `cards` |
 | Player units: trooper, breacher (charges for walls), rocket trooper (anti-armour, 2 bandwidth), battle tank (6 bandwidth); barracks picks its recipe | built | `siege` (`LP_MIX`), arena |
 | Fought capture against live defences | in progress: no squad wins yet | `siege`, `duel` |
 | Corporations as forces (Grubstake, Serenity): own force, colour, intel; they raid each other | built (first step) | `rivals` |
@@ -6828,6 +6829,31 @@ Bugs and surprises the headless runs caught, each kept as a check:
   shadows at full strength since 0.2.321, the old cards made before); 12 more differed in bytes only (mean pixel
   difference 0.00: the biters, sweeper, railgunner and battle tank) and were kept as they were. Open, as before: the
   laser drone's shadow runs off its card's right edge.
+- **The selection's cards** (0.2.339; the user, 2026-11-12: "How far could we push unit selection? I mean unit cards
+  with HP overlays?", then "Why not try to get a build going for the morning. Be ambitious"). scripts/cards.lua, on the
+  command tool's selection (storage.cmd.selected):
+  - **Bars:** a health bar over each selected unit's head, green, yellow under half, red under a quarter (vanilla's
+    steps), to its player only (two rectangles a unit, moved as its health changes, every 10 ticks).
+  - **Panel:** at the bottom of the screen, above vanilla's quickbar: a card a unit, its icon, a health bar and its
+    rank's chevrons in the corner. Past 24 units, a card a kind: how many, their health together, the highest rank.
+    Click: only that unit (or kind); CONTROL + click a unit: all of its kind; SHIFT + click: drop it; right-click:
+    follow it in remote view (`centered_on`; 2.1 has no zoom_to_world).
+  - **One unit selected:** its own card, the unit itself moving in an entity preview, its health, rank and merit, and
+    its order (moving, attacking, attack-moving, holding, with its squad; or offline over the command cap).
+  - **Control groups:** CONTROL + 1 to 9 keeps the selection as a group, ALT + 1 to 9 selects it again, twice within
+    half a second follows it. A group is unit numbers, in the promotion's rewire (veterancy.KEYED: cmd.groups.*.*).
+  - **`/lp squad [n]`:** n of your units east of you, every third hurt, every fifth ranked, all selected: the look on
+    demand.
+
+  Checked, scenario cards (headless, on the model the panel is drawn from): a card and a bar a unit; a bar reads its
+  unit's health; picks narrow and drop; a group recalls its units less the dead, and keeps a promoted unit (seen
+  failing with cmd.groups out of the rewire: the copy lost, 6 of 7); past 24, a card a kind; released, nothing left;
+  /lp squad. Seen in game in stills (docs/review/stills-cards.lua, the film toolkit's new per-still `gui` switch): the
+  first panel sat on vanilla's quickbar (placed by the screen's bottom edge), and a rank label under the card pushed
+  it out of its row (now a chevron sprite inside the button); a promoted unit stood without its selection ring (rings
+  now redrawn when the selection's unit numbers change). **Not yet:** played by hand (the clicks, the keys, remote view
+  following, a multiplayer selection each its own); the bars only every 10 ticks, so a unit's bar trails a hit by up
+  to a sixth of a second.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

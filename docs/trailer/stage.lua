@@ -11,6 +11,9 @@
 -- (Re-timed 2026-11-11 for the reshoot at 0.2.320, from the fork's rehearsal (FILM_REHEARSE, trace on, settlements 1
 -- and 4): its herd breaches at 65112 (-38,-270), its gap open 65411 (-38,-288), its rush 65635; the drop's assault 49000;
 -- the armed camp deploys 66400, paints 68200, its lances fall 68920.)
+-- (Re-timed 2026-11-12 for the reshoot at 0.2.338, from the fork's rehearsal (FILM_REHEARSE, trace on): the drop's pods
+-- at 45100 and its assault 49300, the armed camp's pods 66700, its strike painted 68500 and falling 69220, each 300 ticks
+-- after 0.2.321's; the herd's way in now at 3,-300 (no wall) at 64997, its gap open 65692 at -38,-312.)
 return {name = "stage", base = 1, army = true, waves = true, resolution = {1920, 1080}, anti_alias = true, speed = 8,
   fast_until = 29300, moves = {
   -- Muster: the barracks turning out the army, a timelapse (a frame every 15 ticks: 3000 ticks in 6.7 s).
@@ -21,15 +24,15 @@ return {name = "stage", base = 1, army = true, waves = true, resolution = {1920,
   {name = "m3-battle", tick = 41400, frames = 240, from = {pos = {392, -158}, zoom = 0.75, daytime = 0.22}, to = {pos = {396, -158}, zoom = 0.8, daytime = 0.22}},
   {name = "m4-battle", tick = 42600, frames = 240, track = true, from = {pos = "army", zoom = 0.9, daytime = 0.22}, to = {daytime = 0.22}},
   -- Kessler-Hayashi against Grubstake: the drop, then the barrage on the camp.
-  {name = "c1-drop", tick = 44750, frames = 180, every = 3, from = {pos = {-548, 31}, zoom = 0.7, daytime = 0.25}, to = {pos = {-550, 31}, zoom = 0.72, daytime = 0.25}},
-  {name = "c2-barrage", tick = 47000, frames = 240, from = {pos = {-560, 31}, zoom = 0.6, daytime = 0.26}, to = {pos = {-566, 32}, zoom = 0.7, daytime = 0.26}},
+  {name = "c1-drop", tick = 45050, frames = 180, every = 3, from = {pos = {-548, 31}, zoom = 0.7, daytime = 0.25}, to = {pos = {-550, 31}, zoom = 0.72, daytime = 0.25}},
+  {name = "c2-barrage", tick = 47300, frames = 240, from = {pos = {-560, 31}, zoom = 0.6, daytime = 0.26}, to = {pos = {-566, 32}, zoom = 0.7, daytime = 0.26}},
   -- Its assault through the breach (siege.lua open_way: at what stands behind, not the wall beside the gap).
-  {name = "c3-assault", tick = 48950, frames = 360, from = {pos = {-556, 32}, zoom = 0.75, daytime = 0.27}, to = {pos = {-568, 33}, zoom = 0.8, daytime = 0.27}},
+  {name = "c3-assault", tick = 49250, frames = 360, from = {pos = {-556, 32}, zoom = 0.75, daytime = 0.27}, to = {pos = {-568, 33}, zoom = 0.8, daytime = 0.27}},
   -- Synthexis: the herd marching (tracked), its breach, inside.
   {name = "s1-march", tick = 64300, frames = 180, track = true, from = {pos = "wave", zoom = 0.6, daytime = 0.33}, to = {daytime = 0.33}},
   {name = "s2-breach", tick = 64960, frames = 300, from = {pos = {-41, -290}, zoom = 0.75, daytime = 0.34}, to = {pos = {-36, -292}, zoom = 0.8, daytime = 0.34}},
   {name = "s3-inside", tick = 65590, frames = 180, track = true, from = {pos = "wave", zoom = 0.75, daytime = 0.35}, to = {daytime = 0.35}},
   -- The strike on the player's wall: the deploy, then the paint and the lances.
-  {name = "k1-deploy", tick = 66450, frames = 180, every = 3, from = {pos = {-30, 262}, zoom = 0.65, daytime = 0.36}, to = {pos = {-30, 260}, zoom = 0.68, daytime = 0.36}},
-  {name = "k2-strike", tick = 68300, frames = 1000, from = {pos = {-29, 258}, zoom = 0.5, daytime = 0.38}, to = {pos = {-28, 250}, zoom = 0.75, daytime = 0.38}},
+  {name = "k1-deploy", tick = 66750, frames = 180, every = 3, from = {pos = {-30, 262}, zoom = 0.65, daytime = 0.36}, to = {pos = {-30, 260}, zoom = 0.68, daytime = 0.36}},
+  {name = "k2-strike", tick = 68600, frames = 1000, from = {pos = {-29, 258}, zoom = 0.5, daytime = 0.38}, to = {pos = {-28, 250}, zoom = 0.75, daytime = 0.38}},
 }}

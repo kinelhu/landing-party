@@ -4154,6 +4154,98 @@ scenarios.arcflamer = function()
   end)
 end
 
+-- The selection's cards (the user, 2026-11-12: "unit cards with HP overlays?", "Be ambitious"; scripts/cards.lua),
+-- headless: what the panel and the bars are drawn from. Checked: a card a unit and a bar a unit, the bar's share its
+-- health's; a click narrows the selection to a kind or a unit, SHIFT drops one; a control group recalls its units, less
+-- the dead, and keeps a unit promoted (its copy, a new unit number) in it; past 24 units, a card a kind; released, no
+-- cards and no bars.
+scenarios.cards = function()
+  local A = {{-10, 1190}, {70, 1230}}
+  local function make(name, n, x0, y)
+    for i = 1, n do surface().create_entity{name = name, position = {x0 + i * 2, y}, force = "player"} end
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-12, 1185, 72, 1235)
+    make("lp-trooper", 6, 0, 1200)
+    make("lp-battle-tank", 2, 0, 1210)
+    S.enlisted = lp("debug_enlist", A)
+    S.picked = lp("debug_select", A)
+    local m = lp("debug_cards")
+    S.first = {n = m.n, grouped = m.grouped, cards = #m.cards, bars = m.bars}
+    -- One trooper at half health.
+    local c = m.cards[#m.cards]
+    for _, u in ipairs(surface().find_entities_filtered{area = A, name = "lp-trooper"}) do
+      if not S.hurt then S.hurt = u; u.health = u.max_health / 2 end
+    end
+    S.kept = lp("debug_group_keep", 1)
+  end)
+  schedule(80, function()
+    local m = lp("debug_cards")
+    S.hurt_share = m.bar_share[S.hurt.unit_number]
+    for _, c in ipairs(m.cards) do if c.unit_number == S.hurt.unit_number then S.hurt_card = c.share end end
+    S.tanks = lp("debug_pick", "lp-battle-tank", false)
+    S.after_pick = lp("debug_cards").n
+    S.recalled = lp("debug_group_recall", 1, 80)
+    S.dropped = lp("debug_pick", "lp-battle-tank", true)
+    S.one = lp("debug_pick", S.hurt.unit_number, false)
+    local m1 = lp("debug_cards")
+    S.single = m1.single
+    S.recalled2 = lp("debug_group_recall", 1, 200)
+    -- A trooper dies; another is promoted (its copy takes its place).
+    local tr = surface().find_entities_filtered{area = A, name = "lp-trooper"}
+    S.dead = tr[2].unit_number
+    tr[2].die()
+    S.promoted_old = tr[3].unit_number
+    lp("debug_promote", S.promoted_old, 99)
+  end)
+  schedule(400, function()
+    S.after_death = lp("debug_group_recall", 1, 400)
+    local m = lp("debug_cards")
+    S.after_death_cards, S.after_death_bars = #m.cards, m.bars
+    S.ranked = 0
+    for _, c in ipairs(m.cards) do
+      if c.rank > 0 then S.ranked = S.ranked + 1 end
+      if c.unit_number == S.promoted_old then S.old_in = true end
+      if c.unit_number == S.dead then S.dead_in = true end
+    end
+    make("lp-trooper", 30, 0, 1220)
+    lp("debug_enlist", A)
+    lp("debug_select", A)
+    local g = lp("debug_cards")
+    S.grouped = {n = g.n, grouped = g.grouped, cards = #g.cards, troopers = 0}
+    for _, c in ipairs(g.cards) do if c.name == "lp-trooper" then S.grouped.troopers = c.count end end
+    lp("debug_release", A)
+    local r = lp("debug_cards")
+    S.released = {n = r.n, bars = r.bars}
+  end)
+  schedule(420, function()
+    check("cards: a card and a bar a selected unit", S.first.n == 8 and not S.first.grouped and S.first.cards == 8 and S.first.bars == 8,
+      serpent.line(S.first) .. ", enlisted " .. tostring(S.enlisted))
+    check("cards: the bar and the card read its health", S.hurt_share and math.abs(S.hurt_share - 0.5) < 0.01
+      and S.hurt_card and math.abs(S.hurt_card - 0.5) < 0.01, tostring(S.hurt_share) .. ", card " .. tostring(S.hurt_card))
+    check("cards: a click narrows the selection to its kind", S.tanks == 2 and S.after_pick == 2, S.tanks .. ", " .. S.after_pick)
+    check("cards: a group recalls its units", S.kept == 8 and S.recalled == 8, S.kept .. " kept, " .. S.recalled .. " recalled")
+    check("cards: SHIFT drops a kind, a click narrows to one unit", S.dropped == 6 and S.one == 1, S.dropped .. ", " .. S.one)
+    check("cards: one unit selected, its own card", S.single and S.single.name == "lp-trooper", serpent.line(S.single))
+    check("cards: a group recalled again, less its dead", S.after_death == 7 and not S.dead_in, S.after_death .. " units")
+    check("cards: a unit promoted stays in its group, its copy ranked", not S.old_in and S.ranked == 1, S.ranked .. " ranked")
+    check("cards: a bar a unit still, the dead one's gone", S.after_death_bars == 7, tostring(S.after_death_bars))
+    check("cards: past 24 units, a card a kind", S.grouped.grouped and S.grouped.cards == 2 and S.grouped.troopers == 35,
+      serpent.line(S.grouped))
+    check("cards: released, no cards and no bars", S.released.n == 0 and S.released.bars == 0, serpent.line(S.released))
+    -- The look's verb, /lp squad: 30 units east, enlisted and selected, grouped by kind (5 kinds).
+    flatten(-12, 1290, 100, 1320)
+    lp("dev", {"squad", "30"}, {0, 1300})
+    local q = lp("debug_cards")
+    S.squad = {n = q.n, grouped = q.grouped, cards = #q.cards, bars = q.bars}
+  end)
+  schedule(430, function()
+    check("cards: /lp squad selects its units, a card a kind", S.squad.n == 30 and S.squad.grouped and S.squad.cards == 5
+      and S.squad.bars == 30, serpent.line(S.squad))
+  end)
+end
+
 scenarios.evolution = function()
   schedule(50, function()
     game.map_settings.enemy_evolution.enabled = true

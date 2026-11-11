@@ -133,7 +133,7 @@ end
 -- by unit number goes here; scenario veteran's trace (its paths before a swap and after) shows one missed.
 local KEYED = {}
 for _, p in ipairs({"merit", "unit_owner", "crew_owner", "carrying", "scorch", "scorch_by", "aim_redirected", "fall_skip",
-  "owner", "cmd.troopers", "cmd.selected.*", "oplog.member", "sep.at", "watch.units", "bases.*.roster",
+  "owner", "cmd.troopers", "cmd.selected.*", "cmd.groups.*.*", "oplog.member", "sep.at", "watch.units", "bases.*.roster",
   "bases.*.returning_since", "bases.*.op.resent", "herd.waves.*.units", "herd.waves.*.straggling", "herd.waves.*.holders",
   "herd.waves.*.known", "herd.waves.*.left_behind", "herd.waves.*.big_busy", "herd.waves.*.fodder_set", "herd.waves.*.aim",
   "herd.waves.*.sapper_at", "herd.waves.*.sapper_last", "herd.waves.*.seen", "bases.*.yard_slot", "bases.*.yard_sent",

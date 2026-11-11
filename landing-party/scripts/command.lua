@@ -602,6 +602,8 @@ local function rings(player_index)
   end
 end
 
+command.rings = rings
+
 function command.select(player_index, units)
   storage.cmd.selected = storage.cmd.selected or {}
   local sel, n = {}, 0

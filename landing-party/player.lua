@@ -313,6 +313,15 @@ data:extend({
   -- Retire the selection (scripts/command.lua: home to a barracks, its order again).
   {type = "custom-input", name = "lp-retire", key_sequence = "ALT + R", consuming = "game-only"},
 })
+-- Control groups (scripts/cards.lua): CONTROL + N keeps the selection as group N, ALT + N selects it again.
+for n = 1, 9 do
+  data:extend{
+    {type = "custom-input", name = "lp-group-keep-" .. n, key_sequence = "CONTROL + " .. n, consuming = "none", order = "b[group]-a" .. n},
+    {type = "custom-input", name = "lp-group-" .. n, key_sequence = "ALT + " .. n, consuming = "none", order = "b[group]-b" .. n}}
+end
+-- The selection cards' health bars (scripts/cards.lua): vanilla's health bar, a card wide and thin.
+data.raw["gui-style"].default.lp_card_hp_bar = {type = "progressbar_style", parent = "health_progressbar", width = 40,
+  bar_width = 5, top_padding = 0, bottom_padding = 0}
 
 -- Command bandwidth: how many relays count. Level 1 unlocks the army and grants the first command core.
 local function tech(level, prereq, packs, count, effects, extra)
