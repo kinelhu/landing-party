@@ -6721,6 +6721,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   once shadows were made solid. faction_works.py takes the other part out of the render (hide_render) in both its
   turret and flamer passes; the four turrets re-rendered (the heads' raw shadow cores 146 to 198, their halo 15 to 42),
   repacked, made solid, filmed: what lies east of the gun nest is now its sandbags', shield's and barrel's own shadow.
+  **0.2.335, the base's own shadow drawn over the base** (the user, an annotated still: "Still not fixed. Are you seeing
+  it at all?", a box round the gun nest's plate below its top strip). A turret's base layers draw in order, the shadow
+  over the body, so a base shadow must be cut where its body stands, as vanilla's laser and flamethrower base shadows are;
+  ours held the solid ground under the plate (85 % of each base shadow lay under its own body), and from 0.2.333 a
+  solid dark layer covered every base: the sandbags light tan in the sprite, dark grey in game. Measured in the still,
+  not judged: the plate's bottom strip 46 to 91, its west rim 52 to 103, its top strip (outside the shadow) 67 both times.
+  0.2.334's own claim (a ghost of the base in the head frames) was wrong as the cause: masking the head shadows under the
+  base changed the plate's brightness by nothing. tools/blender/shadow_underbody.py cuts each base shadow under its body:
+  the four, the KH laser turret, the flak turret, both factions' mortars and howitzers (gun.json's boxes aligning a gun's
+  separately cropped sheets); shadow_unbase.py the head shadows over the base, left in (harmless, as measured).
 - **Turret bases read as shadows; the bait under its smoke** (0.2.332; the user's ratings, 2026-11-11: gun nest and flamer
   2, "Seems like the base plate shadow is applied on top of the turret?"; bait 2, "Nothing changed in the still with this
   cloud!"). 0.2.329's skids were near-black, darker than the shadow beside them, so they read as a shadow laid over the
