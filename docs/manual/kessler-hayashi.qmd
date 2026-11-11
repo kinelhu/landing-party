@@ -46,6 +46,12 @@ orbital strikes and stay until you break them.
 Its army is troopers, tanks and railgunners, with laser drones from its {{< var kh.drone_level_nth >}} level. The railgunners clear the biter
 spawners round its camp. Full numbers are in the [Reference](reference.qmd#sec-units).
 
+**Clearing nests.** A camp that the biters keep attacking sends a clearance to the nests they come from. Its guns come
+down in cargo pods, with a howitzer where worms outrange the mortars, and its railgunners go in once the shelling is
+done. The further the biters have evolved, the more railgunners it sends. The site digs in the moment it lands: a ring
+of wall, pillboxes facing the nests, and, once the biters are well evolved, a flamethrower turret in the middle. Late
+in the game its gun turrets load uranium rounds, as yours would.
+
 It raids whatever your turrets do not cover, and it cuts your power: it looks for a pole that feeds the turrets facing
 it and has no second feed, and destroys it from where no turret reaches. Sieges are its main weapon (see
 [Sieges](#sec-kh-sieges)). If you build on its ground or put a turret near its camp, it answers with a siege. Nothing
@@ -70,7 +76,9 @@ to every enemy unit, biters included, and a flier they stun stays stunned longer
 ## The camp and the line
 
 A camp is floored with space platform foundation. Each hub stands inside its own wall, with a gate in every opening, a
-second wall behind each gate, turrets in walled corner pillboxes and flamethrower turrets at the gates.
+second wall behind each gate, turrets in walled corner pillboxes and flamethrower turrets at the gates. Its
+flamethrowers burn a short blue flame that needs no fuel. They turn all the way round, so a gate cannot be rushed from
+the side, and their fire spares Kessler-Hayashi's own units.
 
 - **Lander.** It cannot be destroyed while at least {{< var kh.hull_share >}} of the generators around it stand. Generators are not military
   targets, so your turrets and units do not fire on them by themselves. Its crews rebuild lost generators first.

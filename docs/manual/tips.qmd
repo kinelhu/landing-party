@@ -16,6 +16,8 @@
   holds its finished orders. Put a rally beacon down too, or new units stand where they were trained.
 - **Retire units to make room.** When your bandwidth is full, select the units you can spare and press ALT + R. They
   walk back to a barracks and hand in their orders, and the bandwidth they took is free again.
+- **Bring your veterans home.** A ranked unit is worth more than a new one, and a powered barracks heals it. Pull a
+  hurt squad back before it is lost; its card in the selection panel shows how much health it has left.
 - **Put a threat scanner at each outpost.** Wired to a programmable speaker or a lamp, it tells you a raid has come
   before the turrets start firing.
 - **Turn on Chat notices** in the map settings if you want to hear about raids and sieges as they start. Only first
@@ -44,6 +46,8 @@
 - **Keep what matters deep behind your turrets.** A siege's mortars stand just outside your turrets' reach and outrange
   them only a little. Roboports, substations and assemblers well behind the turret line are out of their reach, and
   only a howitzer can touch them.
+- **Hurt a raid that brings its elites.** A raid with an Elite or a Heroic unit in it turns home sooner to save it,
+  so turrets that bite early send it back before it reaches its target.
 - **Hit the guns while they are assembled.** The escort holds just outside your turrets while the pods come down. It
   fires back at whatever shoots at it, but each gun is defenseless until the deploy ends. A gun destroyed then is lost
   to that siege.

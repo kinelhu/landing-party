@@ -1,6 +1,6 @@
 # Landing Party: mod portal page (draft)
 
-Drafted 2026-11-10 for the user to edit; nothing here is published. Paste the part below the line into the portal's
+Drafted 2026-11-10 for the user to edit, brought up to 0.2.339 on 2026-11-12; nothing here is published. Paste the part below the line into the portal's
 "Information" field. Placeholders in [square brackets].
 
 Portal fields:
@@ -29,7 +29,8 @@ more than it destroys, and what it takes sits in its yard until you come for it.
 
 **Kessler-Hayashi** arrives after your first rocket. An armed contractor that lives in orbit, it pushes a line of posts
 toward you, cuts your outposts off, besieges your walls with mortars dropped from orbit and calls orbital strikes on
-them. Its laser lines, shield domes and Tesla tanks are the hardest defences on the planet.
+them. Its laser lines, shield domes, lightning tanks and blue arc flamers are the hardest defences on the planet, and
+it clears the biter nests round its camps with railgunners, more of them as the biters evolve.
 
 **Synthexis** takes over the biter nests. It breeds its own strains in farms of captured spawners and sends waves with
 intent: it scouts your walls, finds the weak face, and learns from what kills its waves.
@@ -39,9 +40,15 @@ between raids, sieges, thefts and air strikes by what your defences can and cann
 
 ## Your side
 
-- **An army of your own:** barracks train riflemen, breachers, rocket troopers, flamethrower troopers and battle tanks.
+- **An army of your own:** barracks train troopers, breachers, rocket troopers, flamethrower troopers and battle tanks.
   Command them with a selection tool (ALT + C) or with rally beacons driven by the circuit network. A panel at the top of
   the screen shows your units against your command cap; retire units you no longer need (ALT + R).
+- **Selection cards and control groups:** the units you select wear health bars, and a panel above the quickbar shows a
+  card for each, with its health and rank. Click a card to narrow the selection, SHIFT + click to drop it, right-click
+  to follow it. CONTROL + 1 to 9 keeps a selection as a group, ALT + 1 to 9 calls it back.
+- **Veterancy:** units that kill earn ranks (Veteran, Elite, Heroic), promoted on the spot in the middle of a fight,
+  with more health and harder hits and gold chevrons to show for it. The rivals' units rank too, and a raid pulls back
+  sooner to save its elites. Synthexis never ranks: the hive learns as a whole.
 - **Eyes and roads:** a threat scanner reports enemy units by type to the circuit network; concrete roads speed your
   army; a muster point deploys troops carried by train.
 - **Orbital cannons:** after artillery and space platforms, build cannons on a platform over Nauvis, supply them with
@@ -67,7 +74,7 @@ most cultures, largest attack and learning.
 
 ## Gallery captions
 
-1. A Kessler-Hayashi settlement: hubs, walls, roads and laser posts.
+1. An armed Kessler-Hayashi fortress inside its rings of wall, its lander at the centre and its mine beside it.
 2. Your army attacking a Grubstake camp.
 3. A Synthexis swarm against a flamethrower wall.
 4. A Kessler-Hayashi orbital strike opening a wall.

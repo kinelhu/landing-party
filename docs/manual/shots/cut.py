@@ -20,7 +20,12 @@ preview = sys.argv[3] if len(sys.argv) > 3 else None
 spec = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "cut.json")))
 LIMIT = 1024 * 1024
 made = 0
+# CUT_ONLY=out1,out2 cuts those pictures alone (the rest keep the files they have): a refilm of some films, the others'
+# stills gone from docs/sim (2026-11-12). A named one whose still is missing still stops the run.
+ONLY = set(filter(None, os.environ.get("CUT_ONLY", "").split(",")))
 for it in spec["items"]:
+    if ONLY and it["out"] not in ONLY:
+        continue
     src = os.path.join(films, it["src"])
     if not os.path.exists(src):
         sys.exit(f"missing still: {src}")

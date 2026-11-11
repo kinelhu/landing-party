@@ -19,7 +19,7 @@ second turret it builds is a scrap cannon.
 | Laser turret | 1,000 | 400 |  |
 | Wall | 450 | 225 |  |
 | Gate | 350 | 350 |  |
-| Flamethrower turret | 1,400 | 1,400 |  |
+| Flamethrower turret | 1,000 | 1,400 |  |
 | Mine | 15 | 15 |  |
 | Mortar | 800 | 800 |  |
 | Howitzer (deployed) | 1,200 | 1,200 |  |
@@ -39,7 +39,7 @@ second turret it builds is a scrap cannon.
 | Armory | 600 |  |
 | Siege works | 600 |  |
 | Kessler-Hayashi jamming mast | 1,500 | Destroys construction and logistic robots in range. |
-| Invoice post | 350 | Bills you for biter attacks caused by your pollution. Paying in full with circuits, modules or steel buys a truce of 10 to 60 minutes. |
+| Invoice post | 350 | Bills you for biter attacks caused by your pollution. Pay in circuits, modules or steel within 10 minutes, or it raids to collect. |
 
 Each research lab advances one branch of Kessler-Hayashi's research, and only while it stands.
 
@@ -70,14 +70,12 @@ Each research lab advances one branch of Kessler-Hayashi's research, and only wh
 | Building | Health | What it does |
 |:--|--:|:--|
 | Barracks | 350 | Trains units from orders. |
-| Rally beacon | 120 | Gathers units and gives them orders by signal. Squad size signals cap how many of each unit it keeps. |
+| Rally beacon | 120 | Gathers a squad and orders it by signal: A advance, O occupy, R retreat, X and Y move its rally point. Squad size signals cap each unit it keeps. Wired, it outputs S its squad, E and T enemy units and turrets near it. |
 | Command relay | 250 | Lets you command 10 more units while powered. Research raises how many relays count. |
 | Muster point | 350 | Turns unit orders into units and sends them to the nearest rally beacon. |
 | Threat scanner | 120 | Outputs the number of faction units and biters within 64 tiles, by type. |
 | Mortar | 800 | Short-range artillery that fires mortar shells. |
 | Strip drill | 300 | Mines twice as fast as an electric mining drill and depletes ore at half the rate. |
-| Border stake | 200 | Sets a border with the nearest Kessler-Hayashi base. Its perimeter stops at the stake. |
-| Trade post | 350 | Grubstake collects the items placed here in exchange for a truce. |
 | Claim marker | 300 | Grubstake leaves your buildings within 40 tiles alone. |
 | Pact breaker | 200 | Jams Grubstake's pact with the biters for 3 minutes. Works only inside a Grubstake claim. |
 | Pheromone bait | 100 | Makes nearby biters attack whatever is around it. |

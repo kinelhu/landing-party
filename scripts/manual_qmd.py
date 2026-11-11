@@ -151,8 +151,10 @@ def write(rp):
     def ordinal(n):
         return {1: "", 2: "second", 3: "third", 4: "fourth"}.get(n, f"{n}th")
 
+    # (A locale line break, \n, is a space in print: the rally beacon's two lines ran together as a literal "\n" in its
+    # table row, 0.2.339.)
     def md(s):
-        return s.replace("|", "/").replace("*", "\\*")
+        return s.replace("\\n", " ").replace("|", "/").replace("*", "\\*")
 
     # ---- media ----
     def copy_png(rel):
@@ -329,7 +331,11 @@ def write(rp):
             "offset_max": fmt(num(src("scripts/command.lua"), r"^local MAX_OFFSET = (\d+)", "MAX_OFFSET")),
             **{f"relays_l{i + 1}": fmt(float(x)) for i, x in enumerate(re.findall(r"\d+", grab(shared_src, r"^shared\.RELAYS_BY_LEVEL = \{\[0\] = \d+, ([\d, ]+)\}", "RELAYS_BY_LEVEL") or ""))},
             "relays_extra": fmt(num(shared_src, r"^shared\.RELAYS_PER_EXTRA_LEVEL = (\d+)", "RELAYS_PER_EXTRA_LEVEL")),
+            "cards_max": fmt(num(src("scripts/cards.lua"), r"^local CARD_MAX = (\d+)", "CARD_MAX")),
         },
+        # Veterancy's ranks (scripts/veterancy.lua RANKS): the merit each is earned at, Veteran, Elite, Heroic.
+        "vet": dict(zip(("veteran", "elite", "heroic"), (fmt(float(x)) for x in re.findall(r"merit = (\d+)",
+            grab(src("scripts/veterancy.lua"), r"^veterancy\.RANKS = (\{.*\})$", "veterancy.RANKS") or "")))),
         "spoils": {
             "wreck_min": fmt(minutes(shared_src.replace("shared.WRECK_TICKS", "local WRECK_TICKS"), "WRECK_TICKS", "WRECK_TICKS")),
             "core_depot": fmt(core_depot),
@@ -355,7 +361,7 @@ def write(rp):
             "paint_s": fmt(product(orbital_src, r"^local CANNON_PAINT = ([\d\s\*]+?)\s*(?:--|$)", "orbital CANNON_PAINT") / 60),
         },
         # The locale's descriptions, for prose that quotes what a thing does rather than retyping its numbers.
-        "desc": {f"{sec.split('-')[0]}_{k[3:].replace('-', '_')}": v.replace('"', "'")
+        "desc": {f"{sec.split('-')[0]}_{k[3:].replace('-', '_')}": v.replace('"', "'").replace("\\n", " ")
                  for (sec, k), v in loc.items()
                  if sec in ("entity-description", "item-description", "technology-description") and k.startswith("lp-")
                  and "__" not in v},

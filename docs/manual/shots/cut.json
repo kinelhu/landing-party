@@ -1,21 +1,22 @@
 {"_comment": "The manual's pictures cut from the films' stills (docs/manual/shots/cut.py; each film's params in docs/manual/shots/m-*.lua). Boxes in the still's pixels; outputs under docs/manual/media.",
  "items": [
   {"out": "heroes/kessler-hayashi.jpg", "src": "film-m-khwall/assault-220.png", "box": [380, 160, 2140, 1150], "width": 1750},
-  {"out": "heroes/grubstake.jpg", "src": "film-m-strip/strip-z12-12000.png", "box": [280, 170, 2040, 1160], "width": 1750},
+  {"out": "heroes/grubstake.jpg", "src": "film-m-strip/strip-z12-13800.png", "box": [380, 260, 2140, 1250], "width": 1750},
   {"out": "heroes/synthexis.jpg", "src": "film-m-nwwall/breach-z10-0480.png", "box": [400, 40, 2160, 1030], "width": 1750},
   {"out": "heroes/player-army.jpg", "src": "film-m-trailer/army-z12-041820.png", "box": [700, 180, 2460, 1170], "width": 1750},
 
   {"out": "strips/orbital-strike-1-paint.jpg", "src": "film-m-khwall/paint-450.png", "box": [600, 200, 1900, 1200], "width": 900},
   {"out": "strips/orbital-strike-2-shadow.jpg", "src": "film-m-khwall/paint-650.png", "box": [600, 200, 1900, 1200], "width": 900},
   {"out": "strips/orbital-strike-3-fall.jpg", "src": "film-m-khwall/fall-110.png", "box": [600, 286, 1900, 1286], "width": 900},
-  {"out": "strips/landing-1-pod.jpg", "src": "film-m-landing/land-00310.png", "box": [500, 170, 1800, 1070], "width": 900},
-  {"out": "strips/landing-2-hull.jpg", "src": "film-m-landing/land-00430.png", "box": [500, 170, 1800, 1070], "width": 900},
-  {"out": "strips/landing-3-pods.jpg", "src": "film-m-landing/land-00610.png", "box": [500, 170, 1800, 1070], "width": 900},
+  {"out": "strips/landing-1-pod.jpg", "src": "film-m-landing/land-00310.png", "box": [990, 450, 2290, 1350], "width": 900},
+  {"out": "strips/landing-2-hull.jpg", "src": "film-m-landing/land-00430.png", "box": [990, 450, 2290, 1350], "width": 900},
+  {"out": "strips/landing-3-pods.jpg", "src": "film-m-landing/land-00610.png", "box": [990, 450, 2290, 1350], "width": 900},
   {"out": "strips/burster-1-windup.jpg", "src": "film-m-burst/burst-006.png", "box": [410, 140, 1510, 940], "width": 900},
   {"out": "strips/burster-2-swell.jpg", "src": "film-m-burst/burst-027.png", "box": [410, 140, 1510, 940], "width": 900},
   {"out": "strips/burster-3-blast.jpg", "src": "film-m-burst/burst-039.png", "box": [410, 140, 1510, 940], "width": 900},
 
-  {"out": "stills/landing.jpg", "src": "film-m-landing/land-00790.png", "box": [400, 120, 1900, 1120], "width": 1500},
+  {"out": "stills/selection-panel.jpg", "src": "film-m-cards/cards-z20.png", "box": [1150, 1100, 2850, 1980], "width": 1600},
+  {"out": "stills/landing.jpg", "src": "film-m-landing/land-00790.png", "box": [890, 420, 2390, 1420], "width": 1500},
   {"out": "stills/drop-siege.jpg", "src": "film-m-trailer/drop-045100.png", "box": [1100, 300, 2500, 1090], "width": 1400},
   {"out": "stills/kh-assault.jpg", "src": "film-m-trailer/assault-049390.png", "box": [150, 425, 1850, 1375], "width": 1700},
   {"out": "stills/grubstake-column.jpg", "src": "film-m-grubstake/march-1320.png", "box": [300, 230, 1900, 1130], "width": 1600},
@@ -62,7 +63,7 @@
    "view": {"center": [-142, -48], "zoom": 1.4},
    "caption": "A Grubstake claim on an ore patch it staked, built by its hauler.",
    "callouts": [
-    {"world": [-143.5, -51.5], "dy": -10, "label": "Drill, its ore bin beside it"},
+    {"world": [-143.5, -51.5], "dy": -10, "label": "Drills"},
     {"world": [-143.5, -47.5], "dy": -25, "label": "Pylon"},
     {"world": [-149, -42], "dy": -10, "label": "Generator"},
     {"world": [-136, -53], "label": "The staked ore patch"}]}

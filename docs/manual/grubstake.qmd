@@ -42,7 +42,8 @@ turrets and units, whether or not there are biter spawners nearby (see [The pact
 landing pad is fenced, with the lander in the middle and a pacifier antenna beside it. A grown camp lays streets out
 from the pad and builds along them: fabricators, generators, depots, a launch pad, junk yards. Apart from the pad's
 fence it builds no walls. Its defenses are gun turrets, alternating with scrap cannons whose shells burst over groups
-of units. Your gun turrets outrange both. Its drills pollute more than your electric drills.
+of units. Your gun turrets outrange both. Late in the game its gun turrets load uranium rounds. Its drills pollute
+more than your electric drills.
 
 ![A Grubstake lander just down, before its crews have laid the pad. Its first pylons and guns are going up round it.](media/stills/landing.jpg)
 
@@ -76,8 +77,9 @@ the buggies follow it in through its lane.
 ![A dozer has charged through the wall, and a second one comes up behind it. Buggies wait for the way in.](media/stills/dozer-charge.jpg)
 
 **Fliers.** Where little of yours can shoot up at a target, such as artillery, a radar or power behind walls and
-flamethrowers, Grubstake may send its scrap copters and bomb drones alone. Where your defenses have few guns that shoot
-up, it builds more fliers.
+flamethrowers, Grubstake may send its scrap copters and bomb drones alone. They fly over your walls and take what they
+find as a raid does, emptying chests and carrying off machines. Where your defenses have few guns that shoot up, it
+builds more fliers.
 
 **Skims.** A hauler parks beside one of your belts that no turret reaches and lifts items into its trunk, the most
 valuable first, until the trunk is full, its time is up or dawn comes. You can spot a skim by the truck, and by the

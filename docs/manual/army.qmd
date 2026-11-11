@@ -94,12 +94,43 @@ A marker flashes where each order went. Selected units obey you over their beaco
 joins the nearest beacon. The attack order works only on corporation targets. Against Synthexis or the wild biters,
 attack-move onto them.
 
+**The selection panel.** While you have units selected, each one shows a health bar over its head, and a panel above
+the quickbar shows a card for each: its picture, a health bar and the chevrons of its rank. With more than {{< var
+army.cards_max >}} selected, the panel shows one card for each kind of unit instead, with how many are selected and
+their health together. Click a card to keep only that unit, or that kind, selected. CONTROL + click on a unit's card
+selects all of its kind, and SHIFT + click drops it from the selection. Right-click a card to follow the unit in remote
+view. With a single unit selected, a larger card beside it shows the unit itself, its health, its rank and merit, and
+what it is doing.
+
+![Twelve units selected: a health bar over each one and a card for each above the quickbar. The ranked ones wear their chevrons on the map and on their cards.](media/stills/selection-panel.jpg)
+
+**Control groups.** CONTROL + 1 to 9 keeps the units you have selected as a group under that number. ALT and the same
+number selects the group again, and pressing it twice in quick succession follows the group in remote view. Units that
+die drop out of their groups. A unit that is promoted stays in them.
+
 **Retiring units.** Select units with the command tool, then press ALT + R or the Retire button on the army panel (see
 below). Each one walks back to the nearest barracks without stopping to fight and hands in its order beside it. The
 order is marked for deconstruction, so your robots carry it to storage, and a muster point can turn it into a unit
 again later. A retired unit no longer takes any of your command bandwidth. With no barracks, a unit hands in its order
 where it stands. To keep a squad at a size without picking units by hand, use squad sizes on its beacon (see
 [Rally beacons](#sec-beacons)).
+
+## Ranks {#sec-ranks}
+
+Units earn ranks by fighting. Each kill gives its killer merit, more for a stronger victim and less for a weaker one,
+measured against the killer: a trooper earns little for a small biter and a full rank at once for a big biter or a
+tank. Destroying a spawner, a turret or another building earns merit too. Walls, belts, poles, pipes and rails earn
+nothing.
+
+A unit is promoted the moment it has the merit for its next rank, in the middle of a fight if need be: Veteran at {{<
+var vet.veteran >}} merit, Elite at {{< var vet.elite >}} and Heroic at {{< var vet.heroic >}}. A single kill raises it
+one rank at most. Each rank gives the unit more health and makes its weapons hit harder. A ranked unit wears one, two or
+three gold chevrons, and its new rank's name shows over it when it is promoted. A barracks repairs it like any other
+unit, so a veteran brought home lives to fight again.
+
+Kessler-Hayashi's and Grubstake's units earn ranks the same way, and a raid with an Elite or a Heroic unit in it turns
+home sooner to keep it alive. Synthexis's units, and any biter bred by Synthexis, never earn ranks: the hive learns as
+a whole.
 
 ## Command bandwidth
 
