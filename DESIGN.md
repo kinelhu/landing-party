@@ -7187,6 +7187,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   dome and, in the break, its turrets, walls and blocks. Scenario `dome hull` (a battery breaks it, the generators round
   its lander destroyed as it breaks): its hull held, its lander stands (failing before: hull down, lander destroyed).
   And the dome's debug read no longer raises on a fallen camp's lander.
+- **An armed Kessler-Hayashi camp far into biter country: alive, not a threat** (2026-11-12; the user: "a second base
+  couldn't drop far into biter territory? They got arc flamers now"). Measured on deathworld10x, 40-minute visits, an
+  armed landing called two minutes in (visit LP_MIX=kh2, era 3), three seeds each: by the site search, 530 tiles out
+  among the nests, it stood on all three, 56 to 58 units, and razed 39 to 379 of the player's buildings; placed 900 out
+  (kh2far), it stood on all three too (its barrage and sweeps cleared its ground; on one it fought Synthexis), but sent
+  2 or 3 operations, none done, and razed 0 to 23. The counter-biter kit keeps a far camp alive; it does not bring it to
+  the player. The search's near site stays. (At 900 the search itself found no site: not looked into; its way over land
+  is checked for an armed landing.)
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

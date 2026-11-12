@@ -11118,6 +11118,31 @@ scenarios.visit = function()
     info(string.format("visit: factory at %.0f,%.0f, %d buildings counted, 95%% within %.0f tiles; %d technologies; landing at %d",
       sp.x, sp.y, #d, p95, researched, S.dist or -1))
     info("visit: player at start " .. serpent.line(S.start))
+    -- kh2 (the user, 2026-11-12: "a second base couldn't drop far into biter territory? They got arc flamers now"): two
+    -- minutes in, the era 3 and an armed Kessler-Hayashi landing called (its counter-biter kit: barrage, sweeps,
+    -- railgunners, arc flamers); kh2far: forced deep, 900 tiles out, into biter country. Its fate in the summary (kh2).
+    if params.mix:find("kh2", 1, true) then
+      schedule(game.tick - storage.t0 + 2 * 3600, function()
+        lp("debug_tune", {era = 3})
+        local far = params.mix:find("kh2far", 1, true)
+        S.kh2_before = {}
+        for _, l in ipairs(surface().find_entities_filtered{name = "lp-lander"}) do S.kh2_before[l.unit_number] = true end
+        if far then
+          -- (Placed, not searched: at 900 the search found no site, its way over land checked; a direction a seed.)
+          local k = tonumber(params.mix:match("seed(%d+)")) or 1
+          local a = (k - 1) * 2 * math.pi / 3
+          local at = {sp.x + 900 * math.cos(a), sp.y + 900 * math.sin(a)}
+          surface().request_to_generate_chunks(at, 4); surface().force_generate_chunk_requests()
+          local q = surface().find_non_colliding_position("lp-lander", at, 60, 2)
+          S.kh2_id = q and lp("land", surface().index, {q.x, q.y}, {corp = "serenity", armed = true})
+        else
+          S.kh2_id = lp("arrive", surface().index, sp, S.p95 + 150, {corp = "serenity"})
+        end
+        local st = S.kh2_id and lp("stats", S.kh2_id)
+        info(string.format("visit kh2: called, base %s at %s, %s from spawn", tostring(S.kh2_id), st and serpent.line(st.origin) or "-",
+          st and string.format("%.0f", math.sqrt((st.origin.x - sp.x) ^ 2 + (st.origin.y - sp.y) ^ 2)) or "-"))
+      end)
+    end
     S.poll0 = {}
     for name, v in pairs(game.get_pollution_statistics(surface()).input_counts) do S.poll0[name] = v end
     -- The absent player's character cannot die: in a single-player save its death ends the game, and the visit at
@@ -12128,6 +12153,13 @@ scenarios.visit = function()
   end
   schedule(END - 60, function()
     info("visit: player at the end " .. serpent.line(census()))
+    if S.kh2_id then
+      local st = lp("stats", S.kh2_id)
+      info(string.format("visit kh2: base %d %s: lander %s, garrison %d, units built %d, lost %d, razed %d, operations %d (%d done), hazards %d, clearances %d, mined %d, turrets %d",
+        S.kh2_id, st.fallen and "fallen" or "standing", tostring(st.lander), st.garrison or 0, st.units_built or 0, st.units_lost or 0,
+        st.razed or 0, st.ops and st.ops.launched or 0, st.ops and st.ops.done or 0, st.ops and st.ops.hazards or 0,
+        st.ops and st.ops.clearances or 0, st.mined or 0, st.turrets_n or st.turrets or 0))
+    end
     info("visit: the player's buildings razed by the corporations " .. serpent.line(lp("pressure").razed))
     info("visit: the player's buildings razed by biters " .. serpent.line(S.biter_razed or {}))
     -- Synthexis: whether it came, its waves and where they went, what it broke.
