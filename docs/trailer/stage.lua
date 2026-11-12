@@ -26,7 +26,9 @@ return {name = "stage", base = 1, army = true, waves = true, resolution = {1920,
   -- and its fight there 40900 to about 41500, its peak 41100 to 41300, wrecks by 41600: the old m3 at 41400 came
   -- after it. Both now on the peak, the camera north of the fight, the camp's street and buildings above it.)
   {name = "m3-battle", tick = 40900, frames = 240, from = {pos = {376, -147}, zoom = 0.65, daytime = 0.22}, to = {pos = {374, -146}, zoom = 0.72, daytime = 0.22}},
-  {name = "m4-battle", tick = 41001, frames = 240, from = {pos = {372, -145}, zoom = 0.95, daytime = 0.22}, to = {pos = {373, -144}, zoom = 1.0, daytime = 0.22}},
+  -- (The trailer's army as veterans since 2026-11-12 (the fork's LP_MIX=vets, a film's staging: plain, it lost 76 of
+  -- 77 at the street's west end): it breaks in and pushes east along the camp's street from 41600, m4 tracking it.)
+  {name = "m4-battle", tick = 41600, frames = 240, track = true, from = {pos = "army", zoom = 0.85, daytime = 0.22}, to = {zoom = 0.9, daytime = 0.22}},
   -- Kessler-Hayashi against Grubstake: the drop, then the barrage on the camp.
   {name = "c1-drop", tick = 45050, frames = 180, every = 3, from = {pos = {-548, 31}, zoom = 0.7, daytime = 0.25}, to = {pos = {-550, 31}, zoom = 0.72, daytime = 0.25}},
   {name = "c2-barrage", tick = 47300, frames = 240, from = {pos = {-560, 31}, zoom = 0.6, daytime = 0.26}, to = {pos = {-566, 32}, zoom = 0.7, daytime = 0.26}},
