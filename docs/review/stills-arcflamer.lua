@@ -19,14 +19,12 @@ local function each(tick)
     if b and t then b.commandable.set_command{type = defines.command.attack, target = t, distraction = defines.distraction.none} end
   end
 end
-local shots, t = {}, 230
-for k = 0, 29 do
-  shots[#shots + 1] = {name = string.format("arc-night-%02d", k), tick = t, pos = {14, 400}, zoom = 1.3, daytime = 0.5, hide_clouds = true}
-  t = t + 4
-end
-for k = 0, 7 do
-  shots[#shots + 1] = {name = string.format("arc-day-%02d", k), tick = t, pos = {14, 400}, zoom = 1.3, daytime = 0.05, hide_clouds = true}
-  t = t + 4
+-- (Day and night alternate through the same seconds: in a day series after the night one, the fight was over.)
+local shots = {}
+for k = 0, 59 do
+  local night = k % 2 == 0
+  shots[#shots + 1] = {name = string.format("arc-%s-%02d", night and "night" or "day", k), tick = 230 + k * 2, pos = {14, 400},
+    zoom = 1.3, daytime = night and 0.5 or 0.05, hide_clouds = true}
 end
 return {name = "arcflamer", pad = {-8, 392, 34, 408}, tile = "grass-1", each = each, resolution = {1920, 1080},
   build = {{name = "lp-flamer", force = "player", pos = {0, 400}}}, shots = shots}
