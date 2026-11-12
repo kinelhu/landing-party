@@ -36,18 +36,12 @@
   },
   {
    "n": 6,
-   "x": 854,
-   "y": 854,
-   "label": "Escort: tanks"
-  },
-  {
-   "n": 7,
-   "x": 738,
-   "y": 725,
+   "x": 848,
+   "y": 759,
    "label": "Escort: troopers"
   },
   {
-   "n": 8,
+   "n": 7,
    "x": 718,
    "y": 178,
    "label": "The strike's rings on the target"
