@@ -6985,6 +6985,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   and clinic's acid pad and those left by incubators gone (found within 160 tiles of a culture's site; the first film of
   a converted culture kept one acid), what lay under kept. `farm`'s checks: the pads are the floor, an acid pad and a
   stray one relaid (both seen failing).
+- **A big cannon strike strobed the screen** (0.2.347, 2026-11-12). Filmed for the trailer's culture shot (the user:
+  "a nice spot for a player made max radius orbital strike"; `/lp cannon salvo 9`, a platform's strike at full reach,
+  nothing spent), the strike's frames sampled twice a second alternated between brightness 120 and 70; still by still,
+  each of its 90 shells shook the screen with the nuke's camera effect (`lp-cannon-shock`), twice the frame's brightness,
+  some four times a second for fifteen seconds. Now the first shell shakes it and the rest at most once a second
+  (`SHOCK_GAP`, orbital.lua; the others `lp-cannon-impact`: the explosion and scorch alone). `dev`: the salvo's 90 shells
+  all land and at most 20 shake (16; 90 with no gap, seen failing). The trailer's shot 30 is that strike now, shot 28 the
+  wall reel's k8 (its k6 to k8 timed on the bombard, at fixed ticks they filmed an empty wall), and the mod page has a
+  loop of it (`media/release/loops/strike.gif`, 480 wide, 10 a second, 6.4 MB).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

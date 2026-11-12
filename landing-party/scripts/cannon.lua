@@ -197,20 +197,24 @@ function cannon.fire(force, s, pos, player)
   if spent == 0 then return no("lp.cannon-empty") end
   store()
   storage.cannon_next_pl[lead.platform.index] = game.tick + C.COOLDOWN
+  -- (The shadow is the platform that fired.)
+  cannon.fall(force, s, pos, spent, cannon.silhouette(lead.platform, lead.cannons), lead.platform.index)
+  return spent
+end
+
+-- A strike of n cannons' charges at pos: its radius, its shells' points and their fall from orbit (sil: the shadow).
+function cannon.fall(force, s, pos, spent, sil, platform)
   local c = {pos.x or pos[1], pos.y or pos[2]}
   local R = shared.cannon_radius(spent)
   local at, targets, covered, most = points(s, force, c, spent * C.SHELLS, R)
-  -- (The shadow is the platform that fired.)
-  local sil = cannon.silhouette(lead.platform, lead.cannons)
   storage.cannon_silhouette = sil and #sil.pts or 0
   orbital.from_orbit(s, force.name, c, at, R, sil)
   storage.cannon_strikes = (storage.cannon_strikes or 0) + 1
   storage.cannon_shells = (storage.cannon_shells or 0) + #at
   storage.cannon_last = {spent = spent, radius = R, shells = #at, targets = targets, covered = covered, most = most,
-    platform = lead.platform.index}
+    platform = platform}
   shared.reply(force, {x = c[1], y = c[2]}, {"lp.cannon-fired", spent, #at, targets, math.floor(R + 0.5),
     string.format("[gps=%d,%d,%s]", c[1], c[2], s.name)})
-  return spent
 end
 
 -- The readout: a line in the army's panel's place for each player whose force has the technology.
@@ -363,7 +367,7 @@ function cannon.stats()
   for _, b in pairs(storage.cannon_barrel or {}) do if b.obj and b.obj.valid then barrels = barrels + 1 end end
   return {strikes = storage.cannon_strikes or 0, shells = storage.cannon_shells or 0, silhouette = storage.cannon_silhouette or 0,
     barrels = barrels, recoils = storage.cannon_recoils or 0, recoil_max = storage.cannon_recoil_max or 0,
-    last = storage.cannon_last}
+    last = storage.cannon_last, shocks = storage.cannon_shocks or 0, impacts = storage.cannon_impacts or 0}
 end
 
 return cannon

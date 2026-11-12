@@ -358,8 +358,15 @@ function dev.run(player, args)
   elseif what == "cannon" then
     -- /lp cannon [n]: a platform over Nauvis (made once, kept in storage.dev_platform) with a targeting array and n orbital
     -- cannons (4), each charged to its store and stocked; /lp cannon fire: a strike where the player stands (DESIGN.md,
-    -- "Orbital cannons").
+    -- "Orbital cannons"); /lp cannon salvo [n]: n cannons' strike there (9: the full radius) as a platform's would fall,
+    -- nothing spent and no platform (no shadow): for films and looks.
     local f = player.force
+    if args[2] == "salvo" then
+      local n = math.max(1, math.min(40, tonumber(args[3]) or 9))
+      cannon.fall(f, player.surface, player.position, n, nil, nil)
+      player.print(string.format("orbital salvo: %d cannons' strike, radius %.0f", n, shared.cannon_radius(n)))
+      return
+    end
     if args[2] == "fire" then
       local n, why = cannon.fire(f, player.surface, player.position, player.valid ~= nil and player or nil)
       player.print(n and string.format("orbital strike: %d cannons fired, radius %.0f", n, shared.cannon_radius(n)) or ("no strike: " .. tostring(why)))

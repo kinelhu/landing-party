@@ -169,7 +169,14 @@ shock.created_effect = {type = "direct", action_delivery = {type = "instant", so
   {type = "camera-effect", duration = 24, ease_in_duration = 2, ease_out_duration = 22, strength = 2.2,
     full_strength_max_distance = 40, max_distance = 220},
   {type = "create-entity", entity_name = "huge-scorchmark-tintable", check_buildability = true}}}}
-data:extend({shock})
+-- The same impact without the shock on screen: a strike's shells past its first shake it at most once a SHOCK_GAP
+-- (scripts/orbital.lua; 0.2.346: a nine-cannon strike's 90 shells, each with the shock, flashed the whole screen to twice
+-- its brightness some four times a second for fifteen seconds, its film measured still by still).
+local impact = table.deepcopy(shock)
+impact.name = "lp-cannon-impact"
+impact.created_effect = {type = "direct", action_delivery = {type = "instant", source_effects = {
+  {type = "create-entity", entity_name = "huge-scorchmark-tintable", check_buildability = true}}}}
+data:extend({shock, impact})
 -- Its arcs while it charges: Space Age's Tesla lightning, harmless and silent (scripts/cannon.lua draws them between its
 -- towers' terminals and its first coil's contact posts; drawn into the sprite they read as scribbles, the user).
 local arc = table.deepcopy(data.raw.beam["chain-tesla-turret-beam-start"])

@@ -51,9 +51,11 @@ between raids, sieges, thefts and air strikes by what your defences can and cann
   sooner to save its elites. Synthexis never ranks: the hive learns as a whole.
 - **Eyes and roads:** a threat scanner reports enemy units by type to the circuit network; concrete roads speed your
   army; a muster point deploys troops carried by train.
-- **Orbital cannons:** after artillery and space platforms, build cannons on a platform over Nauvis, supply them with
-  orbital shells and thruster fuel, and call strikes with a remote (ALT + O). Their targeting array is built round a
-  beacon salvaged from Kessler-Hayashi.
+- **Orbital cannons:** after artillery, space platforms, the foundry and the electromagnetic plant, build cannons on a
+  platform over Nauvis. Ship them shells cast on the ground, feed them thruster fuel and oxidizer made from asteroids,
+  and call strikes with a remote (ALT + O). Each strike fires one platform: the more cannons on it, the wider and denser
+  it falls; the more platforms, the more strikes in a row. Their targeting array is built round a beacon salvaged from
+  Kessler-Hayashi.
 - **Spoils:** each faction's technology can be taken from its wreckage: cluster shells, rail rifles, pheromone bait and
   more.
 
@@ -84,3 +86,6 @@ most cultures, largest attack and learning.
 8. A Grubstake Killdozer charging through a wall.
 9. Your orbital cannons on a platform over Nauvis.
 10. An orbital strike from your cannons on a nest field.
+
+Loops (media/release/loops): bombers, flak, prism, tesla (the showcase film, `loops.py`), and strike: nine cannons'
+strike at full reach on a Synthexis culture (from the trailer's culture reel, 2026-11-12).

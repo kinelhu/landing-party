@@ -4933,6 +4933,39 @@ scenarios.dev = function()
       and S.cannon_ready.loaded == 3 and S.cannon_after.ready == 0 and S.cannon_after.loaded == 3
       and S.cannon_after.charges == 3 and left == 0,
       serpent.line({ready = S.cannon_ready, after = S.cannon_after, left = left}))
+    -- /lp cannon salvo 9 (the full radius, 0.2.346: a film's or a look's strike, nothing spent): nests 40 tiles out from
+    -- its point, inside its 48 and past one cannon's 16, all taken; its charges as they were.
+    S.salvo_nests = {}
+    for k = 0, 3 do
+      local a = k * math.pi / 2
+      local q = surface().find_non_colliding_position("biter-spawner", {60 + 40 * math.cos(a), 560 + 40 * math.sin(a)}, 6, 1)
+      local e = q and surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}
+      if e then
+        S.salvo_nests[#S.salvo_nests + 1] = e
+        S.salvo_far = math.max(S.salvo_far or 0, math.sqrt((q.x - 60) ^ 2 + (q.y - 560) ^ 2))
+      end
+    end
+    S.salvo_before = lp("cannon_readout")
+    S.salvo_stats0 = lp("cannon_stats")
+    lp("dev", {"cannon", "salvo", "9"}, {60, 560})
+    S.salvo_last = lp("cannon_stats").last
+  end)
+  schedule(2 * 3600 + 30 + 80 * 60, function()
+    local left = 0
+    for _, e in ipairs(S.salvo_nests or {}) do if e.valid then left = left + 1 end end
+    local after = lp("cannon_readout")
+    -- (Caught 0.2.346: each of its 90 shells shook the screen, the film flashing to twice its brightness four times a
+    -- second for fifteen seconds; now every shell lands and scorches, and the screen shakes at most once a second.)
+    local st1, st0 = lp("cannon_stats"), S.salvo_stats0 or {}
+    local impacts, shocks = (st1.impacts or 0) - (st0.impacts or 0), (st1.shocks or 0) - (st0.shocks or 0)
+    check("dev: the salvo's 90 shells all landed, the screen shaken by few of them", impacts == 90 and shocks >= 1
+      and shocks <= 20, string.format("impacts %d, shocks %d", impacts, shocks))
+    -- (Where the ground takes them: two of four stood on seed 12345's, the others in water.)
+    check("dev: /lp cannon salvo 9 fell 48 wide, took nests 40 out, spent nothing", #(S.salvo_nests or {}) >= 2 and left == 0
+      and (S.salvo_far or 0) > 30
+      and S.salvo_last and S.salvo_last.radius == 48 and S.salvo_last.spent == 9 and after.charges == S.salvo_before.charges,
+      serpent.line({n = #(S.salvo_nests or {}), far = S.salvo_far, left = left, last = S.salvo_last, before = S.salvo_before,
+        after = after}))
   end)
   schedule(2 * 3600 + 600 + 15 * 60, function()
     local o = lp("stats", S.s).ops

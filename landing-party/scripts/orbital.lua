@@ -27,6 +27,7 @@ local COLOR = {r = 0.9, g = 0.2, b = 0.15}
 local LANCE_H = 60
 local LANCE_TICKS = 14
 local LIGHT = {r = 0.8, g = 0.95, b = 1}
+local SHOCK_GAP = 60            -- ticks between a cannon strike's shocks on screen (its first shell always)
 local SHADOW_RUN = 90          -- tiles its shadow travels to reach the point at the fall
 local SHADOW_TAIL = 6 * 60     -- ticks it goes on past it
 local SHADOW_ALPHA = 0.42      -- its darkness at its lowest, over the point
@@ -222,7 +223,12 @@ local function fall(st, s, b, at)
   rendering.draw_light{sprite = "utility/light_medium", scale = 6, intensity = 1, color = LIGHT, target = {x, y},
     surface = s, time_to_live = LANCE_TICKS}
   -- (The cannon's: a shock on screen, the big explosion, a huge scorch, lp-cannon-shock.)
-  if st.cannon then s.create_entity{name = "lp-cannon-shock", position = {x, y}}
+  if st.cannon then
+    local shook = not st.shock_at or game.tick - st.shock_at >= SHOCK_GAP
+    if shook then st.shock_at = game.tick end
+    s.create_entity{name = shook and "lp-cannon-shock" or "lp-cannon-impact", position = {x, y}}
+    storage.cannon_impacts = (storage.cannon_impacts or 0) + 1
+    if shook then storage.cannon_shocks = (storage.cannon_shocks or 0) + 1 end
   else s.create_entity{name = "medium-scorchmark-tintable", position = {x, y}} end
   -- Its flash, lighting by day as well (a game light shows only in the dark): additive, over the explosion.
   rendering.draw_sprite{sprite = "lp-impact-flash", target = {x, y}, surface = s, x_scale = 5, y_scale = 5,
