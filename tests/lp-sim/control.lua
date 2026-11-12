@@ -17511,6 +17511,17 @@ scenarios.guns = function()
     flatten(-5, -5, 5, 5)
     local a = surface().create_entity{name = "artillery-turret", position = {0.5, 0.5}, force = "player"}
     a.insert{name = "artillery-shell", count = 50}
+    -- fewest: six more turrets 300 tiles north, so the ring's sites differ in the guns that reach them: it lands where
+    -- the fewest do (the first clear one, nwa's second camp came down under 59 and fell within 16 minutes, two seeds of
+    -- three; the visits at 0.2.362).
+    if params.mix == "fewest" then
+      -- (North, 300 out: the first clear site, 126 north, landed under the spawn turret alone without them.)
+      flatten(-10, -310, 10, -295)
+      for k = 0, 5 do
+        local e = surface().create_entity{name = "artillery-turret", position = {-2.5 + math.floor(k / 3) * 5, -298.5 - (k % 3) * 4}, force = "player"}
+        if e then e.insert{name = "artillery-shell", count = 5} end
+      end
+    end
     game.forces.player.chart(surface(), {{-400, -400}, {400, 400}})
   end)
   schedule(120, function()
@@ -17521,6 +17532,14 @@ scenarios.guns = function()
     local st = S.s and lp("stats", S.s)
     S.d = st and math.sqrt(st.origin.x ^ 2 + st.origin.y ^ 2)
     S.under = st and st.under_guns
+    if st then
+      local o = st.origin
+      S.guns_on = 0
+      local reach = prototypes.entity["artillery-turret"].attack_parameters.range + 20
+      for _, a in ipairs(surface().find_entities_filtered{name = "artillery-turret", force = "player"}) do
+        if (a.position.x - o.x) ^ 2 + (a.position.y - o.y) ^ 2 <= reach ^ 2 then S.guns_on = S.guns_on + 1 end
+      end
+    end
   end)
   schedule(120 + 2 * 3600, function() game.forces.player.chart(surface(), {{-400, -400}, {400, 400}}) end)
   schedule(END - 60, function()
@@ -17531,6 +17550,9 @@ scenarios.guns = function()
       tostring(S.d and math.floor(S.d)), tostring(S.under), tostring(st and st.lander and not st.fallen),
       tostring(st and st.gens_counted), tostring(st and st.hull_down), left))
     check("guns: it landed under the guns", S.under == true and (S.d or 999) < 300, tostring(S.d))
+    if params.mix == "fewest" then
+      check("guns: fewest, where the fewest artillery reach", S.guns_on == 1, tostring(S.guns_on) .. " in reach")
+    end
     check("guns: the artillery fired on it", left < 50, tostring(left))
     check("guns: and its lander held", st and st.lander and not st.fallen, "")
   end)

@@ -188,6 +188,20 @@ function faction.site(surface, from, distance, count)
   local avoid = landers(surface)
   local fallback, fallback_n = nil, -1
   local among, among_density, dense, dense_density
+  -- Under the guns (pass 2): the site the fewest of the player's artillery reach, not the first clear one. Its dome
+  -- holds three minutes of any number of guns' fire and is down three, and under nwa's 59 a camp lost its hull's
+  -- generators in that and fell within 16 minutes, two seeds of three (the visits at 0.2.362).
+  local under, under_guns
+  local function guns_on(spot)
+    local n = 0
+    for _, pf in pairs(game.forces) do
+      if shared.is_player_force(pf) then
+        n = n + surface.count_entities_filtered{position = spot, radius = threat.artillery_reach(pf) + ARTILLERY_SPARE,
+          force = pf, type = {"artillery-turret", "artillery-wagon"}}
+      end
+    end
+    return n
+  end
   for i = 0, 7 do
     local a = 2 * math.pi * ((start + i) % 8) / 8
     local p = {from.x + distance * math.cos(a), from.y + distance * math.sin(a)}
@@ -334,6 +348,12 @@ function faction.site(surface, from, distance, count)
       if clear then
         local n = surface.count_entities_filtered{position = c, radius = 60, type = "resource", name = site.ORES}
         if n > SITE_MIN_ORE then
+          if faction.under_guns and not weigh then
+            local g = guns_on(spot)
+            if not under or g < under_guns then under, under_guns = spot, g end
+            if g == 0 then return spot end
+            goto next_dir
+          end
           if not weigh then return spot end
           local sc = site_score(weigh, surface, spot, n, density, from, faction.site_corp)
           if not best_score or sc > best_score then best, best_score = spot, sc end
@@ -341,9 +361,14 @@ function faction.site(surface, from, distance, count)
         if n > fallback_n then fallback, fallback_n = spot, n end
       end
     end
+    ::next_dir::
   end
   -- No direction rich and clear: the best clear one seen (seed 2024 once landed blind on two drills' worth); by
   -- approach, a site among nests next.
+  if under then
+    faction.site_scored = string.format("under %d guns, the fewest", under_guns)
+    return under
+  end
   if best then
     faction.site_scored = string.format("scored %.2f", best_score)
     return best

@@ -7146,6 +7146,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   starved camp spent each on a generator and its walls and had none after 20 minutes). Working camps are untouched.
   Scenario `armed starved`: its parts set to 60 at landing, two of its walls killed every 20 s: by minute 19 2 drills, a
   fabricator, 894 mined (failing before: 0 drills, 0 fabricators).
+- **Under the guns, the fewest guns** (0.2.363, 2026-11-12; the nwa visits at 0.2.362: Kessler-Hayashi's first camp
+  played on every seed, 201 to 421 of the player's buildings razed, its second still fell on two of three). The search's
+  pass for a late player (under its guns) took the first clear site; nwa's second camp came down at 13,-643 under its 59
+  artillery, its dome held its three minutes, broke, and in its three down its hull's generators were shelled: hull
+  down, lander destroyed 16 minutes after landing (seed 3). Its dome holds a time, not a number of guns, so a site
+  under many is lost sooner than one under few. Now the pass takes the site the fewest of the player's artillery reach
+  (one none reach at once). Scenario `guns fewest` (a turret at spawn, six more 300 tiles north by the first site):
+  landed where 1 reaches (failing before: 7).
+  From the same visits, seed 1: Kessler-Hayashi's orbital sweeps and clearances (its purge of nests: an incubator is a
+  spawner to it) killed three incubators of a farm 37 minutes in, it uprooted, its two offshoots went the same way, and
+  it waited the hour to land again (2 waves in the run). Working as built; whether a farm uprooted should land sooner when
+  an offshoot falls after it is open.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
