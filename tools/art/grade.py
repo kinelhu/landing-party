@@ -51,6 +51,12 @@ PALETTES = {
     "moss-plum": {"creep": dict(hue=330, spread=0.6, split=-8, chroma=0.7, gamma=1.35),
                   "flesh": dict(hue=125, spread=0.8, split=-25, chroma=1.0, gamma=1.05),
                   "tumor": dict(hue=135, spread=0.7, split=-30, chroma=0.95, gamma=1.25)},
+    # The user: "returning the tumors more purple and switching from green to mauve nests": the rooted things (creep,
+    # pens, tumors) one mauve family, the herd alone green; the tumors lighter and more magenta than the plum creep so
+    # they still read as the targets they are.
+    "mauve-plum": {"creep": dict(hue=330, spread=0.6, split=-8, chroma=0.7, gamma=1.35),
+                   "flesh": dict(hue=345, spread=0.8, split=15, chroma=0.75, gamma=1.0),
+                   "tumor": dict(hue=320, spread=0.7, split=20, chroma=1.15, gamma=0.85)},
     # Dark teal creep, moss flesh: the faction off purple altogether (the arc flamer's violet is Kessler-Hayashi's).
     "teal": {"creep": dict(hue=200, spread=0.6, split=-10, chroma=0.45, gamma=1.3),
              "flesh": dict(hue=125, spread=0.8, split=-25, chroma=1.0, gamma=1.05),
