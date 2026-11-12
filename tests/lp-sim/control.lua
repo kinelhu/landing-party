@@ -12700,6 +12700,7 @@ scenarios.herd = function()
   local by_rank = mix:sub(-5) == "-rank"
   if by_rank then mix = mix:sub(1, -6) end
   local crowd = (mix == "ranks-crowd" or mix == "ranks-crowd-off") and mix or nil
+  if mix == "ranks-mend-old" then mix = "ranks-mend-off"; params.mix = "ranks-mend-old" end
   local mend = (mix == "ranks-mend" or mix == "ranks-mend-off" or crowd) and mix or nil
   if mend then mix = "ranks" end
   local L, G = "laser-turret", "gun-turret"
@@ -12849,6 +12850,8 @@ scenarios.herd = function()
       if mend == "ranks-mend-off" then lp("debug_tune", {biotech_no_keep_line = true}) end
       if mend == "ranks-crowd-off" then lp("debug_tune", {biotech_no_herd_through = true}) end
       if by_rank then lp("debug_tune", {biotech_through_rank = true}) end
+      -- (ranks-mend-old: its mend and its herd's through both off, the rush as before 0.2.215: the check's broken state.)
+      if params.mix == "ranks-mend-old" then lp("debug_tune", {biotech_no_keep_line = true, biotech_no_herd_through = true}) end
     elseif mix == "burst" or mix == "burst-nohold" then
       lp("herd_fill", S.pen, 32, "lp-bred-medium-biter")
       lp("herd_fill", S.pen, 4, "lp-bred-cinder")
@@ -12960,7 +12963,11 @@ scenarios.herd = function()
               end
               helpers.write_file("landing-party/rush.jsonl", helpers.table_to_json(frame) .. "\n", game.tick > 0 and S.trace_frames > 1)
             end
-            -- Its units in the corridor between the rings, 12 tiles or more along it from its gap toward the way round.
+            -- Its units in the corridor between the rings, 12 tiles or more along it from its gap toward the way round, during
+            -- its rush: from its mend to 20 s past its herd's reading itself inside, the trace's window and its stragglers'
+            -- coming in after. (Counted to the scenario's end, it read 1 on 777 and 4242 where the trace saw none: units
+            -- hunting inside near the ring later, not its rush's way; 0.2.354.)
+            if S.trace_end and game.tick > S.trace_end then return end
             local n = 0
             for _, x in ipairs(surface().find_entities_filtered{position = S.at(43 * S.face, S.gap_v + 18 * S.side), radius = 16,
               force = "lp-biotech", type = "unit"}) do

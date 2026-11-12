@@ -7061,7 +7061,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (herd.spread) gone from the reading, kept as the control (`biotech_through_rank`, the scenario's `-rank` variants).
   Outside when through on ranks-mend 12345, 777, 4242: 9, 6, 3 by the rank, 2, 1, 2 by coming; its straggle time 13,
   15, 22 s and 13, 16, 9 s; its corridor 0, 1, 0 and 0, 1, 1. ranks-crowd (120) the same either way (8 outside after a
-  look, not coming: through). Not yet regressed beyond the ranks scenarios.
+  look, not coming: through). Not yet regressed beyond the ranks scenarios. **ranks-mend passes** (failing since 0.2.258):
+  its corridor counted during its rush only (its mend to 20 s past its herd's reading itself inside, the trace's window:
+  counted to the scenario's end it read units hunting inside near the ring later, 1 on 777 and 4242 where the trace saw
+  none); the user, of the call: "I follow your calls on this one". Seen failing: `ranks-mend-old` (its mend and its
+  herd's through off, the rush before 0.2.215) walks the corridor on 12345, 777, 4242 (1, 2, 2), the default on none
+  (outside when through 2, 2, 1).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
