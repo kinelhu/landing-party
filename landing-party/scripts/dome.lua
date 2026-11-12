@@ -205,7 +205,11 @@ local function projector_spot(b, hub)
   end
   local own = half("lp-dome-projector") + 0.5
   local jobs = {}
-  for _, job in ipairs(b.queue or {}) do if job.pos then jobs[#jobs + 1] = {job.pos[1], job.pos[2], half(job.name) + own} end end
+  local function avoid(job) if job.pos then jobs[#jobs + 1] = {job.pos[1], job.pos[2], half(job.name) + own} end end
+  for _, job in ipairs(b.queue or {}) do avoid(job) end
+  -- And the jobs a crew carries, off the queue since it left (a drone took the launch block's 9 jobs at 39330, the
+  -- projector went on the launchpad's spot at 39600 and the crew skipped it: no export, no fund; hazard research, 0.2.352).
+  for _, c in ipairs(b.crews or {}) do for _, job in ipairs(c.jobs or {}) do avoid(job) end end
   for r = 0, 24, 4 do
     for k = 0, (r == 0 and 0 or 7) do
       local a = k * math.pi / 4

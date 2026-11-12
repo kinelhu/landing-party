@@ -7080,6 +7080,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   cap (heads, as it is a count). Scenario `rankreads` (quick set): a fresh and a rare unit of each side, its scale, prior
   and Synthexis price 3.1 times (seen failing on the prior and the price without the rank). Synthexis's own breeds stay
   unranked (0.2.314).
+- **A dome projector on a carried job's spot** (0.2.356, 2026-11-12; the full regression at 0.2.352, hazard research on
+  12345). A hub's projector kept clear of the jobs in its camp's queue (0.2.20x, the launchpad's 9 by 9), but not of
+  the jobs a crew had already taken off it: a drone took the launch block's 9 jobs at tick 39330, the projector went up
+  at 39600 on the launchpad's middle, the crew skipped the launchpad, and the camp exported nothing (no fund, no
+  railguns). Now it keeps clear of every crew's jobs too. The same seed and code without the fix: the projector at
+  -309,42, nothing exported, both research checks failing; with it: at -301,42, 6800 exported, railguns bought.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
