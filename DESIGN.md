@@ -6994,6 +6994,10 @@ Bugs and surprises the headless runs caught, each kept as a check:
   all land and at most 20 shake (16; 90 with no gap, seen failing). The trailer's shot 30 is that strike now, shot 28 the
   wall reel's k8 (its k6 to k8 timed on the bombard, at fixed ticks they filmed an empty wall), and the mod page has a
   loop of it (`media/release/loops/strike.gif`, 480 wide, 10 a second, 6.4 MB).
+- **The clinic graded too** (0.2.348, 2026-11-12; the user, of the trailer's growth shot: "a weird gray nest, what is
+  that?"). Synthexis's clinic is Space Age's biolab, a pale pink-grey brain under a glass dome: beside the graded rose
+  pens it read as a grey nest. Graded as the pens' flesh it took 12% of the sheet and still read grey; its own setting
+  (`brain`: a lower mask, chroma 1.5) grades 31%, the brain rose, the glass and metal as they were.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

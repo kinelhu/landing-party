@@ -650,13 +650,24 @@ end
 -- artillery. A military target, so turrets in reach fire on it.
 do
   local b = data.raw.lab["biolab"]
+  -- Its brain graded the pens' rose (tools/art/grade.py, half-plum's brain; 0.2.348), its glass and metal as they are:
+  -- ungraded it read as "a weird gray nest" beside the rose pens (the user, 2026-11-12, of the trailer's growth shot).
+  local anim = table.deepcopy(b.on_animation)
+  local function regraded(t)
+    if type(t) ~= "table" then return end
+    for k, v in pairs(t) do
+      if type(v) == "string" and v:find("biolab/biolab%-anim%.png$") then t[k] = "__landing-party__/graphics/synthexis/clinic.png"
+      else regraded(v) end
+    end
+  end
+  regraded(anim)
   table.insert(out, {type = "simple-entity-with-force", name = "lp-clinic", localised_name = {"entity-name.lp-clinic"},
     localised_description = {"entity-description.lp-clinic"}, hidden = true, icon = b.icon, icon_size = b.icon_size,
     flags = {"placeable-neutral", "placeable-enemy", "not-blueprintable"}, max_health = 1500, is_military_target = true,
     resistances = {{type = "fire", percent = 70}, {type = "acid", percent = 50}},
     collision_box = b.collision_box, selection_box = b.selection_box, render_layer = "object",
     dying_explosion = b.dying_explosion, corpse = b.corpse, map_color = B.color, enemy_map_color = B.color,
-    animations = table.deepcopy(b.on_animation)})
+    animations = anim})
 end
 
 data:extend(out)
