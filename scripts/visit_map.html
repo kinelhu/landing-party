@@ -11,6 +11,8 @@
   --ink: #d9e1e6;
   --ink-dim: #8796a1;
   --syn: #b78cff;        /* Synthexis */
+  --kh: #6fd6e8;         /* Kessler-Hayashi */
+  --gs: #e0a34a;         /* Grubstake */
   --lost: #ff5a4e;       /* lost, not rebuilt */
   --mended: #c98a3a;     /* lost, rebuilt later */
   --ghost: #ff7ad9;      /* ghosts waiting for robots */
@@ -99,7 +101,7 @@ footer button:focus-visible, footer select:focus-visible, input[type=range]:focu
 <script>
 const D = /*DATA*/null;
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const C = {lost: css('--lost'), mended: css('--mended'), ghost: css('--ghost'), robot: css('--robot'), down: css('--down'), syn: css('--syn'), ink: css('--ink'), dim: css('--ink-dim'), line: css('--line')};
+const C = {lost: css('--lost'), mended: css('--mended'), ghost: css('--ghost'), robot: css('--robot'), down: css('--down'), syn: css('--syn'), kh: css('--kh'), gs: css('--gs'), ink: css('--ink'), dim: css('--ink-dim'), line: css('--line')};
 const BASE_COL = {wall: '#56616a', gun: '#4fb3ff', make: '#3f6fd8', mine: '#7c8a52', port: '#2f9e6a', power: '#8a7a3a', belt: '#2a333a', other: '#4a4f55'};
 const GROUP_NAME = {wall: 'walls', gun: 'turrets', make: 'assemblers, furnaces, labs', mine: 'drills', port: 'roboports', power: 'power', belt: 'belts, inserters, pipes', other: 'other'};
 const [x0, y0, x1, y1] = D.box;
@@ -115,10 +117,10 @@ const baseCv = document.createElement('canvas'); baseCv.width = W; baseCv.height
 const ports = D.base.port || [];
 const PORT = D.groups.indexOf('port');
 
-const layers = {base: true, coverage: true, lost: true, mended: false, ghosts: true, down: true, units: true, waves: true};
+const layers = {base: true, coverage: true, lost: true, mended: false, ghosts: true, down: true, units: true, waves: true, serenity: true, grubstake: true};
 const LAYER_UI = [
   ['lost', C.lost, 'Lost, not rebuilt (yet)'], ['mended', C.mended, 'Lost, rebuilt later'], ['ghosts', C.ghost, 'Ghosts waiting for robots'],
-  ['down', C.down, 'Roboports without power'], ['coverage', C.robot, 'Robot reach of standing roboports'], ['units', C.syn, "Synthexis's units"],
+  ['down', C.down, 'Roboports without power'], ['coverage', C.robot, 'Robot reach of standing roboports'], ['units', C.syn, "Synthexis's units"], ['serenity', C.kh, "Kessler-Hayashi's camps and units"], ['grubstake', C.gs, "Grubstake's camps and units"],
   ['waves', C.ink, 'Wave routes and breaches'], ['base', '#56616a', 'The base at the start']];
 const legend = document.getElementById('legend');
 for (const [k, col, txt] of LAYER_UI) {
@@ -199,6 +201,16 @@ function draw() {
       if (w.breach && (w.breach_t ?? w.start) <= T) { const bx = sx(w.breach[0]), by = sy(w.breach[1]); ctx.strokeStyle = C.lost; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bx - 7, by - 7); ctx.lineTo(bx + 7, by + 7); ctx.moveTo(bx + 7, by - 7); ctx.lineTo(bx - 7, by + 7); ctx.stroke(); }
     }
   }
+  // The corporations: their buildings faint, their landers ringed, their units solid.
+  for (const [key, col] of [['serenity', C.kh], ['grubstake', C.gs]]) {
+    const c = (f.corps || {})[key]; if (!layers[key] || !c) continue;
+    ctx.fillStyle = col; ctx.globalAlpha = 0.35; const b = c.b, bs = Math.max(1.5, s * 1.2);
+    for (let i = 0; i < b.length; i += 2) ctx.fillRect(sx(b[i]) - bs / 2, sy(b[i + 1]) - bs / 2, bs, bs);
+    ctx.globalAlpha = 1; const u = c.u, us = Math.max(2.5, s * 1.6);
+    for (let i = 0; i < u.length; i += 2) ctx.fillRect(sx(u[i]) - us / 2, sy(u[i + 1]) - us / 2, us, us);
+    ctx.strokeStyle = col; ctx.lineWidth = 2; const l = c.l;
+    for (let i = 0; i < l.length; i += 2) { ctx.beginPath(); ctx.arc(sx(l[i]), sy(l[i + 1]), Math.max(7, 6 * s), 0, 6.283); ctx.stroke(); }
+  }
   if (layers.units) {
     ctx.fillStyle = C.syn; const u = f.u, us = Math.max(2, s * 1.4);
     for (let i = 0; i < u.length; i += 2) ctx.fillRect(sx(u[i]) - us / 2, sy(u[i + 1]) - us / 2, us, us);
@@ -212,7 +224,9 @@ function draw() {
   const rows = [['Buildings down now', down.toLocaleString()], ...['make', 'mine', 'port', 'gun', 'power'].map(g => [`  of which ${GROUP_NAME[g]}`, (byG[g] || 0).toLocaleString()]),
     ['Ghosts waiting', f.ng.toLocaleString()], ['Roboports without power', (f.down.length / 2).toLocaleString()],
     ['Construction robots free', `${f.rob[0].toLocaleString()} of ${f.rob[1].toLocaleString()}`], ["Synthexis's units", f.nu.toLocaleString()],
-    ['Incubators', (f.pens.length / 2).toLocaleString()]];
+    ['Incubators', (f.pens.length / 2).toLocaleString()],
+    ["Kessler-Hayashi's units", ((f.corps || {}).serenity?.nu ?? 0).toLocaleString()], ["  its camps' buildings", ((f.corps || {}).serenity?.nb ?? 0).toLocaleString()],
+    ["Grubstake's units", ((f.corps || {}).grubstake?.nu ?? 0).toLocaleString()], ["  its camps' buildings", ((f.corps || {}).grubstake?.nb ?? 0).toLocaleString()]];
   document.getElementById('stats').innerHTML = rows.map(([a, b]) => `<span>${a.replace(/^  /, '&emsp;')}</span><b>${b}</b>`).join('') + (top ? `<span style="grid-column:1/-1;color:${C.dim};font-size:12px">Most ghosts: ${top}</span>` : '');
   for (const [k, , , fm] of CH) { const x = T / maxM * 300; const c = document.getElementById('cur-' + k); c.setAttribute('x1', x); c.setAttribute('x2', x); const p = series[k].find((q, i, a) => i === a.length - 1 || a[i + 1][0] > T); document.getElementById('chv-' + k).textContent = p ? fm(p[1]) : ''; }
   for (const b of wavesEl.children) { const w = D.waves[b.dataset.i]; b.classList.toggle('now', w.start <= T && (w.end ?? 1e9) >= T); }

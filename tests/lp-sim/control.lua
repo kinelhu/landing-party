@@ -11722,8 +11722,18 @@ scenarios.visit = function()
           live[#live + 1] = {id = w.id, stage = w.stage, n = w.alive, size = w.size, at = w.group, mark = w.mark, breach = w.breach,
             deep = w.deep and w.deep.going or nil}
         end
+        -- The corporations' camps and units (the user, 2026-11-12, after the nwa visit at 0.2.355 where Kessler-Hayashi did
+        -- the damage and Synthexis fell to it: the page showed Synthexis alone). Buildings thinned to one in four.
+        local corps = {}
+        for key, c in pairs(require("__landing-party__.shared").CORPS) do
+          local cu = surface().find_entities_filtered{force = c.force, type = {"unit", "spider-vehicle", "car"}}
+          local cb, all = {}, surface().find_entities_filtered{force = c.force, type = {"unit", "spider-vehicle", "car", "entity-ghost", "corpse"}, invert = true}
+          for i = 1, #all, 4 do cb[#cb + 1] = all[i] end
+          local landers = surface().find_entities_filtered{force = c.force, name = "lp-lander"}
+          corps[key] = {u = flat(cu, 2500), nu = #cu, b = flat(cb, 6000), nb = #all, l = flat(landers)}
+        end
         rec({k = "s", t = game.tick, units = flat(units, 2500), nunits = #units, ghosts = flat(ghosts, 4000), nghosts = #ghosts,
-          gby = gby, down = down, ports = #ports, robots = {avail, all, nets}, pens = pens, waves = live})
+          gby = gby, down = down, ports = #ports, robots = {avail, all, nets}, pens = pens, waves = live, corps = corps})
         rec_flush()
       end)
     end

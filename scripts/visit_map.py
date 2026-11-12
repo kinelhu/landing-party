@@ -41,7 +41,12 @@ def main(run_dir, out_path):
         groups[GROUP_OF.get(t, "other")].extend(xy)
     xs = [v for g in groups.values() for v in g[0::2]]
     ys = [v for g in groups.values() for v in g[1::2]]
-    box = [min(xs), min(ys), max(xs), max(ys)]
+    # (And the corporations' camps: Kessler-Hayashi's first lander on nwa stood 600 tiles past the base's edge.)
+    for s in snaps:
+        for c in (s.get("corps") or {}).values():
+            for k in ("b", "l"):
+                xs.extend(c.get(k, [])[0::2]); ys.extend(c.get(k, [])[1::2])
+    box = [min(xs) - 20, min(ys) - 20, max(xs) + 20, max(ys) + 20]
 
     # Each loss with its rebuild: the next robot build of that type at that tile after it (-1: never).
     built_at = {}
@@ -78,6 +83,8 @@ def main(run_dir, out_path):
             "down": s.get("down", []),
             "rob": s.get("robots", [0, 0, 0]),
             "pens": s.get("pens", []),
+            "corps": {k: {"u": c.get("u", []), "nu": c.get("nu", 0), "b": c.get("b", []), "nb": c.get("nb", 0),
+                          "l": c.get("l", [])} for k, c in (s.get("corps") or {}).items()},
             "waves": [{"stage": w.get("stage"), "n": w.get("n"), "at": w.get("at"), "mark": w.get("mark"),
                        "breach": w.get("breach"), "deep": w.get("deep")} for w in s.get("waves", [])],
         })
