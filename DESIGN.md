@@ -6924,6 +6924,25 @@ Bugs and surprises the headless runs caught, each kept as a check:
   - The Grubstake column: the fortress fork's column stayed bunched at its yard through the march stills.
   - Synthexis's pictures: nothing in them changed.
   - Not changed: the locale names both corporations' flamers "Flamethrower turret", and the manual follows it.
+- **The trailer reshot at 0.2.338** (2026-11-12, overnight; the user: "And refilm trailer"). As at 0.2.321, every
+  source re-made on the Mac Studio from the worktree at 0.2.338 (6001b0f; the interface work in the main tree kept out):
+  the seven scenario forks (old ones moved aside, none reused), the scenes stage, and the three nw visits replayed from
+  their save copies with their harness run 40 minutes (0.2.321's lesson) and the film mods cleared first. The edit
+  (cut.json, 35 shots, 53 bars) and the score's config unchanged; media/trailer/rough-cut.mp4 106 s at 1920x1080, the
+  old clips, score and cut kept in media/trailer/pre-0.2.338/. All 23 re-made clips the lengths of the old. Framings
+  re-read from a traced rehearsal of the trailer fork (FILM_REHEARSE, settlements 1 and 4) and the takes' contact
+  sheets: **moved:** Kessler-Hayashi's beats all 300 ticks later (the drop's pods 45100, its assault 49300; the armed
+  camp's pods 66700, its strike painted 68500 and falling 69220), so stage, stage-c1 and stage-kh shift by 300 (those
+  three went in with 0.2.339's commit); the herd's way in moved (its log now "breach at 3,-300 (no wall)", gap open
+  65692 at -38,-312, where 0.2.321's broke 2 wall pieces at -38,-270): it runs south along the outside of the wall and
+  crosses it about -38,-280 from 65900, and stage-herd's breach shot (65500 on -42,-308) and inside shot (65900 on
+  -34,-282) now hold it; their first takes showed an empty wall for 180 frames and a herd outside the wall throughout.
+  Every other framing held (Grubstake's landing at 536,-613 as before). Midpoint frames of all 35 shots checked
+  (contact sheet beside the old cut's). **Seen, not fixed:** the trailer scenario's wave still breaks a wall piece from
+  inside withdrawing (1, its check fails; 4 at 0.2.321); the player's battle in the trailer fork is much bigger than
+  before (51 Grubstake losses to the player in its window against 2), unexamined; the film and the bare sim differ by
+  300 ticks on the drop (the stand-in character), so beats come from rehearsals, not sims. Shot 1 kept as it was (its
+  save never ticks in a film window). Filmed before 0.2.342's arc flamer model.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
