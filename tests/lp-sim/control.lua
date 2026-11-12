@@ -12904,13 +12904,58 @@ scenarios.herd = function()
                   for _, x in ipairs(surface().find_entities_filtered{position = p, radius = 0.3, type = "wall"}) do x.destroy() end
                 elseif surface().count_entities_filtered{position = p, radius = 0.3, type = "wall"} == 0 then
                   local x = put("stone-wall", p)
-                  if x then S.mended, S.mended_ids[x.unit_number] = S.mended + 1, true end
+                  if x then
+                    S.mended, S.mended_ids[x.unit_number] = S.mended + 1, true
+                    S.mended_pos = S.mended_pos or {}
+                    table.insert(S.mended_pos, {p[1], p[2]})
+                  end
                 end
               end
               info(string.format("herd ranks-mend: at its rush, its outer ring mended (%d pieces) and opened 22 along from its gap at %.0f",
                 S.mended, gv))
             end
             if not S.mended then return end
+            -- The rush traced (the user, 2026-11-12: "is it time to break out more fine grained diagnostic tools ... I'm
+            -- wary of hard coding and want to keep this modular and adaptable"): every 20 ticks from the mend to 20 s past
+            -- its herd's reading itself inside, each unit near its gap in the wall's own frame (du out from the middle,
+            -- toward its face; dv along it from its gap, toward the way round), its class, its group and its order, the
+            -- wave's stage and mends, and the mended pieces standing; the first frame its rings' walls. rush.jsonl,
+            -- drawn by scripts/herd_trace.py.
+            if w and w.stage == "inside" and not S.trace_end then S.trace_end = game.tick + 1200 end
+            if (S.trace_frames or 0) < 400 and (not S.trace_end or game.tick <= S.trace_end) then
+              S.trace_frames = (S.trace_frames or 0) + 1
+              local CMD = {}
+              for k, i in pairs(defines.command) do CMD[i] = k end
+              local frame = {tick = game.tick, stage = w and w.stage, mends = w and w.mends, rushed = w and w.rushed,
+                gap_open = w and w.gap_open, units = {}}
+              local function frame_of(p)
+                local du = (p.x - c[1]) * u[1] + (p.y - c[2]) * u[2]
+                local dv = (p.x - c[1]) * v[1] + (p.y - c[2]) * v[2]
+                return du * S.face, (dv - S.gap_v) * S.side
+              end
+              for _, x in ipairs(surface().find_entities_filtered{position = S.at(43 * S.face, S.gap_v + 10 * S.side), radius = 60,
+                force = "lp-biotech", type = "unit"}) do
+                local a_, b_ = frame_of(x.position)
+                local cls = a_ > 46.5 and "out" or a_ >= 40.5 and "corridor" or "in"
+                local cm = x.commandable and x.commandable.command
+                table.insert(frame.units, {math.floor(a_ * 10) / 10, math.floor(b_ * 10) / 10, cls,
+                  x.commandable and x.commandable.parent_group ~= nil or false, cm and CMD[cm.type] or "none", x.name})
+              end
+              local up = 0
+              for _, p in ipairs(S.mended_pos or {}) do
+                if surface().count_entities_filtered{position = p, radius = 0.3, type = "wall", limit = 1} > 0 then up = up + 1 end
+              end
+              frame.mended_up = up
+              if S.trace_frames == 1 then
+                frame.walls = {}
+                for _, x in ipairs(surface().find_entities_filtered{position = S.at(43 * S.face, S.gap_v + 10 * S.side), radius = 60,
+                  type = "wall", force = "player"}) do
+                  local a_, b_ = frame_of(x.position)
+                  table.insert(frame.walls, {math.floor(a_ * 10) / 10, math.floor(b_ * 10) / 10, S.mended_ids[x.unit_number] and 1 or 0})
+                end
+              end
+              helpers.write_file("landing-party/rush.jsonl", helpers.table_to_json(frame) .. "\n", game.tick > 0 and S.trace_frames > 1)
+            end
             -- Its units in the corridor between the rings, 12 tiles or more along it from its gap toward the way round.
             local n = 0
             for _, x in ipairs(surface().find_entities_filtered{position = S.at(43 * S.face, S.gap_v + 18 * S.side), radius = 16,
