@@ -429,6 +429,12 @@ pen.autoplace = nil
 pen.captured_spawner_entity = nil
 pen.hidden_in_factoriopedia = true
 pen.graphics_set = {animations = {table.deepcopy(data.raw["assembling-machine"]["captive-biter-spawner"].graphics_set.animation)}}
+-- Its flesh graded (tools/art/grade.py, palette half-plum; 0.2.344): moved half the way from the wild nest's orange to
+-- rose-mauve, its metal, cables and glass as they were (the user, 2026-11-12: tinting "is also hitting the metal parts";
+-- all green was "a little jarring" beside the wild nests: "Halfway is good").
+for _, l in ipairs(pen.graphics_set.animations[1].layers) do
+  if l.filename and l.filename:find("captive%-anim") then l.filename = "__landing-party__/graphics/synthexis/pen.png" end
+end
 pen.map_color = B.color
 -- It eats by script (creep.drink), as a wild spawner would: the engine's absorption off, or it would eat uncounted.
 pen.absorptions_per_second = nil
@@ -501,8 +507,12 @@ creep.collision_mask = {layers = {ground_tile = true, object = true}}
 -- It eats by script (creep.drink, shared.CREEP_ABSORB a tile): the engine's absorption off.
 creep.absorptions_per_second = nil
 creep.map_color = {150, 50, 170}
--- Violet over the soil: the first look (untinted) read as brown mud beside Nauvis dirt.
-creep.tint = {r = 0.8, g = 0.55, b = 1, a = 1}
+-- Plum, graded (tools/art/grade.py, half-plum; 0.2.344): the first look (untinted) read as brown mud beside Nauvis dirt,
+-- then a violet tint {0.8, 0.55, 1} shouted (the user, 2026-11-12: "the purple creep"): dark plum keeps its veins apart
+-- and reads at the wide zoom as Synthexis's ground (nothing is built on it) while quiet beside dirt and grass.
+creep.tint = nil
+for _, v in ipairs(creep.variants.main) do v.picture = "__landing-party__/graphics/synthexis/creep.png" end
+creep.variants.transition.spritesheet = "__landing-party__/graphics/synthexis/creep.png"
 creep.hidden_in_factoriopedia = true
 table.insert(out, creep)
 
@@ -527,7 +537,12 @@ for _, a in ipairs(tumor.animations) do
   for _, l in ipairs(a.layers or {}) do
     l.scale = (l.scale or 1) * 1.3
     if l.shift then l.shift = {l.shift[1] * 1.3, l.shift[2] * 1.3} end
-    if not l.draw_as_shadow then l.tint = {r = 0.75, g = 1, b = 0.6, a = 1} end
+    -- Graded magenta (tools/art/grade.py, half-plum; 0.2.344; a green tint until then): lighter than the plum creep, so
+    -- it still reads as the target it is, the herd alone green on its base.
+    if not l.draw_as_shadow then
+      local k = l.filename:match("spawner%-upper%-small%-(%d)")
+      if k then l.filename = "__landing-party__/graphics/synthexis/tumor-" .. k .. ".png" end
+    end
   end
 end
 table.insert(out, tumor)

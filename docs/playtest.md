@@ -57,7 +57,7 @@ Read when something puzzles you; not a checklist.
 ### Synthexis (biotech, from evolution 0.25)
 - **Landing and food**: lands at the edge of your pollution and eats it through its creep. Incubators breed only on
   that biomass; a clean factory leaves it a trickle. An idle incubator has no animation.
-- **Creep**: violet ground with sunk tumors, dead trees on it. No building on creep; its biters are quicker and mend on
+- **Creep**: plum ground (0.2.344; violet till then) with sunk magenta tumors, dead trees on it. No building on creep; its biters are quicker and mend on
   it. Kill the tumors and it withdraws; incubators left off it go wild after three minutes.
 - **The culture**: biochambers by each incubator (kill one: that incubator stops), technicians walking from a heating
   tower on Gleba soil (kill them: five minutes without feed), a clinic biolab (kill it: only small and medium biters for

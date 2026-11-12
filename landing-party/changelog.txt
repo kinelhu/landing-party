@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.2.343
-Date: 2026-11-11
+Version: 0.2.344
+Date: 2026-11-12
   Features:
     - Its own icons for every item, technology and unit, the rivals' too; the threat scanner's signals show the units they count.
     - Three rival factions come to Nauvis and build settlements of their own: drills on real ore, fabricators, power, walls and guns.

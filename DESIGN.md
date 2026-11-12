@@ -6943,6 +6943,20 @@ Bugs and surprises the headless runs caught, each kept as a check:
   before (51 Grubstake losses to the player in its window against 2), unexamined; the film and the bare sim differ by
   300 ticks on the drop (the stand-in character), so beats come from rehearsals, not sims. Shot 1 kept as it was (its
   save never ticks in a film window). Filmed before 0.2.342's arc flamer model.
+- **Synthexis graded, not tinted** (0.2.344, 2026-11-12; the user: "recolor synthexis cultures slightly? Considering the
+  purple creep and bright green tumors and biters?", then "Your tinting is a little rudimentary. It's also hitting the
+  metal parts. Even the fleshy bits deserve a progressive grading depending on the base color"). A Factorio tint only
+  multiplies: the pen's metal took it as much as its flesh, and the flesh's pinks, rings and veins collapsed toward one
+  hue. `tools/art/grade.py` regrades the borrowed art (the pen's captive-spawner sheet, the creep's jellynut soil, the
+  tumor's Gleba raft) in OKLCh: a chroma mask leaves greys alone, each pixel's hue moves by its offset from the art's own
+  mean (0.8 of its spread kept: at 0.45 the flesh went one flat mint), shadows and highlights split, a second gradient
+  stop optional. Judged on the gallery's pads first (they flatter nothing: square, close), then on a real culture (the
+  trailer's bigpens fork, `docs/review/stills-culturegrade.lua`) close and at the trailer's wide zoom. Seen: moss-green
+  pens blended the green herd into its own base, and all-green read "a little jarring" beside the wild nests (the
+  orange domes inside a culture are wild biter spawners, the enemy force's); creep at half its chroma read as gravel;
+  green-leaning highlights melted the creep's edge into dirt. Chosen (the user: "Halfway is good"): half-plum, a dark
+  plum creep, the pens' flesh moved half the way from the wild nest's orange to rose-mauve, the tumors a lighter magenta
+  than the creep (they stay targets), the herd alone green. The bred units' mask tints unchanged (made to be tinted).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
