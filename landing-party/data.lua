@@ -497,6 +497,8 @@ end
 -- (lp-arcflamer-*: the shock trooper's own chain and bounce are lp-arc-chain and lp-arc-bounce, units.lua, loaded later;
 -- named so at first, this turret fired the shock trooper's six-jump chain, 2026-11-12.)
 local bolt = arc_beam("chain-tesla-turret-beam-start", "lp-arcflamer-bolt", ARC.bolt_damage)
+-- (Its sound is the shot's, played whole: the beam's own is cut off with the beam, a third of a second.)
+bolt.working_sound = nil
 local bounce = arc_beam("chain-tesla-turret-beam-bounce", "lp-arcflamer-bounce", ARC.jump_damage)
 local chain = table.deepcopy(data.raw["chain-active-trigger"]["chain-tesla-turret-chain"])
 chain.name = "lp-arcflamer-chain"
@@ -519,6 +521,9 @@ ap.ammo_type = {energy_consumption = "1J", action = {type = "direct", action_del
   {type = "nested-result", action = {type = "direct", action_delivery = {type = "beam", beam = "lp-arcflamer-bolt",
     max_length = ARC.range + 4, duration = ARC.bolt_ticks, add_to_shooter = false, destroy_with_source_or_target = false,
     source_offset = {0, -1.2}}}}}}}}
+-- Its bolt's sound (0.2.349; the user's pick of six, "D": tools/sound/arc_flamer.sh): the tesla's beam a quarter slower
+-- with the flamethrower's ignition under it, once a shot. (The tesla's own beam sound until then.)
+ap.sound = {filename = "__landing-party__/sound/arc-flamer.ogg", volume = 0.8, audible_distance_modifier = 1.2}
 arc.attack_parameters = ap
 local BLUE = {r = 0.45, g = 0.75, b = 1, a = 1}
 local function blued(t)

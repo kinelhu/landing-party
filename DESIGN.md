@@ -6998,6 +6998,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   that?"). Synthexis's clinic is Space Age's biolab, a pale pink-grey brain under a glass dome: beside the graded rose
   pens it read as a grey nest. Graded as the pens' flesh it took 12% of the sheet and still read grey; its own setting
   (`brain`: a lower mask, chroma 1.5) grades 31%, the brain rose, the glass and metal as they were.
+- **The arc flamer's sound** (0.2.349, 2026-11-12): the user's pick of six on the rating page, D ("Crack and
+  ignition"): the tesla turret's beam a quarter slower, cut to its bolt, with the flamethrower turret's ignition under it
+  (`tools/sound/arc_flamer.sh`, mono, `landing-party/sound/arc-flamer.ogg`). Played as the shot's sound, whole: as the
+  beam's own it would stop with the beam after a third of a second, the ignition cut. The jumps keep the tesla's chain
+  sound. Not yet heard in game.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
