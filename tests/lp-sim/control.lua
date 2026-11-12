@@ -12023,8 +12023,9 @@ scenarios.visit = function()
       waves[#waves + 1] = string.format("%s at %s, %d of %d home%s", l.outcome, l.center and string.format("%.0f,%.0f",
         l.center[1], l.center[2]) or "?", l.left or 0, l.size or 0, l.breach and "" or " (no breach)")
     end
-    info(string.format("visit: Synthexis %s, %d waves: %s; razed of the player's %s", #(fs.farms or {}) > 0 and
-      string.format("landed (%d farms, first at %s)", #fs.farms, serpent.line(fs.farms[1] and fs.farms[1].pos)) or "never landed",
+    info(string.format("visit: Synthexis %s, %d waves: %s; razed of the player's %s", (#(fs.farms or {}) > 0 or (fs.fell or 0) > 0) and
+      string.format("landed (%d farms standing, first at %s; %d fell)", #fs.farms, serpent.line(fs.farms[1] and fs.farms[1].pos),
+        fs.fell or 0) or "never landed",
       #hl, table.concat(waves, "; "), serpent.line(S.syn_razed or {})))
     -- What fought back without a player: robots rebuilding, and turrets still armed.
     local rebuilt = 0
@@ -15298,6 +15299,8 @@ scenarios.farm = function()
     end
     if mix == "killed" then
       check("farm: every pen dead, the farm gone", S.after and #S.after.farms == 0, serpent.line(S.after))
+      -- Counted as fallen (a visit said "never landed" of a farm that landed and fell, nwa 0.2.355).
+      check("farm: the farm counted as fallen", S.after and S.after.fell == 1, tostring(S.after and S.after.fell))
       local sh = S.share
       check("farm: an incubator killed, its share of the biomass with it", sh and sh.n >= 2
         and math.abs(sh.after - sh.before * (sh.n - 1) / sh.n) <= 1, serpent.line(sh))

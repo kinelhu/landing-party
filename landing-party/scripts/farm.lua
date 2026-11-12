@@ -347,6 +347,9 @@ local function gone(f, why)
   creep.forget(f.id)
   cell.forget_site(f.id)
   st().next_arrival = game.tick + RELAND
+  -- Counted, for the reports: a visit's summary read the farms standing at its end and said "never landed" of one that
+  -- landed and fell (nwa, 0.2.355).
+  st().fell = (st().fell or 0) + 1
   trace(string.format("farm %d gone (%s); lands again in %d minutes", f.id, why, RELAND / 3600))
 end
 
@@ -2411,7 +2414,7 @@ end
 
 function farm.state()
   local s = st()
-  local out = {next_arrival = s.next_arrival, landing = s.landing, farms = {}}
+  local out = {next_arrival = s.next_arrival, landing = s.landing, farms = {}, fell = s.fell or 0}
   for id, f in pairs(s.list) do
     local tags = 0
     for _, t in pairs(f.tags) do if t.valid then tags = tags + 1 end end
