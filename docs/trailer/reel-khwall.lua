@@ -41,13 +41,16 @@ return {name = "reel-khwall", base = 1, resolution = {1920, 1080}, anti_alias = 
   -- Close on the battery firing (its first emplacement, on the roboports behind the wall).
   {name = "k5-battery", after = "phase:bombard", dt = 1400, frames = 360,
     from = {pos = {-132, 374}, zoom = 1.0, daytime = 0.31}, to = {pos = {-131, 373}, zoom = 1.1, daytime = 0.32}},
+  -- (k6 to k8 timed on the bombard since 0.2.345: at fixed ticks from the 2026-11-05 beats (its bombard 12034600), the
+  -- 0.2.338 reshoot's siege marched at 12051000 and bombarded at 12054400, and they filmed an empty wall before it; the
+  -- user: "Shot at 1:15 after the flak buggies shows nothing happening?". The same offsets from its bombard.)
   -- Close on the battery moved up to the bastion's foot, firing over the wall.
-  {name = "k6-battery-up", tick = 12041000, frames = 360,
+  {name = "k6-battery-up", after = "phase:bombard", dt = 6400, frames = 360,
     from = {pos = {-139, 351}, zoom = 1.1, daytime = 0.32}, to = {pos = {-139, 349}, zoom = 1.2, daytime = 0.32}},
   -- Close on the wall taking it: lasers at y 317 and the roboports behind, the robots mending between hits.
-  {name = "k7-wall", tick = 12042600, frames = 450,
+  {name = "k7-wall", after = "phase:bombard", dt = 8000, frames = 450,
     from = {pos = {-128, 312}, zoom = 0.8, daytime = 0.32}, to = {pos = {-130, 312}, zoom = 0.85, daytime = 0.33}},
   -- Wide over the wall: the battery at the bottom, the arcs over the wall onto the roboports behind it.
-  {name = "k8-over", tick = 12044400, frames = 450,
+  {name = "k8-over", after = "phase:bombard", dt = 9800, frames = 450,
     from = {pos = {-135, 330}, zoom = 0.6, daytime = 0.33}, to = {pos = {-135, 328}, zoom = 0.58, daytime = 0.34}},
 }}
