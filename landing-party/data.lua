@@ -448,8 +448,8 @@ arc.rotation_speed = 0.04
 -- lint_turrets) is done before they reach it: unfolding only once they were in reach, it was still deploying when a
 -- biter stood at its foot, inside the flame's minimum, and it fired only north (scenario arcflamer, 2026-11-11).
 arc.prepare_range = 70
--- (And it deploys as vanilla's flamethrower turret, 188 ticks, not the laser turret it was copied from, 300: corps.lua
--- keep_timing reads these before its head replaces them.)
+-- (And it deploys as vanilla's flamethrower turret, not the laser turret it was copied from: their speeds, a state taking
+-- 1 / its speed ticks whatever its frames; corps.lua, 0.2.351.)
 arc.preparing_animation, arc.preparing_speed = table.deepcopy(flamer.preparing_animation), flamer.preparing_speed
 arc.folding_animation, arc.folding_speed = table.deepcopy(flamer.folding_animation), flamer.folding_speed
 arc.circuit_connector = nil

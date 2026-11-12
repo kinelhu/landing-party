@@ -4107,6 +4107,103 @@ end
 -- electric, no fuel). A spike's first full-circle turrets turned too slowly and lost biters at their sides inside the
 -- flame's 6-tile minimum: they hit only what stood in front. Checked: it hits a biter on each side; a Kessler-Hayashi
 -- unit standing where it burns is spared; against six medium biters, how long it takes beside the oil flamer.
+-- The turret model's effect (DESIGN.md, the modelled turrets: the trailer's battle on seed 12345 broke 1 of Grubstake's
+-- turrets with its model and 10 without, "a picture, which the simulation never reads"; the user, 2026-11-12: "Chase
+-- everything that needs to be chased"): vanilla's gun turret and Grubstake's, the same stats bar their graphics, each
+-- with the same magazines against the same pack of medium biters sent at it; their ammo spent, kills and health read
+-- every second for 30 s. LP_MIX=player: both on the player's force.
+scenarios.turretmodel = function()
+  local KINDS = {"gun-turret", "lp-grubstake-turret"}
+  local mix = params.mix or ""
+  local force = mix == "player" and "player" or "lp-grubstake"
+  S.t = {}
+  schedule(30, function()
+    lp("debug_tune", {raids_off = true, ops_off = true})
+    flatten(-600, 900, 600, 1100)
+    local x = -500
+    for rep = 1, 3 do
+      for _, kind in ipairs(KINDS) do
+        local t = surface().create_entity{name = kind, position = {x, 1000}, force = force}
+        t.insert{name = "piercing-rounds-magazine", count = 10}
+        S.t[#S.t + 1] = {t = t, kind = kind, x = x, log = {}}
+        x = x + 80
+      end
+    end
+  end)
+  schedule(120, function()
+    for _, r in ipairs(S.t) do
+      r.b = {}
+      for i = 0, 9 do
+        local b = surface().create_entity{name = i < 6 and "small-biter" or "medium-biter", position = {r.x + 26 + (i % 5) * 2, 996 + math.floor(i / 5) * 4}, force = "enemy"}
+        if b then
+          b.commandable.set_command{type = defines.command.attack, target = r.t, distraction = defines.distraction.none}
+          r.b[#r.b + 1] = b
+        end
+      end
+    end
+  end)
+  -- (Its first shot to the tick: rounds every 5 ticks for 3 s from the pack's arrival.)
+  for t = 120, 300, 5 do
+    schedule(t, function()
+      for _, r in ipairs(S.t) do
+        local ammo = r.t.valid and r.t.get_inventory(defines.inventory.turret_ammo)
+        local rounds = 0
+        if ammo then for i = 1, #ammo do local st = ammo[i]; if st.valid_for_read then rounds = rounds + st.count * 10 - (10 - st.ammo) end end end
+        r.first = r.first or (rounds < 100 and t) or nil
+        r.shoot = r.shoot or (r.t.valid and r.t.shooting_target and t) or nil
+      end
+    end)
+  end
+  for t = 180, 120 + 30 * 60, 60 do
+    schedule(t, function()
+      for _, r in ipairs(S.t) do
+        local alive = 0
+        for _, b in ipairs(r.b or {}) do if b.valid then alive = alive + 1 end end
+        local ammo = r.t.valid and r.t.get_inventory(defines.inventory.turret_ammo)
+        local rounds = 0
+        if ammo then for i = 1, #ammo do local st = ammo[i]; if st.valid_for_read then rounds = rounds + st.count * 10 - (10 - st.ammo) end end end
+        r.log[#r.log + 1] = string.format("%d:%d/%d/%d", math.floor((t - 120) / 60), alive, rounds, r.t.valid and math.floor(r.t.health) or 0)
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local sum = {}
+    for _, r in ipairs(S.t) do
+      info("turretmodel: " .. r.kind .. " at " .. r.x .. ": a target from tick " .. tostring(r.shoot) .. ", its first round by " ..
+        tostring(r.first) .. "; t:alive/rounds/hp " .. table.concat(r.log, " "))
+      local s = sum[r.kind] or {kills = 0, used = 0, hp = 0, n = 0}
+      local alive = 0
+      for _, b in ipairs(r.b or {}) do if b.valid then alive = alive + 1 end end
+      local ammo = r.t.valid and r.t.get_inventory(defines.inventory.turret_ammo)
+      local rounds = 0
+      if ammo then for i = 1, #ammo do local st = ammo[i]; if st.valid_for_read then rounds = rounds + st.count * 10 - (10 - st.ammo) end end end
+      s.kills, s.used, s.hp, s.n = s.kills + (10 - alive), s.used + (100 - rounds), s.hp + (r.t.valid and r.t.health or 0), s.n + 1
+      sum[r.kind] = s
+    end
+    info("turretmodel: " .. serpent.line(sum))
+    -- (Caught 0.2.351: on speeds slowed by its lost frames, 0.2.324's keep_timing, Grubstake's turret fired its first round
+    -- 75 ticks after its target where vanilla's took 25: a state takes 1 / its speed ticks, whatever its frames.)
+    local first = {}
+    for _, r in ipairs(S.t) do
+      local f = first[r.kind] or {}
+      f[#f + 1] = r.first and r.shoot and (r.first - r.shoot) or 999
+      first[r.kind] = f
+    end
+    info("turretmodel: target to first round, ticks " .. serpent.line(first))
+    local worst = 0
+    for i, gv in ipairs(first["lp-grubstake-turret"] or {}) do
+      worst = math.max(worst, math.abs(gv - ((first["gun-turret"] or {})[i] or 0)))
+    end
+    check("turretmodel: Grubstake's turret fires its first round when vanilla's does", worst <= 5, serpent.line(first))
+    local v, g = sum["gun-turret"] or {}, sum["lp-grubstake-turret"] or {}
+    metric("turretmodel_vanilla_used", v.used or -1)
+    metric("turretmodel_grubstake_used", g.used or -1)
+    check("turretmodel: Grubstake's turret fights as vanilla's gun turret (rounds, kills, health within 10%)",
+      math.abs((g.used or 0) - (v.used or 0)) <= 0.1 * math.max(1, v.used or 0) and math.abs((g.kills or 0) - (v.kills or 0)) <= 1
+      and math.abs((g.hp or 0) - (v.hp or 0)) <= 0.1 * math.max(1, v.hp or 0), serpent.line({vanilla = v, grubstake = g}))
+  end)
+end
+
 scenarios.arcflamer = function()
   local DIRS = {N = {0, -65}, W = {-65, 0}, S = {0, 65}, E = {65, 0}}
   S.r = {}

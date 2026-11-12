@@ -1,7 +1,8 @@
-"""Every turret of the mod's takes as long to deploy and to fold as vanilla's of its type: a state's time is its
-animation's frames over its speed, and a modelled head of one frame on the vanilla speed made a turret ready in a fifth
-to a fifteenth of the time (the factions' turrets and the flak turret from 0.2.304 to 0.2.323; the trailer's battle
-tipped from 10 of Grubstake's turrets broken to 1). corps.lua keep_timing and studies.lua slow the speeds to match.
+"""Every turret of the mod's takes as long to deploy and to fold as vanilla's of its type: a state takes 1 / its speed
+ticks whatever its animation's frames (measured, scenario turretmodel, 2026-11-12: Grubstake's gun turret on vanilla's
+speeds fired its first round at vanilla's tick, on speeds slowed by its lost frames 50 ticks later). From 0.2.324 to
+0.2.350 this lint read a state's time as frames over speed and passed the slowed speeds, every modelled turret five to
+fifteen times slower to deploy than vanilla's.
 
     python3 -I scripts/lint_turrets.py <data-raw-dump.json>
 """
@@ -24,8 +25,7 @@ def frames(a):
 
 
 def times(p):
-    return (frames(p.get("preparing_animation")) / p.get("preparing_speed", 1),
-            frames(p.get("folding_animation")) / p.get("folding_speed", 1))
+    return (1 / p.get("preparing_speed", 1), 1 / p.get("folding_speed", 1))
 
 
 bad = []
@@ -41,10 +41,10 @@ for ty, ref in VANILLA.items():
         if k in BY_NAME:
             r = BY_NAME[k][1]
             rp, rf = times(d[BY_NAME[k][0]][r])
-        if tp < 0.9 * rp or tf < 0.9 * rf:
+        if not (0.9 * rp <= tp <= 1.1 * rp) or not (0.9 * rf <= tf <= 1.1 * rf):
             bad.append(f"{n}: deploys in {tp:.0f} ticks and folds in {tf:.0f}, {r} {rp:.0f} and {rf:.0f}")
 if bad:
-    print("TURRET LINT FAILED: a turret faster to deploy than vanilla's (slow its speeds by the frames its animation lost)")
+    print("TURRET LINT FAILED: a turret deploying or folding at other than vanilla's pace (keep its speeds vanilla's)")
     for b in bad:
         print("  " + b)
     sys.exit(1)

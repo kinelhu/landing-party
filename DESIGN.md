@@ -7009,6 +7009,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (`tools/art/grade.py` arcfire: hue 56 to 272, the core toward cyan-white, the edges violet), the smoke and patch
   vanilla's, and a burning target sparks now and then (`lp-arc-spark`: the lightning hit's arcing frames, small and
   violet, one each `ARC_FLAMER.spark_ticks` = 50 of its 3 s burn, the sticker's update_effects). Seen in the clip.
+- **The modelled turrets' deploy "fix" was backwards** (0.2.351, 2026-11-12; chasing the trailer's battle, the user: "Chase
+  everything that needs to be chased"). 0.2.324 slowed every modelled turret's preparing and folding speeds by the frames
+  its one-frame head lost, on the guess that a state takes frames over speed. Measured (scenario `turretmodel`: vanilla's
+  gun turret and Grubstake's side by side, the same magazines, the same pack): both take their target at the same tick;
+  vanilla's fires its first round 25 ticks later, Grubstake's 75; on vanilla's speeds, 25 too. A state takes 1 / its
+  speed ticks, whatever its frames: the "fix" made Grubstake's and Kessler-Hayashi's turrets, the flamers and the flak
+  turret five to fifteen times slower to deploy than vanilla's. Removed (corps.lua, studies.lua), `lint_turrets.py` now
+  reads 1 / speed and fails a turret off vanilla's pace either way (seen failing on the slowed speeds: lp-gun-turret,
+  lp-grubstake-turret, lp-turret), and `turretmodel` (quick set) checks the first round to 5 ticks (75 against 25, seen
+  failing). Not the trailer battle's cause: its flip from 10 of Grubstake's turrets broken to 1 came at 0.2.304, before
+  the slowdown, and still stands at current code (76 of the player's units lost, 1 turret: its check fails); that is
+  next.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
