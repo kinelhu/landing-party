@@ -345,8 +345,20 @@ shared.STRIKE_RADIUS = 60
 -- big cannon, 2026-11-10: 12 by 18, four times the first's cost, SHELLS 10 for 6; the logistics made a load (the user: "How
 -- did you end up setting that up for it to be a challenge?"): 4 MW a cannon, a platform's solar field, and FUEL 500 for
 -- 200, firing against flying. First numbers, to tune in play.)
-shared.CANNON = {STORE = 2, CYCLE = 180, FUEL = 500, RADIUS = 20, SHELLS = 10, COOLDOWN = 30 * 60, REACH = 16, POWER = "4MW",
-  MUZZLE = 25}
+-- (0.2.346, the user: "more cannons could increase both levers to avoid insane overkill ... radius could increase up to a
+-- point and density no cap", "allow multiple platforms: ... this one fires from a single platform", the shells "made in
+-- foundries or EM plants" on the ground, "some logistics above would be good"): a strike fires ONE platform (the ready one
+-- with the most charged cannons), every charged cannon on it one charge; its radius R0 * sqrt(cannons) up to R_MAX (its
+-- density the same till the cap, then rising, uncapped); COOLDOWN is a platform's; each charge burns FUEL thruster fuel and
+-- OXIDIZER thruster oxidizer, the thrusters' own pair (with the basic recipes about 10 asteroid chunks a charge: 4
+-- carbonic, 2 metallic, 4 oxide); the shell, cast in a foundry on the ground round an EM plant's fuse, weighs SHELL_KG
+-- (four a rocket). Was: every cannon over Nauvis pooled, a radius of 20, 500 fuel, a 40 kg shell made aloft. First numbers.
+shared.CANNON = {STORE = 2, CYCLE = 180, FUEL = 1500, OXIDIZER = 1500, R0 = 16, R_MAX = 48, SHELLS = 10, COOLDOWN = 30 * 60,
+  SHELL_KG = 250, REACH = 16, POWER = "4MW", MUZZLE = 25}
+-- A strike's radius from the cannons it fires.
+function shared.cannon_radius(n)
+  return math.min(shared.CANNON.R_MAX, shared.CANNON.R0 * math.sqrt(math.max(n, 1)))
+end
 shared.DEFOLIATE_RADIUS = 6
 -- And the player's other devices and weapons, likewise read by their descriptions (__1__, __2__; 2026-11-06: the
 -- numbers had been typed in the locale): the claim marker's reach (ops.marked), the pact breaker's minutes

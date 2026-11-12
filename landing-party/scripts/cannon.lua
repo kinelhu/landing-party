@@ -1,11 +1,14 @@
--- The player's orbital cannons (orbital_cannon.lua; DESIGN.md, "Orbital cannons", decided 2026-11-10). A strike is called
--- with the remote on Nauvis; it spends one charge from every ready cannon of every platform of the force stopped over
--- Nauvis with a targeting array (pooled: decided, 1), at most once each shared.CANNON.COOLDOWN, and its shells (SHELLS a
--- charge) fall within RADIUS of the point: first one on each hostile building and nest there, nearest first, then the rest
--- spread inside the circle. The look is Kessler-Hayashi's strike's (orbital.from_orbit). A corporation struck counts it an
+-- The player's orbital cannons (orbital_cannon.lua; DESIGN.md, "Orbital cannons", decided 2026-11-10, changed 2026-11-12).
+-- A strike is called with the remote on Nauvis; it fires ONE platform of the force stopped over Nauvis with a targeting
+-- array (the ready one with the most charged cannons; each platform its own COOLDOWN: more platforms, more strikes, the
+-- artillery remote's way with a platform for a gun), one charge from every charged cannon on it. Its shells (SHELLS a
+-- charge) fall within shared.cannon_radius(cannons) of the point: each hostile building and nest there, nearest first, as
+-- many as its health takes (threat.shells_for, the strike beacon's rule), then the rest spread inside the circle. (Until
+-- 0.2.346: every cannon of every platform pooled, a radius of 20, one shell a target.) The look is Kessler-Hayashi's strike's (orbital.from_orbit). A corporation struck counts it an
 -- attack through its losses, as any (decided, 4: no answer of its own).
 local shared = require("__landing-party__.shared")
 local orbital = require("__landing-party__.scripts.orbital")
+local threat = require("__landing-party__.scripts.threat")
 
 local cannon = {}
 local C = shared.CANNON
@@ -39,42 +42,60 @@ local function charges_in(e)
   return inv and inv.get_item_count("lp-orbital-charge") or 0
 end
 
--- Charges ready over Nauvis (one a cannon is what a strike takes), cannons and platforms counted.
+-- A platform's wait before it fires again (ticks; 0 ready).
+local function wait_of(pl)
+  return math.max(0, ((storage.cannon_next_pl or {})[pl.index] or 0) - game.tick)
+end
+
+-- Over Nauvis: strikes ready (platforms not realigning with a charged cannon), charged cannons, cannons, platforms,
+-- charges stored, and the shortest wait of a platform realigning (ticks).
 function cannon.readout(force)
-  local ready, charges, cannons, platforms = 0, 0, 0, 0
+  local ready, loaded, charges, cannons, platforms, wait = 0, 0, 0, 0, 0, nil
   for _, b in ipairs(cannon.batteries(force)) do
     platforms = platforms + 1
+    local n_loaded = 0
     for _, e in ipairs(b.cannons) do
       cannons = cannons + 1
       local n = charges_in(e)
       charges = charges + n
-      if n > 0 then ready = ready + 1 end
+      if n > 0 then n_loaded = n_loaded + 1 end
+    end
+    loaded = loaded + n_loaded
+    local w = wait_of(b.platform)
+    if n_loaded > 0 then
+      if w == 0 then ready = ready + 1 elseif not wait or w < wait then wait = w end
     end
   end
-  local wait = math.max(0, ((storage.cannon_next or {})[force.name] or 0) - game.tick)
-  return {ready = ready, charges = charges, cannons = cannons, platforms = platforms, cooldown = wait}
+  return {ready = ready, loaded = loaded, charges = charges, cannons = cannons, platforms = platforms, cooldown = wait or 0}
 end
 
--- Its shells' points: one on each target (nearest first), the rest spread over the circle (a sunflower, by the index: no
--- dice in what changes the game).
-local function points(s, force, c, n)
+-- Its shells' points within radius R: each target (nearest first) as many as its health takes, while shells last, the
+-- rest spread over the circle (a sunflower, by the index: no dice in what changes the game). Returns the points, the
+-- targets in the circle and those given their shells.
+local function points(s, force, c, n, R)
   local found = {}
-  for _, t in pairs(s.find_entities_filtered{position = c, radius = C.RADIUS, force = hostile(force)}) do
+  for _, t in pairs(s.find_entities_filtered{position = c, radius = R, force = hostile(force)}) do
     if t.valid and t.health and t.type ~= "unit" and t.type ~= "spider-unit" and not SPARE[t.type] then found[#found + 1] = t end
   end
   table.sort(found, function(x, y)
     return (x.position.x - c[1]) ^ 2 + (x.position.y - c[2]) ^ 2 < (y.position.x - c[1]) ^ 2 + (y.position.y - c[2]) ^ 2
   end)
-  local out = {}
-  for k = 1, math.min(n, #found) do out[k] = {found[k].position.x, found[k].position.y} end
+  local out, covered, most = {}, 0, 0
+  for _, t in ipairs(found) do
+    if #out >= n then break end
+    local k = math.min(threat.shells_for("lp-orbital-projectile", t), n - #out)
+    for _ = 1, k do out[#out + 1] = {t.position.x, t.position.y} end
+    covered, most = covered + 1, math.max(most, k)
+  end
   local rest = n - #out
   for k = 1, rest do
-    local r = C.RADIUS * 0.9 * math.sqrt(k / rest)
+    local r = R * 0.9 * math.sqrt(k / rest)
     local a = k * 2.39996
     out[#out + 1] = {c[1] + r * math.cos(a), c[2] + r * math.sin(a)}
   end
-  return out, #found
+  return out, #found, covered, most
 end
+cannon.points = points
 
 -- Its platform's silhouette, for the strike's shadow (orbital.lua shadow): the middles of the cells of CELL tiles its
 -- foundation covers, and of its cannons' barrels over the void; {x, y} in tiles from the middle of its tiles, -y its bow,
@@ -135,15 +156,26 @@ function cannon.fire(force, s, pos, player)
     return nil, key
   end
   if s.name ~= "nauvis" then return no("lp.cannon-nauvis") end
-  storage.cannon_next = storage.cannon_next or {}
-  local wait = (storage.cannon_next[force.name] or 0) - game.tick
-  if wait > 0 then return no("lp.cannon-cooldown", math.ceil(wait / 60)) end
-  local spent = 0
-  local lead, lead_n
+  storage.cannon_next_pl = storage.cannon_next_pl or {}
+  -- The platform that fires: ready (not realigning), the most charged cannons (ties: the first listed).
+  local lead, lead_n, wait
   for _, b in ipairs(cannon.batteries(force)) do
     local n = 0
     for _, e in ipairs(b.cannons) do if charges_in(e) > 0 then n = n + 1 end end
-    if n > 0 and (not lead_n or n > lead_n) then lead, lead_n = b, n end
+    local w = wait_of(b.platform)
+    if n > 0 and w > 0 then
+      if not wait or w < wait then wait = w end
+    elseif n > 0 and (not lead_n or n > lead_n) then
+      lead, lead_n = b, n
+    end
+  end
+  if not lead then
+    if wait then return no("lp.cannon-cooldown", math.ceil(wait / 60)) end
+    return no("lp.cannon-empty")
+  end
+  local spent = 0
+  do
+    local b = lead
     for _, e in ipairs(b.cannons) do
       if charges_in(e) > 0 then
         e.get_inventory(defines.inventory.crafter_output).remove{name = "lp-orbital-charge", count = 1}
@@ -164,16 +196,19 @@ function cannon.fire(force, s, pos, player)
   end
   if spent == 0 then return no("lp.cannon-empty") end
   store()
-  storage.cannon_next[force.name] = game.tick + C.COOLDOWN
+  storage.cannon_next_pl[lead.platform.index] = game.tick + C.COOLDOWN
   local c = {pos.x or pos[1], pos.y or pos[2]}
-  local at, targets = points(s, force, c, spent * C.SHELLS)
-  -- (The shadow is the platform that fired the most.)
-  local sil = lead and cannon.silhouette(lead.platform, lead.cannons)
+  local R = shared.cannon_radius(spent)
+  local at, targets, covered, most = points(s, force, c, spent * C.SHELLS, R)
+  -- (The shadow is the platform that fired.)
+  local sil = cannon.silhouette(lead.platform, lead.cannons)
   storage.cannon_silhouette = sil and #sil.pts or 0
-  orbital.from_orbit(s, force.name, c, at, C.RADIUS, sil)
+  orbital.from_orbit(s, force.name, c, at, R, sil)
   storage.cannon_strikes = (storage.cannon_strikes or 0) + 1
   storage.cannon_shells = (storage.cannon_shells or 0) + #at
-  shared.reply(force, {x = c[1], y = c[2]}, {"lp.cannon-fired", spent, #at, targets,
+  storage.cannon_last = {spent = spent, radius = R, shells = #at, targets = targets, covered = covered, most = most,
+    platform = lead.platform.index}
+  shared.reply(force, {x = c[1], y = c[2]}, {"lp.cannon-fired", spent, #at, targets, math.floor(R + 0.5),
     string.format("[gps=%d,%d,%s]", c[1], c[2], s.name)})
   return spent
 end
@@ -193,9 +228,9 @@ function cannon.gui_tick()
       end
       local r = cannon.readout(p.force)
       local l = frame.lp_orbital_label
-      l.caption = r.cooldown > 0 and {"lp.cannon-readout-wait", r.ready, r.cannons, math.ceil(r.cooldown / 60)}
-        or {"lp.cannon-readout", r.ready, r.cannons}
-      l.tooltip = {"lp.cannon-tooltip", r.platforms, r.charges}
+      l.caption = r.cooldown > 0 and {"lp.cannon-readout-wait", r.ready, r.platforms, math.ceil(r.cooldown / 60)}
+        or {"lp.cannon-readout", r.ready, r.platforms}
+      l.tooltip = {"lp.cannon-tooltip", r.platforms, r.loaded, r.cannons, r.charges}
     end
   end
 end
@@ -327,7 +362,8 @@ function cannon.stats()
   local barrels = 0
   for _, b in pairs(storage.cannon_barrel or {}) do if b.obj and b.obj.valid then barrels = barrels + 1 end end
   return {strikes = storage.cannon_strikes or 0, shells = storage.cannon_shells or 0, silhouette = storage.cannon_silhouette or 0,
-    barrels = barrels, recoils = storage.cannon_recoils or 0, recoil_max = storage.cannon_recoil_max or 0}
+    barrels = barrels, recoils = storage.cannon_recoils or 0, recoil_max = storage.cannon_recoil_max or 0,
+    last = storage.cannon_last}
 end
 
 return cannon

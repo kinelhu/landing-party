@@ -2230,54 +2230,75 @@ end
 -- the remote's call spends one charge from each cannon, the nests fall; called again at once, refused (realigning); at
 -- 40 s a second strike spends the rest; a third, refused (empty). The array taken away, a strike is refused; the platform
 -- sent off Nauvis, refused.
+-- The orbital cannons (scripts/cannon.lua; DESIGN.md "Orbital cannons"; per platform since 0.2.346, the user: "allow
+-- multiple platforms: ... this one fires from a single platform", the radius growing with the cannons "up to a point and
+-- density no cap"): platform A over Nauvis with two cannons, platform B with one, each with its targeting array, the
+-- cannons fed shells, thruster fuel and oxidizer for three charges. Six nests and a behemoth worm round the target.
 scenarios.cannon = function()
+  local C = {R0 = 16, R_MAX = 48}   -- (shared.CANNON's: the checks below read the strike's own record against these)
+  local function deck(pl, xs, tag)
+    local ps = pl and pl.surface
+    if not (ps and ps.valid) then return {} end
+    local tiles = {}
+    for x = -30, 30 do for y = 8, 30 do tiles[#tiles + 1] = {name = "space-platform-foundation", position = {x, y}} end end
+    ps.set_tiles(tiles)
+    local eei = ps.create_entity{name = "electric-energy-interface", position = {-20, 20}, force = "player"}
+    if eei then eei.power_production, eei.electric_buffer_size = 1e8 / 60, 1e8 end
+    for x = -16, 28, 6 do ps.create_entity{name = "medium-electric-pole", position = {x + 0.5, 11.5}, force = "player"} end
+    S["array_" .. tag] = ps.create_entity{name = "lp-targeting-array", position = {-20.5, 26.5}, force = "player"}
+    local out = {}
+    -- (The big cannon, 12 by 18: at the deck's south edge, facing the void.)
+    for k, x in ipairs(xs) do
+      local c = ps.create_entity{name = "lp-orbital-cannon", position = {x, 22}, force = "player", direction = defines.direction.south}
+      if c then
+        c.insert{name = "lp-orbital-shell", count = 4}
+        -- (Three charges' fuel and oxidizer: a third craft starts and holds, its shell taken.)
+        c.insert_fluid{name = "thruster-fuel", amount = 4500}
+        c.insert_fluid{name = "thruster-oxidizer", amount = 4500}
+        out[k] = c
+      end
+    end
+    return out
+  end
   schedule(60, function()
     lp("debug_tune", {raids_off = true, ops_off = true})
     local f = game.forces.player
     f.technologies["lp-orbital-cannon"].researched = true
-    local pl = f.create_space_platform{name = "lp-test", planet = "nauvis", starter_pack = "space-platform-starter-pack"}
-    S.made = pl ~= nil
-    if pl then pl.apply_starter_pack() end
-    S.pl = pl
+    local a = f.create_space_platform{name = "lp-test-a", planet = "nauvis", starter_pack = "space-platform-starter-pack"}
+    local b = f.create_space_platform{name = "lp-test-b", planet = "nauvis", starter_pack = "space-platform-starter-pack"}
+    S.made = a ~= nil and b ~= nil
+    if a then a.apply_starter_pack() end
+    if b then b.apply_starter_pack() end
+    S.pl, S.plb = a, b
   end)
   schedule(120, function()
     local pl = S.pl
     local ps = pl and pl.surface
-    S.surface_ok = ps ~= nil and ps.valid
+    S.surface_ok = ps ~= nil and ps.valid and S.plb and S.plb.surface and S.plb.surface.valid
     S.loc = pl and pl.space_location and pl.space_location.name
     if not S.surface_ok then return end
-    S.tiles = {}
+    -- Where the big cannon may stand, by its rule alone (asked on the bare deck): at the edge facing the void, yes; mid-deck,
+    -- the deck ahead of it, no.
     local tiles = {}
     for x = -30, 30 do for y = 8, 30 do tiles[#tiles + 1] = {name = "space-platform-foundation", position = {x, y}} end end
     ps.set_tiles(tiles)
-    -- Where the big cannon may stand, by its rule alone (asked on the bare deck): at the edge facing the void, yes; mid-deck,
-    -- the deck ahead of it, no.
     S.mid_ok = ps.can_place_entity{name = "lp-orbital-cannon", position = {22, 17}, direction = defines.direction.south, force = "player"}
     S.edge_ok = ps.can_place_entity{name = "lp-orbital-cannon", position = {22, 22}, direction = defines.direction.south, force = "player"}
-    local eei = ps.create_entity{name = "electric-energy-interface", position = {-20, 20}, force = "player"}
-    if eei then eei.power_production, eei.electric_buffer_size = 1e8 / 60, 1e8 end
-    for x = -16, 28, 6 do ps.create_entity{name = "medium-electric-pole", position = {x + 0.5, 11.5}, force = "player"} end
-    S.array = ps.create_entity{name = "lp-targeting-array", position = {-20.5, 26.5}, force = "player"}
-    S.cannons = {}
-    -- (The big cannon, 12 by 18: at the deck's south edge, facing the void.)
-    for k, x in ipairs({-6, 7}) do
-      local c = ps.create_entity{name = "lp-orbital-cannon", position = {x, 22}, force = "player", direction = defines.direction.south}
-      if c then
-        c.insert{name = "lp-orbital-shell", count = 4}
-        c.insert_fluid{name = "thruster-fuel", amount = 1500}   -- (three charges at 500: a third craft starts and holds, its shell taken)
-        S.cannons[k] = c
-      end
-    end
+    S.cannons = deck(S.pl, {-6, 7}, "a")
+    S.cannons_b = deck(S.plb, {-6}, "b")
+    S.array = S.array_a
     -- And one on Nauvis: refused there (its surface conditions).
     S.ground = surface().can_place_entity{name = "lp-orbital-cannon", position = {0, 40}, force = "player"}
     S.built = #S.cannons
-    -- The nests.
+    -- The nests, and a behemoth worm among them (3000 health: one shell does not take it; its health sizes its shells).
     S.nests = {}
     for k = 0, 5 do
       local q = surface().find_non_colliding_position("biter-spawner", {200 + (k % 3) * 9, math.floor(k / 3) * 9}, 8, 1)
       local e = q and surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}
       if e then S.nests[#S.nests + 1] = e end
     end
+    local q = surface().find_non_colliding_position("behemoth-worm-turret", {209, -7}, 6, 1)
+    S.worm = q and surface().create_entity{name = "behemoth-worm-turret", position = q, force = "enemy"}
     S.target = {209, 4.5}
   end)
   -- Its arcs while it charges (the game's lightning, scripts/cannon.lua arcs), counted a minute in.
@@ -2287,74 +2308,95 @@ scenarios.cannon = function()
       if ps then S.arcs = math.max(S.arcs or 0, ps.count_entities_filtered{name = "lp-cannon-arc"}) end
     end)
   end
-  schedule(60 + 600 * 60, function()
+  local T = 60 + 600 * 60
+  schedule(T, function()
     S.full = lp("cannon_readout")
     S.held, S.shells_left = {}, {}
     for k, c in ipairs(S.cannons or {}) do
       S.held[k] = c.valid and c.get_inventory(defines.inventory.crafter_output).get_item_count("lp-orbital-charge") or -1
       S.shells_left[k] = c.valid and c.get_inventory(defines.inventory.crafter_input).get_item_count("lp-orbital-shell") or -1
     end
+    -- The first click: platform A (two charged cannons, the most), every cannon on it.
     S.shot1 = lp("debug_cannon_fire", S.target)
+    S.last1 = lp("cannon_stats").last
     S.sil = lp("cannon_stats").silhouette
     S.cstats0 = lp("cannon_stats")
+    -- At once again: A realigns, so B fires (one cannon: a narrower strike); then both realigning, refused.
     S.shot1b = lp("debug_cannon_fire", S.target)
+    S.last1b = lp("cannon_stats").last
+    S.shot1c = lp("debug_cannon_fire", S.target)
+    S.mid = lp("cannon_readout")
   end)
-  schedule(60 + 600 * 60 + 20 * 60, function()
+  schedule(T + 20 * 60, function()
     local left = 0
     for _, e in ipairs(S.nests) do if e.valid then left = left + 1 end end
     S.nests_left = left
+    S.worm_left = S.worm and S.worm.valid
   end)
-  schedule(60 + 600 * 60 + 40 * 60, function()
+  schedule(T + 40 * 60, function()
     S.shot2 = lp("debug_cannon_fire", S.target)
+    S.last2 = lp("cannon_stats").last
+    S.shot2b = lp("debug_cannon_fire", S.target)
   end)
-  schedule(60 + 600 * 60 + 75 * 60, function()
+  schedule(T + 75 * 60, function()
     S.shot3 = lp("debug_cannon_fire", S.target)
     -- Charged again? (no: their shells are spent, two of four kept for a second cycle pair; so the empty refusal reads now.)
-    if S.array and S.array.valid then S.array.destroy() end
+    for _, a in ipairs({S.array_a, S.array_b}) do if a and a.valid then a.destroy() end end
   end)
-  schedule(60 + 600 * 60 + 80 * 60, function()
+  schedule(T + 80 * 60, function()
     for _, c in ipairs(S.cannons or {}) do
       if c.valid then c.get_inventory(defines.inventory.crafter_output).insert{name = "lp-orbital-charge", count = 1} end
     end
     S.noarray = lp("debug_cannon_fire", S.target)
-    -- The array back, charged, and the platform sent to Vulcanus: refused (not over Nauvis).
+    -- A's array back, charged, and the platform sent to Vulcanus: refused (not over Nauvis).
     local ps = S.pl and S.pl.surface
     if ps then ps.create_entity{name = "lp-targeting-array", position = {-20.5, 26.5}, force = "player"} end
     S.back = lp("cannon_readout")
     S.pl.space_location = "vulcanus"
   end)
-  schedule(60 + 600 * 60 + 82 * 60, function()
+  schedule(T + 82 * 60, function()
     S.away = lp("debug_cannon_fire", S.target)
   end)
   schedule(END - 60, function()
     info("cannon: " .. serpent.line({made = S.made, surface = S.surface_ok, loc = S.loc, built = S.built, ground = S.ground,
-      full = S.full, held = S.held, shot1 = S.shot1, shot1b = S.shot1b, nests_left = S.nests_left, shot2 = S.shot2,
-      shot3 = S.shot3, noarray = S.noarray, stats = lp("cannon_stats")}))
+      full = S.full, held = S.held, shot1 = S.shot1, last1 = S.last1, shot1b = S.shot1b, last1b = S.last1b, shot1c = S.shot1c,
+      nests_left = S.nests_left, worm_left = S.worm_left, shot2 = S.shot2, last2 = S.last2, shot2b = S.shot2b, shot3 = S.shot3,
+      noarray = S.noarray, stats = lp("cannon_stats")}))
     check("cannon: its arcs strike while it charges", (S.arcs or 0) > 0, tostring(S.arcs))
     -- (Its barrel its own sprite over each cannon, slid back as it fires and home again.)
     local cs = lp("cannon_stats")
-    check("cannon: each barrel drawn over its cannon, recoiling as it fires", (S.cstats0 and S.cstats0.barrels or 0) == 2
+    check("cannon: each barrel drawn over its cannon, recoiling as it fires", (S.cstats0 and S.cstats0.barrels or 0) == 3
       and cs.recoils >= 4 and (cs.recoil_max or 0) > 0.99, serpent.line({before = S.cstats0, after = cs}))
-    -- (Its shadow is its own platform's: the deck's strips and the two barrels, 60 by 23 tiles in cells of 2.)
+    -- (Its shadow is its own platform's: the deck's strips and the two barrels.)
     check("cannon: the strike's shadow drawn from its own platform", (S.sil or 0) >= 12, tostring(S.sil))
     check("cannon: buildable at the deck's edge facing the void, not mid-deck", S.edge_ok == true and S.mid_ok == false,
       string.format("edge %s, mid %s", tostring(S.edge_ok), tostring(S.mid_ok)))
-    check("cannon: a platform over Nauvis with two cannons on it, none buildable on Nauvis", S.surface_ok and S.loc == "nauvis"
+    check("cannon: two platforms over Nauvis, two cannons on the first, none buildable on Nauvis", S.surface_ok and S.loc == "nauvis"
       and S.built == 2 and S.ground == false, serpent.line({S.surface_ok, S.loc, S.built, S.ground}))
     -- (Not three: its third craft, begun before the script stopped it, holds; its shell taken, so one of four left. Without
     -- the stop it held three and gave one at once to the next strike, a third strike not refused.)
-    check("cannon: each charged its store of two and stopped", S.held and S.held[1] == 2 and S.held[2] == 2
-      and S.shells_left[1] == 1 and S.shells_left[2] == 1 and S.full.ready == 2 and S.full.cannons == 2,
-      serpent.line({held = S.held, shells = S.shells_left, full = S.full}))
-    check("cannon: the remote's strike spent one charge each and took the nests", S.shot1 and S.shot1.spent == 2
-      and S.nests_left == 0, serpent.line({shot = S.shot1, left = S.nests_left}))
-    check("cannon: called again at once, refused (realigning)", S.shot1b and S.shot1b.spent == nil
-      and S.shot1b.why == "lp.cannon-cooldown", serpent.line(S.shot1b))
-    check("cannon: a second strike spent the rest, a third was refused (empty)", S.shot2 and S.shot2.spent == 2
-      and S.shot3 and S.shot3.why == "lp.cannon-empty", serpent.line({S.shot2, S.shot3}))
+    check("cannon: each charged its store of two on shells, fuel and oxidizer, and stopped", S.held and S.held[1] == 2
+      and S.held[2] == 2 and S.shells_left[1] == 1 and S.shells_left[2] == 1 and S.full.ready == 2 and S.full.loaded == 3
+      and S.full.platforms == 2, serpent.line({held = S.held, shells = S.shells_left, full = S.full}))
+    -- One platform a click: A's two cannons, its radius R0 * sqrt(2); then B's one, R0.
+    local function near(x, y) return x and math.abs(x - y) < 0.01 end
+    check("cannon: the first strike fired one platform, both its cannons, R0 * sqrt(2) wide, and took the nests",
+      S.shot1 and S.shot1.spent == 2 and S.last1 and near(S.last1.radius, C.R0 * math.sqrt(2)) and S.nests_left == 0,
+      serpent.line({shot = S.shot1, last = S.last1, left = S.nests_left}))
+    check("cannon: called again at once, the second platform fired (one cannon, R0 wide)", S.shot1b and S.shot1b.spent == 1
+      and S.last1b and near(S.last1b.radius, C.R0) and S.last1b.platform ~= (S.last1 and S.last1.platform),
+      serpent.line({shot = S.shot1b, last = S.last1b}))
+    check("cannon: a third click with both realigning, refused", S.shot1c and S.shot1c.spent == nil
+      and S.shot1c.why == "lp.cannon-cooldown" and S.mid and S.mid.ready == 0 and S.mid.cooldown > 0,
+      serpent.line({S.shot1c, S.mid}))
+    -- (Caught 0.2.346: one shell a target left a behemoth worm standing; sized by its health it takes several.)
+    check("cannon: a tough target given the shells its health takes, and taken", S.last1 and (S.last1.most or 0) >= 3
+      and S.worm_left == false, serpent.line({most = S.last1 and S.last1.most, worm = S.worm_left}))
+    check("cannon: a second round, A then B again, then empty", S.shot2 and S.shot2.spent == 2 and S.shot2b
+      and S.shot2b.spent == 1 and S.shot3 and S.shot3.why == "lp.cannon-empty", serpent.line({S.shot2, S.shot2b, S.shot3}))
     check("cannon: without its targeting array, refused", S.noarray and S.noarray.why == "lp.cannon-empty",
       serpent.line(S.noarray))
-    check("cannon: its platform away from Nauvis, refused", S.back and S.back.ready == 2 and S.away
+    check("cannon: its platform away from Nauvis, refused", S.back and S.back.ready == 1 and S.away
       and S.away.why == "lp.cannon-empty", serpent.line({back = S.back, away = S.away}))
   end)
 end
@@ -4886,8 +4928,10 @@ scenarios.dev = function()
   schedule(2 * 3600 + 30 + 20 * 60, function()
     local left = 0
     for _, e in ipairs(S.cannon_nests or {}) do if e.valid then left = left + 1 end end
-    check("dev: /lp cannon charged three over Nauvis and /lp cannon fire took the nests", S.cannon_ready.ready == 3
-      and S.cannon_after.ready == 3 and S.cannon_after.charges == 3 and left == 0,
+    -- (Since 0.2.346 the readout's ready counts platforms ready to fire, loaded the cannons charged.)
+    check("dev: /lp cannon charged three over Nauvis and /lp cannon fire took the nests", S.cannon_ready.ready == 1
+      and S.cannon_ready.loaded == 3 and S.cannon_after.ready == 0 and S.cannon_after.loaded == 3
+      and S.cannon_after.charges == 3 and left == 0,
       serpent.line({ready = S.cannon_ready, after = S.cannon_after, left = left}))
   end)
   schedule(2 * 3600 + 600 + 15 * 60, function()

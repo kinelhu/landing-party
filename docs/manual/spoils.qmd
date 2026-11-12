@@ -83,7 +83,8 @@ The table above gives what each study asks for and what its technology costs.
 **Field dome.** {{< var desc.entity_player_dome >}} You research it with science packs; it needs no study. See
 [Your army](army.qmd).
 
-**Orbital cannon.** You research it with science packs after Artillery, Space platform and Tungsten carbide. Its targeting array is
+**Orbital cannon.** You research it with science packs after Artillery, Space platform, Tungsten carbide, the Foundry
+and the Electromagnetic plant. Its targeting array is
 built round Kessler-Hayashi's orbital beacon, or a targeting core where there is none. See
 [Orbital cannons](army.qmd#sec-cannons).
 

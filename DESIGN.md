@@ -164,7 +164,7 @@ document still says Serenity where it records history.
 | Loot instead of salvage: buildings and units drop what they are made of | built | `loot`, `fall` |
 | Faction components (six) and the first faction technology, Cluster shells | built | `fuze` (two) |
 | Faction technologies: Pheromone bait, Pact breaker, Claim marker, Cluster shells, Rail rifle, Orbital strike | built | `bait`, `crystal` (two), `fuze` (two), `rifle`, `strike` |
-| Orbital cannons for the player: cannons on a platform over Nauvis, charged like a silo, fed thruster fuel and space-made shells, fired by remote, after artillery; Kessler-Hayashi's salvaged beacon a part of the targeting array (replaces the one-shot strike beacon) | built 0.2.274; its models 0.2.275 (tools/blender/orbital_cannon.py, targeting_array.py); `/lp cannon [n]`, `/lp cannon fire` | `cannon`, `dev` |
+| Orbital cannons for the player: cannons on a platform over Nauvis, charged like a silo, fed thruster fuel and oxidizer and ground-cast shells (0.2.346), fired by remote one platform a strike, its radius growing with its cannons (0.2.346), after artillery; Kessler-Hayashi's salvaged beacon a part of the targeting array (replaces the one-shot strike beacon) | built 0.2.274; its models 0.2.275 (tools/blender/orbital_cannon.py, targeting_array.py); `/lp cannon [n]`, `/lp cannon fire` | `cannon`, `dev` |
 | The player's unit cap shown (a panel at the top: units / cap, offline, relays and waiting orders in its tooltip); units retired (ALT + R or the panel's button: home to a barracks, the order handed in beside it for the robots) | built 0.2.273 | `retire` |
 | `/lp rig`, `/lp tap` on demand (`/lp flare` retired) | built | `jumper`, `tap` (`cmd`) |
 | Builders: yards build what they reach, crews the rest (Grubstake's truck, Serenity's drone), rebuilds too | built | `crew` (five), `pace` |
@@ -1207,10 +1207,28 @@ Everything below is a proposal; numbers are first guesses to be priced (arena, s
 - **Decided (2026-11-10; recommended, the user agreed bar the fourth, which was changed on the user's word: "another
   constraint on a tightly balanced system"):**
   1. *Pooled:* the remote fires every ready cannon of every platform stationed over Nauvis; no platform picker (a player
-     who wants one held back flies it elsewhere).
+     who wants one held back flies it elsewhere). **Changed 0.2.346** (the user, 2026-11-12: "allow multiple platforms:
+     in that way, you get multiple charges just like the artillery command fires from a single cannon, this one fires from
+     a single platform"): a strike fires ONE platform, the ready one with the most charged cannons, every charged cannon
+     on it; each platform realigns on its own, so more platforms give more strikes in a row.
   2. *A store of 2, a cycle of 3 minutes* (first numbers, to tune in play): a strike and a follow-up, never a stack spent
      at once; more cannons make a strike stronger, not more often. Artillery the everyday tool, the cannon the planned one.
-  3. *One shell* for the first release; cluster and incendiary later, the cluster from Kessler-Hayashi's fuze.
+     **And its reach, 0.2.346** (the user: "the damage of the strike currently is quite high ... more cannons could
+     increase both levers to avoid insane overkill ... radius could increase up to a point and density no cap"): radius
+     `R0 * sqrt(cannons)` (16) up to `R_MAX` (48, at 9 cannons), so density holds while it widens and rises past the cap;
+     each target given the shells its health takes (`threat.shells_for`, the strike beacon's rule: one a target left a
+     behemoth worm standing), the rest spread. A shell is 240 physical and 720 explosive in 2.5 tiles, a nest 350: one
+     cannon's ten shells into a radius of 20 took ten nests, five cannons' fifty into the same circle carpeted it.
+  3. *One shell* for the first release; cluster and incendiary later, the cluster from Kessler-Hayashi's fuze. **Its
+     making, 0.2.346** (the user: shells "made in foundries or EM plants", on the ground, "Still think some logistics
+     above would be good"): cast in a foundry on a planet (gravity at least 1) from 300 molten iron, 10 tungsten carbide
+     and 20 explosives round an orbital fuse (an electromagnetic plant's: a supercapacitor and 2 processing units), 250
+     kg, four a rocket: one cannon firing nonstop takes a rocket every 12 minutes. Measured before (the game's weights):
+     the space-made shell's ingredients were 40.5 kg, a rocket feeding a cannon for 74 minutes, and its 500 fuel 2.8 a
+     second from asteroids: no load at all. Aloft, each charge burns 1,500 thruster fuel and 1,500 oxidizer (the
+     thrusters' pair; the cannon's two inputs, fuel left, oxidizer right): with the basic recipes 40 carbon, 40 iron ore
+     and 400 water, about 10 chunks (4 carbonic, 2 metallic, 4 oxide), 3.3 a minute a cannon; a tenth with Vulcanus's
+     calcite. The research now also needs the Foundry and the Electromagnetic plant.
   4. *No special answer:* a strike is an attack (provoked, its grievance, know.lua), and the corporations' own raids and
      sieges answer it where their choice sends them. Revisited only if play shows strikes going unpunished.
   5. *Without Kessler-Hayashi* (its lever off): the array takes a targeting core, made of processing units, low density

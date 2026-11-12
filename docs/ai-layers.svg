@@ -64,7 +64,7 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M689,-235.5C689,-235.5 537.25,-235.5 537.25,-235.5 531.25,-235.5 525.25,-229.5 525.25,-223.5 525.25,-223.5 525.25,-203.5 525.25,-203.5 525.25,-197.5 531.25,-191.5 537.25,-191.5 537.25,-191.5 689,-191.5 689,-191.5 695,-191.5 701,-197.5 701,-203.5 701,-203.5 701,-223.5 701,-223.5 701,-229.5 695,-235.5 689,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="613.12" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="613.12" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">22 modules, 9377 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="613.12" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">22 modules, 9413 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="613.12" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">army 1055, ops 2185, siege 2132</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
@@ -168,9 +168,9 @@
 <!-- Army and operations&#45;&gt;Seams (leaves) -->
 <g id="edge4" class="edge">
 <title>Army and operations&#45;&gt;Seams (leaves)</title>
-<path fill="none" stroke="#8899aa" stroke-width="7.2" d="M701.5,-215.85C770.64,-219.44 868.13,-230.14 948.12,-260.5 974.11,-270.36 984.92,-271.98 1000.12,-295.25 1034.35,-347.63 1023.56,-372.76 1017.12,-435 1012.66,-478.24 1020.77,-494.27 997.12,-530.75 925.12,-641.85 767.17,-685.11 670.89,-701.56"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="7.2" points="670.07,-695.31 661.2,-703.12 672.07,-707.75 670.07,-695.31"/>
-<text xml:space="preserve" text-anchor="middle" x="1020.78" y="-461.2" font-family="Helvetica,sans-Serif" font-size="9.00">25</text>
+<path fill="none" stroke="#8899aa" stroke-width="7.5" d="M701.5,-215.85C770.64,-219.44 868.13,-230.14 948.12,-260.5 974.11,-270.36 984.92,-271.98 1000.12,-295.25 1034.35,-347.63 1023.56,-372.76 1017.12,-435 1012.66,-478.24 1020.77,-494.27 997.12,-530.75 925.12,-641.85 767.17,-685.11 670.89,-701.56"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="7.5" points="670.11,-695.04 661.28,-703.11 672.2,-708 670.11,-695.04"/>
+<text xml:space="preserve" text-anchor="middle" x="1020.78" y="-461.2" font-family="Helvetica,sans-Serif" font-size="9.00">26</text>
 </g>
 <!-- Army and operations&#45;&gt;Perception and attempts (any attacker) -->
 <g id="edge3" class="edge">

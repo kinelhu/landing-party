@@ -29,18 +29,27 @@ data:extend({
   {type = "recipe", name = "lp-orbital-charge", categories = {"lp-orbital"}, hidden = true, enabled = true,
     energy_required = C.CYCLE, hide_from_player_crafting = true,
     ingredients = {{type = "item", name = "lp-orbital-shell", amount = 1},
-      {type = "fluid", name = "thruster-fuel", amount = C.FUEL}},
+      {type = "fluid", name = "thruster-fuel", amount = C.FUEL}, {type = "fluid", name = "thruster-oxidizer", amount = C.OXIDIZER}},
     results = {{type = "item", name = "lp-orbital-charge", amount = 1}}},
 })
 
--- The shell: made in space only, its penetrator tungsten carbide (Vulcanus's, shipped to Nauvis's orbit), its charge
--- explosives (coal from no asteroid: shipped up until coal synthesis), its case steel.
+-- The shell (0.2.346; the user: shells "made in foundries or EM plants", on the ground): cast in a foundry on a planet
+-- (gravity: not aloft) from molten iron, round a tungsten carbide penetrator (Vulcanus's) and explosives, its fuse an
+-- electromagnetic plant's (Fulgora's supercapacitor); SHELL_KG, four a rocket: the silo is the cannons' supply line. (Made
+-- aloft until then from 4 tungsten carbide, 10 explosives and 5 steel: 40 kg, a rocket an hour and a quarter a cannon.)
+local GROUND = {{property = "gravity", min = 1}}
 data:extend({
   {type = "item", name = "lp-orbital-shell", icons = {{icon = "__base__/graphics/icons/artillery-shell.png", tint = TINT}},
-    stack_size = 10, weight = 100000, subgroup = "lp-components", order = "y-orbital-a"},
-  {type = "recipe", name = "lp-orbital-shell", enabled = false, energy_required = 30, surface_conditions = SPACE,
-    ingredients = {{type = "item", name = "tungsten-carbide", amount = 4}, {type = "item", name = "explosives", amount = 10},
-      {type = "item", name = "steel-plate", amount = 5}},
+    stack_size = 10, weight = C.SHELL_KG * 1000, subgroup = "lp-components", order = "y-orbital-a"},
+  {type = "item", name = "lp-orbital-fuse", icons = {{icon = "__space-age__/graphics/icons/supercapacitor.png", tint = TINT}},
+    stack_size = 20, subgroup = "lp-components", order = "y-orbital-b"},
+  {type = "recipe", name = "lp-orbital-fuse", enabled = false, categories = {"electromagnetics"}, energy_required = 20,
+    ingredients = {{type = "item", name = "supercapacitor", amount = 1}, {type = "item", name = "processing-unit", amount = 2}},
+    results = {{type = "item", name = "lp-orbital-fuse", amount = 1}}},
+  {type = "recipe", name = "lp-orbital-shell", enabled = false, categories = {"metallurgy"}, energy_required = 30,
+    surface_conditions = GROUND,
+    ingredients = {{type = "fluid", name = "molten-iron", amount = 300}, {type = "item", name = "tungsten-carbide", amount = 10},
+      {type = "item", name = "explosives", amount = 20}, {type = "item", name = "lp-orbital-fuse", amount = 1}},
     results = {{type = "item", name = "lp-orbital-shell", amount = 1}}},
 })
 
@@ -117,13 +126,17 @@ cannon.tile_buildability_rules = {
     remove_on_collision = true},
   {area = {{-2.9, -8.9 - C.REACH}, {2.9, -9.1}}, required_tiles = {layers = {empty_space = true}}, remove_on_collision = true},
 }
--- Its thruster fuel from behind (the side away from the void).
+-- Its thruster fuel and oxidizer from behind (the side away from the void): the fuel on the left, the oxidizer on the
+-- right (0.2.346; fuel alone until then, both inputs one box).
 local fb = table.deepcopy(cannon.fluid_boxes[1])
 fb.production_type = "input"
-fb.volume = 1000
-fb.pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {-4.5, 8.5}},
-  {flow_direction = "input", direction = defines.direction.south, position = {4.5, 8.5}}}
-cannon.fluid_boxes = {fb}
+fb.volume = math.max(C.FUEL, C.OXIDIZER) * 3   -- (room for a third charge's: a craft begun past the store holds)
+fb.filter = "thruster-fuel"
+fb.pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {-4.5, 8.5}}}
+local ob = table.deepcopy(fb)
+ob.filter = "thruster-oxidizer"
+ob.pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {4.5, 8.5}}}
+cannon.fluid_boxes = {fb, ob}
 cannon.fluid_boxes_off_when_no_fluid_recipe = false
 cannon.icon_draw_specification = {shift = {0, 1.5}, scale = 2}
 cannon.localised_description = {"entity-description.lp-orbital-cannon", tostring(C.STORE), tostring(math.floor(C.CYCLE / 60))}
@@ -211,13 +224,14 @@ data:extend({
 -- The technology: after artillery and the space platform.
 data:extend({
   {type = "technology", name = "lp-orbital-cannon", icon = "__base__/graphics/technology/artillery.png", icon_size = 256,
-    prerequisites = {"artillery", "space-platform", "tungsten-carbide"},
+    prerequisites = {"artillery", "space-platform", "tungsten-carbide", "foundry", "electromagnetic-plant"},
     unit = {count = 1000, time = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1},
       {"military-science-pack", 1}, {"chemical-science-pack", 1}, {"utility-science-pack", 1}, {"space-science-pack", 1}}},
     effects = {{type = "unlock-recipe", recipe = "lp-orbital-cannon"}, {type = "unlock-recipe", recipe = "lp-orbital-shell"},
+      {type = "unlock-recipe", recipe = "lp-orbital-fuse"},
       {type = "unlock-recipe", recipe = "lp-targeting-array"}, {type = "unlock-recipe", recipe = "lp-targeting-core"},
       {type = "unlock-recipe", recipe = "lp-targeting-array-core"}},
-    localised_description = {"technology-description.lp-orbital-cannon", tostring(C.RADIUS)}},
+    localised_description = {"technology-description.lp-orbital-cannon", tostring(C.R0), tostring(C.R_MAX)}},
 })
 
 -- The strike beacon retired (the cannons replace it): its technology and recipe hidden; a placed one fires as before.

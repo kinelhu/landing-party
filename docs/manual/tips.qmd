@@ -65,8 +65,9 @@
   turrets. A second line of turrets behind the wall meets it there.
 - **Mix your laser line.** A lightning tank stops each laser or tesla turret it strikes for
   {{< var kh.tesla_stun_s >}} seconds. Gun turrets and flamethrowers between them keep firing.
-- **Keep a cannon strike for a siege.** Your orbital cannons send their first shells one to each enemy building in the
-  circle, so a strike on a siege site goes to its guns, its mast and its dome projector, nearest first.
+- **Keep a cannon strike for a siege.** Your orbital cannons send their first shells to the enemy buildings in the
+  circle, as many as each takes, so a strike on a siege site goes to its guns, its mast and its dome projector, nearest
+  first.
 - **Lead with tanks against lightning.** Each hit from a lightning tank or a shock trooper adds to a unit's charge, and
   a charged unit can be stunned. Tanks take little of the charge, and the lightning jumps less between units kept
   apart.

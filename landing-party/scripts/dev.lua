@@ -362,10 +362,10 @@ function dev.run(player, args)
     local f = player.force
     if args[2] == "fire" then
       local n, why = cannon.fire(f, player.surface, player.position, player.valid ~= nil and player or nil)
-      player.print(n and string.format("orbital strike: %d cannons fired", n) or ("no strike: " .. tostring(why)))
+      player.print(n and string.format("orbital strike: %d cannons fired, radius %.0f", n, shared.cannon_radius(n)) or ("no strike: " .. tostring(why)))
       return
     end
-    local n = math.max(1, math.min(5, tonumber(args[2]) or 4))
+    local n = math.max(1, math.min(5, tonumber(args[2]) or 4))   -- (five fit the dev deck)
     local t = f.technologies["lp-orbital-cannon"]
     if t then t.researched = true end
     local pl = storage.dev_platform
@@ -395,7 +395,8 @@ function dev.run(player, args)
         or ps.create_entity{name = "lp-orbital-cannon", position = p, force = f, direction = defines.direction.south}
       if c then
         c.insert{name = "lp-orbital-shell", count = 4}
-        c.insert_fluid{name = "thruster-fuel", amount = 1000}
+        c.insert_fluid{name = "thruster-fuel", amount = shared.CANNON.FUEL}
+        c.insert_fluid{name = "thruster-oxidizer", amount = shared.CANNON.OXIDIZER}
         local out = c.get_inventory(defines.inventory.crafter_output)
         local want = shared.CANNON.STORE - out.get_item_count("lp-orbital-charge")
         if want > 0 then out.insert{name = "lp-orbital-charge", count = want} end
