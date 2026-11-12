@@ -10,12 +10,12 @@ digraph ai {
     "names" [label="names\n54 lines", width=0.86, fillcolor="#eef2f7"];
     "chart" [label="chart\n114 lines", width=0.93, fillcolor="#d9f0d9"];
     "ground" [label="ground\n38 lines", width=0.84, fillcolor="#d9f0d9"];
-    "threat" [label="threat\n295 lines", width=1.13, fillcolor="#eef2f7"];
+    "threat" [label="threat\n297 lines", width=1.13, fillcolor="#eef2f7"];
     "unit_prior" [label="unit_prior\n29 lines", width=0.83, fillcolor="#d9f0d9"];
     "lights" [label="lights\n28 lines", width=0.83, fillcolor="#d9f0d9"];
     "landfx" [label="landfx\n239 lines", width=1.07, fillcolor="#eef2f7"];
     "burstfx" [label="burstfx\n305 lines", width=1.14, fillcolor="#eef2f7"];
-    "veterancy" [label="veterancy\n411 lines", width=1.26, fillcolor="#eef2f7"];
+    "veterancy" [label="veterancy\n408 lines", width=1.25, fillcolor="#eef2f7"];
   }
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];
@@ -60,12 +60,12 @@ digraph ai {
   }
   subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n1055 lines", width=1.97, fillcolor="#f7dede"];
-    "ops" [label="ops\n2185 lines", width=3.23, fillcolor="#f7dede"];
+    "ops" [label="ops\n2196 lines", width=3.24, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n295 lines", width=1.13, fillcolor="#eef2f7"];
     "airraid" [label="airraid\n127 lines", width=0.94, fillcolor="#eef2f7"];
     "cannon" [label="cannon\n373 lines", width=1.21, fillcolor="#eef2f7"];
-    "siege" [label="siege\n2132 lines", width=3.17, fillcolor="#f7dede"];
+    "siege" [label="siege\n2135 lines", width=3.17, fillcolor="#f7dede"];
     "assault" [label="assault\n142 lines", width=0.96, fillcolor="#eef2f7"];
     "strip" [label="strip\n238 lines", width=1.06, fillcolor="#eef2f7"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
@@ -91,7 +91,7 @@ digraph ai {
     "marker" [label="marker\n70 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_7 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n4475 lines", width=3.80, fillcolor="#f7dede"];
+    "herd" [label="herd\n4478 lines", width=3.80, fillcolor="#f7dede"];
     "herd_learn" [label="herd_learn\n253 lines", width=1.08, fillcolor="#eef2f7"];
     "farm" [label="farm\n2440 lines", width=3.51, fillcolor="#f7dede"];
     "creep" [label="creep\n590 lines", width=1.46, fillcolor="#eef2f7"];
@@ -109,10 +109,10 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1251 lines", width=2.19, fillcolor="#f7dede"];
+    "control" [label="control\n1266 lines", width=2.21, fillcolor="#f7dede"];
     "dev" [label="dev\n603 lines", width=1.47, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
-    "oplog" [label="oplog\n188 lines", width=1.01, fillcolor="#eef2f7"];
+    "oplog" [label="oplog\n189 lines", width=1.01, fillcolor="#eef2f7"];
   }
   "airraid" -> "attempt";
   "airraid" -> "costmap";

@@ -386,10 +386,7 @@ end
 
 -- A ranked unit's strength over its rank's normal (health times damage, the probe's: 1.3 and 1.48 a level): what the
 -- AI's sums of worth count it as.
-function veterancy.scale(u)
-  local r = veterancy.rank(u)
-  return (1 + 0.3 * r) * (1 + 0.48 * r)
-end
+function veterancy.scale(u) return shared.rank_scale(u) end
 
 -- The share of a raid's launched units it turns home below (ops: 0.5, a prospector's 0.7): with an Elite or a Hero in
 -- it, at least ELITE_SHARE (the user: "preserving highly elite units vs throwing mass prod in the grinder").

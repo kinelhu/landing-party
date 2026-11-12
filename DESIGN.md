@@ -7067,6 +7067,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   none); the user, of the call: "I follow your calls on this one". Seen failing: `ranks-mend-old` (its mend and its
   herd's through off, the rush before 0.2.215) walks the corridor on 12345, 777, 4242 (1, 2, 2), the default on none
   (outside when through 2, 2, 1).
+- **The AI weighs a unit at its rank** (0.2.355, 2026-11-12; the user: "Does the AI take veterancy into account in its
+  decisions? Meaning both its units and the enemy's?", then "Seemed like a pretty big hole?"). Read: ranks came at 0.2.296
+  after every strength reading was built, and were wired into two (an air raid's worth, a raid with Elites turning home
+  sooner); the rest read a unit by its prototype, a Heroic trooper as a fresh one, the corporations' own and the
+  player's alike. Now one scale, `shared.rank_scale` ((1 + 0.3 l)(1 + 0.48 l) by quality level, the engine's raises as
+  scenario vetprobe measured; 3.1 at Rare), read wherever a unit is weighed: the corporations' threat prior of a unit
+  (threat.prior: every fire map), Synthexis's and a siege's price of it (a learned price is a fresh unit's, read at this
+  one's rank), the losses learned from (Synthexis's lost worth by killer divided by the killer's rank; oplog's sent and
+  lost, an op's sent worth at each one's rank), and a raid's members (its ranked counting as more than one head, the
+  highest first till they make up what it wants, the rest home). Not here: a turret's quality (not measured), the army
+  cap (heads, as it is a count). Scenario `rankreads` (quick set): a fresh and a rare unit of each side, its scale, prior
+  and Synthexis price 3.1 times (seen failing on the prior and the price without the rank). Synthexis's own breeds stay
+  unranked (0.2.314).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

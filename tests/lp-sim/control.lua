@@ -2413,6 +2413,46 @@ end
 -- same, raids an undefended outpost of assemblers 120 tiles out: promoted there, in the raid, the copy in the group and
 -- under the command the original had, and home again its settlement's own. LP_MIX=off: veterancy off (debug_tune vet_off); LP_MIX=norewire: the
 -- swap without its rewiring (debug_tune rewire_off): the checks seen failing.
+-- The AI's readings weigh a unit at its rank (0.2.355; the user, 2026-11-12: "Does the AI take veterancy into account in
+-- its decisions? Meaning both its units and the enemy's?", then "Seemed like a pretty big hole?": it read a rank in two
+-- places only). A fresh and a rare unit of each side, side by side: its rank scale, the corporations' threat prior of it
+-- and Synthexis's price of it, each higher for the rare one. A new reading that skips the rank fails it.
+scenarios.rankreads = function()
+  local PAIRS = {{"lp-trooper", "player"}, {"lp-infantry", "lp-serenity"}, {"lp-shotgun-hand", "lp-grubstake"}}
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, ops_off = true})
+    flatten(-200, 900, 200, 1000)
+    S.pairs = {}
+    for i, p in ipairs(PAIRS) do
+      local x = -150 + i * 40
+      local a_ = surface().create_entity{name = p[1], position = {x, 950}, force = p[2]}
+      local b_ = surface().create_entity{name = p[1], position = {x + 6, 950}, force = p[2], quality = "rare"}
+      S.pairs[#S.pairs + 1] = {name = p[1], fresh = a_ and a_.unit_number, rare = b_ and b_.unit_number}
+    end
+  end)
+  schedule(120, function()
+    local ids = {}
+    for _, p in ipairs(S.pairs or {}) do ids[#ids + 1] = p.fresh; ids[#ids + 1] = p.rare end
+    local by = {}
+    for _, r in ipairs(lp("debug_rank_reads", ids)) do by[r.unit] = r end
+    S.reads = {}
+    for _, p in ipairs(S.pairs or {}) do S.reads[#S.reads + 1] = {name = p.name, fresh = by[p.fresh], rare = by[p.rare]} end
+  end)
+  schedule(END - 60, function()
+    info("rankreads: " .. serpent.line(S.reads))
+    for _, k in ipairs({"scale", "prior", "herd_price"}) do
+      local ok, why = #(S.reads or {}) == #PAIRS, {}
+      for _, r in ipairs(S.reads or {}) do
+        local f, rr = r.fresh and r.fresh[k], r.rare and r.rare[k]
+        if not (f and rr and rr > f * 1.5) then ok = false end
+        why[#why + 1] = string.format("%s %s to %s", r.name, tostring(f and math.floor(f * 100) / 100),
+          tostring(rr and math.floor(rr * 100) / 100))
+      end
+      check("rankreads: a rare unit read at its rank (" .. k .. ")", ok, table.concat(why, "; "))
+    end
+  end)
+end
+
 scenarios.veteran = function()
   local camp, off = params.mix == "camp", params.mix == "off"
   local trace = {vet_trace = true, vet_off = off or nil, rewire_off = params.mix == "norewire" or nil}

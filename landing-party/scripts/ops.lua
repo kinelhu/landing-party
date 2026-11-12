@@ -1314,6 +1314,16 @@ local function launch(b, key, trace, army, opts)
   end
   local committed = battery(t) or threat_bonus(b, t) > 0 or desperate or is_answer
   local members = pool.take(b, want, floor_of(b, army, committed), SOLDIER)
+  -- (Its ranked ones as more than one (shared.rank_scale: a Rare about two): the highest first till they make up what it
+  -- wants, the rest home again; 0.2.355, a camp of Elites sent as many as of recruits.)
+  if #members > 1 then
+    table.sort(members, function(x, y) return shared.rank_scale(x) > shared.rank_scale(y) end)
+    local heads, keep = 0, {}
+    for _, u in ipairs(members) do
+      if heads < want then keep[#keep + 1] = u; heads = heads + shared.rank_scale(u) else pool.give_one(b, u) end
+    end
+    members = keep
+  end
   -- What field() counted may not be there to send (haulers, the dead): no raid of nought (a camp launched four, visit).
   if #members == 0 then return false end
   local dx, dy = h.position.x - t.pos[1], h.position.y - t.pos[2]
@@ -1567,7 +1577,8 @@ local choose_strip, launch_strip, strip_site, strip_step = strip_.choose_strip, 
 local function measure(b, op)
   op.measured = true
   local sent = 0
-  for _, m in ipairs(op.members or {}) do if m.valid then sent = sent + attempt.worth(m.name) end end
+  -- (Each at its rank, 0.2.355.)
+  for _, m in ipairs(op.members or {}) do if m.valid then sent = sent + attempt.worth(m.name) * veterancy.scale(m) end end
   op.sent_worth = sent
   op.razed0 = op.razed0 or b.razed
   local t = b.intel.targets[op.target]

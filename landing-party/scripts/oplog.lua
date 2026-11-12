@@ -5,6 +5,7 @@
 -- it planned, where its units stood every SAMPLE ticks, where each died and to what, what each destroyed, and how it
 -- ended. One line of JSON an operation, written to ops.jsonl when it ends (scripts/ops_review.py draws them).
 local attempt = require("__landing-party__.scripts.attempt")
+local shared = require("__landing-party__.shared")
 local valuemap = require("__landing-party__.scripts.valuemap")
 
 local oplog = {}
@@ -111,7 +112,7 @@ local function follow(s, view, base_id, seen)
         -- anew; the code review, 2026-10-31.)
         if u.type == "unit" then
           rec.size = rec.size + 1
-          rec.attempt.sent = rec.attempt.sent + attempt.worth(u.name)
+          rec.attempt.sent = rec.attempt.sent + attempt.worth(u.name) * shared.rank_scale(u)
         end
       end
     end
@@ -172,7 +173,7 @@ function oplog.on_died(e)
     local c = e.cause and e.cause.valid and e.cause or nil
     table.insert(s.live[key].deaths, {t = minute(), at = xy(ent.position), name = ent.name,
       killer = c and c.name or (e.force and e.force.name) or "?"})
-    s.live[key].attempt.lost = s.live[key].attempt.lost + attempt.worth(ent.name)
+    s.live[key].attempt.lost = s.live[key].attempt.lost + attempt.worth(ent.name) * shared.rank_scale(ent)
   end
   local c = e.cause and e.cause.valid and e.cause or nil
   local by = c and c.unit_number and s.member[c.unit_number]

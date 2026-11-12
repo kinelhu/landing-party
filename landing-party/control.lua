@@ -1070,6 +1070,21 @@ remote.add_interface("landing-party", {
   -- The event raised as a unit is promoted (veterancy.PROMOTED: {old, new, rank}, before the old one goes): for a mod
   -- that holds our units to put the copy where it held the old one.
   promoted_event = function() return veterancy.PROMOTED end,
+  -- Tests: how the AI's readings weigh these units at their ranks (0.2.355): each one's rank scale, its threat prior (the
+  -- corporations' fire maps) and Synthexis's price of it.
+  debug_rank_reads = function(unit_numbers)
+    local want, out = {}, {}
+    for _, n in ipairs(unit_numbers) do want[n] = true end
+    for _, s in pairs(game.surfaces) do
+      for _, e in ipairs(s.find_entities_filtered{type = {"unit", "spider-unit"}}) do
+        if want[e.unit_number] then
+          out[#out + 1] = {unit = e.unit_number, name = e.name, quality = e.quality.name, scale = shared.rank_scale(e),
+            prior = threat.prior(e, 6), herd_price = herd.price_of(e)}
+        end
+      end
+    end
+    return out
+  end,
   -- Tests and films: a unit given this much merit, promoted the next tick if it has earned a rank (veterancy.check).
   debug_promote = function(unit_number, n)
     -- (Searched: get_entity_by_unit_number finds only prototypes flagged get-by-unit-number, never a unit.)

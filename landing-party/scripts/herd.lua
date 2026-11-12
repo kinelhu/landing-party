@@ -174,8 +174,10 @@ end
 -- covered it; before any, its mind's per_turret scaled by the turret's research (threat.prior). One price for every
 -- turret could not learn that a laser line is dearer than a gun line (the perception consult, 2026-10-27); a guess of 6
 -- for all let waves of 60 at a ring of guns whose gaps cost them half their number.
+-- (A learned price is a fresh unit's, its losses learned at their killer's rank, below: read at this one's, 0.2.355.)
 function herd.price_of(t)
-  return know.price("biotech", t.force.name, t.name) or threat.prior(t, B.mind.per_turret or firemap.AFFORD)
+  local p = know.price("biotech", t.force.name, t.name)
+  return p and p * shared.rank_scale(t) or threat.prior(t, B.mind.per_turret or firemap.AFFORD)
 end
 -- Where its own died lately to what the fire map cannot show (a killer no turret profile names: mines, burning ground,
 -- units, nothing), each weighing less as it ages (DEATHS_FOR): the cost map's memory of the ground (costmap.DEATH).
@@ -4248,7 +4250,8 @@ function herd.on_died(e)
           w.lost_worth_by = w.lost_worth_by or {}
           -- (Its rams at their worth as any unit's: by herd.strength, which leaves them out of a herd's strength, sixteen big
           -- bursters killed at the square lab fort's wall cost it nothing, its lasers read cheap; 2026-10-31.)
-          w.lost_worth_by[key] = (w.lost_worth_by[key] or 0) + herd.worth(ent.name)
+          -- (At its killer's rank: what a fresh one of its kind costs it, its price read at each one's rank, herd.price_of.)
+          w.lost_worth_by[key] = (w.lost_worth_by[key] or 0) + herd.worth(ent.name) / shared.rank_scale(c or nil)
           -- A ram of a rank killed short: its rank's reading (herd.rk.size_next).
           if ent.name == "lp-bred-big-burster" then herd.rk.read_death(w, ent) end
           -- (Traced: by its part at the breach, a ram, its screen, its herd held or its herd rushing; and each ram's death.)

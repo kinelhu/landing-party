@@ -355,6 +355,17 @@ shared.STRIKE_RADIUS = 60
 -- (four a rocket). Was: every cannon over Nauvis pooled, a radius of 20, 500 fuel, a 40 kg shell made aloft. First numbers.
 shared.CANNON = {STORE = 2, CYCLE = 180, FUEL = 1500, OXIDIZER = 1500, R0 = 16, R_MAX = 48, SHELLS = 10, COOLDOWN = 30 * 60,
   SHELL_KG = 250, REACH = 16, POWER = "4MW", MUZZLE = 25}
+-- A unit's rank as a scale on what it is worth in a fight (0.2.355; the user, 2026-11-12: "Does the AI take veterancy into
+-- account in its decisions? Meaning both its units and the enemy's?"; it read it in two places only, a hole): its quality
+-- level l raises its health RANK.health and its damage RANK.damage a level (scenario vetprobe measured the engine's: 30%
+-- and about 48%), so (1 + 0.3 l)(1 + 0.48 l), Lanchester's health times damage. 1 for anything not a unit (a turret's
+-- quality not measured).
+shared.RANK = {health = 0.3, damage = 0.48}
+function shared.rank_scale(e)
+  if not (e and e.valid and (e.type == "unit" or e.type == "spider-unit") and e.quality) then return 1 end
+  local l = e.quality.level or 0
+  return (1 + shared.RANK.health * l) * (1 + shared.RANK.damage * l)
+end
 -- A strike's radius from the cannons it fires.
 function shared.cannon_radius(n)
   return math.min(shared.CANNON.R_MAX, shared.CANNON.R0 * math.sqrt(math.max(n, 1)))

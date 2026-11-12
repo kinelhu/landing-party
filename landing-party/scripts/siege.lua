@@ -332,7 +332,10 @@ local function read_ways(b, h, targets)
   end
   if far == 0 then return nil end
   local radius = far + 60
-  local function price(e) return know.price(b.corp, e.force.name, e.name) or threat.prior(e, ops.PER_TURRET) end
+  local function price(e)
+    local p = know.price(b.corp, e.force.name, e.name)
+    return p and p * shared.rank_scale(e) or threat.prior(e, ops.PER_TURRET)
+  end
   -- Biter country too, where it is at war with the biters (Synthexis reads none, the biters its allies): worms are guns
   -- (their prototypes' reach, threat.profile), and the spawners round its way and where its own died to biters lately
   -- (its hazard log) are what no fire map shows (costmap's deaths). On nw its haulers died to worms and spitters.
