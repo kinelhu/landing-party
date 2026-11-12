@@ -13,7 +13,10 @@ return {name = "stage-herd", base = 1, waves = true, resolution = {1920, 1080}, 
   -- last frame, the herd reaching it at the top edge.)
   -- (0.2.338: its way in moved north, its gap open at -38,-312 at 65692; at 65400 on -40,-300 its take showed the wall
   -- empty for 180 frames and the herd only reaching it outside, 2026-11-12.)
-  {name = "s2-breach", tick = 65500, frames = 300, from = {pos = {-42, -308}, zoom = 0.75, daytime = 0.34}, to = {pos = {-38, -310}, zoom = 0.8, daytime = 0.34}},
+  -- (0.2.338, the user: "a misplaced camera": at 65500 on -42,-308 the herd came in at the top, ran down the wall's
+  -- outside at the left edge and left at the bottom (the cut's 2 s are its frames 90 to 150); it crosses about -38,-280
+  -- from 65900: now later and lower, the wall at the centre, drifting down with the herd.)
+  {name = "s2-breach", tick = 65640, frames = 300, from = {pos = {-42, -298}, zoom = 0.75, daytime = 0.34}, to = {pos = {-40, -284}, zoom = 0.8, daytime = 0.34}},
   -- Through the gap and on to the heart: held on the gap, drifting toward the heart.
   -- (0.2.338: at 65640 on -34,-290 the herd was still outside the wall the whole take; it runs south along the wall and
   -- crosses it about -38,-280, south of the gap its log names (-38,-312), from about 65900.)
