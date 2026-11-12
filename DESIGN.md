@@ -7158,6 +7158,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   spawner to it) killed three incubators of a farm 37 minutes in, it uprooted, its two offshoots went the same way, and
   it waited the hour to land again (2 waves in the run). Working as built; whether a farm uprooted should land sooner when
   an offshoot falls after it is open.
+- **The starved camp's fixes kept to the starved camp** (0.2.364, 2026-11-12; the full regression at 0.2.362: 11 of
+  326 failing, every one again on rerun: rivals, heist, crew doomed, dome ring, domehub, farm artillery and bigpens,
+  herd spit and wallgoal, cards, watchdog economy). Bisected on the Studio: the dome's reach (0.2.360, 0.2.361) none of
+  them, 0.2.362's economy all; its parts each some (the stores, bins and belts, the crew's payment, alone: 1, 4 and 1
+  passed again). Each changed every camp's first minutes, not the stuck camp's alone: the mining planned on any busy
+  queue, bins and belts past any waiting job, a minute's stores from landing. Now the mining waits for its rebuilds to
+  be due, bins and belts go first only while it has no fabricator, and the stores begin after STORES_GRACE (5 minutes)
+  without one. All 11 pass again, armed starved still does (and watchdog economy runs without the stores, debug_tune
+  stores_off: they bought its stalled camp a fabricator). And the fewest guns under a late player's guns in the pod's
+  weighed search too (0.2.363 reached only the first-clear search; nwa's real landings come by pod, and its second camp
+  landed where it had): `guns fewestpod`, a landing by pod (passes; it does not reach the weighed search in the sim
+  either, the nwa visit is its test).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

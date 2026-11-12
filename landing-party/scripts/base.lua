@@ -381,9 +381,12 @@ end
 -- Both of Kessler-Hayashi's camps on nwa, their walls shelled from landing and every part spent on rebuilds, made no part
 -- in two hours (the visits at 0.2.359 to 0.2.361). Working camps are untouched.
 local STORES_EVERY = 60 * 60
+-- (And only once it has gone STORES_GRACE without one: from its landing, a minute's stores changed every young camp's
+-- first minutes, the regression at 0.2.362.)
+local STORES_GRACE = 5 * 3600
 local function stores(b)
-  if #b.fabs > 0 or not (b.lander and b.lander.valid) then b.stores_at = nil; return end
-  b.stores_at = b.stores_at or game.tick
+  if #b.fabs > 0 or not (b.lander and b.lander.valid) or storage.stores_off then b.stores_at = nil; return end
+  b.stores_at = b.stores_at or (game.tick + STORES_GRACE - STORES_EVERY)
   if game.tick - b.stores_at >= STORES_EVERY then
     b.stores_at = game.tick
     b.parts = b.parts + shared.cost["lp-fabricator"]
@@ -827,7 +830,9 @@ function base.tick(tick)
           -- And the drill that feeds it (the fabricate rule wants ore coming in): its walls lost before its first plan,
           -- their rebuilds waiting on parts it could not make, both of Kessler-Hayashi's camps on nwa planned nothing in
           -- two hours, 0 fabricators, 0 mined (the visits at 0.2.359 to 0.2.361).
-          if #b.fabs == 0 and #b.drills == 0 then plan(b, "mine") end
+          -- (Only while its rebuilds are due, the deadlock: on any busy queue it changed every camp's first minutes, and
+          -- eleven scenarios with them, the regression at 0.2.362.)
+          if pending and #b.fabs == 0 and #b.drills == 0 then plan(b, "mine") end
           -- Its generators first (queued behind the line's posts, a starved camp counted them as supply and never built
           -- them: demand past supply, cordon broken), as its lost generators are rebuilt first.
           local gens, rest = {}, {}

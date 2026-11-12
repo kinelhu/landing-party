@@ -159,8 +159,11 @@ site.occupied = occupied
 -- Rebuild first: the first lost entity whose ground is free. Occupied ground waits.
 -- (And the bin its drills fill, and the belt to its fabricators: without them a drill mines nothing. A starved camp's
 -- bins waited behind 582 fortress walls, its two drills idle, armed starved.)
-local ECONOMY = {["lp-generator"] = true, ["lp-fabricator"] = true, ["lp-drill"] = true, ["lp-pylon"] = true,
-  ["lp-bin"] = true, ["lp-belt"] = true}
+local ECONOMY = {["lp-generator"] = true, ["lp-fabricator"] = true, ["lp-drill"] = true, ["lp-pylon"] = true}
+-- (Bins and belts only while it has no fabricator, the starving camp: always, they changed every camp's build order and
+-- eleven scenarios with it, the regression at 0.2.362.)
+local STARVED = {["lp-bin"] = true, ["lp-belt"] = true}
+local function makes_parts(b, kind) return ECONOMY[kind] or (STARVED[kind] and #b.fabs == 0) end
 -- What makes parts comes first: with its fabricators destroyed, a settlement spent its last 646 parts on new blocks,
 -- units and two turrets while their ground was held, and once it was free had nothing to rebuild them with, nor ever
 -- again (scenario occupy). Parts kept back for every pending rebuild of what makes them.
@@ -254,14 +257,14 @@ local function build(b)
   if base.crew_take and base.crew_take(b, job) then return end
   local cost = shared.cost[job.name] or 0
   -- (What makes parts and power builds below the reserve: the reserve is for it.)
-  local held = ECONOMY[shared.kind_of(job.name or "")] and 0 or base.reserve(b, job.name)
+  local held = makes_parts(b, shared.kind_of(job.name or "")) and 0 or base.reserve(b, job.name)
   if b.parts < cost + held then
     -- What makes parts and power goes past a job waiting for parts: behind a turret or a launch pad the camp could
     -- not pay for, its first fabricator and its pylon waited for good (parked, grow; 2026-10-24).
     -- Moved to the head, it is built as the head is, next step (a crew's if its module is beyond the yards).
     for i = 2, #b.queue do
       local q = b.queue[i]
-      if q.name and not q.tiles and ECONOMY[shared.kind_of(q.name)] and b.parts >= (shared.cost[q.name] or 0) then
+      if q.name and not q.tiles and makes_parts(b, shared.kind_of(q.name)) and b.parts >= (shared.cost[q.name] or 0) then
         table.remove(b.queue, i)
         table.insert(b.queue, 1, q)
         break

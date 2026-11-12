@@ -191,7 +191,7 @@ function faction.site(surface, from, distance, count)
   -- Under the guns (pass 2): the site the fewest of the player's artillery reach, not the first clear one. Its dome
   -- holds three minutes of any number of guns' fire and is down three, and under nwa's 59 a camp lost its hull's
   -- generators in that and fell within 16 minutes, two seeds of three (the visits at 0.2.362).
-  local under, under_guns
+  local under, under_guns, under_score
   local function guns_on(spot)
     local n = 0
     for _, pf in pairs(game.forces) do
@@ -356,7 +356,14 @@ function faction.site(surface, from, distance, count)
           end
           if not weigh then return spot end
           local sc = site_score(weigh, surface, spot, n, density, from, faction.site_corp)
-          if not best_score or sc > best_score then best, best_score = spot, sc end
+          -- (Weighed too, as a real landing's search is, faction.dry: under the guns the fewest win, its score after.
+          -- 0.2.363 kept the guns to the first-clear search alone, and nwa's second camp landed where it had.)
+          if faction.under_guns then
+            local g = guns_on(spot)
+            if not under or g < under_guns or (g == under_guns and sc > (under_score or -math.huge)) then
+              under, under_guns, under_score = spot, g, sc
+            end
+          elseif not best_score or sc > best_score then best, best_score = spot, sc end
         end
         if n > fallback_n then fallback, fallback_n = spot, n end
       end

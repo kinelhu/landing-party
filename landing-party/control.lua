@@ -651,6 +651,8 @@ remote.add_interface("landing-party", {
     if t.pact_off ~= nil then storage.pact_off = t.pact_off; pact.apply() end
     -- Tests: the berth between camps and farms off (shared.berth; system LP_MIX=berthoff, the check seen failing).
     if t.berth_off ~= nil then storage.berth_off = t.berth_off end
+    -- Tests: no lander's stores (base.lua; watchdog economy stalls a camp on purpose).
+    if t.stores_off ~= nil then storage.stores_off = t.stores_off end
     if t.quiet_minutes then storage.quiet_ticks = t.quiet_minutes * 3600 end
     for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end
   end,

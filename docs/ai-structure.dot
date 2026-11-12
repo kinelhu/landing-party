@@ -30,7 +30,7 @@ digraph ai {
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "faction" [label="faction\n971 lines", width=1.88, fillcolor="#eef2f7"];
+    "faction" [label="faction\n978 lines", width=1.89, fillcolor="#eef2f7"];
     "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
     "war" [label="war\n628 lines", width=1.50, fillcolor="#eef2f7"];
     "standing" [label="standing\n114 lines", width=0.93, fillcolor="#eef2f7"];
@@ -41,8 +41,8 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n916 lines", width=1.82, fillcolor="#eef2f7"];
-    "construction" [label="construction\n408 lines", width=1.25, fillcolor="#d9f0d9"];
+    "base" [label="base\n921 lines", width=1.82, fillcolor="#eef2f7"];
+    "construction" [label="construction\n411 lines", width=1.26, fillcolor="#d9f0d9"];
     "planner" [label="planner\n338 lines", width=1.18, fillcolor="#eef2f7"];
     "layout" [label="layout\n1747 lines", width=2.74, fillcolor="#f7dede"];
     "wfc" [label="wfc\n380 lines", width=1.22, fillcolor="#d9f0d9"];
@@ -109,7 +109,7 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1272 lines", width=2.21, fillcolor="#f7dede"];
+    "control" [label="control\n1274 lines", width=2.22, fillcolor="#f7dede"];
     "dev" [label="dev\n603 lines", width=1.47, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n189 lines", width=1.01, fillcolor="#eef2f7"];

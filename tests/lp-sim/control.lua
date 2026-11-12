@@ -12543,7 +12543,8 @@ end
 -- operations and moved off; it fires in the system sim on every seed (stuck units among trees).
 scenarios.watchdog = function()
   local mode = params.mix ~= "" and params.mix or "economy"
-  schedule(60, function() lp("debug_tune", {history_off = true, raids_off = true}) end)
+  -- (economy: no lander's stores, 0.2.362: they bought the stalled camp a fabricator and the alarm had nothing to see.)
+  schedule(60, function() lp("debug_tune", {history_off = true, raids_off = true, stores_off = mode == "economy" or nil}) end)
   schedule(4 * 3600, function()
     local id = storage.id
     if mode == "economy" then
@@ -17514,7 +17515,7 @@ scenarios.guns = function()
     -- fewest: six more turrets 300 tiles north, so the ring's sites differ in the guns that reach them: it lands where
     -- the fewest do (the first clear one, nwa's second camp came down under 59 and fell within 16 minutes, two seeds of
     -- three; the visits at 0.2.362).
-    if params.mix == "fewest" then
+    if params.mix == "fewest" or params.mix == "fewestpod" then
       -- (North, 300 out: the first clear site, 126 north, landed under the spawn turret alone without them.)
       flatten(-10, -310, 10, -295)
       for k = 0, 5 do
@@ -17527,6 +17528,11 @@ scenarios.guns = function()
   schedule(120, function()
     -- One ring (200 tiles out): beyond it, the first pass found ground out of the artillery's reach.
     lp("debug_tune", {rings = {0}})
+    -- fewestpod: as a real landing comes, by its pod's search (weighed, faction.dry; 0.2.363's first fix missed it).
+    if params.mix == "fewestpod" then
+      lp("arrive_async", 1, {x = 0, y = 0}, 200, {corp = "serenity"})
+      return
+    end
     S.s = lp("arrive", 1, {x = 0, y = 0}, 200, {corp = "serenity"})
     lp("debug_tune", {rings = false})
     local st = S.s and lp("stats", S.s)
@@ -17541,6 +17547,26 @@ scenarios.guns = function()
       end
     end
   end)
+  if params.mix == "fewestpod" then
+    for t2 = 180, 3 * 3600, 60 do
+      schedule(t2, function()
+        if S.s then return end
+        local last = lp("landing_jobs").last
+        if not (last and last.id) then return end
+        lp("debug_tune", {rings = false})
+        S.s = last.id
+        local st = lp("stats", S.s)
+        S.d = math.sqrt(st.origin.x ^ 2 + st.origin.y ^ 2)
+        S.under = st.under_guns
+        local o = st.origin
+        S.guns_on = 0
+        local reach = prototypes.entity["artillery-turret"].attack_parameters.range + 20
+        for _, a in ipairs(surface().find_entities_filtered{name = "artillery-turret", force = "player"}) do
+          if (a.position.x - o.x) ^ 2 + (a.position.y - o.y) ^ 2 <= reach ^ 2 then S.guns_on = S.guns_on + 1 end
+        end
+      end)
+    end
+  end
   schedule(120 + 2 * 3600, function() game.forces.player.chart(surface(), {{-400, -400}, {400, 400}}) end)
   schedule(END - 60, function()
     local st = S.s and lp("stats", S.s)
@@ -17549,8 +17575,11 @@ scenarios.guns = function()
     info(string.format("guns: landed %s tiles out, under the guns %s; lander %s, generators counted %s, hull down %s; shells left %d",
       tostring(S.d and math.floor(S.d)), tostring(S.under), tostring(st and st.lander and not st.fallen),
       tostring(st and st.gens_counted), tostring(st and st.hull_down), left))
-    check("guns: it landed under the guns", S.under == true and (S.d or 999) < 300, tostring(S.d))
-    if params.mix == "fewest" then
+    -- (A pod's landing lands at its site, opts.at: its under-guns flag is the search's, not the landing's.)
+    if params.mix ~= "fewestpod" then
+      check("guns: it landed under the guns", S.under == true and (S.d or 999) < 300, tostring(S.d))
+    end
+    if params.mix == "fewest" or params.mix == "fewestpod" then
       check("guns: fewest, where the fewest artillery reach", S.guns_on == 1, tostring(S.guns_on) .. " in reach")
     end
     check("guns: the artillery fired on it", left < 50, tostring(left))
