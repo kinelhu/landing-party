@@ -38,6 +38,19 @@ PALETTES = {
     "wine": {"creep": dict(hue=10, spread=0.6, split=-8, chroma=0.6, gamma=1.3),
              "flesh": dict(hue=20, spread=0.8, split=12, chroma=0.7, gamma=1.1),
              "tumor": dict(hue=135, spread=0.7, split=-15, chroma=1.0, gamma=1.0)},
+    # The second round (the user: "Yes" to another iteration): Moss's pen kept; the creep given back its life (0.5 of its
+    # chroma read as gravel), three ways; the tumors darker in the body with yellow-green highlights (they sat flat).
+    "moss-mauve": {"creep": dict(hue=350, spread=0.6, split=-8, chroma=0.75, gamma=1.15),
+                   "flesh": dict(hue=125, spread=0.8, split=-25, chroma=1.0, gamma=1.05),
+                   "tumor": dict(hue=135, spread=0.7, split=-30, chroma=0.95, gamma=1.25)},
+    # The same, its highlights leaning green (a gradient map's second stop: the ground tied to the faction).
+    "moss-sheen": {"creep": dict(hue=350, spread=0.6, split=-8, chroma=0.75, gamma=1.15, hi_hue=120, hi_mix=0.55),
+                   "flesh": dict(hue=125, spread=0.8, split=-25, chroma=1.0, gamma=1.05),
+                   "tumor": dict(hue=135, spread=0.7, split=-30, chroma=0.95, gamma=1.25)},
+    # Darker plum.
+    "moss-plum": {"creep": dict(hue=330, spread=0.6, split=-8, chroma=0.7, gamma=1.35),
+                  "flesh": dict(hue=125, spread=0.8, split=-25, chroma=1.0, gamma=1.05),
+                  "tumor": dict(hue=135, spread=0.7, split=-30, chroma=0.95, gamma=1.25)},
     # Dark teal creep, moss flesh: the faction off purple altogether (the arc flamer's violet is Kessler-Hayashi's).
     "teal": {"creep": dict(hue=200, spread=0.6, split=-10, chroma=0.45, gamma=1.3),
              "flesh": dict(hue=125, spread=0.8, split=-25, chroma=1.0, gamma=1.05),
@@ -99,6 +112,10 @@ def grade(img, p, mask=MASK):
     h0 = np.degrees(np.arctan2((w * np.sin(np.radians(h))).sum(), (w * np.cos(np.radians(h))).sum()))
     dh = (h - h0 + 180) % 360 - 180
     nh = p["hue"] + p["spread"] * dh + p["split"] * (L - 0.5) * 2
+    # A second stop (hi_hue): the highlights drawn toward it by hi_mix, along the hue circle's shorter way.
+    if "hi_hue" in p:
+        mix = p["hi_mix"] * smoothstep(0.35, 0.75, L)
+        nh = nh + mix * ((p["hi_hue"] - nh + 180) % 360 - 180)
     nC = np.minimum(C * p["chroma"], 0.25)
     nL = np.clip(L, 0, 1) ** p["gamma"]
     out = np.stack([nL, nC * np.cos(np.radians(nh)), nC * np.sin(np.radians(nh))], -1)
