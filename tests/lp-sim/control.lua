@@ -11770,7 +11770,12 @@ scenarios.visit = function()
         local corps = {}
         for key, c in pairs(LP_CORPS) do
           local cu = surface().find_entities_filtered{force = c.force, type = {"unit", "spider-vehicle", "car"}}
-          local cb, all = {}, surface().find_entities_filtered{force = c.force, type = {"unit", "spider-vehicle", "car", "entity-ghost", "corpse"}, invert = true}
+          -- (Not by invert: it inverts every filter, the force too, and counted all the world's other entities, 855,000.)
+          local cb, all = {}, {}
+          for _, e in ipairs(surface().find_entities_filtered{force = c.force}) do
+            local ty = e.type
+            if ty ~= "unit" and ty ~= "spider-vehicle" and ty ~= "car" and ty ~= "entity-ghost" and ty ~= "corpse" then all[#all + 1] = e end
+          end
           for i = 1, #all, 4 do cb[#cb + 1] = all[i] end
           local landers = surface().find_entities_filtered{force = c.force, name = "lp-lander"}
           corps[key] = {u = flat(cu, 2500), nu = #cu, b = flat(cb, 6000), nb = #all, l = flat(landers)}
