@@ -410,18 +410,34 @@ local function ctrace(n, why)
   end
 end
 
+-- A corporation's camp a berth off (shared.berth): its creep takes no nest and founds no incubator there (on nwa its creep
+-- took nests toward Kessler-Hayashi's fortress as the fortress grew toward it, and the farm fell to it; 0.2.355). Its
+-- buildings only: their units walk where they like.
+local MOBILE = {"unit", "car", "spider-vehicle", "character"}
+local function by_camp(surface, pos)
+  local fs = {}
+  for _, c in pairs(shared.CORPS) do if game.forces[c.force] then fs[#fs + 1] = c.force end end
+  if #fs == 0 then return false end
+  local r = shared.berth()
+  if r <= 0 then return false end
+  return surface.count_entities_filtered{position = pos, radius = r, force = fs}
+    > surface.count_entities_filtered{position = pos, radius = r, force = fs, type = MOBILE}
+end
+creep.by_camp = by_camp
+
 local function found_spot(surface, mine)
   for _, rec in ipairs(mine) do
     if rec.r >= R_MAX
       and surface.count_entities_filtered{name = "lp-pen", position = rec.pos, radius = FOUND_APART, limit = 1} == 0
-      and room(surface, rec.pos) then return rec end
+      and not by_camp(surface, rec.pos) and room(surface, rec.pos) then return rec end
   end
 end
 
 local function found(c, id, surface, mine, tick)
   for _, rec in ipairs(mine) do
     if rec.r >= R_MAX
-      and surface.count_entities_filtered{name = "lp-pen", position = rec.pos, radius = FOUND_APART, limit = 1} == 0 then
+      and surface.count_entities_filtered{name = "lp-pen", position = rec.pos, radius = FOUND_APART, limit = 1} == 0
+      and not by_camp(surface, rec.pos) then
       local q = room(surface, rec.pos)
       if q then
         c.wants = FOUND_PRICE
@@ -490,7 +506,15 @@ function creep.bud(id, tick, tumors)
   c.blocked = c.blocked or {}
   local nests = {}
   for _, n in ipairs(surface.find_entities_filtered{type = "unit-spawner", force = "enemy", position = c.pos, radius = HEDGE}) do
-    if not c.blocked[n.unit_number] then nests[#nests + 1] = n end
+    -- (By a camp: read again with its reading of the ground, LAND_FOR.)
+    c.berthed = c.berthed or {}
+    local bt = c.berthed[n.unit_number]
+    if not bt or tick - bt.t >= LAND_FOR then
+      bt = {t = tick, near = by_camp(surface, n.position)}
+      c.berthed[n.unit_number] = bt
+      if bt.near then ctrace(n, "a corporation's camp within its berth") end
+    end
+    if not c.blocked[n.unit_number] and not bt.near then nests[#nests + 1] = n end
   end
   if #nests == 0 then return found(c, id, surface, mine, tick) end
   -- Over land: the walk from its middle to each nest, round water (a cost map of the ground, no fire: costmap). In a

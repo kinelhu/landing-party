@@ -59,13 +59,22 @@ function faction.state()
   return storage.faction
 end
 
-local function landers()
+local function landers(surface)
   local out = {}
   for _, b in pairs(storage.bases) do if b.lander.valid then table.insert(out, b.lander.position) end end
   -- And the sites of settlements that stood down (war.lua): a new landing goes elsewhere.
   for _, p in ipairs(storage.failed_sites or {}) do table.insert(out, p) end
+  -- And Synthexis's incubators (on nwa Kessler-Hayashi came down 204 tiles from a farm's middle, a minute after it, on
+  -- the same nest field: its fortress grew into the farm; 0.2.355). A farm keeps APART from the camps in its turn.
+  if surface and not storage.berth_off then
+    for _, e in ipairs(surface.find_entities_filtered{name = "lp-pen", force = shared.BIOTECH.force}) do
+      table.insert(out, e.position)
+    end
+  end
   return out
 end
+-- Tests: what a landing keeps APART from now.
+faction.landers = landers
 
 -- Ground generated round pos, r chunks each way. An asynchronous landing (faction.request) runs its search "dry":
 -- ground not yet made is requested, not forced, and the search stops there until the engine has made it.
@@ -176,7 +185,7 @@ function faction.site(surface, from, distance, count)
   local weigh = faction.dry and mind and mind.site
   local best, best_score
   local start = (surface.map_gen_settings.seed + 3 * (count or 0)) % 8
-  local avoid = landers()
+  local avoid = landers(surface)
   local fallback, fallback_n = nil, -1
   local among, among_density, dense, dense_density
   for i = 0, 7 do

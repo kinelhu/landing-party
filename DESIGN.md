@@ -7097,6 +7097,27 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the same visit: Synthexis sized that way in at 22 with 3 guns and its wave priced it at 424 with 11 (two plans, from the
   farm's middle and from its incubator nearest the target, on readings ten minutes apart: not looked into); a farm does
   not answer a rival growing into it; corporations land beside farms.
+- **Camps and farms keep a berth; a farm under a rival's guns uproots** (0.2.359, 2026-11-12; the user, "Ok on 1 and 2",
+  on my two proposals after the nwa visits; asked "Should synthexis deprioritize KH? Should they get a truce?", my
+  answer no: Kessler-Hayashi's identity is purging biters, the rivalry is the mod's best emergent story and a player's
+  tool, and Synthexis already went for it only when struck). What went wrong on nwa, in two of four visits (0.2.355 and
+  0.2.358 seed 1): Kessler-Hayashi's second camp landed a few minutes after a farm, 204 tiles from its middle, on the same
+  nest field (its search's last pass, the one that lands among nests), its fortress grew into the farm and killed its
+  incubators one by one (22 in 35 minutes on seed 1), and the farm never chose that fight. Now:
+  - *Landing*: a corporation's landing keeps APART (200) from Synthexis's incubators as from other landers (a farm
+    already kept APART from camps).
+  - *Growth*: the berth, `shared.berth()`, BERTH_K (2, a prior) times the longest reach of the corporations' turrets read
+    from the prototypes (30 now, so 60): a camp's blocks are refused within it of an incubator (biters occupy no ground,
+    and the farm read as theirs), and a farm's creep takes no nest and founds no incubator within it of a camp's building.
+  - *Uprooting*: corporations having killed UPROOT_N (3, a prior) of a farm's incubators in a wave's gap, more than it took
+    or grew there, it lets the rest go wild and lands again in 5 minutes, not an hour (it is a test range and "never
+    retaliates in anger"; a counter-attack was the other option). The player's kills do not move it.
+  Scenarios: `creep uproot` (three killed by Kessler-Hayashi: uprooted 7 s later, lands again in 5 minutes, two wild),
+  `creep uprootp` (the same by the player: it stays; seen failing as uproot did while its look ran on `tick % 600`, which
+  the farm's tick never hit), `creep berth` (the landing's search keeps APART from every incubator: 6 kept from with the
+  berth, 2 with LP_MIX=berthoff, failing). Not seen failing: the growth half (a camp's buildings within the berth of an
+  incubator at the end), in creep berth and in system: no camp came near a farm there with the berth or without, as small
+  maps never reach the search's nest pass. The nwa visits are its test.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

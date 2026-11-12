@@ -143,6 +143,13 @@ local function occupied(b, surface, pos)
       return true
     end
   end
+  -- Synthexis's incubators, a berth off (shared.berth): biters do not occupy ground, and its farm read as theirs; on nwa
+  -- Kessler-Hayashi's blocks grew to 85 tiles of a farm's middle and its turrets there fought it for 25 minutes (0.2.355).
+  local bt = game.forces[shared.BIOTECH.force]
+  if bt and shared.berth() > 0 and not f.get_cease_fire(bt) and surface.count_entities_filtered{position = pos, radius = shared.berth(), name = "lp-pen",
+    force = bt, limit = 1} > 0 then
+    return true
+  end
   return false
 end
 base.occupied = occupied

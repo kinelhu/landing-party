@@ -341,16 +341,41 @@ end
 -- Tests: an arrival now, whatever the evolution.
 function farm.arrive_now(surface) return arrive(surface, FAR) or arrive(surface, FARTHEST) end
 
-local function gone(f, why)
+-- A farm a rival corporation is taking apart where it lives moves (the user, 2026-11-12, "Ok on 1 and 2"): it is a test
+-- range, it "never retaliates in anger", and a range under a camp's guns teaches nothing. On nwa Kessler-Hayashi's
+-- fortress killed a farm's incubators one by one over 25 minutes while the farm waited on a siege of the player's walls,
+-- and it fell (0.2.355). When a corporation has killed more of its incubators in a wave's gap than it took or grew there,
+-- UPROOT_N at the least, it lets the rest go wild and lands again on another field UPROOT_RELAND later, not an hour. The
+-- player's kills do not move it: a player can still destroy a farm.
+local UPROOT_N = 3              -- incubators killed by corporations in a wave's gap, at the least (a prior)
+local UPROOT_RELAND = 5 * 3600
+local function recent(list, tick)
+  local n, keep = 0, {}
+  for _, t in ipairs(list or {}) do if tick - t < WAVE_GAP then n = n + 1; keep[#keep + 1] = t end end
+  return n, keep
+end
+local function uproots(f, tick)
+  if not f.rival_kills or tick - (f.uproot_look or 0) < 600 then return nil end
+  f.uproot_look = tick
+  local killed, kk = recent(f.rival_kills, tick)
+  local joined, kj = recent(f.joins, tick)
+  f.rival_kills, f.joins = kk, kj
+  if killed >= UPROOT_N and killed > joined then
+    return string.format("uprooted: %d of its incubators killed by corporations in %d minutes, %d taken or grown", killed,
+      WAVE_GAP / 3600, joined)
+  end
+end
+
+local function gone(f, why, reland)
   for _, t in pairs(f.tags) do if t.valid then t.destroy() end end
   st().list[f.id] = nil
   creep.forget(f.id)
   cell.forget_site(f.id)
-  st().next_arrival = game.tick + RELAND
+  st().next_arrival = game.tick + (reland or RELAND)
   -- Counted, for the reports: a visit's summary read the farms standing at its end and said "never landed" of one that
   -- landed and fell (nwa, 0.2.355).
   st().fell = (st().fell or 0) + 1
-  trace(string.format("farm %d gone (%s); lands again in %d minutes", f.id, why, RELAND / 3600))
+  trace(string.format("farm %d gone (%s); lands again in %d minutes", f.id, why, (reland or RELAND) / 3600))
 end
 
 -- Where a wave goes (the faction AI's one picker, Synthexis's part; docs/reviews/2026-10-23-faction-ai-audit.md). It is
@@ -2202,12 +2227,22 @@ function farm.tick(tick)
         f.taken = (f.taken or 0) + 1
         f.grown = spot and (f.grown or 0) + 1 or f.grown
         f.last_take = tick
+        f.joins = f.joins or {}
+        table.insert(f.joins, tick)
         trace(string.format("farm %d: %s at %.0f,%.0f (%d incubators)", f.id,
           spot and "grew an incubator of its own" or "its creep took the nest", rec.pen.position.x,
           rec.pen.position.y, #f.pens))
       end
     end
-    if #left == 0 then
+    local up = #left > 0 and uproots(f, tick)
+    if up then
+      for _, pid in ipairs(f.pens) do
+        cell.forget(pid)
+        herd.release(pid)
+      end
+      f.pens = {}
+      gone(f, up, UPROOT_RELAND)
+    elseif #left == 0 then
       gone(f, "every pen dead")
     else
       if not f.tagged then tag(f) end
@@ -2265,6 +2300,11 @@ function farm.on_pen_died(e)
   local share = math.max(0, cul.biomass) / math.max(1, standing)
   cul.biomass, cul.lost = cul.biomass - share, (cul.lost or 0) + share
   f.pens_killed = (f.pens_killed or 0) + 1
+  -- By a corporation: counted for its uprooting (uproot, below).
+  if e.force and shared.is_corp(e.force.name) then
+    f.rival_kills = f.rival_kills or {}
+    table.insert(f.rival_kills, game.tick)
+  end
   trace(string.format("farm %d: an incubator killed (by %s); %.0f of its biomass with it, %.0f left over %d", f.id,
     e.force and e.force.name or "?", share, cul.biomass, standing - 1))
   -- Its last (the dying pen is still valid here, so 1 standing): Culture shock, to the force that killed it.

@@ -649,6 +649,8 @@ remote.add_interface("landing-party", {
     if t.relief_minutes ~= nil then storage.relief_ticks = t.relief_minutes * 3600 end
     if t.relief_off ~= nil then storage.relief_off = t.relief_off end
     if t.pact_off ~= nil then storage.pact_off = t.pact_off; pact.apply() end
+    -- Tests: the berth between camps and farms off (shared.berth; system LP_MIX=berthoff, the check seen failing).
+    if t.berth_off ~= nil then storage.berth_off = t.berth_off end
     if t.quiet_minutes then storage.quiet_ticks = t.quiet_minutes * 3600 end
     for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end
   end,
@@ -1072,6 +1074,10 @@ remote.add_interface("landing-party", {
   promoted_event = function() return veterancy.PROMOTED end,
   -- Tests: how the AI's readings weigh these units at their ranks (0.2.355): each one's rank scale, its threat prior (the
   -- corporations' fire maps) and Synthexis's price of it.
+  -- Tests: the berth a camp and a farm keep (shared.berth).
+  berth = function() return shared.berth_reach() end,
+  -- Tests: how many places a landing keeps APART from (landers, failed sites, incubators).
+  debug_landing_avoids = function(surface_index) return #faction.landers(game.surfaces[surface_index]) end,
   debug_rank_reads = function(unit_numbers)
     local want, out = {}, {}
     for _, n in ipairs(unit_numbers) do want[n] = true end

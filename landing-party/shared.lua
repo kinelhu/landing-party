@@ -759,6 +759,29 @@ end
 -- camp's garrison holds, read by the biotech before it razes a camp (herd.lua).
 shared.LEASH = 15
 
+-- The berth a corporation's camp and a Synthexis farm keep from each other (the user, 2026-11-12, "Ok on 1 and 2", after
+-- the nwa visit at 0.2.355: Kessler-Hayashi landed a minute after a farm 200 tiles from it, its fortress grew into the
+-- farm, and the farm fell to it without ever choosing that fight): BERTH_K times the longest reach of the corporations'
+-- turrets, their artillery aside, read from the prototypes. Neither grows its guns or its incubators within reach of
+-- the other's; they meet where one chooses to go, or where the player draws them.
+shared.BERTH_K = 2
+local berth
+function shared.berth()
+  if storage and storage.berth_off then return 0 end
+  return shared.berth_reach()
+end
+-- (Its reading, off or not: the tests' measure.)
+function shared.berth_reach()
+  if berth then return berth end
+  local r = 0
+  for name, p in pairs(prototypes.get_entity_filtered{{filter = "type", type = {"electric-turret", "ammo-turret", "fluid-turret"}}}) do
+    local ap = name:sub(1, 3) == "lp-" and p.attack_parameters
+    if ap and ap.range and ap.range > r then r = ap.range end
+  end
+  berth = r * shared.BERTH_K
+  return berth
+end
+
 -- The biotech's big burster (biotech.lua builds it from these; herd.lua sends and sets it off by them): its health, its
 -- blast's radius, the blast's damage, and the core's (half the radius) on top.
 shared.BIG_BURST = {health = 3000, r = 6, amount = 1500, core = 800}

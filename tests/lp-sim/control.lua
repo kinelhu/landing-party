@@ -1,4 +1,6 @@
 local lp_threat = require("__landing-party__.scripts.threat")
+-- (Read while the file loads: require is refused at run time, and the recorder and the berth check failed on it.)
+local LP_CORPS = require("__landing-party__.shared").CORPS
 -- Headless simulation: lands one base near spawn, lets it grow, plays a scripted player action at
 -- params.strike minutes, snapshots the base and checks what should follow.
 -- params.lua (written by scripts/sim.sh into this mod's copy in the run's profile) gives
@@ -3275,6 +3277,7 @@ scenarios.system = function()
   end
   schedule(30, function()
     lp("debug_tune", {history_off = true})
+    if params.mix == "berthoff" then lp("debug_tune", {berth_off = true}) end
     local x0, y0, x1, y1 = -45, -45, 45, 45
     flatten(x0 - 4, y0 - 4, x1 + 4, y1 + 4)
     for x = x0, x1 do put("stone-wall", x + 0.5, y0 + 0.5); put("stone-wall", x + 0.5, y1 + 0.5) end
@@ -3607,6 +3610,25 @@ scenarios.system = function()
   end
   schedule(END - 30, function()
     check("system: a frame a minute written", (S.frames or 0) >= END / 3600 - 2, tostring(S.frames))
+    -- The berth (shared.berth; the nwa visit at 0.2.355, Kessler-Hayashi's fortress grown into a farm): at the end, no
+    -- incubator within it of a corporation's building, every pen's nearest counted.
+    do
+      local r = lp("berth")
+      local inside, near = 0, math.huge
+      local fs = {}
+      for _, c in pairs(LP_CORPS) do fs[#fs + 1] = c.force end
+      for _, pen in ipairs(surface().find_entities_filtered{name = "lp-pen"}) do
+        for _, e in ipairs(surface().find_entities_filtered{position = pen.position, radius = r, force = fs}) do
+          if e.type ~= "unit" and e.type ~= "car" and e.type ~= "spider-vehicle" then
+            local d = math.sqrt((e.position.x - pen.position.x) ^ 2 + (e.position.y - pen.position.y) ^ 2)
+            if d < near then near = d end
+            inside = inside + 1
+          end
+        end
+      end
+      check("system: no incubator within a camp's berth", inside == 0, string.format("%d buildings within %d of an incubator, the nearest %s",
+        inside, r, near < math.huge and string.format("%.0f", near) or "-"))
+    end
     -- The knowledge layer saw what the world did to each faction: a faction that lost anything holds a record of it.
     local lost, recorded = {}, {}
     for key, n in pairs(S.kills or {}) do
@@ -8465,9 +8487,12 @@ scenarios.quiet = function()
       check("quiet: streak, it stood down on its failures in a row, not the hour", (S.streak_down or 0) >= 1,
         string.format("%s on a streak, stood down at %s", tostring(S.streak_down), tostring(S.down)))
     else
-      check("quiet: stood down, it still answers a gun turret on its ground", S.answered ~= nil,
-        string.format("put at %s, answered at %s, %s, operations %s -> %d", tostring(S.creep_at), tostring(S.answered),
-          S.creep and (S.creep.valid and "standing" or "razed") or "none", tostring(S.launched_creep), st.ops.launched))
+      -- (Or shot dead by its turrets: on 12345 at 0.2.356 its guns razed the turret before any operation, a failure only of
+      -- the check; razed by anyone else, not an answer.)
+      check("quiet: stood down, it still answers a gun turret on its ground", S.answered ~= nil or S.creep_killer == "lp-serenity",
+        string.format("put at %s, answered at %s, %s by %s, operations %s -> %d", tostring(S.creep_at), tostring(S.answered),
+          S.creep and (S.creep.valid and "standing" or "razed") or "none", tostring(S.creep_killer), tostring(S.launched_creep),
+          st.ops.launched))
     end
   end)
 end
@@ -11725,7 +11750,7 @@ scenarios.visit = function()
         -- The corporations' camps and units (the user, 2026-11-12, after the nwa visit at 0.2.355 where Kessler-Hayashi did
         -- the damage and Synthexis fell to it: the page showed Synthexis alone). Buildings thinned to one in four.
         local corps = {}
-        for key, c in pairs(require("__landing-party__.shared").CORPS) do
+        for key, c in pairs(LP_CORPS) do
           local cu = surface().find_entities_filtered{force = c.force, type = {"unit", "spider-vehicle", "car"}}
           local cb, all = {}, surface().find_entities_filtered{force = c.force, type = {"unit", "spider-vehicle", "car", "entity-ghost", "corpse"}, invert = true}
           for i = 1, #all, 4 do cb[#cb + 1] = all[i] end
@@ -13703,6 +13728,49 @@ scenarios.creep = function()
         local b = lp("herd_state").grubstake_broken
         if b then S.broken, S.broken_after = b, game.tick - S.intruder_at end
       end
+      -- berth: a minute after the farm, Kessler-Hayashi told to land 120 tiles from it (the nwa visits at 0.2.355 and 0.2.358,
+      -- seed 1: its second camp came down by a farm minutes after it and took it apart). It lands APART (200) from every
+      -- incubator, and grows none of its buildings within the berth of them. berthoff: the berth off, the check seen failing.
+      if (mix == "berth" or mix == "berthoff") and S.landed and not S.kh_asked and game.tick - S.landed >= 3600 then
+        S.kh_asked = game.tick
+        if mix == "berthoff" then lp("debug_tune", {berth_off = true}) end
+        lp("debug_tune", {herd_off = true})
+        S.kh_before = {}
+        for _, l in ipairs(surface().find_entities_filtered{name = "lp-lander"}) do S.kh_before[l.unit_number] = true end
+        -- (40 out: at 120 its search took a site 300 off, past APART with the berth or without.)
+        S.kh = lp("arrive", surface().index, S.farm_pos, 40, {corp = "serenity"})
+        S.avoids = lp("debug_landing_avoids", surface().index)
+        S.pens_then = surface().count_entities_filtered{name = "lp-pen"}
+        S.landers_then = surface().count_entities_filtered{name = "lp-lander"}
+      end
+      if S.kh and not S.kh_at then
+        local l
+        for _, e in ipairs(surface().find_entities_filtered{name = "lp-lander", force = "lp-serenity"}) do
+          if not S.kh_before[e.unit_number] then l = e end
+        end
+        if l then
+          S.kh_at = l.position
+          local near = math.huge
+          for _, pen in ipairs(surface().find_entities_filtered{name = "lp-pen"}) do
+            near = math.min(near, math.sqrt((pen.position.x - l.position.x) ^ 2 + (pen.position.y - l.position.y) ^ 2))
+          end
+          S.kh_near = near
+        end
+      end
+      -- uproot: three of its incubators killed by Kessler-Hayashi three minutes in: it moves, lets the last go wild and
+      -- lands again in 5 minutes (the nwa visit at 0.2.355: a farm Kessler-Hayashi took apart where it lived waited on a
+      -- siege of the player's walls till it fell). uprootp: the same three killed by the player: it stays.
+      if (mix == "uproot" or mix == "uprootp") and S.landed and not S.uproot_at and game.tick - S.landed >= 3 * 3600 then
+        local pens = surface().find_entities_filtered{name = "lp-pen", position = S.farm_pos, radius = 120}
+        S.pens_before = #pens
+        local by = mix == "uproot" and game.forces["lp-serenity"] or game.forces.player
+        for i = 1, math.min(3, #pens - 1) do pens[i].die(by) end
+        S.uproot_at = game.tick
+      end
+      if S.uproot_at and not S.uprooted then
+        local fs = lp("farm_state")
+        if (fs.fell or 0) >= 1 then S.uprooted, S.next_arrival = game.tick, fs.next_arrival end
+      end
       if mix == "killed" and S.landed and not S.killed and game.tick - S.landed >= 6 * 3600 then
         S.killed = game.tick
         for _, t in ipairs(surface().find_entities_filtered{name = "lp-tumor"}) do t.die("player") end
@@ -13783,6 +13851,42 @@ scenarios.creep = function()
       check("creep: the incubators back in the wild", wild >= 4, tostring(wild))
       check("creep: their stock gone feral", feral >= 1, tostring(feral))
       check("creep: the culture gone", #fs.farms == 0, serpent.line(fs.farms))
+      return
+    end
+    if mix == "berth" or mix == "berthoff" then
+      local r = lp("berth")
+      local inside = 0
+      for _, pen in ipairs(surface().find_entities_filtered{name = "lp-pen"}) do
+        for _, e in ipairs(surface().find_entities_filtered{position = pen.position, radius = r, force = "lp-serenity"}) do
+          if e.type ~= "unit" and e.type ~= "car" and e.type ~= "spider-vehicle" then inside = inside + 1 end
+        end
+      end
+      info(string.format("creep %s: Kessler-Hayashi landed at %s, %s from the nearest incubator; %d of its buildings within %d of one",
+        mix, serpent.line(S.kh_at), S.kh_near and string.format("%.0f", S.kh_near) or "-", inside, r))
+      -- (Its search refuses ground by spawners on its first passes, incubators among them, and here it landed 314 off with
+      -- the berth or without: the rule itself is checked, what its search keeps APART from. On nwa it came down 204 from a
+      -- farm on its last pass, the one that lands among nests.)
+      check("creep: a landing's search keeps APART from every incubator", S.avoids and S.avoids >= S.landers_then + S.pens_then,
+        string.format("%s kept from, %s landers and %s incubators", tostring(S.avoids), tostring(S.landers_then), tostring(S.pens_then)))
+      check("creep: a corporation told to land by a farm keeps 200 from its incubators", S.kh_near and S.kh_near >= 200,
+        S.kh_near and string.format("%.0f", S.kh_near) or "no landing")
+      check("creep: and builds nothing within the berth of them", S.kh_at and inside == 0, tostring(inside))
+      return
+    end
+    if mix == "uproot" or mix == "uprootp" then
+      local fs = lp("farm_state")
+      local wild = surface().count_entities_filtered{name = "biter-spawner", force = "enemy", position = S.farm_pos, radius = 120}
+      info(string.format("creep %s: %s incubators, 3 killed at %s, gone at %s, lands again at %s; %d farms now, %d wild spawners",
+        mix, tostring(S.pens_before), tostring(S.uproot_at), tostring(S.uprooted), tostring(S.next_arrival), #fs.farms, wild))
+      if mix == "uproot" then
+        check("creep: three incubators killed by a corporation, the farm uproots", S.uprooted and S.uprooted - S.uproot_at <= 900,
+          tostring(S.uprooted and S.uprooted - S.uproot_at))
+        check("creep: and lands again in about 5 minutes", S.next_arrival and S.next_arrival - S.uprooted >= 4 * 3600
+          and S.next_arrival - S.uprooted <= 6 * 3600, tostring(S.next_arrival and (S.next_arrival - S.uprooted) / 3600))
+        check("creep: what it left gone wild", wild >= 1, tostring(wild))
+      else
+        check("creep: the same killed by the player, it stays", not S.uprooted and #fs.farms == 1, tostring(S.uprooted))
+      end
       return
     end
     if mix == "break" then
@@ -18292,6 +18396,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     S.khdeaths[key] = (S.khdeaths[key] or 0) + 1
     S.khdeath_n = (S.khdeath_n or 0) + 1
   end
+  if S.creep and e.entity == S.creep then S.creep_killer = e.force and e.force.name or "?" end
   if REC.on and e.entity.force.name == "player" and e.entity.type ~= "character" then
     rec({k = "d", t = game.tick, n = e.entity.type, x = math.floor(e.entity.position.x), y = math.floor(e.entity.position.y),
       by = e.cause and e.cause.valid and e.cause.name or "", f = e.force and e.force.name or ""})
