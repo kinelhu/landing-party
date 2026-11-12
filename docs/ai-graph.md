@@ -16,7 +16,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
-| `herd` | 4388 | attempt, burstfx, costmap, feeds, firemap, ground, herd_learn, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
+| `herd` | 4437 | attempt, burstfx, costmap, feeds, firemap, ground, herd_learn, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
 | `farm` | 2440 | achievements, cell, costmap, creep, feeds, firemap, herd, know, pods, rng, tactics, threat, tune, valuemap | control, dev |  | 60, 600, 3600, 36000 |  | biotech_time_parts, carrying, farms |
 | `ops` | 2185 | airraid, answers, assault, attempt, cuts, ground, intel, jammer, know, perimeter, pool, power, ram, rd, routing, siege, stance, strip, tactics, threat, tune, veterancy | army, base, control, cordon, crew, dev, dome, faction, jumper, ledger, prospect, prowl, skim, standing, tap, war | base.claim_map, cordon.cordon_check, cordon.cordon_step, war.corridor | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `siege` | 2132 | achievements, assault, attempt, costmap, firemap, know, orbital, pods, tactics, threat, valuemap | ops |  |  |  | threat_last, unit_owner, ways_dumped |
@@ -52,10 +52,10 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `jumper` | 314 | base, ops, rng, threat, tune, war | control, dev |  | 60, 600 |  |  |
 | `burstfx` | 305 | rng | control, dev, herd |  |  |  | burstfx, burstfx_stats |
 | `intel` | 295 | know, threat | ops |  |  |  |  |
+| `threat` | 295 | unit_prior | airraid, assault, attempt, cannon, control, costmap, dome, faction, farm, feeds, firemap, herd, herd_learn, intel, jumper, ops, orbital, power, prowl, routing, siege, strike, veterancy, war |  |  |  |  |
 | `tactics` | 279 | know, rng | assault, control, farm, herd, herd_learn, ops, siege |  |  |  |  |
 | `phases` | 269 | faction | control |  | 360, 3600 |  | phases |
 | `lots_grubstake` | 266 | (leaf) |  |  |  |  |  |
-| `threat` | 266 | unit_prior | airraid, assault, attempt, cannon, control, costmap, dome, faction, farm, feeds, firemap, herd, herd_learn, intel, jumper, ops, orbital, power, prowl, routing, siege, strike, veterancy, war |  |  |  |  |
 | `herd_learn` | 253 | attempt, firemap, know, tactics, threat | herd |  |  |  |  |
 | `know` | 239 | (leaf) | airraid, army, control, farm, herd, herd_learn, intel, ops, rd, siege, strategy, tactics |  | 3600 |  | know |
 | `landfx` | 239 | rng | base, control, faction | layout.locate | 4, 7 |  | landfx, landfx_descents |

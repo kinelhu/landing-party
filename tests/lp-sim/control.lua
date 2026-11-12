@@ -13268,8 +13268,12 @@ scenarios.herd = function()
             corridor = S.corridor, inside = w and w.t_inside}))
         end
         if not crowd then
-          check("herd: ranks-mend, its rush keeps its gap's line through a mended piece: none of it left outside when through",
-            (S.mended or 0) >= 1 and S.out_at_in == 0 and w ~= nil
+          -- (Its line, not its count: none round by the corridor, and through. Those still outside when it reads itself
+          -- through, 10 of 37 at 0.2.343, are ranks-crowd's measure, read here for the record; the user, 2026-11-12, of
+          -- letting it trail: "Herd ranks: ok".)
+          metric("herd_mend_outside_when_in", S.out_at_in or -1)
+          check("herd: ranks-mend, its rush keeps its gap's line through a mended piece: none of it round by the corridor",
+            (S.mended or 0) >= 1 and (S.corridor or 0) == 0 and S.out_at_in ~= nil and w ~= nil
             and w.t_inside ~= nil, serpent.line({mended = S.mended, corridor = S.corridor, outside_when_in = S.out_at_in,
             of = S.all_at_in, mends = w and w.mends, inside = w and w.t_inside}))
         end

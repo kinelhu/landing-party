@@ -306,6 +306,50 @@ do
     end
   end
   data:extend{{type = "mod-data", name = "lp-unit-hit", data = hits}}
+  -- What a turret's shot does and how often (lp-turret-hit, read by threat.turret_dps): an electric turret's own attack by
+  -- damage type, an ammo turret's cooldown and damage modifier (its damage its ammo's: lp-ammo-hit), each by its
+  -- ammo category for the force's modifiers. A fluid turret's burn is its fire profile's (threat.profile), not here. For
+  -- what a Synthexis sweep must pay to cross a fire (herd.sweepers_at; the user, 2026-11-12: "I would steer clear of hard
+  -- coding. Can we not scale the number of sweepers to something?").
+  local function shot(action)
+    local out = {}
+    for _, item in ipairs(list(action)) do
+      for _, del in ipairs(list(item.action_delivery)) do
+        if del.type == "projectile" and data.raw.projectile[del.projectile] then
+          walk(data.raw.projectile[del.projectile].action, out, item.repeat_count or 1)
+        elseif del.type == "beam" and data.raw.beam[del.beam] then
+          local bm = data.raw.beam[del.beam]
+          walk(bm.action, out, math.max(1, math.floor((del.duration or 1) / (bm.damage_interval or 20))))
+        end
+      end
+    end
+    walk(action, out, 1)
+    return out
+  end
+  local thits = {}
+  for _, ty in ipairs({"ammo-turret", "electric-turret"}) do
+    for name, t in pairs(data.raw[ty] or {}) do
+      local ap = t.attack_parameters
+      if ap and (ap.cooldown or 0) > 0 then
+        local e = {cooldown = ap.cooldown, mod = ap.damage_modifier or 1, cat = ap.ammo_category or (ap.ammo_categories and ap.ammo_categories[1])}
+        local at = ap.ammo_type and (ap.ammo_type[1] or ap.ammo_type)
+        if ty == "electric-turret" and at and at.action then
+          e.dmg = shot(at.action)
+          e.cat = e.cat or at.category
+        end
+        thits[name] = e
+      end
+    end
+  end
+  local ahits = {}
+  for name, a in pairs(data.raw.ammo or {}) do
+    local at = a.ammo_type and (a.ammo_type[1] or a.ammo_type)
+    if at and at.action then
+      local out = shot(at.action)
+      if next(out) then ahits[name] = {dmg = out, cat = a.ammo_category or at.category} end
+    end
+  end
+  data:extend{{type = "mod-data", name = "lp-turret-hit", data = {turrets = thits, ammo = ahits}}}
 end
 
 -- The player's troops' effects (the user, 2026-11-09: "I feel like we could do a FX pass on player troops", the six

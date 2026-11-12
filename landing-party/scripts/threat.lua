@@ -257,6 +257,35 @@ function threat.unit_dps(unit, e)
   end
   return total / h.cooldown
 end
+-- What a turret's fire does to an entity of prototype `target` a tick (0.2.352; data-final-fixes: lp-turret-hit): its
+-- shot, its own (an electric turret) or its loaded ammo's (an ammo turret), times its force's damage and turret-attack
+-- modifiers, over its cooldown shortened by the force's speed modifier, less the target's resistances. 0 for a turret it
+-- does not know or one with no ammo. (Flamethrowers burn: their profile's, not here.)
+local thits
+function threat.turret_dps(t, target)
+  thits = thits or prototypes.mod_data["lp-turret-hit"].data
+  local h = t.valid and thits.turrets[t.name]
+  if not h then return 0 end
+  local dmg, cat = h.dmg, h.cat
+  if t.type == "ammo-turret" then
+    local inv = t.get_inventory(defines.inventory.turret_ammo)
+    local stack = inv and not inv.is_empty() and inv[1]
+    local a = stack and stack.valid_for_read and thits.ammo[stack.name]
+    if not a then return 0 end
+    dmg, cat = a.dmg, a.cat or cat
+  end
+  if not dmg then return 0 end
+  local f = t.force
+  local mult = h.mod * (1 + (cat and f.get_ammo_damage_modifier(cat) or 0)) * (1 + f.get_turret_attack_modifier(t.name))
+  local cool = h.cooldown / (1 + (cat and f.get_gun_speed_modifier(cat) or 0))
+  local res = prototypes.entity[target] and prototypes.entity[target].resistances or {}
+  local total = 0
+  for ty, amount in pairs(dmg) do
+    local r = res[ty]
+    total = total + math.max(0, amount * mult - (r and r.decrease or 0)) * (1 - (r and r.percent or 0))
+  end
+  return total / math.max(1, cool)
+end
 -- How many such shells it takes (at least one).
 function threat.shells_for(proj, e)
   local b = threat.blow(proj, e)

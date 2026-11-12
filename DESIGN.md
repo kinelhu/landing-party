@@ -7021,6 +7021,29 @@ Bugs and surprises the headless runs caught, each kept as a check:
   failing). Not the trailer battle's cause: its flip from 10 of Grubstake's turrets broken to 1 came at 0.2.304, before
   the slowdown, and still stands at current code (76 of the player's units lost, 1 turret: its check fails); that is
   next.
+- **Synthexis's sweep scaled to the fire on its way** (0.2.352, 2026-11-12; the user, of farm siege's sweepers lasered
+  7 short of their mines: "I would steer clear of hard coding. Can we not scale the number of sweepers to something?").
+  Each mine cluster's spot is sent as many sweepers as the fire a lone sweeper walks through on its way takes, plus one
+  to arrive: `herd.sweepers_at`, each 2-tile step's covering turrets (firemap) at their dps on a sweeper
+  (`threat.turret_dps`: an electric turret's own shot or an ammo turret's loaded ammo, from data-final-fixes'
+  `lp-turret-hit`, times the force's ammo damage, turret attack and gun speed modifiers, less the sweeper's
+  resistances), over its health. The plan pays for the sum (herd.plan sappers), the sweep sends one a spot first, then
+  the rest. farm siege 12345: 16 sweepers for 6 clusters, 0 of 12 mines left (it had failed since 0.2.187: 2 of 6, then
+  1 of 10). Flamethrowers' burn not counted (their profile's).
+- **Chased, not fixed: the trailer herd's wall broken withdrawing.** Two causes read in the trailer run (veterans): 4
+  of its own held at the west wall where it crossed (-37,-280) when its group reached its gap; and its way home went
+  gap, then its breach, read where no wall stood (3,-300, inside the outpost: "breach at 3,-300 (no wall)"), then on
+  across the far wall (13,-340). Tried: the group held at its gap while its own were inside (4 pieces to 1); stragglers
+  routed out by the gap at the end (3); the inside breach left off the way home (12). Every change tips the fight, and
+  one knife-edge run cannot judge a fix: all reverted. 2.1 has no pathfinder flag against an enemy's entities
+  (PathfinderFlags: friendly and own only), as said before. Next: judge withdrawal changes over seeds, with a scenario
+  of its own (a walled outpost, a breach read inside), not the trailer.
+- **The trailer's battle flipped back** (current code, 2026-11-12): the plain army breaks 23 of Grubstake's turrets and
+  118 units (at 0.2.350: 1 and 54); the change between is 0.2.351's deploy timing. The film tree (0.2.338) still loses,
+  so its battle shots stage the army as veterans (LP_MIX=vets).
+- **ranks-mend does not beat its control** (2026-11-12). Its check reads its line now (none round by the corridor; those
+  outside when through recorded, the user: "Herd ranks: ok"). On 12345 mend and mend-off both pass (corridor 0); on 777
+  mend 1 in the corridor, off 0; on 4242 mend 3, off 2. The mend does not keep the line: open.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

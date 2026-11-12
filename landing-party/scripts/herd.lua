@@ -1211,9 +1211,13 @@ function herd.plan(surface, from, target, forces, n)
   for _, t in ipairs(cover) do cover_price = cover_price + herd.price_of(t) end
   -- (What of its way is standing at the wall: not paid by a herd that waits for its rams, farm.lua siege_size.)
   local standing = math.min(costmap.wall_along(cm, target), way.cost)
+  -- (Its sweep paid for as many as the fire on each spot's way takes, herd.sweepers_at, not one a cluster: 0.2.352.)
+  local spots = herd.sapper_spots(mines, rest[1])
+  local sappers = 0
+  for _, k in ipairs(herd.sweepers_at(surface, forces, spots, rest[1])) do sappers = sappers + k end
   return {path = pts, upto = upto, start = {way.start.x, way.start.y}, breach = {way.breach.x, way.breach.y},
     cost = way.cost, cover = #cover, openable = openable, target = {target.x, target.y}, mines = #mines, walled = walled,
-    sappers = #herd.sapper_spots(mines, rest[1]),
+    sappers = sappers,
     standing = standing, cover_price = cover_price}
 end
 
@@ -1987,6 +1991,38 @@ function herd.sapper_spots(mines, from)
   return spots
 end
 
+-- How many sweepers each spot takes (0.2.352; the user, 2026-11-12, of farm siege's sweepers lasered 7 short: "I would
+-- steer clear of hard coding. Can we not scale the number of sweepers to something?"): the fire a lone sweeper walks
+-- through from `from` to its spot (each step's covering turrets, their dps on a sweeper: threat.turret_dps) over its
+-- health, one for each sweeper that fire would take, and one to arrive.
+function herd.sweepers_at(s, forces, spots, from)
+  local out = {}
+  if #spots == 0 or not from then return out end
+  local proto = prototypes.entity["lp-sweeper"]
+  local hp, speed = proto.get_max_health(), math.max(0.01, proto.speed or 0.1)
+  local fx, fy = from.x or from[1], from.y or from[2]
+  local far = 0
+  for _, p in ipairs(spots) do far = math.max(far, math.sqrt(d2(p, {x = fx, y = fy}))) end
+  local map = firemap.read(s, {x = fx, y = fy}, far, forces)
+  local dps = {}
+  local STEP = 2
+  for i, p in ipairs(spots) do
+    local dx, dy = p.x - fx, p.y - fy
+    local d = math.sqrt(dx * dx + dy * dy)
+    local taken = 0
+    for k = 0, math.floor(d / STEP) do
+      local q = {x = fx + dx * (k * STEP / math.max(d, 1e-6)), y = fy + dy * (k * STEP / math.max(d, 1e-6))}
+      for _, t in ipairs(firemap.cover(map, q)) do
+        local u = t.unit_number
+        if dps[u] == nil then dps[u] = threat.turret_dps(t, "lp-sweeper") end
+        taken = taken + dps[u] * STEP / speed
+      end
+    end
+    out[i] = 1 + math.floor(taken / hp)
+  end
+  return out
+end
+
 -- Its sweep: a runt at each of its foe's mines on the last of its way and through the breach (w.sweep of them, paid by its
 -- farm from its plan, herd.plan: mines), nearest first; each walks on to its mine and sets it off.
 local function sweep(w, s, from, to, inside)
@@ -1995,8 +2031,20 @@ local function sweep(w, s, from, to, inside)
   local mines = mines_along(s, foes(w), {from, to, inside}, herd.spread(#herd_units(w)) + SWEEP_GAP, from)
   local spots = herd.sapper_spots(mines, from)
   w.sweep_mines = #mines
+  -- (Each spot as many as the fire on its way takes, herd.sweepers_at: one each first, nearest first, then the rest.)
+  local want = herd.sweepers_at(s, foes(w), spots, from)
+  local order = {}
+  for i = 1, #spots do order[#order + 1] = i end
+  for extra = 2, 64 do
+    local any = false
+    for i = 1, #spots do if (want[i] or 1) >= extra then order[#order + 1] = i; any = true end end
+    if not any then break end
+  end
+  w.sweep_want = 0
+  for i = 1, #spots do w.sweep_want = w.sweep_want + (want[i] or 1) end
   local made = 0
-  for i = 1, math.min(n, #spots) do
+  for k = 1, math.min(n, #order) do
+    local i = order[k]
     local q = s.find_non_colliding_position("lp-sweeper", {from.x, from.y}, 12, 0.5)
     local u = q and s.create_entity{name = "lp-sweeper", position = q, force = B.force}
     if u then
@@ -2012,8 +2060,9 @@ local function sweep(w, s, from, to, inside)
   -- (What it swept for, to count what still stands once its sweep is done: a mine a sweeper walked onto went off by
   -- itself, cleared all the same, and counting its bursts' kills read 4 of 6 cleared; farm siege 12345, 0.2.186.)
   w.sweep_set = made > 0 and mines or nil
-  if #spots > made then
-    log(w, string.format("its sweep: %d mines in %d clusters, %d sweepers", #mines, #spots, made))
+  if #spots > made or w.sweep_want > #spots then
+    log(w, string.format("its sweep: %d mines in %d clusters, %d sweepers (the fire on their way asked %d)", #mines, #spots,
+      made, w.sweep_want))
   end
   return made
 end

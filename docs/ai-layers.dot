@@ -2,14 +2,14 @@ digraph layers {
   graph [rankdir=TB, fontname="Helvetica", nodesep=0.5, ranksep=0.7];
   node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#eef2f7"];
   edge [color="#8899aa", fontname="Helvetica", fontsize=9];
-  "Seams (leaves)" [label="Seams (leaves)\n13 modules, 1798 lines", fillcolor="#d9f0d9"];
+  "Seams (leaves)" [label="Seams (leaves)\n13 modules, 1827 lines", fillcolor="#d9f0d9"];
   "Perception and attempts (any attacker)" [label="Perception and attempts (any attacker)\n6 modules, 1426 lines", fillcolor="#eef2f7"];
   "Knowledge and strategy (per faction)" [label="Knowledge and strategy (per faction)\n2 modules, 316 lines", fillcolor="#eef2f7"];
   "Corporation" [label="Corporation\n9 modules, 2872 lines", fillcolor="#eef2f7"];
   "Settlement" [label="Settlement\n16 modules, 6209 lines\nlayout 1747", fillcolor="#f7dede"];
   "Army and operations" [label="Army and operations\n22 modules, 9423 lines\narmy 1055, ops 2185, siege 2132", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1390 lines", fillcolor="#eef2f7"];
-  "The biotech" [label="The biotech\n5 modules, 8109 lines\nherd 4388, farm 2440", fillcolor="#f7dede"];
+  "The biotech" [label="The biotech\n5 modules, 8158 lines\nherd 4437, farm 2440", fillcolor="#f7dede"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
   "The player's army" [label="The player's army\n6 modules, 1612 lines", fillcolor="#eef2f7"];
   "Army and operations" -> "Corporation" [label="3", penwidth=1.8];
