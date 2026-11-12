@@ -12696,6 +12696,9 @@ scenarios.herd = function()
   -- ranks-crowd: ranks-mend with a herd of 120 (the user's wall: 168 through a gap mended to one or two tiles): its group's
   -- order is done with most of it still outside the outer ring. Through is read by its herd (herd.rk.hold_rush);
   -- ranks-crowd-off, by its group's order (the control, biotech_no_herd_through).
+  -- (…-rank: through read by a rank's count, as before 0.2.354, biotech_through_rank: the control.)
+  local by_rank = mix:sub(-5) == "-rank"
+  if by_rank then mix = mix:sub(1, -6) end
   local crowd = (mix == "ranks-crowd" or mix == "ranks-crowd-off") and mix or nil
   local mend = (mix == "ranks-mend" or mix == "ranks-mend-off" or crowd) and mix or nil
   if mend then mix = "ranks" end
@@ -12845,6 +12848,7 @@ scenarios.herd = function()
       if mix == "ranks-off" then lp("debug_tune", {biotech_no_ranks = true}) end
       if mend == "ranks-mend-off" then lp("debug_tune", {biotech_no_keep_line = true}) end
       if mend == "ranks-crowd-off" then lp("debug_tune", {biotech_no_herd_through = true}) end
+      if by_rank then lp("debug_tune", {biotech_through_rank = true}) end
     elseif mix == "burst" or mix == "burst-nohold" then
       lp("herd_fill", S.pen, 32, "lp-bred-medium-biter")
       lp("herd_fill", S.pen, 4, "lp-bred-cinder")

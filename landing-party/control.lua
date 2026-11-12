@@ -559,6 +559,9 @@ remote.add_interface("landing-party", {
     -- biotech_no_herd_through: its rush through when its group's order is done, however much of it is outside, as before
     -- 0.2.216 (herd.rk.hold_rush; its check's control).
     if t.biotech_no_herd_through ~= nil then storage.biotech_no_herd_through = t.biotech_no_herd_through or nil end
+    -- biotech_through_rank: its rush through once no more than a rank of it is outside, as before 0.2.354, not by whether
+    -- those outside are coming (herd.rk.hold_rush; the control).
+    if t.biotech_through_rank ~= nil then storage.biotech_through_rank = t.biotech_through_rank or nil end
     -- old_stock: Synthexis's army bred by the engine and standing at its incubators, as before 0.2.90 (farm.lua hatching).
     if t.old_stock ~= nil then storage.biotech_old_stock = t.old_stock or nil end
     if t.prospect_window ~= nil then storage.prospect_window = t.prospect_window end

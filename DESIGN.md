@@ -7055,6 +7055,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   within the runs' own spread. Tried and set aside: its fodder left out of its outside count (herd.rk.outside): read
   through sooner, its stragglers took the corridor (12345: 0 to 3). Open: when a rush reads itself through, by whether
   those outside are coming, not a rank's count (ranks-mend and ranks-crowd alike), judged by the trace's straggle time.
+- **A rush through by whether those outside are coming** (0.2.354, 2026-11-12, from the rush trace). Held while any of
+  it is outside and they are coming (their mean way to its gap shorter each look by a quarter of what the slowest of them
+  walks in it, herd.rk.out_way), through once none is outside or all the same once they are not; its rank's count
+  (herd.spread) gone from the reading, kept as the control (`biotech_through_rank`, the scenario's `-rank` variants).
+  Outside when through on ranks-mend 12345, 777, 4242: 9, 6, 3 by the rank, 2, 1, 2 by coming; its straggle time 13,
+  15, 22 s and 13, 16, 9 s; its corridor 0, 1, 0 and 0, 1, 1. ranks-crowd (120) the same either way (8 outside after a
+  look, not coming: through). Not yet regressed beyond the ranks scenarios.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

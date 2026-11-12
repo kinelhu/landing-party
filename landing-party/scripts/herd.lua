@@ -2621,13 +2621,32 @@ function herd.rk.hold_rush(w)
   if w.rush_more then return false end
   local out, mid, list = herd.rk.outside(w)
   local rank = herd.spread(alive(w))
-  if out <= rank then return false end
+  -- (By whether those outside are coming, not by a rank's count (0.2.354, the rush trace: at a mended gap the rank's count
+  -- read it through with 9, 6 and 3 of its own pressed at the wall on 12345, 777 and 4242; by whether they come, 2, 1 and
+  -- 2, the crowd's the same): held while any are outside; herd.rk.watch_rush reads their way to its gap each look. The
+  -- rank's count kept behind storage.biotech_through_rank, the control.)
+  if herd.rk.by_coming() then
+    if out == 0 then return false end
+    w.out_d = herd.rk.out_way(w, list)
+  elseif out <= rank then return false end
   w.rush_held, w.out_last, w.rush_more = game.tick, out, 1
   local wall = herd.rk.push_rush(w, mid, list)
   log(w, string.format("its rush's order done with %d of its %d outside, their middle at %.0f,%.0f, more than a rank of %d: not through, they come on to it%s",
     out, alive(w), mid.x, mid.y, rank, wall and string.format(", at a mended piece at %.0f,%.0f first", wall.position.x,
     wall.position.y) or ""))
   return true
+end
+-- The mean way to its gap of those outside (`list`), and the least of their paces a tick (for herd.rk.watch_rush's reading
+-- of whether they are coming: their way shorter by a quarter of what the slowest walks in a look).
+function herd.rk.by_coming() return not storage.biotech_through_rank end
+function herd.rk.out_way(w, list)
+  local d, pace = 0, nil
+  for _, u in ipairs(list) do
+    d = d + math.sqrt(d2(u.position, w.gap))
+    local sp = prototypes.entity[u.name] and prototypes.entity[u.name].speed or 0.1
+    pace = pace and math.min(pace, sp) or sp
+  end
+  return #list > 0 and d / #list or 0, pace or 0.1
 end
 function herd.rk.watch_rush(w)
   if not (w.rush_held and w.group and w.group.valid) or game.tick - w.rush_held < LOOK then return end
@@ -2636,7 +2655,16 @@ function herd.rk.watch_rush(w)
   local rank = herd.spread(alive(w))
   -- (Or none the fewer while it is at a mended piece on its way: opening its way, not stuck.)
   local chewing = w.mend_at and w.mend_at.valid and w.rush_more < WALL_TRIES
-  if out > rank and (out < w.out_last or chewing) then
+  -- (Held while those outside are coming, their way to its gap shorter by a quarter of what the slowest of them walks in a
+  -- look; through once none is outside, or all the same once they are not. Its control the rank's count, below.)
+  local coming
+  if herd.rk.by_coming() then
+    local d, pace = herd.rk.out_way(w, list)
+    coming = out > 0 and w.out_d and (w.out_d - d) >= 0.25 * pace * LOOK
+    w.out_d = d
+  end
+  if (herd.rk.by_coming() and out > 0 and (coming or chewing))
+    or (not herd.rk.by_coming() and out > rank and (out < w.out_last or chewing)) then
     w.rush_held, w.out_last, w.rush_more = game.tick, math.min(out, w.out_last), w.rush_more + 1
     local wall = herd.rk.push_rush(w, mid, list)
     if storage.trace then
