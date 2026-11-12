@@ -7176,6 +7176,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   of nwa's artillery; three guns break its dome as sixty do (it holds a time), and its hull's generators went in the
   three minutes down. Now a poor site under the guns is put by: the nest pass runs first, and only if it finds nothing
   does the landing take the poorest-gunned one put by. nwa, seed 2: the second camp at 1088,1105, no gun in reach.
+- **A hull holds through its dome's break; 0.2.365 reverted** (0.2.366, 2026-11-12; the user: "What is the expected
+  behavior for the second site?"). By design a late landing on a megabase lands under its guns (the band between its
+  factory and its artillery's reach, the one approach free of nests: landed beyond, camps had 18 to 101 nests on the way
+  and razed nothing) and holds there on its dome and hull, the guns breaking its dome but buying no shortcut: troops do.
+  0.2.365 sent it far out instead, the failure that pass was made against; reverted (its trace kept: the landing's line
+  names how its site was taken). The bug was that three guns broke its hull: the dome broken, its three minutes down
+  let the shells take the generators its hull stands on. Now its hull is not read while its lander's dome is down: read
+  again once the dome is whole, its generators rebuilt under it meanwhile. The shells still take what is outside the
+  dome and, in the break, its turrets, walls and blocks. Scenario `dome hull` (a battery breaks it, the generators round
+  its lander destroyed as it breaks): its hull held, its lander stands (failing before: hull down, lander destroyed).
+  And the dome's debug read no longer raises on a fallen camp's lander.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

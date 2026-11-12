@@ -91,6 +91,8 @@ local function fresh() return {left = 1, down_till = 0, caught = 0, breaks = 0} 
 -- break it first now, then reach them: the troops it is meant to draw.
 local PAD_SPARE = 4
 local function pad_reach(b)
+  -- (Its lander gone: a fallen camp's dome read by the tests raised here.)
+  if not (b.lander and b.lander.valid) then return nil end
   local r, lx, ly = 0, b.lander.position.x, b.lander.position.y
   for _, g in ipairs(b.gens or {}) do
     if g.valid and g.force.name == b.force then

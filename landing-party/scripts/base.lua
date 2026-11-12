@@ -724,6 +724,12 @@ local function hull(b)
   b.gens_max = math.max(b.gens_max or 0, n)
   b.gens_counted = n
   local held = n >= shared.HULL_MIN_GENS and n >= shared.HULL_SHARE * b.gens_max
+  -- Held through its lander's dome's break (dome.lua: down BREAK after HOLD of the guns' fire): the guns alone break the
+  -- dome and the shells then land, but its hull is read again once the dome is whole, its generators rebuilt under it
+  -- meanwhile; troops break a hull. Shelled in its three minutes down, nwa's second camp lost its hull's generators to
+  -- three guns and its lander with them, 16 minutes after landing, two seeds of three (the visits at 0.2.364; the dome:
+  -- "the guns buy no shortcut, troops do").
+  if not held and not b.lander.destructible and b.dome and (b.dome.down_till or 0) > game.tick then return end
   if b.lander.destructible == held then
     b.lander.destructible = not held
     b.hull_down = (b.hull_down or 0) + (held and 0 or 1)

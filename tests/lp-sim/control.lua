@@ -7140,7 +7140,26 @@ scenarios.dome = function()
       end
       info("dome: banks at " .. serpent.line(S.banks))
     end
-    for k = 1, ((mix == "battery" or mix == "whole") and 6 or mix == "ring" and 0 or 1) do
+    -- hull: the battery's, and once it breaks the dome, the generators round its lander destroyed (as its shells took them
+    -- on nwa): its hull holds while the dome is down.
+    if mix == "hull" then
+      for t2 = 60, END - 3600, 60 do
+        schedule(game.tick - storage.t0 + t2, function()
+          local d = lp("debug_dome", storage.id)
+          if S.gens_hit or not d or (d.breaks or 0) < 1 then return end
+          local l = surface().find_entities_filtered{name = "lp-lander", force = "lp-serenity", limit = 1}[1]
+          S.gens_hit = 0
+          for _, g in ipairs(l and surface().find_entities_filtered{name = "lp-generator", force = "lp-serenity", position = l.position, radius = 90} or {}) do
+            g.die("player"); S.gens_hit = S.gens_hit + 1
+          end
+          schedule(game.tick - storage.t0 + 3600, function()
+            local st = lp("stats", storage.id)
+            S.hull_after = {down = st.hull_down or 0, destructible = l and l.valid and l.destructible}
+          end)
+        end)
+      end
+    end
+    for k = 1, ((mix == "battery" or mix == "whole" or mix == "hull") and 6 or mix == "ring" and 0 or 1) do
       local t = surface().create_entity{name = "artillery-turret", position = {c[1] + 4 * (k - 1), c[2]}, force = "player"}
       S.loaded = S.loaded + t.insert{name = "artillery-shell", count = 20}
       table.insert(S.turrets, t)
@@ -7178,6 +7197,15 @@ scenarios.dome = function()
         S.loaded - left, d.breaks, lost))
     elseif mix == "battery" then
       check("dome: a battery breaks it and its shells land", d.breaks >= 1 and lost > 0, d.breaks .. " breaks, " .. lost .. " lost")
+    elseif mix == "hull" then
+      check("dome: its generators lost while it is down, its hull holds", (S.gens_hit or 0) > 0 and S.hull_after
+        and S.hull_after.down == 0 and S.hull_after.destructible == false,
+        string.format("%s generators lost, then %s", tostring(S.gens_hit), serpent.line(S.hull_after)))
+      -- And its lander stands, its hull held through the break (the guns alone broke its dome and then its hull: nwa's
+      -- second camp, under three guns, fell 16 minutes after landing, the visits at 0.2.364).
+      local st = lp("stats", storage.id)
+      check("dome: broken by the guns alone, its lander stands, its hull held", st.lander and not st.fallen and (st.hull_down or 0) == 0,
+        string.format("lander %s, hull down %s times", tostring(st.lander and not st.fallen), tostring(st.hull_down)))
     elseif mix == "dark" or mix == "off" then
       check("dome: none, the camp is shelled", d.caught == 0 and lost > 0, d.caught .. " caught, " .. lost .. " lost")
     else

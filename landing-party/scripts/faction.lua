@@ -384,16 +384,6 @@ function faction.site(surface, from, distance, count)
     return best
   end
   local last = fallback or among or dense
-  -- Under the guns, a poor site (no rich one among them) waits for the nest pass: it may find ground no gun reaches. nwa's
-  -- second camp took the richest clear site under 3 guns on this pass and fell within 16 minutes, two seeds of three
-  -- (the visits at 0.2.364); faction.arrive lands there only if the nest pass finds nothing.
-  if last and faction.under_guns then
-    local g = guns_on(last)
-    if not faction.under_fallback or g < faction.under_fallback.guns then
-      faction.under_fallback = {pos = last, guns = g}
-    end
-    return nil
-  end
   if last then
     faction.site_scored = string.format("%s (pass %s), %d guns in reach", fallback and "the richest clear" or among and "among nests"
       or "the least dense nest field", faction.pass or "?", guns_on(last))
@@ -501,7 +491,6 @@ function faction.arrive(surface, from, opts, quiet)
   local far_ring = ((opts and opts.distance) or DISTANCE)
   for _, e in ipairs(storage.rings or {0, 120, 240, 480, 800, 1200, 1800}) do far_ring = math.max(far_ring, ((opts and opts.distance) or DISTANCE) + e) end
   faction.reach_refused = 0
-  faction.under_fallback = nil
   for pass = 0, 3 do
     if b then break end
     if pass == 2 and not late then goto next_pass end
@@ -562,23 +551,6 @@ function faction.arrive(surface, from, opts, quiet)
     end
     if b then break end
     ::next_pass::
-  end
-  -- The poor site under the guns, put by for the nest pass (faction.site), if that found nothing.
-  local uf = faction.under_fallback
-  faction.under_fallback = nil
-  if not b and uf and not faction.pending then
-    faction.site_scored = string.format("the richest clear under the guns, after the nest pass, %d guns in reach", uf.guns)
-    if faction.site_only then
-      local at = layout.find_pad(surface, uf.pos)
-      if at then
-        faction.ignore_nests, faction.under_guns, faction.pact_site, faction.approach_max = false, false, false, nil
-        faction.dense_ok = false
-        return nil, "site", uf.pos, at
-      end
-    else
-      b = base.land(surface, uf.pos, opts)
-      if b then b.under_guns = true; base.trace(b, "landed under the player's guns (inside its artillery's reach)") end
-    end
   end
   -- (Its way checked: the sites refused for having none, traced; f.by_way counts the landings checked, `armed`.)
   if b and landing_cm then
