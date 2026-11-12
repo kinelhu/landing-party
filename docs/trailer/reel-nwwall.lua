@@ -24,8 +24,11 @@ return {name = "reel-nwwall", base = 1, waves = true, resolution = {1920, 1080},
   {name = "w1-march", after = "wave:march", dt = 2400, frames = 300,
     from = {pos = {33, -616}, zoom = 0.55, daytime = 0.3}, to = {pos = {15, -518}, daytime = 0.31}},
   -- Locked on the breach from its first tick: the big bursters at the wall, the gap, the rush, the flamethrowers.
+  -- (0.2.338, the user: "shows solar panels on half the screen, we don't see the coming biter wave": on the breach
+  -- point (3.3,-401.6, 8 tiles inside) the outer wall (-425) was at the frame's top edge and the herd beyond it; now on
+  -- the outer wall's line from the film log's breach point, the approach above it, the flamethrower line (-402) last.)
   {name = "w2-breach", after = "wave:breach", dt = 0, frames = 600,
-    from = {pos = "breach", zoom = 0.7, daytime = 0.31}, to = {off = {0, 4}, daytime = 0.33}},
+    from = {pos = {3.3, -430}, zoom = 0.55, daytime = 0.31}, to = {pos = {3.3, -424}, zoom = 0.6, daytime = 0.33}},
   -- After: the broken wall, pulling out over the line. (Timed on the breach: the film reads a stage only while the wave
   -- has a group, and inside its biters each go their own way.)
   {name = "w3-after", after = "wave:breach", dt = 1200, frames = 240,

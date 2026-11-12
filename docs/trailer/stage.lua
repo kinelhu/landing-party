@@ -21,10 +21,12 @@ return {name = "stage", base = 1, army = true, waves = true, resolution = {1920,
   -- The army moving out, tracked.
   {name = "m2-move-out", tick = 39800, frames = 180, track = true, from = {pos = "army", zoom = 0.8, daytime = 0.2}, to = {daytime = 0.2}},
   -- The battle at the Grubstake camp: a lock-off on the line, then tracked on what is left of the army.
-  -- (0.2.338: the fight is round 366,-141 throughout, at the frame's bottom-left edge from 392,-158 and its top-right
-  -- from the army's point 356,-133, the user: "a misplaced camera"; m4 at 42600 came after it, wrecks only: now 41900.)
-  {name = "m3-battle", tick = 41400, frames = 240, from = {pos = {364, -143}, zoom = 0.75, daytime = 0.22}, to = {pos = {367, -141}, zoom = 0.8, daytime = 0.22}},
-  {name = "m4-battle", tick = 41900, frames = 240, from = {pos = {366, -141}, zoom = 0.95, daytime = 0.22}, to = {pos = {368, -140}, zoom = 1.0, daytime = 0.22}},
+  -- (0.2.338, the user: "a misplaced camera", then "underwhelming ... compared to previous versions", "a little too
+  -- low": a scouting pass (scout-battle.lua) shows the army halting at the camp's west street (357,-137 from 41200)
+  -- and its fight there 40900 to about 41500, its peak 41100 to 41300, wrecks by 41600: the old m3 at 41400 came
+  -- after it. Both now on the peak, the camera north of the fight, the camp's street and buildings above it.)
+  {name = "m3-battle", tick = 40900, frames = 240, from = {pos = {376, -147}, zoom = 0.65, daytime = 0.22}, to = {pos = {374, -146}, zoom = 0.72, daytime = 0.22}},
+  {name = "m4-battle", tick = 41001, frames = 240, from = {pos = {372, -145}, zoom = 0.95, daytime = 0.22}, to = {pos = {373, -144}, zoom = 1.0, daytime = 0.22}},
   -- Kessler-Hayashi against Grubstake: the drop, then the barrage on the camp.
   {name = "c1-drop", tick = 45050, frames = 180, every = 3, from = {pos = {-548, 31}, zoom = 0.7, daytime = 0.25}, to = {pos = {-550, 31}, zoom = 0.72, daytime = 0.25}},
   {name = "c2-barrage", tick = 47300, frames = 240, from = {pos = {-560, 31}, zoom = 0.6, daytime = 0.26}, to = {pos = {-566, 32}, zoom = 0.7, daytime = 0.26}},
