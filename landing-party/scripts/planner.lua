@@ -142,6 +142,7 @@ local function keep(b) return b.posture and b.posture.keep or 0 end
 
 -- The planner's rules, in priority order. The first that applies and finds a place acts.
 -- `only`: that rule alone (base.lua: the power rule while the queue is busy).
+local GUARD_LOSSES, GUARD_R, GUARD_MOST, GUARD_WINDOW = 6, 28, 4, 30 * 3600   -- priors (arcguard)
 local function plan(b, only)
   local surface = game.surfaces[b.surface]
   -- Whose ground the layout's checks refuse (shared.refused), while it plans.
@@ -213,6 +214,45 @@ local function plan(b, only)
     {"fortify", function() return b.parts > 80 + keep(b) and #b.fabs > 0 end, function()
       local block = layout.fortify(b)
       return block and string.format("walls round %s at %.0f,%.0f", block.kind, block.center[1], block.center[2]) end},
+    -- An arc flamer where the biters hit it (the user, 2026-11-12: "Should we put an arc flamer on every cluster at high
+    -- evolution?"; read from its losses, not the evolution: on nwa its second camp lost 509 buildings and units to biter
+    -- waves and fell, its flamers only at its gates). A block with GUARD_LOSSES lost to biters within GUARD_R of it in the
+    -- last half hour (its hazard log, siege.lua) gets a flamer by them, one more each GUARD_LOSSES, GUARD_MOST at most.
+    {"arcguard", function()
+      b.target = nil
+      local log = b.hazard and b.hazard.log
+      -- (Its own price only, not its army's keep past it: under attack the keep is high, and a flamer is 8 parts.)
+      if not log or #log < GUARD_LOSSES or b.parts < (shared.cost["lp-flamer"] or 8) then return false end
+      local cut, name = game.tick - GUARD_WINDOW, shared.variant(b.corp, "lp-flamer")
+      local best, most
+      for _, blk in ipairs(b.blocks) do
+        local cx, cy, n, sx, sy = blk.center[1], blk.center[2], 0, 0, 0
+        for _, l in ipairs(log) do
+          if l[1] >= cut and (l[2] - cx) ^ 2 + (l[3] - cy) ^ 2 <= GUARD_R ^ 2 then n, sx, sy = n + 1, sx + l[2], sy + l[3] end
+        end
+        if n >= GUARD_LOSSES then
+          local have = surface.count_entities_filtered{position = blk.center, radius = GUARD_R, name = name}
+          for _, q in ipairs(b.queue) do
+            if q.name == name and (q.pos[1] - cx) ^ 2 + (q.pos[2] - cy) ^ 2 <= GUARD_R ^ 2 then have = have + 1 end
+          end
+          if have < math.min(GUARD_MOST, math.floor(n / GUARD_LOSSES)) and (not most or n > most) then
+            best, most = {blk = blk, at = {sx / n, sy / n}, n = n, have = have}, n
+          end
+        end
+      end
+      b.target = best
+      return best ~= nil end,
+      function()
+        local t, name = b.target, shared.variant(b.corp, "lp-flamer")
+        local cx, cy = t.blk.center[1], t.blk.center[2]
+        -- Toward the losses from the block's middle, within it.
+        local px, py = cx + (t.at[1] - cx) * 0.6, cy + (t.at[2] - cy) * 0.6
+        local p = surface.find_non_colliding_position(name, {px, py}, 8, 0.5)
+        if not p then return end
+        table.insert(b.queue, 1, {name = name, pos = {p.x, p.y}, module = t.blk})
+        return string.format("an arc flamer by %s at %.0f,%.0f (%d lost to biters round it, %d flamers there)", t.blk.kind,
+          p.x, p.y, t.n, t.have)
+      end},
     {"defend", function()
       b.target = (doc.outpost_turrets and undefended(b)) or undefended(b, true)
       return b.target ~= nil and b.target ~= false end,

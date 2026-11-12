@@ -41,9 +41,9 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n927 lines", width=1.83, fillcolor="#eef2f7"];
+    "base" [label="base\n929 lines", width=1.83, fillcolor="#eef2f7"];
     "construction" [label="construction\n411 lines", width=1.26, fillcolor="#d9f0d9"];
-    "planner" [label="planner\n338 lines", width=1.18, fillcolor="#eef2f7"];
+    "planner" [label="planner\n378 lines", width=1.22, fillcolor="#eef2f7"];
     "layout" [label="layout\n1747 lines", width=2.74, fillcolor="#f7dede"];
     "wfc" [label="wfc\n380 lines", width=1.22, fillcolor="#d9f0d9"];
     "wfc_serenity" [label="wfc_serenity\n134 lines", width=0.95, fillcolor="#d9f0d9"];

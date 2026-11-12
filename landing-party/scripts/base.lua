@@ -830,6 +830,8 @@ function base.tick(tick)
         -- demand ran past supply (cordon: 6.6 of 6.0 MW, the planner idle from minute 11).
         elseif not withdrawing then
           plan(b, "power")
+          -- And its arc flamers where the biters hit it: under their waves its rebuilds are always due (planner arcguard).
+          plan(b, "arcguard")
           -- And its first fabricator (queued first, planner.fill): a camp whose queue waited on parts it could not make
           -- planned nothing more and never made a part (parked, 2026-10-24).
           if #b.fabs == 0 then plan(b, "fabricate") end

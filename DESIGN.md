@@ -7195,6 +7195,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   2 or 3 operations, none done, and razed 0 to 23. The counter-biter kit keeps a far camp alive; it does not bring it to
   the player. The search's near site stays. (At 900 the search itself found no site: not looked into; its way over land
   is checked for an armed landing.)
+- **Arc flamers where the biters hit** (0.2.367, 2026-11-12; the user: "Should we put an arc flamer on every cluster at
+  high evolution?"; my answer: by its losses, not the evolution). A block with GUARD_LOSSES (6) lost to biters within
+  GUARD_R (28) of it in the last half hour (its hazard log) gets an arc flamer between its middle and the losses, one more
+  each GUARD_LOSSES, GUARD_MOST (4) at most: planner rule `arcguard`, also run while its rebuilds are due (under waves they
+  always are), on its own price, not its army's keep (high under attack). Priors, all four. The nwa visit, seed 2, 60
+  minutes: 17 flamers placed, its second camp's losses to biters 509 to 63, and it stood (it fell without); deathworld10x,
+  kh2, three seeds: no losses to biters, no flamer, the same runs to the unit. Scenario `arcguard` (8 of its units
+  killed by the enemy round its pad: a flamer there; failing before: none).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

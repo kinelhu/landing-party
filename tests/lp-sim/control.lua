@@ -7100,6 +7100,31 @@ scenarios.domehub = function()
   end)
 end
 
+-- arcguard: a block of the camp hit by biters (14 of its units killed by the enemy force round its pad, three minutes
+-- in) gets an arc flamer by it (planner arcguard; the nwa visit, seed 2: its second camp, flamers at its gates only, lost
+-- 509 to biter waves and fell; with them 63 and it stood).
+scenarios.arcguard = function()
+  schedule(3 * 3600, function()
+    local b = lp("stats", storage.id)
+    local o = b.origin
+    local name = "lp-flamer"
+    S.before = surface().count_entities_filtered{force = "lp-serenity", type = "electric-turret", position = o, radius = 200}
+    -- (Its units, not its buildings: killed round its pad, its pylons and bins took its economy with them and the
+    -- flamers it planned were never paid for.)
+    local victims = surface().find_entities_filtered{force = "lp-serenity", type = "unit", position = {o.x, o.y}, radius = 40, limit = 14}
+    for _, e in ipairs(victims) do e.die("enemy") end
+    S.killed = #victims
+  end)
+  schedule(6 * 3600, function()
+    local o = lp("stats", storage.id).origin
+    S.after = surface().count_entities_filtered{force = "lp-serenity", type = "electric-turret", position = o, radius = 200}
+    local flamers = surface().count_entities_filtered{force = "lp-serenity", name = "lp-flamer", position = o, radius = 200}
+    info(string.format("arcguard: %d killed by biters, electric turrets %d -> %d, %d arc flamers", S.killed or 0, S.before or 0, S.after, flamers))
+    check("arcguard: hit by biters round a block, it puts an arc flamer there", (S.killed or 0) >= 6 and flamers >= 1,
+      string.format("%d killed, %d flamers", S.killed or 0, flamers))
+  end)
+end
+
 scenarios.dome = function()
   local mix = params.mix or ""
   schedule(60, function()
