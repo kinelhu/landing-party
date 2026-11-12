@@ -7102,23 +7102,42 @@ end
 
 -- arcguard: a block of the camp hit by biters (14 of its units killed by the enemy force round its pad, three minutes
 -- in) gets an arc flamer by it (planner arcguard; the nwa visit, seed 2: its second camp, flamers at its gates only, lost
--- 509 to biter waves and fell; with them 63 and it stood).
+-- 509 to biter waves and fell; with them 63 and it stood). LP_MIX=grubstake: Grubstake's camp, arrived at a minute (the
+-- rule queued the corporation's own name and the builder named it again, "lp-grubstake-grubstake-flamer": maxevo bare and
+-- pact nopact crashed at 0.2.367, while this ran only Serenity's, whose names carry no prefix).
 scenarios.arcguard = function()
+  local g = params.mix == "grubstake"
+  local force = g and "lp-grubstake" or FORCE
+  local flamer = g and "lp-grubstake-flamer" or "lp-flamer"
+  local function id() return g and S.g or storage.id end
+  if g then
+    schedule(60, function()
+      S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+      lp("debug_depot", S.g, 3000)
+    end)
+  end
   schedule(3 * 3600, function()
-    local b = lp("stats", storage.id)
+    local b = lp("stats", id())
     local o = b.origin
-    local name = "lp-flamer"
-    S.before = surface().count_entities_filtered{force = "lp-serenity", type = "electric-turret", position = o, radius = 200}
+    S.before = surface().count_entities_filtered{force = force, type = "electric-turret", position = o, radius = 200}
     -- (Its units, not its buildings: killed round its pad, its pylons and bins took its economy with them and the
     -- flamers it planned were never paid for.)
-    local victims = surface().find_entities_filtered{force = "lp-serenity", type = "unit", position = {o.x, o.y}, radius = 40, limit = 14}
-    for _, e in ipairs(victims) do e.die("enemy") end
+    local victims = surface().find_entities_filtered{force = force, type = "unit", position = {o.x, o.y}, radius = 40, limit = 14}
+    -- (At its pad: Grubstake's sprawl spreads its units past GUARD_R of any block, and ten killed where they stood
+    -- named none.)
+    for _, e in ipairs(victims) do
+      local p = surface().find_non_colliding_position(e.name, {o.x, o.y}, 12, 0.5)
+      if p then e.teleport(p) end
+      e.die("enemy")
+    end
     S.killed = #victims
   end)
   schedule(6 * 3600, function()
-    local o = lp("stats", storage.id).origin
-    S.after = surface().count_entities_filtered{force = "lp-serenity", type = "electric-turret", position = o, radius = 200}
-    local flamers = surface().count_entities_filtered{force = "lp-serenity", name = "lp-flamer", position = o, radius = 200}
+    local st = lp("stats", id())
+    local o = st.origin
+    info(string.format("arcguard: %d biter losses logged, %d parts, %d blocks", st.biter_losses or -1, st.parts or -1, st.blocks or -1))
+    S.after = surface().count_entities_filtered{force = force, type = "electric-turret", position = o, radius = 200}
+    local flamers = surface().count_entities_filtered{force = force, name = flamer, position = o, radius = 200}
     info(string.format("arcguard: %d killed by biters, electric turrets %d -> %d, %d arc flamers", S.killed or 0, S.before or 0, S.after, flamers))
     check("arcguard: hit by biters round a block, it puts an arc flamer there", (S.killed or 0) >= 6 and flamers >= 1,
       string.format("%d killed, %d flamers", S.killed or 0, flamers))

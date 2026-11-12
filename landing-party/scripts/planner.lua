@@ -233,7 +233,7 @@ local function plan(b, only)
         if n >= GUARD_LOSSES then
           local have = surface.count_entities_filtered{position = blk.center, radius = GUARD_R, name = name}
           for _, q in ipairs(b.queue) do
-            if q.name == name and (q.pos[1] - cx) ^ 2 + (q.pos[2] - cy) ^ 2 <= GUARD_R ^ 2 then have = have + 1 end
+            if q.name == "lp-flamer" and (q.pos[1] - cx) ^ 2 + (q.pos[2] - cy) ^ 2 <= GUARD_R ^ 2 then have = have + 1 end
           end
           if have < math.min(GUARD_MOST, math.floor(n / GUARD_LOSSES)) and (not most or n > most) then
             best, most = {blk = blk, at = {sx / n, sy / n}, n = n, have = have}, n
@@ -249,7 +249,9 @@ local function plan(b, only)
         local px, py = cx + (t.at[1] - cx) * 0.6, cy + (t.at[2] - cy) * 0.6
         local p = surface.find_non_colliding_position(name, {px, py}, 8, 0.5)
         if not p then return end
-        table.insert(b.queue, 1, {name = name, pos = {p.x, p.y}, module = t.blk})
+        -- (Queued by its kind: construction.place names the corporation's own; a variant queued was named twice,
+        -- "lp-grubstake-grubstake-flamer", and crashed maxevo bare and pact nopact at 0.2.367.)
+        table.insert(b.queue, 1, {name = "lp-flamer", pos = {p.x, p.y}, module = t.blk})
         return string.format("an arc flamer by %s at %.0f,%.0f (%d lost to biters round it, %d flamers there)", t.blk.kind,
           p.x, p.y, t.n, t.have)
       end},

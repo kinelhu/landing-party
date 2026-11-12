@@ -41,9 +41,9 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `cards` | 406 | veterancy | control, dev |  |  |  | cards, cmd |
 | `rd` | 396 | know | army, control, faction, ops, planner, war | ops.era |  |  | corps |
 | `cordon` | 385 | base, ops, prospect | control |  |  |  |  |
+| `planner` | 380 | rd | base |  |  |  |  |
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |
 | `orbital` | 379 | achievements, threat | cannon, control, dev, siege, strike |  | 10, 30 |  | cannon_impacts, cannon_shocks, kh_shadows, kh_strikes |
-| `planner` | 378 | rd | base |  |  |  |  |
 | `tap` | 375 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
 | `cannon` | 373 | orbital, threat | control, dev |  | 30, 60 |  | cannon_barrel, cannon_last, cannon_next_pl, cannon_recoil, cannon_recoil_max, cannon_recoils, cannon_shells, cannon_silhouette, cannon_strikes |
 | `prospect` | 362 | base, chart, ops, pool, standing, studies | control, cordon |  | 60, 3600 |  | prospect_failed |

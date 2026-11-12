@@ -889,7 +889,7 @@ function base.stats(b)
     made = b.made, rate_in = b.rate_in, rate_parts = b.rate_parts, fabs = #b.fabs, drills = #b.drills,
     gens = #b.gens, turrets = #b.turrets, pylons = #b.pylons, modules = #b.modules, queue = #b.queue,
     lost = b.lost, rebuilt = b.rebuilt, rebuild_pending = #b.rebuild,
-    doctrine = b.doctrine, hubs = #b.hubs, blocks = #b.blocks, walls = #b.walls, road_tiles = b.road_tiles,
+    doctrine = b.doctrine, hubs = #b.hubs, blocks = #b.blocks, biter_losses = b.hazard and #b.hazard.log or 0, walls = #b.walls, road_tiles = b.road_tiles,
     radars = #b.radars, depots = #b.depots, garrison = #b.garrison, returning = #(b.returning or {}),
     roster = table_size(b.roster or {}), units_built = b.units_built,
     units_lost = b.units_lost, howitzer_down = b.howitzer_down, parked = b.parked and b.parked.valid or false,

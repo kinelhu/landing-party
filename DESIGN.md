@@ -7203,6 +7203,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   minutes: 17 flamers placed, its second camp's losses to biters 509 to 63, and it stood (it fell without); deathworld10x,
   kh2, three seeds: no losses to biters, no flamer, the same runs to the unit. Scenario `arcguard` (8 of its units
   killed by the enemy round its pad: a flamer there; failing before: none).
+- **The arc flamer named twice** (0.2.368, 2026-11-13; the 0.2.367 regression, two of 330 failing). The rule queued the
+  corporation's own name (`shared.variant`) and the builder names its jobs' kinds itself, so Grubstake's became
+  "lp-grubstake-grubstake-flamer", no prototype: maxevo bare and pact nopact crashed in `clear_area`. Serenity's names
+  carry no prefix, so `arcguard`, the nwa and deathworld visits never met it. Now queued by its kind. Scenario `arcguard`
+  LP_MIX=grubstake (its units killed at its pad: sprawl's units stood past GUARD_R of every block, and ten killed where
+  they stood named no block); the old code crashes in it, the fix passes. Stats carry `biter_losses` (its hazard log).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
