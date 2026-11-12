@@ -14076,7 +14076,7 @@ scenarios.farm = function()
     -- siege (2026-10-28): a laser wall no wave it fields crosses (a laser every 6 tiles on every face, nw's research): the
     -- chain from its order to the breach in minutes, which on nw took a three-hour visit a fault (its order bred the cheap
     -- breed first, its incubators overspent what it kept back, its wave left most bursters behind, each counted twice).
-    if mix == "siege" or mix == "siegepoor" or mix == "behind" or mix == "lab" then
+    if mix == "siege" or mix == "siegepoor" or mix == "siegestall" or mix == "behind" or mix == "lab" then
       game.forces.player.set_ammo_damage_modifier("laser", 3)
       game.forces.player.set_gun_speed_modifier("laser", 2.2)
       -- (Every 3 tiles, 107 lasers: no siege of 20 big bursters opens that, and none was laid.)
@@ -14530,7 +14530,7 @@ scenarios.farm = function()
     end
     -- (clinic: the wild at 0.5, so the breeds' cap without a clinic, 0.3, shows.)
     -- (siege: 0.95, its big bursters come at 0.85: its evolution follows the wild's, farm.evolve.)
-    game.forces.enemy.set_evolution_factor(mix == "clinic" and 0.5 or (mix == "siege" or mix == "siegepoor" or mix == "behind" or mix == "lab" or mix == "bigpens") and 0.95 or 0.3, surface())
+    game.forces.enemy.set_evolution_factor(mix == "clinic" and 0.5 or (mix == "siege" or mix == "siegepoor" or mix == "siegestall" or mix == "behind" or mix == "lab" or mix == "bigpens") and 0.95 or 0.3, surface())
     info(string.format("farm: field of %d spawners at %.0f,%.0f", #S.field, at(750, 0)[1], at(750, 0)[2]))
   end)
   local function farm1() return lp("farm_state").farms[1] end
@@ -14649,7 +14649,7 @@ scenarios.farm = function()
         end
         -- (A siege's breeds at its lead from landing: at the old climb, 0.004 a minute, it got there in 12 minutes; at 0.002
         -- it probed instead, its big bursters not bred yet; the playtest's evolution cap, 0.2.127.)
-        if mix == "siege" or mix == "siegepoor" or mix == "behind" or mix == "lab" or mix == "bigpens" then
+        if mix == "siege" or mix == "siegepoor" or mix == "siegestall" or mix == "behind" or mix == "lab" or mix == "bigpens" then
           lp("farm_set_evo", f.id, math.min(1, game.forces.enemy.get_evolution_factor(surface()) + 0.15))
         end
         -- bigpens: a culture at evolution 1, its growth fed to its hold every 10 s: it grows past 16, its old most
@@ -14663,7 +14663,7 @@ scenarios.farm = function()
             end)
           end
         end
-        if mix == "siege" or mix == "siegepoor" or mix == "behind" or mix == "lab" then
+        if mix == "siege" or mix == "siegepoor" or mix == "siegestall" or mix == "behind" or mix == "lab" then
           S.min_bio, S.max_near, S.sieges = math.huge, 0, {}
           for t2 = game.tick - storage.t0 + 60, END - 120, 600 do
             schedule(t2, function()
@@ -14672,7 +14672,18 @@ scenarios.farm = function()
               -- (180 a minute: at 600 its order and its reserve could go wrong unseen, there was always enough; nw's
               -- poorest culture earned 23.)
               -- (siegepoor: not fed, its stock's worth past its biomass.)
-              if mix ~= "siegepoor" then lp("debug_biomass", g.id, 30) end
+              if mix ~= "siegepoor" and mix ~= "siegestall" then lp("debug_biomass", g.id, 30) end
+              -- siegestall: its siege laid, its biomass taken each 10 s from then on (nwa, 0.2.355: Kessler-Hayashi's camp
+              -- killed its incubators one by one and it waited 1 h 50 min on a siege it got no nearer to). It lets go a
+              -- wave's gap on, and does not lay that one again for as long.
+              if mix == "siegestall" then
+                if g.siege and not S.stall_laid then S.stall_laid, S.stall_at = game.tick, g.siege.at end
+                if S.stall_laid and g.biomass and g.biomass.now and g.biomass.now > 0 then lp("debug_biomass", g.id, -g.biomass.now) end
+                if S.stall_laid and not S.stall_gone and not g.siege then S.stall_gone = game.tick end
+                if S.stall_gone and g.siege and g.siege.at[1] == S.stall_at[1] and g.siege.at[2] == S.stall_at[2] then
+                  S.stall_again = S.stall_again or game.tick
+                end
+              end
               local b = g.biomass and g.biomass.now
               if b and b < S.min_bio then S.min_bio = b end
               if g.siege then S.sieges[#S.sieges + 1] = g.siege.k end
@@ -15250,7 +15261,7 @@ scenarios.farm = function()
     local mins = e.tick and (e.tick - S.landed) / 3600 or 0
     info(string.format("farm: evolution %s at landing, %s %.1f min on (bred at %s), clinic %s", tostring(S.evo_land),
       tostring(e.evo), mins, tostring(e.bred), tostring(e.clinic)))
-    if mix ~= "killed" and mix ~= "artillery" and mix ~= "siege" and mix ~= "siegepoor" and mix ~= "behind" and mix ~= "evocap" and mix ~= "bigpens"
+    if mix ~= "killed" and mix ~= "artillery" and mix ~= "siege" and mix ~= "siegepoor" and mix ~= "siegestall" and mix ~= "behind" and mix ~= "evocap" and mix ~= "bigpens"
         and mix ~= "strike" then
       -- (0.002 a minute, farm.lua CLIMB, up to its lead over the wild's.)
       check("farm: its clinic stands and its breeds climb", e.clinic == true and S.evo_land and e.evo
@@ -15276,6 +15287,14 @@ scenarios.farm = function()
     if mix == "bigpens" then
       check("farm: bigpens, at evolution 1 its most is 28, and it grew past 16", S.pens_max == 28 and (S.pens_most or 0) > 16,
         serpent.line({most = S.pens_most, max = S.pens_max}))
+      return
+    end
+    if mix == "siegestall" then
+      local held = S.stall_gone and S.stall_laid and (S.stall_gone - S.stall_laid) / 3600
+      check("farm: a siege it gets no nearer to, let go after a wave's gap", held and held >= 19 and held <= 25,
+        string.format("laid at %s, let go %s min on", tostring(S.stall_laid), held and string.format("%.1f", held) or "never"))
+      check("farm: and not laid there again for as long", S.stall_gone and (not S.stall_again or S.stall_again - S.stall_gone >= 20 * 3600),
+        tostring(S.stall_again and (S.stall_again - S.stall_gone) / 3600))
       return
     end
     if mix == "siegepoor" then

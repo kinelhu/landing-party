@@ -1060,6 +1060,14 @@ local FILLED_WAIT = 30 * 3600   -- no nest taken this long: its field is filled
 -- gone at forever. It picks among its choices by chance, in proportion to their scores (f.rng, seeded: one game plays
 -- the same): mostly the best, a close second its turn. (Always the best, the siege lab's trials 5 to 8 were one siege at
 -- one breach, its defences rebuilt each time; the user, 2026-10-30.) REPEAT assumed, not tuned.
+-- A siege it let go of as getting no nearer (below): not laid there again for a wave's gap, or it laid the same one again
+-- at its next weighing.
+local NEARER = 0.1   -- of what a laid siege still lacks: what it must gain to count as getting nearer (a prior)
+local function farm_dropped(f, key)
+  local t = key and f.siege_dropped and f.siege_dropped[key]
+  return t and game.tick - t < WAVE_GAP or false
+end
+
 local function menu(f, choice, sieges_allowed, s)
   local mind = B.mind
   local ops, rejected = {}, {}
@@ -1100,6 +1108,7 @@ local function menu(f, choice, sieges_allowed, s)
   end
   if sieges_allowed then
     for _, sg in pairs(choice.sieges or {}) do
+      if not farm_dropped(f, sg.key) then
       expect({method = "siege", at = sg.at, gain = sg.value or 0, lost = sg.need or 0, sent = sg.need, dist = sg.dist, siege = sg},
         sg.rival and sg.rival[1] or "player")
       -- Its spread beside it (spread_of): before any spread there, what the siege would lose less the share its attempts
@@ -1108,6 +1117,7 @@ local function menu(f, choice, sieges_allowed, s)
       -- (tactics.expect). (The adaptive tactics consult, 2026-11-05: wrong in detail, spreading saves a part of what fire
       -- took; the record decides.)
       if sg.spread then expect(spread_op(sg, s), sg.rival and sg.rival[1] or "player") end
+      end
     end
     -- A probe at its best place not tried lately: what its sieges at this foe have done on the mean (herd.foe_record),
     -- once it has any. (A probe only when nothing fit, a siege proven at one place was the only choice there ever was,
@@ -1170,7 +1180,7 @@ local function probe(f, s, choice, tick)
     local pl = herd.plan(s, f.pos, at, rival or players(), shared.WAVE_MIN)
     local foe = rival and rival[1] or "player"
     local _, wt = herd.attempt(foe, at, "siege")
-    if pl and pl.walled and wt <= ATTEMPT_FADED then
+    if pl and pl.walled and wt <= ATTEMPT_FADED and not farm_dropped(f, herd.attempt_key(foe, at)) then
       -- (As many rams as got a siege in near its breach, if more: herd.history_near.)
       local _, near_rams = herd.best_size({hist = herd.history_near(foe, pl.breach, "siege", nil)}, 0, nil)
       local k = math.min(RAMS_MAX, math.max(math.ceil(1 / herd.reach(foe)), near_rams or 0))
@@ -1277,6 +1287,24 @@ local function send(f, tick)
     local keep = herd.PROBE_N * shared.BREEDS["lp-runt"].cost + sweep_price
     local owed = hatching() and owed_of(f) or 0
     local hatch_short = hatching() and cul0 and ((budget or 0) < need or cul0.biomass - keep < owed)
+    -- Getting no nearer: what it has toward the siege (hatching, the biomass it may spend; else what is bred and ready)
+    -- not past its best since the siege was laid for a wave's gap. On nwa a farm laid siege needing 3989 with 1817,
+    -- Kessler-Hayashi's camp killed its incubators one by one, its biomass fell to 137 and it waited the visit's last
+    -- 1 h 50 min on that siege, sending nothing (0.2.355). It lets go, and weighs again on what it has.
+    -- Nearer: past its best by a tenth of what was still missing there (a trickle of a few biomass a minute, its stock's
+    -- hatching nibbling at it, set its best anew every look; the farm siegestall test).
+    local have = hatching() and (budget or 0) or (bursters + avail)
+    local want = hatching() and need or siege.n
+    if not siege.best or have >= siege.best + math.max(1, (want - siege.best) * NEARER) then siege.best, siege.best_at = have, tick end
+    if tick - (siege.best_at or siege.tick or tick) >= WAVE_GAP and (hatch_short or not hatching() and (bursters < siege.k or avail < siege.n)) then
+      trace(string.format("farm %d: lets go of its siege at %.0f,%.0f: no nearer in %d minutes (%.0f, its best %.0f, of %.0f)",
+        f.id, siege.at.x, siege.at.y, WAVE_GAP / 3600, have, siege.best, want))
+      f.siege_dropped = f.siege_dropped or {}
+      f.siege_dropped[siege.key] = tick
+      f.siege, f.want, f.want_key = nil, nil, nil
+      f.escalate_retry = tick + 60
+      return holds(f, tick, "lets go of its siege")
+    end
     if hatching() and not hatch_short then
     elseif hatch_short or not hatching() and (bursters < siege.k or avail < siege.n or (cul0 and cul0.biomass < sweep_price)) then
       f.escalate_retry = tick + 600

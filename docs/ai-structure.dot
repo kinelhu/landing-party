@@ -93,7 +93,7 @@ digraph ai {
   subgraph cluster_7 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "herd" [label="herd\n4478 lines", width=3.80, fillcolor="#f7dede"];
     "herd_learn" [label="herd_learn\n253 lines", width=1.08, fillcolor="#eef2f7"];
-    "farm" [label="farm\n2443 lines", width=3.51, fillcolor="#f7dede"];
+    "farm" [label="farm\n2471 lines", width=3.55, fillcolor="#f7dede"];
     "creep" [label="creep\n590 lines", width=1.46, fillcolor="#eef2f7"];
     "cell" [label="cell\n438 lines", width=1.29, fillcolor="#eef2f7"];
   }

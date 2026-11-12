@@ -7086,6 +7086,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   at 39600 on the launchpad's middle, the crew skipped the launchpad, and the camp exported nothing (no fund, no
   railguns). Now it keeps clear of every crew's jobs too. The same seed and code without the fix: the projector at
   -309,42, nothing exported, both research checks failing; with it: at -301,42, 6800 exported, railguns bought.
+- **A laid siege let go when it gets no nearer** (0.2.358, 2026-11-12; the nwa visit at 0.2.355: the user, "Think that
+  synthexis result is acceptable?", and mine, no). A farm's siege ended only when its target was gone. On nwa a farm
+  laid siege needing 3989 biomass with 1817, Kessler-Hayashi's second camp (landed a minute after it, 200 tiles north)
+  killed its incubators one by one, its biomass fell to 137, and it waited the visit's last 1 h 50 min on that siege
+  sending nothing. Now a siege that has not gained a tenth of what it still lacks (`NEARER`, a prior) for a wave's gap
+  (WAVE_GAP, 20 minutes) is let go of, and that way in is not laid again for as long; it weighs again on what it has.
+  Scenario `farm siegestall`: the siege laid, its biomass taken every 10 s, let go 20.2 min on, the next siege elsewhere
+  (failing before: never let go; and with "nearer" read as any gain, a trickle set its best anew every look). Open, from
+  the same visit: Synthexis sized that way in at 22 with 3 guns and its wave priced it at 424 with 11 (two plans, from the
+  farm's middle and from its incubator nearest the target, on readings ten minutes apart: not looked into); a farm does
+  not answer a rival growing into it; corporations land beside farms.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
