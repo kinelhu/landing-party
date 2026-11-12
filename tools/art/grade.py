@@ -57,6 +57,15 @@ PALETTES = {
     "mauve-plum": {"creep": dict(hue=330, spread=0.6, split=-8, chroma=0.7, gamma=1.35),
                    "flesh": dict(hue=345, spread=0.8, split=15, chroma=0.75, gamma=1.0),
                    "tumor": dict(hue=320, spread=0.7, split=20, chroma=1.15, gamma=0.85)},
+    # The user: "the switch from fleshy nests to all green is a little jarring ... wild nests look so different from
+    # captured ones": a captive is the same creature (its machinery, creep and lamps say captive), its flesh moved only
+    # part of the way from the wild nest's orange (mean hue 50): kin a third (deep raw red-pink), half to rose-mauve.
+    "kin-plum": {"creep": dict(hue=330, spread=0.6, split=-8, chroma=0.7, gamma=1.35),
+                 "flesh": dict(hue=28, spread=0.9, split=10, chroma=1.05, gamma=1.12),
+                 "tumor": dict(hue=320, spread=0.7, split=20, chroma=1.15, gamma=0.85)},
+    "half-plum": {"creep": dict(hue=330, spread=0.6, split=-8, chroma=0.7, gamma=1.35),
+                  "flesh": dict(hue=5, spread=0.9, split=10, chroma=0.95, gamma=1.12),
+                  "tumor": dict(hue=320, spread=0.7, split=20, chroma=1.15, gamma=0.85)},
     # Dark teal creep, moss flesh: the faction off purple altogether (the arc flamer's violet is Kessler-Hayashi's).
     "teal": {"creep": dict(hue=200, spread=0.6, split=-10, chroma=0.45, gamma=1.3),
              "flesh": dict(hue=125, spread=0.8, split=-25, chroma=1.0, gamma=1.05),
