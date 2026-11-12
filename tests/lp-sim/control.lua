@@ -17718,6 +17718,10 @@ scenarios.trailer = function()
       if not S.go then
         S.go = rel()
         S.sent = lp("army").alive
+        -- (LP_MIX=vets: the army sent as veterans, rare, a staging for the film: on seed 12345 the battle sits on a knife's
+        -- edge, 76 of 77 lost and 1 of Grubstake's 9 turrets broken, DESIGN "The modelled turrets"; 2026-11-12.)
+        local vm = ({vets = 8, vets16 = 16})[params.mix or ""]
+        if vm then S.vets = lp("debug_merit", "player", vm) end
         S.g2_turrets0 = surface().count_entities_filtered{position = S.g2_at, radius = 90, force = GS, type = "ammo-turret"}
         beat("battle", S.g2_at)
       end
