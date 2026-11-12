@@ -88,4 +88,5 @@ most cultures, largest attack and learning.
 10. An orbital strike from your cannons on a nest field.
 
 Loops (media/release/loops): bombers, flak, prism, tesla (the showcase film, `loops.py`), and strike: nine cannons'
-strike at full reach on a Synthexis culture (from the trailer's culture reel, 2026-11-12).
+strike at full reach on a Synthexis culture (from the trailer's culture reel, 2026-11-12). And arcflamer: Kessler-Hayashi's arc flamer's bolts and
+blue burn (docs/review/clip-arcflamer.lua, 0.2.350).

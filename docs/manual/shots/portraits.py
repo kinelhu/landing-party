@@ -65,6 +65,11 @@ for n in names:
         half = max(bhalf * 1.3, min(shalf * 1.05, bhalf * 1.6)) + 10
         # (No square under 600 px: a drone's sprite is small, and blown up to the portrait it showed its pixels.)
         half = max(half, 300)
+        # A shadow past that square (a flier's, cast far off its body: the laser drone's was cut at the right edge, the
+        # user, 2026-11-12): the square round the body and its shadow together, so both are whole, the body off centre.
+        if shalf * 1.05 + 10 > half:
+            cx, cy = (allb[0] + allb[2]) / 2, (allb[1] + allb[3]) / 2
+            half = max(half, max(allb[2] - allb[0], allb[3] - allb[1]) / 2 * 1.08 + 10)
         if cx - half >= 0 and cy - half >= 0 and cx + half <= W and cy + half <= H:
             pick = (f, a, body, cx, cy, half)
             break
