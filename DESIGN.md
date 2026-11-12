@@ -7044,6 +7044,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
 - **ranks-mend does not beat its control** (2026-11-12). Its check reads its line now (none round by the corridor; those
   outside when through recorded, the user: "Herd ranks: ok"). On 12345 mend and mend-off both pass (corridor 0); on 777
   mend 1 in the corridor, off 0; on 4242 mend 3, off 2. The mend does not keep the line: open.
+- **The rush traced** (2026-11-12; the user: "is it time to break out more fine grained diagnostic tools ... I'm wary of
+  hard coding and want to keep this modular and adaptable", then "Dont wait on me"). The herd ranks scenarios write
+  `rush.jsonl` (each unit near its gap every 20 ticks in the wall's frame: class, group, order, name; the wave's stage,
+  mends, the mended pieces standing), `scripts/herd_trace.py` draws runs side by side. Read on 12345, 777, 4242, mend on
+  and off: no unit goes the long way round in most; its tail outside when through is 5 to 10 of its group pressed at the
+  outer wall beside the mended gap, plus its siege's fodder (5 small biters on a screen at another wall all rush long).
+  Found: a held rush's order was done again every 2 ticks for its look's whole length (145 of 150 lines a wave):
+  fixed (0.2.353; an order done within 10 ticks of its giving waits till the next look), 8 to 12 lines, the outcomes
+  within the runs' own spread. Tried and set aside: its fodder left out of its outside count (herd.rk.outside): read
+  through sooner, its stragglers took the corridor (12345: 0 to 3). Open: when a rush reads itself through, by whether
+  those outside are coming, not a rank's count (ranks-mend and ranks-crowd alike), judged by the trace's straggle time.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

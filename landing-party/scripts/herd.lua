@@ -2603,9 +2603,19 @@ end
 function herd.rk.hold_rush(w)
   if storage.biotech_no_herd_through or not (w.rushed and w.gap and w.goal and w.group and w.group.valid) then return false end
   if w.rush_held then
+    -- (Its order done again within a few ticks of its giving: it had nowhere to go, and given again it was done again, every
+    -- 2 ticks for its look's whole length, 145 times in a hold; the rush trace, herd ranks-mend 4242, 0.2.353. It waits
+    -- there for them till its next look, answering what hits it.)
+    if w.rush_given and game.tick - w.rush_given <= 10 then
+      w.group.set_command{type = defines.command.wander, radius = 4,
+        ticks_to_wait = math.max(30, LOOK - (game.tick - w.rush_held)), distraction = defines.distraction.by_damage}
+      w.rush_given = nil
+      return true
+    end
     -- (Its order done again while held: on along its legs from where its group point is. Told to wait there for them, its
     -- group stood under the flamethrowers past the zigzag for four looks: 1,393 mediums at the breach to 321; from the save.)
     herd.rk.rush_on(w, nil, true)
+    w.rush_given = game.tick
     return true
   end
   if w.rush_more then return false end

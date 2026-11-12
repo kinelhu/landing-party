@@ -16,7 +16,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
-| `herd` | 4437 | attempt, burstfx, costmap, feeds, firemap, ground, herd_learn, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
+| `herd` | 4447 | attempt, burstfx, costmap, feeds, firemap, ground, herd_learn, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
 | `farm` | 2440 | achievements, cell, costmap, creep, feeds, firemap, herd, know, pods, rng, tactics, threat, tune, valuemap | control, dev |  | 60, 600, 3600, 36000 |  | biotech_time_parts, carrying, farms |
 | `ops` | 2185 | airraid, answers, assault, attempt, cuts, ground, intel, jammer, know, perimeter, pool, power, ram, rd, routing, siege, stance, strip, tactics, threat, tune, veterancy | army, base, control, cordon, crew, dev, dome, faction, jumper, ledger, prospect, prowl, skim, standing, tap, war | base.claim_map, cordon.cordon_check, cordon.cordon_step, war.corridor | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `siege` | 2132 | achievements, assault, attempt, costmap, firemap, know, orbital, pods, tactics, threat, valuemap | ops |  |  |  | threat_last, unit_owner, ways_dumped |
