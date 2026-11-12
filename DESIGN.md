@@ -6957,6 +6957,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   green-leaning highlights melted the creep's edge into dirt. Chosen (the user: "Halfway is good"): half-plum, a dark
   plum creep, the pens' flesh moved half the way from the wild nest's orange to rose-mauve, the tumors a lighter magenta
   than the creep (they stay targets), the herd alone green. The bred units' mask tints unchanged (made to be tinted).
+- **The cells' floor** (0.2.345, 2026-11-12; the user: "not sure about the patches of bright green concrete anymore").
+  Once the creep went plum, the acid-green pads under each biochamber and clinic were the loudest thing in a culture.
+  Filmed on the bigpens culture (each film's own tiles swapped): black refined concrete read well but is
+  Kessler-Hayashi's trim, brown vanished into the dirt, purple fought the plum, no pad lost the cell's shape. Chosen
+  (the user: "Do it"): `lp-cell-floor` (`shared.BIOTECH.floor`), refined concrete graded a dark slate-plum a step off
+  the creep (`tools/art/grade.py`: grey concrete has no hue to rotate, so chroma is added, not scaled); the biochamber's
+  glow and the lamp keep the faction's green. Older saves: `cell.refloor` on configuration changes relays every cell's
+  and clinic's acid pad and those left by incubators gone (found within 160 tiles of a culture's site; the first film of
+  a converted culture kept one acid), what lay under kept. `farm`'s checks: the pads are the floor, an acid pad and a
+  stray one relaid (both seen failing).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

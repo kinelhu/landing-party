@@ -101,7 +101,7 @@ local function init()
 end
 
 script.on_init(init)
-script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs() end)
+script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs(); cell.refloor() end)
 
 -- The watchdog's view of a settlement (scripts/watch.lua).
 local WATCH_DEPS = {
@@ -963,6 +963,8 @@ remote.add_interface("landing-party", {
   debug_group_keep = function(n) return cards.keep_group(1, n) end,
   debug_select_army = function(idle) return cards.select_army(1, idle) end,
   -- Where a unit's order sends it (a formation's slot, or the point clicked).
+  -- An older save's pads relaid (cell.refloor, run on configuration changes): the tiles relaid.
+  debug_refloor = function() return cell.refloor() end,
   debug_order_pos = function(un)
     local t = storage.cmd.troopers[un]
     return t and t.manual and t.manual.pos

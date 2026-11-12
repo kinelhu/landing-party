@@ -11,7 +11,8 @@ local cell = {}
 local B = shared.BIOTECH
 local OUT = 7          -- tiles from the incubator, away from the culture's middle
 local PAD = 2          -- the pad's half size (5x5)
-local FLOOR = "acid-refined-concrete"
+local FLOOR = B.floor   -- (acid-refined-concrete until 0.2.345: OLD_FLOOR, relaid by cell.refloor)
+local OLD_FLOOR = "acid-refined-concrete"
 
 local function st()
   storage.cells = storage.cells or {}
@@ -121,7 +122,7 @@ local function place_clinic(site, surface)
   end
   q = q or surface.find_non_colliding_position("lp-clinic", t, 16, 1)
   -- On a floor of its own (the user, 2026-10-23: "the Synthexis labs probably could use a green concrete floor"):
-  -- the biochambers' acid-green concrete, a tile past its walls.
+  -- the biochambers' floor (acid-green concrete until 0.2.345), a tile past its walls.
   if q then
     local r = {x = math.floor(q.x) + 0.5, y = math.floor(q.y) + 0.5}
     if surface.can_place_entity{name = "lp-clinic", position = r, force = B.force} then q = r end
@@ -397,6 +398,41 @@ function cell.state()
       lamp = c.lamp and c.lamp.valid or false, at = {c.at.x, c.at.y}, fed_until = c.fed_until}
   end
   return out
+end
+
+-- Older saves (before 0.2.345): every cell's and clinic's pad of acid-green concrete relaid in the culture's own floor,
+-- what lay under it kept, and the pads left by incubators gone wild or dead (cell.forget keeps a floor) found round each
+-- culture's site (REFLOOR_REACH: the first film of a converted culture showed one such pad still acid, 2026-11-12). Run
+-- on configuration changes; a pad already relaid has no acid left to find.
+local REFLOOR_REACH = 160   -- tiles round a culture's site (bigpens's culture reached 130 from its tower)
+function cell.refloor()
+  local n = 0
+  local function relay(s, c, half)
+    if not (s and s.valid) then return end
+    local area = {{c.x - half - 0.5, c.y - half - 0.5}, {c.x + half + 0.5, c.y + half + 0.5}}
+    local tiles, under = {}, {}
+    for _, t in ipairs(s.find_tiles_filtered{area = area, name = OLD_FLOOR}) do
+      tiles[#tiles + 1] = {name = FLOOR, position = t.position}
+      under[#under + 1] = {t.position, t.hidden_tile}
+    end
+    if #tiles == 0 then return end
+    s.set_tiles(tiles, true, false)
+    for _, u in ipairs(under) do if u[2] then s.set_hidden_tile(u[1], u[2]) end end
+    n = n + #tiles
+  end
+  for _, c in pairs(st()) do
+    local s = (c.chamber and c.chamber.valid and c.chamber.surface) or (c.lamp and c.lamp.valid and c.lamp.surface)
+    relay(s, c.at, PAD)
+  end
+  for _, site in pairs(sites()) do
+    local cl = site.clinic
+    if cl and cl.valid then relay(cl.surface, {x = math.floor(cl.position.x) + 0.5, y = math.floor(cl.position.y) + 0.5}, 3) end
+    local t = site.tower
+    local s = (t and t.valid and t.surface) or (cl and cl.valid and cl.surface)
+    local at = (t and t.valid and t.position) or site.at
+    if s and at then relay(s, {x = math.floor(at.x) + 0.5, y = math.floor(at.y) + 0.5}, REFLOOR_REACH) end
+  end
+  return n
 end
 
 return cell

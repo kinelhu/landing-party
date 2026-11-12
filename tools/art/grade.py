@@ -11,7 +11,7 @@ oranges and veins all collapsed toward one hue. Here each pixel is moved in OKLC
   - chroma is scaled, lightness lifted or lowered by a gamma.
 
   uv run -q --with numpy --with pillow tools/art/grade.py <palette> <out dir>
-writes <out dir>/pen.png, creep.png, tumor-1.png, tumor-2.png (the same layouts as the sources, so the prototypes only
+writes <out dir>/pen.png, creep.png, tumor-1.png, tumor-2.png and, for a palette with a floor, floor*.png (the same layouts as the sources, so the prototypes only
 change their filename). Palettes below; the source art is read from the game's install (scripts/env.sh's APP).
 """
 import os
@@ -65,7 +65,11 @@ PALETTES = {
                  "tumor": dict(hue=320, spread=0.7, split=20, chroma=1.15, gamma=0.85)},
     "half-plum": {"creep": dict(hue=330, spread=0.6, split=-8, chroma=0.7, gamma=1.35),
                   "flesh": dict(hue=5, spread=0.9, split=10, chroma=0.95, gamma=1.12),
-                  "tumor": dict(hue=320, spread=0.7, split=20, chroma=1.15, gamma=0.85)},
+                  "tumor": dict(hue=320, spread=0.7, split=20, chroma=1.15, gamma=0.85),
+                  # The cells' floor (0.2.345; the user on the acid-green pads: "not sure about the patches of bright
+                  # green concrete anymore"): vanilla's grey refined concrete, which has no hue of its own to rotate, given
+                  # one (add: chroma added, not scaled), a dark slate-plum a step off the creep, its highlights rosier.
+                  "floor": dict(hue=325, spread=0.0, split=12, chroma=0.0, add=0.03, gamma=1.55)},
     # Dark teal creep, moss flesh: the faction off purple altogether (the arc flamer's violet is Kessler-Hayashi's).
     "teal": {"creep": dict(hue=200, spread=0.6, split=-10, chroma=0.45, gamma=1.3),
              "flesh": dict(hue=125, spread=0.8, split=-25, chroma=1.0, gamma=1.05),
@@ -74,7 +78,7 @@ PALETTES = {
 MASK = (0.025, 0.06)  # chroma below the first is grey (untouched), above the second fully graded
 # The creep is ground through and through: no metal in it, and the mask left 62% of it as it was (its low-chroma
 # browns): graded whole.
-MASKS = {"creep": (-1.0, 0.0)}
+MASKS = {"creep": (-1.0, 0.0), "floor": (-1.0, 0.0)}
 
 SOURCES = {
     "pen": ("space-age/graphics/entity/captive-spawner/captive-anim.png", "flesh"),
@@ -82,6 +86,10 @@ SOURCES = {
     "tumor-1": ("space-age/graphics/entity/gleba-spawner/small/spawner-upper-small-1.png", "tumor"),
     "tumor-2": ("space-age/graphics/entity/gleba-spawner/small/spawner-upper-small-2.png", "tumor"),
 }
+# The floor's sheets (refined concrete's: the tile and its transitions; their masks are shapes, left as they are), for
+# a palette with a floor.
+for _k in ("", "-inner-corner", "-outer-corner", "-side", "-u", "-o"):
+    SOURCES["floor" + _k] = (f"base/graphics/terrain/concrete/refined-concrete{_k}.png", "floor")
 
 
 def srgb_to_linear(c):
@@ -131,7 +139,7 @@ def grade(img, p, mask=MASK):
     if "hi_hue" in p:
         mix = p["hi_mix"] * smoothstep(0.35, 0.75, L)
         nh = nh + mix * ((p["hi_hue"] - nh + 180) % 360 - 180)
-    nC = np.minimum(C * p["chroma"], 0.25)
+    nC = np.minimum(C * p["chroma"] + p.get("add", 0.0), 0.25)
     nL = np.clip(L, 0, 1) ** p["gamma"]
     out = np.stack([nL, nC * np.cos(np.radians(nh)), nC * np.sin(np.radians(nh))], -1)
     graded = from_oklab(out)
@@ -153,6 +161,8 @@ def main():
     os.makedirs(out, exist_ok=True)
     data = game_data()
     for key, (src, cls) in SOURCES.items():
+        if cls not in pal:
+            continue
         img = Image.open(os.path.join(data, src))
         g, h0, cover = grade(img, pal[cls], MASKS.get(cls, MASK))
         g.save(os.path.join(out, key + ".png"), optimize=True)

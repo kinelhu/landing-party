@@ -95,7 +95,7 @@ digraph ai {
     "herd_learn" [label="herd_learn\n253 lines", width=1.08, fillcolor="#eef2f7"];
     "farm" [label="farm\n2440 lines", width=3.51, fillcolor="#f7dede"];
     "creep" [label="creep\n590 lines", width=1.46, fillcolor="#eef2f7"];
-    "cell" [label="cell\n402 lines", width=1.25, fillcolor="#eef2f7"];
+    "cell" [label="cell\n438 lines", width=1.29, fillcolor="#eef2f7"];
   }
   subgraph cluster_8 { label="The map"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
@@ -109,7 +109,7 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1246 lines", width=2.18, fillcolor="#f7dede"];
+    "control" [label="control\n1248 lines", width=2.19, fillcolor="#f7dede"];
     "dev" [label="dev\n595 lines", width=1.46, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n188 lines", width=1.01, fillcolor="#eef2f7"];

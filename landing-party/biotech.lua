@@ -516,6 +516,34 @@ creep.variants.transition.spritesheet = "__landing-party__/graphics/synthexis/cr
 creep.hidden_in_factoriopedia = true
 table.insert(out, creep)
 
+-- The cells' floor (scripts/cell.lua; 0.2.345): refined concrete graded a dark slate-plum, a step off the creep
+-- (tools/art/grade.py, half-plum's floor). Acid-green refined concrete until then: the loudest thing in a culture once
+-- the creep went plum (the user, 2026-11-12: "not sure about the patches of bright green concrete anymore"); black
+-- refined concrete read well but is Kessler-Hayashi's trim. The biochamber's glow and the lamp keep the faction's green.
+do
+  local floor = table.deepcopy(data.raw.tile["acid-refined-concrete"])
+  floor.name = shared.BIOTECH.floor
+  floor.localised_name = {"tile-name." .. shared.BIOTECH.floor}
+  floor.tint = nil
+  floor.map_color = {r = 0.24, g = 0.18, b = 0.24}
+  floor.hidden_in_factoriopedia = true
+  -- Mined, plain refined concrete (its own item would place a floor the player has no use for).
+  if floor.minable then floor.minable.result = "refined-concrete" end
+  local function regraded(t)
+    if type(t) ~= "table" then return end
+    for k, v in pairs(t) do
+      if type(v) == "string" then
+        local part = v:match("^__base__/graphics/terrain/concrete/refined%-concrete(.*)%.png$")
+        if part and not part:find("mask", 1, true) then t[k] = "__landing-party__/graphics/synthexis/floor" .. part .. ".png" end
+      else
+        regraded(v)
+      end
+    end
+  end
+  regraded(floor.variants)
+  table.insert(out, floor)
+end
+
 -- The tumor: what grows the creep round it. A small egg raft out of the water, tinted; a military target the player's
 -- turrets shoot. It does not collide with creep (no "object" layer), so it can stand on its own creep, but not on water.
 local raft = data.raw["unit-spawner"]["gleba-spawner-small"]

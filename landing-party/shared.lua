@@ -380,6 +380,8 @@ shared.ARRIVALS = {
 -- The biotech (docs/biotech.md; the third corporation, its first slice): bred biters on their own force, at peace with
 -- the wild ones. Not one of CORPS yet (no settlements, ladder or tree): its pens and herds are scripts/herd.lua's.
 shared.BIOTECH = {name = "Synthexis", force = "lp-biotech", color = {r = 0.45, g = 0.85, b = 0.2}, icon = "item/biter-egg",
+  -- Its cells' and clinics' floor (scripts/cell.lua; biotech.lua's tile; 0.2.345, acid-green refined concrete until then).
+  floor = "lp-cell-floor",
   -- Its breeds' mask layers (units.lua's tints are by kind; these are the biters'): green body, yellow bands.
   tint1 = {r = 0.30, g = 0.85, b = 0.15, a = 1}, tint2 = {r = 0.95, g = 0.90, b = 0.20, a = 1},
   -- Its mind (the faction AI's personality; docs/reviews/2026-10-23-faction-ai-audit.md): a wave is a trial of its

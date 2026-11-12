@@ -14486,9 +14486,40 @@ scenarios.farm = function()
         for _, c in ipairs(cs) do
           if c.working then working = working + 1 end
           if c.lamp then lamps = lamps + 1 end
-          if surface().get_tile(c.at[1], c.at[2]).name == "acid-refined-concrete" then pads = pads + 1 end
+          -- (The culture's own floor since 0.2.345: shared.BIOTECH.floor.)
+          if surface().get_tile(c.at[1], c.at[2]).name == "lp-cell-floor" then pads = pads + 1 end
         end
         S.cells = {n = #cs, working = working, lamps = lamps, pads = pads}
+        -- An older save's pad (acid-green until 0.2.345) relaid by the culture's floor on a configuration change.
+        local c1 = cs[1]
+        if c1 then
+          local old = {}
+          for dx = -2, 2 do for dy = -2, 2 do old[#old + 1] = {name = "acid-refined-concrete", position = {c1.at[1] + dx, c1.at[2] + dy}} end end
+          -- And a pad left by an incubator gone (cell.forget keeps the floor): 3x3 of acid off the cells, near its site.
+          local site0 = lp("cell_sites")[1]
+          if site0 and site0.at then
+            -- (A free, dry 3x3: the first spot, 14 north of the site, lay under its plants and was never laid.)
+            for r = 16, 60, 4 do
+              for k = 0, 7 do
+                local x = math.floor(site0.at[1] + math.cos(k * math.pi / 4) * r) + 0.5
+                local y = math.floor(site0.at[2] + math.sin(k * math.pi / 4) * r) + 0.5
+                local area = {{x - 1.5, y - 1.5}, {x + 1.5, y + 1.5}}
+                if not S.stray and surface().count_entities_filtered{area = area, type = {"unit", "character", "corpse"}, invert = true} == 0
+                  and surface().count_tiles_filtered{area = area, collision_mask = "water_tile"} == 0
+                  and surface().count_tiles_filtered{area = area, name = {"lp-cell-floor", "acid-refined-concrete"}} == 0 then
+                  S.stray = {x, y}
+                end
+              end
+            end
+          end
+          if S.stray then
+            for dx = -1, 1 do for dy = -1, 1 do old[#old + 1] = {name = "acid-refined-concrete", position = {S.stray[1] + dx, S.stray[2] + dy}} end end
+          end
+          surface().set_tiles(old, true, false)
+          S.refloored = lp("debug_refloor")
+          S.stray_tile = S.stray and surface().get_tile(S.stray[1], S.stray[2]).name
+          S.refloor_tile = surface().get_tile(c1.at[1], c1.at[2]).name
+        end
         local site = lp("cell_sites")[1]
         S.site = site and {tower = site.tower, techs = site.techs, plants = site.plants,
           soil = surface().get_tile(site.at[1], site.at[2] + 2).name}
@@ -14631,6 +14662,10 @@ scenarios.farm = function()
     local c = S.cells or {}
     check("farm: a cell by each incubator (pad, biochamber at work, lamp)", (c.n or 0) == (S.pens0 or -1)
       and c.working == c.n and c.lamps == c.n and c.pads == c.n, serpent.line(c))
+    check("farm: an older save's acid pad relaid in the culture's floor", S.refloored == 34 and S.refloor_tile == "lp-cell-floor",
+      tostring(S.refloored) .. " " .. tostring(S.refloor_tile))
+    -- (Caught: the first film of a converted culture kept a dead incubator's pad acid, 2026-11-12.)
+    check("farm: a pad left by an incubator gone relaid too", S.stray_tile == "lp-cell-floor", tostring(S.stray_tile))
     local site = S.site or {}
     check("farm: its substrate (Gleba soil, a heating tower, plants) and technicians", site.tower == true
       and site.soil == "artificial-yumako-soil" and (site.plants or 0) >= 4 and (site.techs or 0) >= 2, serpent.line(site))
