@@ -73,6 +73,10 @@ PALETTES = {
                   # The clinic's brain: the pens' rose, its chroma raised (a pale pink-grey brain: as flesh it took 12%
                   # of the sheet and still read grey from afar).
                   "brain": dict(hue=5, spread=0.8, split=10, chroma=1.5, gamma=1.08)},
+    # Kessler-Hayashi's arc flamer's burn (the user, 2026-11-12, of its tinted fire: "that looks real bad"): vanilla's
+    # flame rotated from its orange to electric blue, its bright core toward cyan-white, its dark edges toward violet (a
+    # light blue tint over orange had left it pale green and yellow).
+    "arcfire": {"flame": dict(hue=272, spread=0.5, split=-50, chroma=1.05, gamma=1.0)},
     # Dark teal creep, moss flesh: the faction off purple altogether (the arc flamer's violet is Kessler-Hayashi's).
     "teal": {"creep": dict(hue=200, spread=0.6, split=-10, chroma=0.45, gamma=1.3),
              "flesh": dict(hue=125, spread=0.8, split=-25, chroma=1.0, gamma=1.05),
@@ -81,7 +85,7 @@ PALETTES = {
 MASK = (0.025, 0.06)  # chroma below the first is grey (untouched), above the second fully graded
 # The creep is ground through and through: no metal in it, and the mask left 62% of it as it was (its low-chroma
 # browns): graded whole.
-MASKS = {"creep": (-1.0, 0.0), "floor": (-1.0, 0.0), "brain": (0.012, 0.035)}
+MASKS = {"creep": (-1.0, 0.0), "floor": (-1.0, 0.0), "brain": (0.012, 0.035), "flame": (-1.0, 0.0)}
 
 SOURCES = {
     "pen": ("space-age/graphics/entity/captive-spawner/captive-anim.png", "flesh"),
@@ -92,6 +96,9 @@ SOURCES = {
 # The clinic (a biolab: a brain under a glass dome; the user, 2026-11-12, of the growth reel: "a weird gray nest, what
 # is that?"): its brain graded as the pens' flesh, its glass and metal as they are (its lights layer left alone).
 SOURCES["clinic"] = ("space-age/graphics/entity/biolab/biolab-anim.png", "brain")
+# Vanilla's flame, four sheets (the fire's and the burning sticker's), for a palette with a flame.
+for _k in range(1, 5):
+    SOURCES[f"fire-flame-0{_k}"] = (f"base/graphics/entity/fire-flame/fire-flame-0{_k}.png", "flame")
 # The floor's sheets (refined concrete's: the tile and its transitions; their masks are shapes, left as they are), for
 # a palette with a floor.
 for _k in ("", "-inner-corner", "-outer-corner", "-side", "-u", "-o"):

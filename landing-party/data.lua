@@ -525,11 +525,19 @@ ap.ammo_type = {energy_consumption = "1J", action = {type = "direct", action_del
 -- with the flamethrower's ignition under it, once a shot. (The tesla's own beam sound until then.)
 ap.sound = {filename = "__landing-party__/sound/arc-flamer.ogg", volume = 0.8, audible_distance_modifier = 1.2}
 arc.attack_parameters = ap
-local BLUE = {r = 0.45, g = 0.75, b = 1, a = 1}
+-- Its burn's flame graded, not tinted (0.2.350; tools/art/grade.py's arcfire: vanilla's orange rotated to electric
+-- blue, the core cyan-white, the edges violet). A light blue tint over the orange read pale green and yellow (the user,
+-- 2026-11-12: "that looks real bad"). Its smoke and burnt patch vanilla's (the tint had taken them too).
 local function blued(t)
   if type(t) ~= "table" then return end
-  if t.filename or t.filenames or t.stripes then t.tint = BLUE end
-  for _, v in pairs(t) do blued(v) end
+  for k, v in pairs(t) do
+    if type(v) == "string" then
+      local n = v:match("^__base__/graphics/entity/fire%-flame/fire%-flame%-0(%d)%.png$")
+      if n then t[k] = "__landing-party__/graphics/serenity/arc-fire/fire-flame-0" .. n .. ".png"; t.tint = nil end
+    else
+      blued(v)
+    end
+  end
 end
 local arc_fire = table.deepcopy(flamer_fire)
 arc_fire.name = "lp-arc-fire"
@@ -542,6 +550,25 @@ arc_sticker.duration_in_ticks = 180
 arc_sticker.damage_per_tick = {amount = 25, type = "fire"}
 arc_sticker.spread_fire_entity = nil
 for _, p in ipairs({arc_fire, arc_sticker}) do blued(p) end
+-- And sparks now and then over what burns (the user, of the fix: "Agreed on 3": a blue flame, an electric crackle through
+-- it, sparingly): Space Age's lightning hit's arcing frames, small and violet, one each ARC.spark_ticks of the burn.
+do
+  local util = require("util")
+  local seq = {}
+  for i = 13, 24 do seq[#seq + 1] = i end
+  local spark = table.deepcopy(data.raw.explosion["explosion"])
+  spark.name = "lp-arc-spark"
+  spark.sound = nil
+  spark.smoke, spark.smoke_count, spark.created_effect = nil, nil, nil
+  spark.light = {intensity = 0.4, size = 4, color = {r = VIOLET.r, g = VIOLET.g, b = 1}}
+  spark.animations = {util.sprite_load("__space-age__/graphics/entity/lightning/lightning-attractor-hit-anim", {
+    draw_as_glow = true, blend_mode = "additive", scale = 0.35, frame_count = 36, frame_sequence = seq,
+    animation_speed = 0.6, tint = {r = VIOLET.r, g = VIOLET.g, b = 1, a = 1}})}
+  spark.hidden = true
+  data:extend({spark})
+  arc_sticker.update_effects = {{effect = {type = "create-entity", entity_name = "lp-arc-spark"},
+    time_cooldown = ARC.spark_ticks, initial_time_cooldown = 8}}
+end
 -- (Its lights blue too: the flame's own light stayed vanilla's orange, a warm halo round a blue fire, 2026-11-12.)
 local function blue_light(t)
   if type(t) ~= "table" then return end

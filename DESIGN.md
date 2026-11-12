@@ -7003,6 +7003,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (`tools/sound/arc_flamer.sh`, mono, `landing-party/sound/arc-flamer.ogg`). Played as the shot's sound, whole: as the
   beam's own it would stop with the beam after a third of a second, the ignition cut. The jumps keep the tesla's chain
   sound. Not yet heard in game.
+- **The arc flamer's burn graded** (0.2.350, 2026-11-12; the user, of a close clip of its burn: "that looks real bad",
+  then "Agreed on 3"). Its blue was a tint {0.45, 0.75, 1} over vanilla's orange flame: multiplied, the yellows went
+  pale green and the core cyan, and the tint took the smoke and burnt patch too. Now the flame's four sheets graded
+  (`tools/art/grade.py` arcfire: hue 56 to 272, the core toward cyan-white, the edges violet), the smoke and patch
+  vanilla's, and a burning target sparks now and then (`lp-arc-spark`: the lightning hit's arcing frames, small and
+  violet, one each `ARC_FLAMER.spark_ticks` = 50 of its 3 s burn, the sticker's update_effects). Seen in the clip.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
