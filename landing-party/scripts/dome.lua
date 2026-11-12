@@ -84,10 +84,23 @@ local function full(b, d)
 end
 -- (Its charge is kept as a share of its whole: more guns brought, more shells it takes, and the same time.)
 local function fresh() return {left = 1, down_till = 0, caught = 0, breaks = 0} end
+-- Round its lander, past the generators its landing pad came with, the ones its hull stands on (base.lua hull): a pad's
+-- generators stand about 33 tiles from the lander, and at RADIUS a camp landed in nwa's artillery's reach lost all four
+-- of them in 75 seconds, its hull went down and its lander with it 2.5 minutes after landing (the visits at 0.2.359,
+-- three seeds). Read once, from the generators it has when the dome first looks (its pad's).
+local PAD_SPARE = 4
+local function pad_reach(b)
+  local r, lx, ly = 0, b.lander.position.x, b.lander.position.y
+  for _, g in ipairs(b.gens or {}) do
+    if g.valid then r = math.max(r, math.sqrt((g.position.x - lx) ^ 2 + (g.position.y - ly) ^ 2)) end
+  end
+  return r > 0 and r + PAD_SPARE or nil
+end
 local function state(b)
   b.dome = b.dome or fresh()
   if b.dome.charge and not b.dome.left then b.dome.left, b.dome.charge = math.min(1, b.dome.charge / 300), nil end
-  b.dome.anchor, b.dome.radius = b.lander, RADIUS
+  if not b.dome.pad_r then b.dome.pad_r = pad_reach(b) end
+  b.dome.anchor, b.dome.radius = b.lander, math.max(RADIUS, b.dome.pad_r or 0)
   return b.dome
 end
 local function charge(b, d) return d.left * full(b, d) end
@@ -337,7 +350,7 @@ end
 -- Tests: a camp's dome (charge, caught, breaks, up).
 function dome.state(b)
   local d = state(b)
-  return {charge = math.floor(charge(b, d) + 0.5), whole = full(b, d), caught = d.caught, breaks = d.breaks,
+  return {charge = math.floor(charge(b, d) + 0.5), whole = full(b, d), caught = d.caught, breaks = d.breaks, radius = d.radius,
     up = d.down_till == 0 and powered(b, d), projectors = (function()
       local n, caught = 0, 0
       for _, h in pairs(b.domes or {}) do

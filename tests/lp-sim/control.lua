@@ -7146,6 +7146,12 @@ scenarios.dome = function()
       table.insert(S.turrets, t)
     end
     S.lost0 = lp("stats", storage.id).lost
+    -- Its pad's generators, the ones its hull stands on: how far the farthest stands from its lander.
+    local l = surface().find_entities_filtered{name = "lp-lander", force = "lp-serenity", limit = 1}[1]
+    S.pad_far = 0
+    for _, g in ipairs(l and surface().find_entities_filtered{name = "lp-generator", force = "lp-serenity", position = l.position, radius = 50} or {}) do
+      S.pad_far = math.max(S.pad_far, math.sqrt((g.position.x - l.position.x) ^ 2 + (g.position.y - l.position.y) ^ 2))
+    end
   end)
   schedule(END - 60, function()
     local left = 0
@@ -7153,6 +7159,8 @@ scenarios.dome = function()
     local d = lp("debug_dome", storage.id)
     local lost = lp("stats", storage.id).lost - S.lost0
     info(string.format("dome: %d shells fired, dome %s, its buildings lost %d", S.loaded - left, serpent.line(d), lost))
+    -- Its lander's dome over its pad's generators (at 30 tiles they stood at 33 outside it: a camp landed in nwa's
+    -- artillery's reach lost them in 75 seconds, its hull went down and its lander with it; the visits at 0.2.359).
     if mix == "whole" then
       -- (Caught a flat 300 for any battery before; seen failing with HOLD's guns counted as one: whole 54.)
       local cd = prototypes.entity["artillery-turret"].attack_parameters.cooldown
@@ -7229,6 +7237,16 @@ scenarios.armed = function()
       check("armed: at era 3 its fortress, built", st.doctrine == "fortress" and st.turrets >= 50 and st.walls >= 500,
         string.format("%s, %d turrets, %d walls", st.doctrine, st.turrets, st.walls))
       check("armed: its hull up, no uplink", st.hull_up and uplinks == 0, tostring(st.hull_up) .. ", " .. uplinks)
+      -- Its lander's dome over the generators its hull stands on (a fortress's pad sets them 33 tiles out, its dome was 30:
+      -- landed in nwa's artillery's reach it lost them in 75 seconds, and its lander with them; the visits at 0.2.359).
+      local l = surface().find_entities_filtered{name = "lp-lander", force = "lp-serenity", limit = 1}[1]
+      local far = 0
+      for _, g in ipairs(l and surface().find_entities_filtered{name = "lp-generator", force = "lp-serenity", position = l.position, radius = 50} or {}) do
+        far = math.max(far, math.sqrt((g.position.x - l.position.x) ^ 2 + (g.position.y - l.position.y) ^ 2))
+      end
+      local d = lp("debug_dome", S.k)
+      check("armed: its lander's dome covers the generators round it", d and d.radius and d.radius >= far,
+        string.format("radius %s, farthest generator %.1f", tostring(d and d.radius), far))
       -- (Landed by the first rich site before 0.2.154: on nwa across a lake from the factory, no way over land.)
       check("armed: its landing's way over land checked", (lp("faction").by_way or 0) >= 1, tostring(lp("faction").by_way))
     end

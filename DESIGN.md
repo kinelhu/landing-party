@@ -7118,6 +7118,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   berth, 2 with LP_MIX=berthoff, failing). Not seen failing: the growth half (a camp's buildings within the berth of an
   incubator at the end), in creep berth and in system: no camp came near a farm there with the berth or without, as small
   maps never reach the search's nest pass. The nwa visits are its test.
+- **A lander's dome over its pad's generators** (0.2.360, 2026-11-12; the nwa visits at 0.2.359, three seeds). With the
+  berth, Kessler-Hayashi's second camp no longer landed by the farm (all three farms stood, 5 to 10 waves each); it came
+  down at 13,-643 instead, 384 tiles from the nearest of nwa's artillery (its reach 560), on the search's pass that lands
+  under a late player's guns. Its hull's generators stood 33 tiles from its lander, its dome reached 30: all four were
+  shelled within 75 seconds, the hull went down and the lander fell 2.5 minutes after landing, every seed (a later camp
+  landed on the same site in the 0.2.358 visits, seed 1, and fell the same way). The lander's dome now reaches PAD_SPARE (4)
+  past the farthest generator it has when it first looks (its pad's), RADIUS at least. Check `armed`: the dome covers
+  the generators round its lander (passes; not seen failing: the sim's fortress sets them 14 tiles out, within 30 before
+  as after; the nwa visit is its test).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
