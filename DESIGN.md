@@ -7170,6 +7170,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   weighed search too (0.2.363 reached only the first-clear search; nwa's real landings come by pod, and its second camp
   landed where it had): `guns fewestpod`, a landing by pod (passes; it does not reach the weighed search in the sim
   either, the nwa visit is its test).
+- **A poor site under the guns waits for the nest pass** (0.2.365, 2026-11-12; the nwa visits at 0.2.364: the second
+  camp at 13,-643 again, fallen on two seeds of three). Traced (the landing's line now names how its site was taken, its
+  pass and the guns in reach): no rich clear site on any pass, and on the under-guns pass the richest clear one, under 3
+  of nwa's artillery; three guns break its dome as sixty do (it holds a time), and its hull's generators went in the
+  three minutes down. Now a poor site under the guns is put by: the nest pass runs first, and only if it finds nothing
+  does the landing take the poorest-gunned one put by. nwa, seed 2: the second camp at 1088,1105, no gun in reach.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

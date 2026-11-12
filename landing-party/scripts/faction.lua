@@ -354,7 +354,10 @@ function faction.site(surface, from, distance, count)
             if g == 0 then return spot end
             goto next_dir
           end
-          if not weigh then return spot end
+          if not weigh then
+            faction.site_scored = string.format("the first clear (pass %s), %d guns in reach", faction.pass or "?", guns_on(spot))
+            return spot
+          end
           local sc = site_score(weigh, surface, spot, n, density, from, faction.site_corp)
           -- (Weighed too, as a real landing's search is, faction.dry: under the guns the fewest win, its score after.
           -- 0.2.363 kept the guns to the first-clear search alone, and nwa's second camp landed where it had.)
@@ -380,7 +383,22 @@ function faction.site(surface, from, distance, count)
     faction.site_scored = string.format("scored %.2f", best_score)
     return best
   end
-  return fallback or among or dense
+  local last = fallback or among or dense
+  -- Under the guns, a poor site (no rich one among them) waits for the nest pass: it may find ground no gun reaches. nwa's
+  -- second camp took the richest clear site under 3 guns on this pass and fell within 16 minutes, two seeds of three
+  -- (the visits at 0.2.364); faction.arrive lands there only if the nest pass finds nothing.
+  if last and faction.under_guns then
+    local g = guns_on(last)
+    if not faction.under_fallback or g < faction.under_fallback.guns then
+      faction.under_fallback = {pos = last, guns = g}
+    end
+    return nil
+  end
+  if last then
+    faction.site_scored = string.format("%s (pass %s), %d guns in reach", fallback and "the richest clear" or among and "among nests"
+      or "the least dense nest field", faction.pass or "?", guns_on(last))
+  end
+  return last
 end
 
 -- Map tags: each settlement marked for the player's forces with its corporation's icon and name. A tag needs
@@ -483,12 +501,14 @@ function faction.arrive(surface, from, opts, quiet)
   local far_ring = ((opts and opts.distance) or DISTANCE)
   for _, e in ipairs(storage.rings or {0, 120, 240, 480, 800, 1200, 1800}) do far_ring = math.max(far_ring, ((opts and opts.distance) or DISTANCE) + e) end
   faction.reach_refused = 0
+  faction.under_fallback = nil
   for pass = 0, 3 do
     if b then break end
     if pass == 2 and not late then goto next_pass end
     if pass == 0 and (faction.pact_site or storage.approach_off) then goto next_pass end
     faction.approach_max = pass == 0 and APPROACH_MAX or nil
     faction.under_guns = pass == 2
+    faction.pass = pass
     faction.ignore_nests = pass == 3
     -- Nest fields (the user: "on some maps you will only get dense fields of nests"): the near rings (to DENSE_SEARCH)
     -- refusing them first; then the same rings again, the least dense site of a ring taken; only then further out
@@ -542,6 +562,23 @@ function faction.arrive(surface, from, opts, quiet)
     end
     if b then break end
     ::next_pass::
+  end
+  -- The poor site under the guns, put by for the nest pass (faction.site), if that found nothing.
+  local uf = faction.under_fallback
+  faction.under_fallback = nil
+  if not b and uf and not faction.pending then
+    faction.site_scored = string.format("the richest clear under the guns, after the nest pass, %d guns in reach", uf.guns)
+    if faction.site_only then
+      local at = layout.find_pad(surface, uf.pos)
+      if at then
+        faction.ignore_nests, faction.under_guns, faction.pact_site, faction.approach_max = false, false, false, nil
+        faction.dense_ok = false
+        return nil, "site", uf.pos, at
+      end
+    else
+      b = base.land(surface, uf.pos, opts)
+      if b then b.under_guns = true; base.trace(b, "landed under the player's guns (inside its artillery's reach)") end
+    end
   end
   -- (Its way checked: the sites refused for having none, traced; f.by_way counts the landings checked, `armed`.)
   if b and landing_cm then
