@@ -689,7 +689,7 @@ end
 -- Only the generators within HULL_RADIUS of the lander count (the hull consult): a mature settlement's later hubs
 -- lie 90-160 tiles out, and a battery in reach of the lander reached almost none of them (seed 777: 31,714 shells,
 -- the hull never down). Fewer than two counted, and the hull is down.
-local HULL_RADIUS = 80
+local HULL_RADIUS = shared.HULL_RADIUS
 local function hull(b)
   if b.hq then return end
   local n = 0

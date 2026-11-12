@@ -233,6 +233,9 @@ shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "
 -- manual: "more than half").
 shared.HULL_SHARE = 0.5
 shared.HULL_MIN_GENS = 2
+-- Only the generators within this of its lander count for its hull (base.lua hull), and its lander's dome reaches the
+-- farthest of them (dome.lua).
+shared.HULL_RADIUS = 80
 -- A player's building its line has enclosed is worth this many times as much to its raids and sieges (ops.choose).
 shared.LINE_WORTH = 2
 -- A landing that comes angry (a lander of its corporation destroyed) brings this many times its escort (faction.lua).

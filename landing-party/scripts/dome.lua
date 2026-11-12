@@ -84,23 +84,30 @@ local function full(b, d)
 end
 -- (Its charge is kept as a share of its whole: more guns brought, more shells it takes, and the same time.)
 local function fresh() return {left = 1, down_till = 0, caught = 0, breaks = 0} end
--- Round its lander, past the generators its landing pad came with, the ones its hull stands on (base.lua hull): a pad's
--- generators stand about 33 tiles from the lander, and at RADIUS a camp landed in nwa's artillery's reach lost all four
--- of them in 75 seconds, its hull went down and its lander with it 2.5 minutes after landing (the visits at 0.2.359,
--- three seeds). Read once, from the generators it has when the dome first looks (its pad's).
+-- Round its lander, past the generators its hull stands on (base.lua hull: those within shared.HULL_RADIUS), read
+-- again as the guns are counted: a fortress's pad sets its first two generators 14 tiles out and its corners' 33, and at
+-- RADIUS a camp landed in nwa's artillery's reach lost its corners' four in 75 seconds, its hull went down and its lander
+-- fell 9 minutes after landing (the visits at 0.2.359 and 0.2.360, seed 1; 0.2.360 read the first two only). Its guns
+-- break it first now, then reach them: the troops it is meant to draw.
 local PAD_SPARE = 4
 local function pad_reach(b)
   local r, lx, ly = 0, b.lander.position.x, b.lander.position.y
   for _, g in ipairs(b.gens or {}) do
-    if g.valid then r = math.max(r, math.sqrt((g.position.x - lx) ^ 2 + (g.position.y - ly) ^ 2)) end
+    if g.valid and g.force.name == b.force then
+      local d = math.sqrt((g.position.x - lx) ^ 2 + (g.position.y - ly) ^ 2)
+      if d <= shared.HULL_RADIUS and d > r then r = d end
+    end
   end
   return r > 0 and r + PAD_SPARE or nil
 end
 local function state(b)
   b.dome = b.dome or fresh()
   if b.dome.charge and not b.dome.left then b.dome.left, b.dome.charge = math.min(1, b.dome.charge / 300), nil end
-  if not b.dome.pad_r then b.dome.pad_r = pad_reach(b) end
-  b.dome.anchor, b.dome.radius = b.lander, math.max(RADIUS, b.dome.pad_r or 0)
+  if not b.dome.pad_at or game.tick - b.dome.pad_at >= LOOK_GUNS then b.dome.pad_r, b.dome.pad_at = pad_reach(b), game.tick end
+  local r = math.max(RADIUS, b.dome.pad_r or 0)
+  -- (Its ring drawn again at its new reach.)
+  if r ~= b.dome.radius and b.dome.ring and b.dome.ring.valid then b.dome.ring.destroy(); b.dome.ring = nil end
+  b.dome.anchor, b.dome.radius = b.lander, r
   return b.dome
 end
 local function charge(b, d) return d.left * full(b, d) end

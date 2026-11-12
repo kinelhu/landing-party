@@ -3688,7 +3688,8 @@ local function step(w, tick)
       w.leg_failed_at = nil
       w.group = s.create_unit_group{position = where(w), force = B.force}
       for _, u in ipairs(live) do if not u.commandable.parent_group and not holds(w, u) then w.group.add_member(u) end end
-      log(w, string.format("its group broke up with %d alive: formed again (%d of %d)", #live, w.regroups, REGROUPS))
+      -- (Its count nil till a counted regroup: a first regroup after a failed leg crashed here, the nwa visit at 0.2.361.)
+      log(w, string.format("its group broke up with %d alive: formed again (%d of %d)", #live, w.regroups or 0, REGROUPS))
       if w.stage == "march" then march(w) elseif w.stage == "blind" then blind_attack(w)
       elseif w.stage == "withdraw" then home_leg(w) else hunt(w) end
       return

@@ -7127,6 +7127,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   past the farthest generator it has when it first looks (its pad's), RADIUS at least. Check `armed`: the dome covers
   the generators round its lander (passes; not seen failing: the sim's fortress sets them 14 tiles out, within 30 before
   as after; the nwa visit is its test).
+  **0.2.361**: 0.2.360 read the generators the dome saw first, the pad's two at 14 tiles, and the camp fell at the same tick:
+  the four it lost were its corners', built later at 33. The dome now reaches past every generator its hull counts
+  (shared.HULL_RADIUS, 80), read again each minute (74 tiles in `armed`). The nwa visit, seed 1: the camp stood the two
+  hours, its dome broke once after 346 shells and was whole again 3 minutes on, its hull never down. Open from that visit:
+  the camp mined nothing and made no parts in two hours, its garrison 0 at the end (57 units lost). And a crash fixed on
+  the way: a Synthexis wave's first regroup after a failed march leg logged a nil count (herd.lua, from 0.2.185).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
