@@ -25,20 +25,20 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `army` | 1055 | airraid, know, ops, pool, rd, rng, tune | base, control, dev, faction, war |  | 60, 300, 600 |  | engine_grouped, engine_ungrouped, rails_ungrouped |
 | `command` | 968 | (leaf) | control, dev |  | 30, 60, 120 |  | cmd |
 | `faction` | 946 | army, base, costmap, firemap, landfx, layout, names, ops, pact, pods, rd, site, threat, war | control, dev, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |
-| `base` | 893 | army, blocks, chart, construction, landfx, layout, lights, modules, names, ops, planner, rng, site, tune | control, cordon, crew, dev, dome, faction, jumper, ledger, pact, prospect, prowl, road, skim, tap, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, ops.siege_goal, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
+| `base` | 916 | army, blocks, chart, construction, landfx, layout, lights, modules, names, ops, planner, rng, site, tune | control, cordon, crew, dev, dome, faction, jumper, ledger, pact, prospect, prowl, road, skim, tap, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, ops.siege_goal, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
 | `war` | 628 | army, base, lights, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `creep` | 614 | costmap, tune | control, farm, studies |  |  |  | creep |
 | `dev` | 603 | army, base, burstfx, cannon, cards, command, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap, veterancy | control |  |  |  | chartcheck, cordon_off, dev_cannon, dev_platform, era_override, hq_fast, merit, ram_trace, trace |
-| `crew` | 487 | base, ops, standing | control |  | 30 |  | crew_owner |
+| `crew` | 497 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `ram` | 454 | (leaf) | control, dev, ops |  | 3, 6 |  | ram_breaches, ram_charges, ram_crushed, ram_early, ram_followers, ram_moved, rams |
 | `costmap` | 451 | firemap, threat | airraid, control, creep, faction, farm, herd, siege |  |  |  |  |
 | `cell` | 438 | pods | control, farm |  |  |  | cell_sites, cells |
 | `dome` | 431 | base, lights, ops, threat | control |  | 60, 3600 |  | dome_alert, pdomes |
 | `skim` | 422 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `routing` | 420 | threat | ops |  |  |  | corridors |
+| `construction` | 408 | (leaf) | base |  |  |  |  |
 | `veterancy` | 408 | threat | airraid, cards, control, dev, ops |  |  |  | merit, promoted, vet_due, vet_stats |
 | `cards` | 406 | veterancy | control, dev |  |  |  | cards, cmd |
-| `construction` | 405 | (leaf) | base |  |  |  |  |
 | `rd` | 396 | know | army, control, faction, ops, planner, war | ops.era |  |  | corps |
 | `cordon` | 385 | base, ops, prospect | control |  |  |  |  |
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |

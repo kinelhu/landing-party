@@ -157,7 +157,10 @@ base.occupied = occupied
 site.occupied = occupied
 
 -- Rebuild first: the first lost entity whose ground is free. Occupied ground waits.
-local ECONOMY = {["lp-generator"] = true, ["lp-fabricator"] = true, ["lp-drill"] = true, ["lp-pylon"] = true}
+-- (And the bin its drills fill, and the belt to its fabricators: without them a drill mines nothing. A starved camp's
+-- bins waited behind 582 fortress walls, its two drills idle, armed starved.)
+local ECONOMY = {["lp-generator"] = true, ["lp-fabricator"] = true, ["lp-drill"] = true, ["lp-pylon"] = true,
+  ["lp-bin"] = true, ["lp-belt"] = true}
 -- What makes parts comes first: with its fabricators destroyed, a settlement spent its last 646 parts on new blocks,
 -- units and two turrets while their ground was held, and once it was free had nothing to rebuild them with, nor ever
 -- again (scenario occupy). Parts kept back for every pending rebuild of what makes them.

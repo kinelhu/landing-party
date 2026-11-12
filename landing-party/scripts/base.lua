@@ -374,7 +374,26 @@ function base.network(b)
 end
 
 -- Bins on the network empty into feedstock; fabricators are fed feedstock and emptied of parts.
+-- Its lander's stores (the user, 2026-11-12: "Shouldn't we just put a base income in?"): while it has no fabricator, its
+-- lander gives a fabricator's price every STORES_EVERY, so a camp that cannot make parts can always pay for what makes them.
+-- (Every 5 minutes was too slow: a starved camp spent each on a generator and its walls' rebuilds, and had no fabricator
+-- after 20 minutes; armed starved.)
+-- Both of Kessler-Hayashi's camps on nwa, their walls shelled from landing and every part spent on rebuilds, made no part
+-- in two hours (the visits at 0.2.359 to 0.2.361). Working camps are untouched.
+local STORES_EVERY = 60 * 60
+local function stores(b)
+  if #b.fabs > 0 or not (b.lander and b.lander.valid) then b.stores_at = nil; return end
+  b.stores_at = b.stores_at or game.tick
+  if game.tick - b.stores_at >= STORES_EVERY then
+    b.stores_at = game.tick
+    b.parts = b.parts + shared.cost["lp-fabricator"]
+    b.stores_given = (b.stores_given or 0) + 1
+    trace(b, string.format("its lander's stores: %d parts, no fabricator standing", shared.cost["lp-fabricator"]))
+  end
+end
+
 local function economy(b)
+  stores(b)
   local net = base.network(b)
   local gained, made = 0, 0
   prune(b.bins); prune(b.fabs)
@@ -805,6 +824,10 @@ function base.tick(tick)
           -- And its first fabricator (queued first, planner.fill): a camp whose queue waited on parts it could not make
           -- planned nothing more and never made a part (parked, 2026-10-24).
           if #b.fabs == 0 then plan(b, "fabricate") end
+          -- And the drill that feeds it (the fabricate rule wants ore coming in): its walls lost before its first plan,
+          -- their rebuilds waiting on parts it could not make, both of Kessler-Hayashi's camps on nwa planned nothing in
+          -- two hours, 0 fabricators, 0 mined (the visits at 0.2.359 to 0.2.361).
+          if #b.fabs == 0 and #b.drills == 0 then plan(b, "mine") end
           -- Its generators first (queued behind the line's posts, a starved camp counted them as supply and never built
           -- them: demand past supply, cordon broken), as its lost generators are rebuilt first.
           local gens, rest = {}, {}

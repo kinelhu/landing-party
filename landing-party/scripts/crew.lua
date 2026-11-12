@@ -424,15 +424,25 @@ function crew.rebuild(b, job)
   if out(b, true) >= MAX_MEND then return true end
   -- A clearance saving for its parts (siege.lua): only its turrets and what makes parts go out until it can pay.
   if base.saving_holds(b, job.name) then return true end
-  local jobs, bill = {}, 0
+  -- As many as it can pay for now (the whole batch or none, a camp with 66 parts and its shelled walls' batch past
+  -- that sent no rebuild in two hours, and while they waited its planner planned nothing: nwa, 0.2.361).
+  local jobs, bill, want = {}, 0, 0
+  -- (With no fabricator, a first fabricator's and drill's price kept back: its rebuilds spent every part as it came, and
+  -- what makes parts was never paid for; armed starved.)
+  local free = b.parts - (#b.fabs == 0 and (shared.cost["lp-fabricator"] + shared.cost["lp-drill"]) or 0)
   for _, r in ipairs(b.rebuild) do
     if game.tick >= r.due and not r.occupied and not base.saving_holds(b, r.name)
       and (r.pos[1] - job.pos[1]) ^ 2 + (r.pos[2] - job.pos[2]) ^ 2 <= REBUILD_AREA ^ 2 then
-      table.insert(jobs, r)
-      bill = bill + (shared.cost[r.name] or 0)
+      local c = shared.cost[r.name] or 0
+      want = want + c
+      if bill + c <= free then
+        table.insert(jobs, r)
+        bill = bill + c
+      end
     end
   end
-  if b.parts < bill then
+  if #jobs == 0 then
+    bill = want
     if game.tick >= (b.mend_said or 0) then
       b.mend_said = game.tick + 600
       base.trace(b, string.format("crew: %d rebuilds wait for parts (%d of %d)", #jobs, b.parts, bill))

@@ -7133,6 +7133,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   hours, its dome broke once after 346 shells and was whole again 3 minutes on, its hull never down. Open from that visit:
   the camp mined nothing and made no parts in two hours, its garrison 0 at the end (57 units lost). And a crash fixed on
   the way: a Synthexis wave's first regroup after a failed march leg logged a nil count (herd.lua, from 0.2.185).
+- **A camp shelled before its first plan can still start its economy; its lander's stores** (0.2.362, 2026-11-12; the
+  nwa visits at 0.2.359 to 0.2.361: both of Kessler-Hayashi's camps planned nothing in two hours, 0 fabricators, 0 mined,
+  "rebuilds wait for parts" 57 times; the user: "Shouldn't we just put a base income in?"). Four holes, one chain:
+  (1) while a rebuild was due the planner planned only power and a first fabricator, and the fabricator rule wants ore
+  coming in: with no drill it never applied; now a camp with no fabricator and no drill plans its mining then too.
+  (2) A crew's rebuild batch went whole or not at all: with 66 parts and its shelled walls' batch past that, none went;
+  now it takes what it can pay for, keeping a first fabricator's and drill's price back while it has no fabricator.
+  (3) The queue let what makes parts past a job waiting on parts (generators, fabricators, drills, pylons), not the bin a
+  drill fills or the belt to the fabricator: a drill with no bin mined nothing; both count now.
+  (4) Its lander's stores: while it has no fabricator, a fabricator's price a minute (STORES_EVERY; every 5 minutes, a
+  starved camp spent each on a generator and its walls and had none after 20 minutes). Working camps are untouched.
+  Scenario `armed starved`: its parts set to 60 at landing, two of its walls killed every 20 s: by minute 19 2 drills, a
+  fabricator, 894 mined (failing before: 0 drills, 0 fabricators).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

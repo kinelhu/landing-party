@@ -7199,10 +7199,38 @@ scenarios.armed = function()
     lp("debug_tune", {era = era2 and 2 or 3, ops_off = true, army_off = true})
     S.k = lp("arrive", 1, {x = 0, y = 0}, params.distance + 200, {corp = "serenity"})
   end)
+  -- starved: a minute in, eight of its walls destroyed and its parts taken: its rebuilds wait on parts it cannot make,
+  -- and it must still plan its first drill and fabricator (both of Kessler-Hayashi's camps on nwa, their walls shelled
+  -- before their first plan, planned nothing in two hours; the visits at 0.2.359 to 0.2.361).
+  if params.mix == "starved" then
+    -- (Shelled from its landing: two of its walls every 20 s, its rebuilds always due, as nwa's artillery did.)
+    S.starved_walls = 0
+    for t2 = 90, 18 * 3600, 1200 do
+      schedule(t2, function()
+        local st0 = S.k and lp("stats", S.k)
+        local o = st0 and st0.origin
+        if not o then return end
+        -- (And poor as nwa's were, 35 and 66 parts: landed here with 3,112 it paid every rebuild and planned on.)
+        if not S.starved_parts then S.starved_parts = true; lp("debug_parts", S.k, 60 - st0.parts) end
+        for _, w in ipairs(surface().find_entities_filtered{type = "wall", force = "lp-serenity", position = o, radius = 60, limit = 2}) do
+          w.die("player")
+          S.starved_walls = S.starved_walls + 1
+        end
+      end)
+    end
+    schedule(19 * 3600, function()
+      local st = lp("stats", S.k)
+      check("armed: starved, its walls' rebuilds waiting on parts, it still plans a drill and a fabricator",
+        (S.starved_walls or 0) > 0 and st.drills > 0 and st.fabs > 0,
+        string.format("%s walls killed, %d drills, %d fabricators, %d parts, %d rebuilds pending; mined %d, feed %d, in %.0f/min, queue %d, power %.1f/%.1f MW",
+          tostring(S.starved_walls), st.drills, st.fabs, st.parts, st.rebuild_pending or -1, st.mined or 0, st.feedstock or 0,
+          st.rate_in or 0, st.queue or 0, (st.demand or 0) / 1e6, (st.supply or 0) / 1e6))
+    end)
+  end
   -- Its orbital relay (war.lua): a spawner set down 70 tiles from its lander once it stands; its sweep takes it. LP_MIX=relay:
   -- the relay destroyed first, no sweep, the spawner stands.
   schedule(4 * 3600, function()
-    if era2 then return end
+    if era2 or params.mix == "starved" then return end
     if relay_dead then
       for _, r in pairs(surface().find_entities_filtered{name = "lp-orbital-relay"}) do r.die("player") end
     end
@@ -7212,7 +7240,7 @@ scenarios.armed = function()
     S.nest = q and surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}
   end)
   schedule(7 * 3600, function()
-    if not era2 then
+    if not era2 and params.mix ~= "starved" then
       local relays = surface().count_entities_filtered{name = "lp-orbital-relay"}
       local standing = S.nest and S.nest.valid
       info(string.format("armed: relays %d, the spawner %s", relays, standing and "stands" or "gone"))
@@ -7227,6 +7255,7 @@ scenarios.armed = function()
     end
   end)
   schedule(7 * 3600, function()
+    if params.mix == "starved" then return end
     local st = lp("stats", S.k)
     local uplinks = surface().count_entities_filtered{name = "lp-uplink"}
     info(string.format("armed: doctrine %s, turrets %d, walls %d, gens %d, hull %s, uplinks %d", st.doctrine, st.turrets,
