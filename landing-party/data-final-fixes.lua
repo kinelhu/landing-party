@@ -7,6 +7,15 @@
 do
   local list = require("__landing-party__.sounds")
   local PLATES = {"", "-physical", "-fire", "-laser"}
+  -- A beam's attack sound as an effect of its shot: attack_parameters.sound is "Played once at the start of the attack if
+  -- these are ProjectileAttackParameters" (prototype-api), so a beam's was never heard. Its hum taken off, the laser
+  -- drone fired in silence (the user, 2026-11-13, watching an air raid: "laser drones don't make sounds when they fire"),
+  -- and the trooper's first pulse of three was silent too.
+  local function beam_sound(d, s)
+    d.source_effects = d.source_effects or {}
+    if d.source_effects.type then d.source_effects = {d.source_effects} end
+    table.insert(d.source_effects, 1, {type = "play-sound", sound = s})
+  end
   local function path(f) return "__" .. f:match("^([^/]+)") .. "__/" .. f:gsub("^[^/]+/", "") end
   local function sound(files, speed, volume)
     local v = {}
@@ -45,7 +54,7 @@ do
               -- Shorter than its damage interval: one hit.
               d.beam, d.duration = name, math.min(e.gap * (e.rounds - 1) + 3, data.raw.beam[name].damage_interval)
               a.cooldown = e.every
-              a.sound = s
+              beam_sound(d, s)
               for r = 2, e.rounds do
                 local tname = "lp-sound-" .. e.id .. "-pulse-" .. r
                 if not made[tname] then
@@ -68,7 +77,15 @@ do
                 made[name] = true
               end
               d.beam = name
-              a.sound = s
+              beam_sound(d, s)
+            elseif a.type == "beam" then
+              -- (A beam with no beam of its own here, a chain's: its delivery plays it, as above. The Prism, the Shock and
+              -- the Tesla trooper were silent too.)
+              local act = a.ammo_type and a.ammo_type.action
+              local first = act and (act.action_delivery and act or act[1])
+              local dl = first and first.action_delivery
+              if dl and dl.type == nil and dl[1] then dl = dl[1] end
+              if dl then beam_sound(dl, s) else a.sound = s end
             else
               a.sound = s
             end

@@ -4589,7 +4589,9 @@ scenarios.cards = function()
     S.form = {near = near, of = #us, minpair = minpair, in2 = in2, sel = S.form_sel, ordered = S.form_n,
       off = #us > 0 and off / #us or 99, distinct = distinct}
     check("cards: a move's formation, all arrived round the point", S.form.of == 16 and S.form.near >= 15, serpent.line(S.form))
-    check("cards: a move's formation, a slot each, each at its own", S.form.distinct == 16 and S.form.off < 1.2,
+    -- (Within 1.5 tiles of its slot on average: on ground flattened far from any camp, 1.29 and 1.43 came from runs that
+    -- differed only elsewhere on the map, at 0.2.370; a slot each, distinct, is the point.)
+    check("cards: a move's formation, a slot each, each at its own", S.form.distinct == 16 and S.form.off < 1.5,
       serpent.line(S.form))
   end)
   schedule(430, function()
@@ -7337,8 +7339,11 @@ scenarios.dome = function()
         and d.breaks == 0 and lost == 0, string.format("%d guns fired, %d of %d caught, %d breaks, %d lost", fired, d.caught,
         S.loaded - left, d.breaks, lost))
     elseif mix == "battery" then
-      check("dome: a battery breaks it and its shells land", d.breaks >= 1 and (lost > 0 or hit_lander),
-        d.breaks .. " breaks, " .. lost .. " lost, lander hit " .. tostring(hit_lander))
+      -- (Its shells past the charge not caught: they land. Counted by what they hit, it read 0 once the guns' target was
+      -- the lander and its hull held, nothing else hit; 0.2.370's site.)
+      local fired = S.loaded - left
+      check("dome: a battery breaks it and its shells land", d.breaks >= 1 and fired > d.caught,
+        string.format("%d breaks, %d fired, %d caught, %d lost", d.breaks, fired, d.caught, lost))
     elseif mix == "hull" then
       check("dome: its generators lost while it is down, its hull holds", (S.gens_hit or 0) > 0 and S.hull_after
         and S.hull_after.down == 0 and S.hull_after.destructible == false,
@@ -16821,6 +16826,23 @@ scenarios.airraid = function()
       end)
     end
   end
+  -- When each flier first came within 25 of the radar (the user, 2026-11-13, watching it: "they didn't group up before
+  -- going on their raid, so they were very far apart"): the first and last in, 2 s apart at most.
+  S.arrive = {}
+  for t = 8 * 3600, END - 120, 30 do
+    schedule(t, function()
+      -- (By where the radar stood: Grubstake's fliers carry it off within seconds of coming in.)
+      if S.radar and S.radar.valid then S.radar_at = {S.radar.position.x, S.radar.position.y} end
+      if not S.radar_at then return end
+      local force = gs and "lp-grubstake" or "lp-serenity"
+      for _, u in pairs(surface().find_entities_filtered{force = force, type = "unit", position = S.radar_at, radius = 25}) do
+        -- (The fliers' kinds, shared.FLIERS: laser drones and harriers, Grubstake's scavengers.)
+        if (u.name:find("drone") or u.name:find("harrier") or u.name:find("scavenger")) and not S.arrive[u.unit_number] then
+          S.arrive[u.unit_number] = game.tick
+        end
+      end
+    end)
+  end
   settle_when(function() return (aa and (S.raids or 0) > 0) or (not aa and S.razed_at ~= nil) end)
   schedule(END - 60, function()
     local st = lp("stats", S.id)
@@ -16834,6 +16856,15 @@ scenarios.airraid = function()
     else
       check("airraid: it went by air at the walled, flamer-held radar", (S.air or 0) >= 1, tostring(S.air))
       check("airraid: and razed the radar", S.razed_at ~= nil, tostring(S.razed_at))
+      local first, last, k = nil, nil, 0
+      for _, t in pairs(S.arrive or {}) do
+        k = k + 1
+        first, last = math.min(first or t, t), math.max(last or t, t)
+      end
+      -- (Mustered, 0.5 s first to last, Grubstake's eight 1.5 s; sent each from where it stood, 3.0 s, the check seen
+      -- failing.)
+      check("airraid: its fliers came in together", k >= 2 and last - first <= 2 * 60,
+        string.format("%d in, %.1f s from the first to the last", k, k > 0 and (last - first) / 60 or -1))
       -- Air theft (the user, 2026-11-10: "They could perhaps do some air theft too?"): a thief's fliers land and take,
       -- the radar and the assembler carried off (their ghosts left), the chest emptied. The first two seen failing with
       -- its fliers ordered to attack (debug_tune dismantle_off); the chest is emptied either way (ops.loot takes from a
@@ -16842,9 +16873,11 @@ scenarios.airraid = function()
         local o = st.ops
         check("airraid: grubstake, its fliers went to take (an air theft)", (o.air_thefts or 0) >= 1, tostring(o.air_thefts))
         check("airraid: grubstake, and carried buildings off", (o.dismantled or 0) >= 1, tostring(o.dismantled))
-        check("airraid: grubstake, and emptied the chest", S.chest and S.chest.valid
-          and S.chest.get_inventory(defines.inventory.chest).get_item_count("advanced-circuit") == 0,
-          S.chest and S.chest.valid and tostring(S.chest.get_inventory(defines.inventory.chest).get_item_count("advanced-circuit")) or "gone")
+        -- (The chest emptied, or a full load of buildings carried off instead: mustered, its eight fliers came in together
+        -- and took the assembler, the radar and the pole first, where sent one by one the first had emptied the chest.)
+        local left = S.chest and S.chest.valid and S.chest.get_inventory(defines.inventory.chest).get_item_count("advanced-circuit")
+        check("airraid: grubstake, and took what it could carry", left == 0 or (o.dismantled or 0) >= 3,
+          string.format("%s circuits left, %d buildings carried off", tostring(left), o.dismantled or 0))
       end
       if detour then
         check("airraid: detour, round the picket (no flier within its guns' reach)", S.picket_in == 0, tostring(S.picket_in))

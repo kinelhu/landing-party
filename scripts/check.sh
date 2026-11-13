@@ -27,6 +27,8 @@ echo "data stage ok: $(grep -c 'Checksum of' "$log") mods loaded"
 python3 -I "$(dirname "$0")/lint_names.py" "$P/script-output/data-raw-dump.json" "$REPO/landing-party/locale/en/locale.cfg"
 # Every turret of the mod's as slow to deploy and fold as vanilla's of its type (a one-frame head had made them quick).
 python3 -I "$(dirname "$0")/lint_turrets.py" "$P/script-output/data-raw-dump.json"
+# Every beam unit of the mod's heard when it fires (a beam's attack sound is never played: on its shot instead).
+python3 -I "$(dirname "$0")/lint_sounds.py" "$P/script-output/data-raw-dump.json"
 rm -f "$P/saves/_check.zip"
 "$FACTORIO" --config "$P/config/config.ini" --create "$P/saves/_check.zip" > "$P/check.out" 2>&1 || fail "control stage"
 echo "control stage ok: fresh map created, on_init ran"

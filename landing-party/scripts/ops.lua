@@ -55,6 +55,9 @@ local THREAT_BONUS = 10               -- value added to targets by it
 -- laser's 24 and 10 to spare, inside a flamethrower's 30 and a modded turret's whatever) and 8 to spare.
 local STAND_OFF = threat.far() + 8
 local STAGE_TICKS = 90 * 60
+-- An air raid's muster (launch_air): this far out from home toward the target, till this share are within AIR_NEAR of
+-- it, or AIR_WAIT at most (fliers are fast; a straggler is not waited for long).
+local AIR_MUSTER, AIR_NEAR, AIR_GATHER, AIR_WAIT = 30, 12, 0.8, 30 * 60
 local MARCH_SPEED = 0.08          -- tiles a tick, a slow column's pace
 local NO_KILL_TICKS = 90 * 60
 local COOL_TICKS = 10 * 60 * 60
@@ -1274,12 +1277,24 @@ local function launch_air(b, key, trace, army)
     cmds[#cmds + 1] = {type = defines.command.attack_area, destination = {t.pos[1], t.pos[2]}, radius = 12,
       distraction = defines.distraction.by_anything}
   end
-  order_all(members, {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = cmds})
-  b.op = {kind = "raid", air = true, overflight = true, target = key, phase = "attack", members = members, launched = #members,
+  -- Mustered first, then in together (the user, 2026-11-13, watching one: "they didn't group up before going on their
+  -- raid, so they were very far apart from each other"): sent each from where it stood, its fliers came in one by one.
+  -- AIR_MUSTER tiles out from home toward the target, till AIR_GATHER of them are there or AIR_WAIT has passed.
+  -- (Toward its way's first turn, where it has one: on the straight line to the target, the muster sent a detour's
+  -- fliers from there across the picket it was routed round, airraid LP_MIX=detour.)
+  local hx, hy = h.position.x, h.position.y
+  local first = (t.air_way and t.air_way[1]) or t.pos
+  local dx, dy = first[1] - hx, first[2] - hy
+  local dl = math.max(1, math.sqrt(dx * dx + dy * dy))
+  local muster = {hx + dx / dl * AIR_MUSTER, hy + dy / dl * AIR_MUSTER}
+  order_all(members, {type = defines.command.go_to_location, destination = muster, radius = 6,
+    distraction = defines.distraction.by_damage})
+  b.op = {kind = "raid", air = true, overflight = true, target = key, phase = "muster", members = members, launched = #members,
+    muster = muster, air_cmd = {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+      commands = cmds},
     staging = {h.position.x, h.position.y}, owner = t.owner, pos = {t.pos[1], t.pos[2]}, started = game.tick,
     phase_at = game.tick, kills_at = b.razed, last_kill = game.tick, razed0 = b.razed, attacked = true, thieving = thief}
   ops.appoint(b, b.op)
-  alert(b, t, "lp.alert-raid")
   b.air_raids = (b.air_raids or 0) + 1
   if thief then b.air_thefts = (b.air_thefts or 0) + 1 end
   b.ops_launched = b.ops_launched + 1
@@ -1623,6 +1638,20 @@ local function step(b, trace, army)
   local n = alive(op)
   if n == 0 then return finish(b, "aborted", trace, army) end
   if game.tick - op.started > MAX_TICKS then return finish(b, "aborted", trace, army) end
+  -- An air raid mustering (launch_air): in together once most are there, or once it has waited long enough.
+  if op.air and op.phase == "muster" then
+    local near = 0
+    for _, u in ipairs(op.members) do
+      if u.valid and (u.position.x - op.muster[1]) ^ 2 + (u.position.y - op.muster[2]) ^ 2 < AIR_NEAR * AIR_NEAR then near = near + 1 end
+    end
+    if near >= AIR_GATHER * n or game.tick - op.phase_at > AIR_WAIT then
+      order_all(op.members, op.air_cmd)
+      op.phase, op.phase_at, op.last_kill, op.kills_at = "attack", game.tick, game.tick, b.razed
+      alert(b, t, "lp.alert-raid")
+      trace(b, string.format("air raid: %d of %d mustered at %.0f,%.0f; in together", near, n, op.muster[1], op.muster[2]))
+    end
+    return
+  end
   -- Its leader fell (ops.appoint).
   if op.leader_down then
     op.leader_down = nil

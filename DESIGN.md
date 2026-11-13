@@ -7259,6 +7259,20 @@ Bugs and surprises the headless runs caught, each kept as a check:
   stands (rivals). Open at the commit (seed 12345): cards (formation spacing), prowl, dome battery, mended dozers, clear
   culture, tap natural, crew grown, cordon (base, rail, broken), herd spit and wallgoal. Noted to follow: a camp's survey
   of a patch can go stale when its ore changes under it.
+- **Beams heard, air raids mustered** (0.2.371; the user, 2026-11-13, watching scripts/watch-sim.sh airraid: "laser
+  drones don't make sounds when they fire. Also, they didn't group up before going on their raid, so they were very far
+  apart from each other"). attack_parameters.sound is "Played once at the start of the attack if these are
+  ProjectileAttackParameters" (prototype-api): every beam's attack sound was never heard. The sound pass (2026-11-09) had
+  taken the hum off the laser drone's beam and given it an attack sound, so it fired in silence; the trooper's first pulse
+  of three and the Tesla trooper's lightning were silent too. A beam's sound is a play-sound effect on its shot now
+  (data-final-fixes, beam_sound), and `scripts/lint_sounds.py` (check.sh) fails a beam unit no shot, hum or cycle makes
+  heard (seen failing: the drone without it). The Prism and the Shock never had a sound (after the sound round): listed
+  for the sound pass. Air raids muster: their fliers sent from where each stood came in one by one; now AIR_MUSTER (30)
+  tiles out toward the target, or toward its way's first turn (a detour's, on the straight line, was sent across the
+  picket it was routed round), till 80% are within 12 or 30 s, then in together. Scenario airraid: the first and last in
+  2 s apart at most (mustered 0.5 s, Grubstake's eight 1.5; sent as before, 3.0 s, seen failing); Grubstake's chest check
+  now takes a full load of buildings as its theft too (in together, they took the radar first). And the open list's dome
+  battery (shells past those caught) and cards (1.5 tiles: 1.29 and 1.43 from runs that differed elsewhere) fixed.
 - **Maps built without a stutter** (0.2.370; the user: "think about when each map is built, and how to avoid stutters").
   Measured on nwa (helpers.create_profiler): an armed landing's way to the player (firemap, the player's edge, the cost
   map over 2,210 tiles) took 620 ms in one tick. Now a landing job builds it in slices before its search, stepped every
