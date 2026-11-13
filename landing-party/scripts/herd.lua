@@ -3090,10 +3090,9 @@ local function cover(w)
     end
   end
   if not rear then return end
-  -- At the breach, answering what hits them (by_damage), not what they see: told by_enemy, they went from the gap for a gun
-  -- 28 tiles in that a deep strike had left standing, and all 8 died to it in 5 seconds (herd test, spit, 2026-10-29;
-  -- raiding the edge, the herd had broken it). From a deep strike, as long again as its herd takes to walk back from the
-  -- heart.
+  -- At the breach, answering what hits them, not what they see: told by_enemy, they went from the gap for a gun 28 tiles
+  -- in that a deep strike had left standing, and all 8 died to it in 5 seconds (herd test, spit, 2026-10-29; raiding the
+  -- edge, the herd had broken it). From a deep strike, as long again as its herd takes to walk back from the heart.
   local wait = COVER_TICKS
   if w.deep and w.deep.reached then
     local units = herd_units(w)
@@ -3102,12 +3101,26 @@ local function cover(w)
     pace = #units > 0 and pace / #units or 0
     if pace > 0 then wait = wait + math.floor(math.sqrt(d2(w.deep.at, w.breach)) / pace) end
   end
-  local cmds = {go(w.breach, defines.distraction.none, 4),
-    {type = defines.command.stop, ticks_to_wait = wait, distraction = defines.distraction.by_damage}}
-  for k = #w.trail, 1, -1 do table.insert(cmds, go(w.trail[k], defines.distraction.none, 6)) end
-  rear.set_command(compound(cmds))
+  -- Deaf while it waits (distraction none), its own hits read by script instead (herd.cover_tick): told by_damage, it
+  -- answered the herd's calls for help (a bred unit calls those within its call_for_help_radius, 50), and a gun turret
+  -- 32 tiles along the wall that shot a medium withdrawing inside drew all ten to its reach, where they died, none of
+  -- them hit first (herd test, spit, seed 12345, 0.2.375). Told to attack what stood within their reach of the gap, they
+  -- chewed the wall beside it.
+  local reach = 0
+  for _, u in ipairs(rear.members) do
+    local ap = u.valid and u.prototype.attack_parameters
+    if ap and ap.range > reach then reach = ap.range end
+  end
+  local back = {}
+  for k = #w.trail, 1, -1 do back[#back + 1] = {w.trail[k].x or w.trail[k][1], w.trail[k].y or w.trail[k][2]} end
+  local c = {group = rear, breach = {w.breach[1] or w.breach.x, w.breach[2] or w.breach.y}, till = game.tick + wait,
+    back = back, reach = reach, hp = {}}
+  for _, u in ipairs(rear.members) do if u.valid then c.hp[u.unit_number] = u.health end end
+  rear.set_command(herd.cover_cmd(c, nil))
   st().rears = st().rears or {}
   st().rears[rear.unique_id] = rear
+  st().covers = st().covers or {}
+  st().covers[rear.unique_id] = c
   log(w, string.format("%d spitters cover the withdrawal (%.0f s)", n, wait / 60))
 end
 
@@ -4006,9 +4019,56 @@ function herd.rk.look_every()
   local p = prototypes.entity["lp-bred-big-burster"]
   return math.max(1, math.floor(WALL_TOUCH / math.max(0.01, p and p.speed or 0.01)))
 end
+-- A rear's orders (cover): to the gap, the rest of its wait there, home down the trail; an attack on what hit it first.
+function herd.cover_cmd(c, target)
+  local cmds = {}
+  if target then cmds[1] = {type = defines.command.attack, target = target, distraction = defines.distraction.none} end
+  cmds[#cmds + 1] = go(c.breach, defines.distraction.none, 4)
+  local left = c.till - game.tick
+  if left > 0 then cmds[#cmds + 1] = {type = defines.command.stop, ticks_to_wait = left, distraction = defines.distraction.none} end
+  for _, p in ipairs(c.back) do cmds[#cmds + 1] = go(p, defines.distraction.none, 6) end
+  return compound(cmds)
+end
+
+-- Each second while a rear waits: one of it hurt, it answers the nearest foe that fights (a turret, a unit, a
+-- character, a vehicle; never a wall) within its reach of the gap. Beyond that reach, it stands.
+herd.COVER_FOES = {"ammo-turret", "electric-turret", "fluid-turret", "turret", "artillery-turret", "unit", "character",
+  "car", "spider-vehicle"}
+function herd.cover_tick(h, tick)
+  for id, c in pairs(h.covers or {}) do
+    local g = c.group
+    if not (g and g.valid) or tick >= c.till then
+      h.covers[id] = nil
+    else
+      local hurt = false
+      for _, u in ipairs(g.members) do
+        if u.valid then
+          if u.health < (c.hp[u.unit_number] or u.health) then hurt = true end
+          c.hp[u.unit_number] = u.health
+        end
+      end
+      if hurt and c.reach > 0 then
+        local best, bd
+        for _, e in pairs(g.surface.find_entities_filtered{position = c.breach, radius = c.reach, type = herd.COVER_FOES}) do
+          if e.force ~= g.force and g.force.is_enemy(e.force) then
+            local d = d2({e.position.x, e.position.y}, c.breach)
+            if not bd or d < bd then best, bd = e, d end
+          end
+        end
+        if best and best ~= c.answering then
+          c.answering = best
+          c.reissued = tick
+          g.set_command(herd.cover_cmd(c, best))
+        end
+      end
+    end
+  end
+end
+
 function herd.tick(tick)
   local h = storage.herd
   if not h then return end
+  if tick % 60 == 31 and h.covers then herd.cover_tick(h, tick) end
   local every
   for _, w in pairs(h.waves) do
     if w.stage == "scout" or tick % 60 == 0 then step(w, tick)
@@ -4095,8 +4155,12 @@ function herd.on_command_completed(e)
   local h = storage.herd
   if not h then return end
   local rear = h.rears and h.rears[e.unit_number]
+  -- (Not the order it was just given in place of the last, herd.cover_tick.)
+  local c = h.covers and h.covers[e.unit_number]
+  if rear and c and c.reissued == game.tick then return end
   if rear then
     h.rears[e.unit_number] = nil
+    if h.covers then h.covers[e.unit_number] = nil end
     if rear.valid then rear.destroy() end
     return
   end

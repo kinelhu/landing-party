@@ -20,6 +20,8 @@ local ECONOMY_TICKS = 60
 local IDLE_RUN = 0.08              -- a starved fabricator's chance a second of a run from nothing (about one in 12 s)
 local BUILD_TICKS = 90
 local PLAN_TICKS = 300
+-- Minutes of its making a queue may hold before its planner grows its mining past it (a named prior; base.tick).
+local QUEUE_LONG = 5
 local START_PARTS = 150
 -- A new mining module sits within reach of the network; the base looks further only when nothing nearer
 -- fits (a long pylon line out to a distant patch is how it sprawls).
@@ -841,6 +843,16 @@ function base.tick(tick)
           -- (Only while its rebuilds are due, the deadlock: on any busy queue it changed every camp's first minutes, and
           -- eleven scenarios with them, the regression at 0.2.362.)
           if pending and #b.fabs == 0 and #b.drills == 0 then plan(b, "mine") end
+          -- And its mining while what is queued would take it QUEUE_LONG minutes or more at what it makes: a young camp
+          -- with four drills and the line's first arc queued (60 jobs) worked through them at 60 ore a minute for 34
+          -- minutes, its planner idle all that while (cordon broken: the arc stood at minute 36). Not while a drill is
+          -- queued already.
+          local bill, drill_queued = 0, false
+          for _, j in ipairs(b.queue) do
+            bill = bill + (shared.cost[j.name or ""] or 0)
+            if shared.kind_of(j.name or "") == "lp-drill" then drill_queued = true end
+          end
+          if not drill_queued and bill > QUEUE_LONG * math.max(1, b.rate_parts or 0) then plan(b, "mine") end
           -- Its generators first (queued behind the line's posts, a starved camp counted them as supply and never built
           -- them: demand past supply, cordon broken), as its lost generators are rebuilt first.
           local gens, rest = {}, {}
@@ -885,7 +897,13 @@ end
 function base.stats(b)
   prune(b.bins); prune(b.fabs); prune(b.pylons); prune(b.walls)
   local supply, demand = power(b)
-  return {id = b.id, tick = game.tick, rule = b.rule, parts = b.parts, feedstock = b.feedstock, mined = b.mined,
+  -- (Its queue's jobs by module kind and entity, its first ten: what waits behind what.)
+  local qk = {}
+  for i, j in ipairs(b.queue) do
+    if i > 10 then break end
+    qk[#qk + 1] = ((j.module and j.module.kind) or "-") .. ":" .. tostring(j.name or "tiles")
+  end
+  return {id = b.id, tick = game.tick, rule = b.rule, parts = b.parts, queue_head = table.concat(qk, " "), waiting = b.waiting, feedstock = b.feedstock, mined = b.mined,
     made = b.made, rate_in = b.rate_in, rate_parts = b.rate_parts, fabs = #b.fabs, drills = #b.drills,
     gens = #b.gens, turrets = #b.turrets, pylons = #b.pylons, modules = #b.modules, queue = #b.queue,
     lost = b.lost, rebuilt = b.rebuilt, rebuild_pending = #b.rebuild,

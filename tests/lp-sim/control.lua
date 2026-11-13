@@ -9806,6 +9806,14 @@ scenarios.cordon = function()
     end)
   end
   if broken then
+    for t = 3600, END - 120, 3 * 3600 do
+      schedule(t, function()
+        local st = lp("stats", storage.id)
+        info(string.format("cordon broken economy at %d min: parts %s, in %.0f/min, queue %s, rule %s, drills %s, fabs %s; waiting %s; head %s",
+          math.floor(t / 3600), tostring(st.parts), st.rate_in or 0, tostring(st.queue), tostring(st.rule), tostring(st.drills),
+          tostring(st.fabs), tostring(st.waiting), tostring(st.queue_head)))
+      end)
+    end
     for t = 4 * 3600, END - 12 * 3600, 600 do
       schedule(t, function()
         if S.hit then return end
@@ -9918,6 +9926,22 @@ scenarios.cordon = function()
       end
     end)
   end
+  if rail then
+    -- Where the train came to rest, and the outermost gate then: judged when it stops, not at the end. Stopped at the
+    -- gate, the camp at war intercepted it and raided it there (0.2.375: dead by minute 17, and the check at minute 19
+    -- read "the train at false").
+    for t = 14 * 3600 + 30, END - 90, 30 do
+      schedule(t, function()
+        local l = S.loco
+        if S.stop or not (l and l.valid) or l.train.speed ~= 0 then return end
+        local outer
+        for _, g in ipairs(surface().find_entities_filtered{name = "lp-gate", force = FORCE, area = {{S.o.x + 90, S.ry - 2}, {S.o.x + 270, S.ry + 2}}}) do
+          if not outer or g.position.x > outer then outer = g.position.x end
+        end
+        S.stop = {x = l.position.x, gate = outer, tick = game.tick}
+      end)
+    end
+  end
   if breach then
     schedule(12 * 3600, function()
       -- On the leading arc (the farthest out): an older arc is recovered on its own (the first try broke the oldest).
@@ -9965,9 +9989,12 @@ scenarios.cordon = function()
       check("cordon: gate posts on the player's rail", #gates >= 2, tostring(#gates))
       -- At the line: the gate, or a post's wall across the track before it (a post beside the crossing put its front on
       -- the rail, 7 tiles out from the gate).
-      local stopped = S.loco and S.loco.valid and S.loco.train.speed == 0
-      check("cordon: the train stopped at the line", stopped and lx and outer and lx > outer and lx - outer < 20,
-        string.format("the train at %s, the gate at %s", tostring(lx), tostring(outer)))
+      -- (Where it came to rest, against the gate standing then, S.stop: the line steps out past it later.)
+      local st = S.stop or {}
+      info(string.format("cordon: the train came to rest at %s (tick %s), the outermost gate then at %s; alive at the end: %s",
+        tostring(st.x), tostring(st.tick), tostring(st.gate), tostring(S.loco and S.loco.valid or false)))
+      check("cordon: the train stopped at the line", st.x and st.gate and st.x > st.gate and st.x - st.gate < 20,
+        string.format("the train at %s, the gate at %s", tostring(st.x), tostring(st.gate)))
       return
     end
     if contact then
@@ -10183,10 +10210,15 @@ scenarios.crew = function()
         S.iron = dropped(S.mid, 40)["iron-plate"] or 0
       end
       if S.built_at then return end
+      -- Read as it was given up, once it is: the camp grew its own depot at -292,-45 later, 4 tiles from the site walled
+      -- gave up, and counted as placed there; island's trucks to a far mine stuck in a forest later, counted as its
+      -- (0.2.376, the camps' economy faster). Nothing builds the outpost once given up (its jobs gone).
+      if S.given_c then return end
       local n = surface().count_entities_filtered{force = "lp-" .. corp, position = S.site, radius = 10,
         type = {"electric-pole", "ammo-turret", "electric-turret", "wall"}}
       if n >= 5 then S.built_at = game.tick end
       S.placed = n
+      if (island or walled) and ((lp("crew_stats", S.g) or {}).unrouted or 0) >= 1 then S.given_c = lp("crew_stats", S.g) end
       if again and S.built_at and not S.broke then
         S.broke = game.tick
         local es = surface().find_entities_filtered{force = "lp-" .. corp, position = S.site, radius = 10,
@@ -10208,7 +10240,8 @@ scenarios.crew = function()
       return
     end
     if walled then
-      check("crew: no truck under the ring's guns, the outpost given up", c.unrouted == 1 and c.lost == 0 and (S.placed or 0) == 0,
+      local c0 = S.given_c or c
+      check("crew: no truck under the ring's guns, the outpost given up", c0.unrouted == 1 and c0.lost == 0 and (S.placed or 0) == 0,
         string.format("%s, ring of %s, placed %s", serpent.line(c), tostring(S.ring), tostring(S.placed)))
       check("crew: the camp's other work went on", c.done >= 1, serpent.line(c))
       return
@@ -10244,8 +10277,9 @@ scenarios.crew = function()
     end
     if island then
       -- Routed (2026-10-17): no way to the island, so it is given up before a truck leaves (three trucks were stuck first).
-      check("crew: no way to the island, the outpost given up unsent", c.unrouted == 1 and c.stuck == 0 and c.lost == 0,
-        serpent.line(c))
+      local c0 = S.given_c or c
+      check("crew: no way to the island, the outpost given up unsent", c0.unrouted == 1 and c0.stuck == 0 and c0.lost == 0,
+        serpent.line(c0))
       check("crew: none built on the island, the camp's other work went on", (S.placed or 0) == 0 and c.done >= 1,
         string.format("%s, placed %s", serpent.line(c), tostring(S.placed)))
       return

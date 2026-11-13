@@ -7341,6 +7341,48 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **A theft that took something succeeded** (0.2.376). A strip mining razes nothing, and its ledger entry (tactics.record)
+  counted an attempt as in only if it razed: the strip that brought 267 ore home went down as a failure at that patch,
+  and the ladder set the next strip there aside without a word (a raid's hold is traced; a strip's was not). So no camp
+  was ever left alone twice, and strip claim failed on 0.2.374 too. Now a strip's ore home, or a thieves' raid's goods or
+  buildings carried off, counts as in, and a strip held by the ladder is traced. Strip claim passes (the second strip,
+  then the camp kept as an outpost); the 12 theft scenarios pass.
+- **A young camp's economy past the line's jobs** (0.2.376). On seed 12345 cordon broken's camp lands on its one
+  candidate site with four drills; the line's first arc (60 jobs) went into its queue at minute 1, and for 34 minutes the
+  camp made 60 ore a minute, its planner idle, the arc standing only at minute 36 (the check's window shut at 28). Three
+  causes (added in turn, the check failing until the third; the first taken out again, it failed): the planner plans nothing past a busy queue but power and a first
+  fabricator, so now also its mining when the queue would take QUEUE_LONG (5, a named prior) minutes of its making and
+  no drill is queued; a head held for a crew let nothing past it, so now what makes parts behind it goes first, its whole
+  module with it (the drills alone came ahead of their belts and 34 mined into nothing); and a crew short of parts sent a
+  mining module's drills alone, paid as parts came, and its bins never (now its bins and belts go with them in that
+  fallback only, crew MINE_HAUL: counted as economy in every batch, a mining module was never held for the reserve, the
+  camps spent to the bone on far mining, and crew doomed, island, walled and tap natural failed; bisected on five trees,
+  one change reverted in each). The camp then makes 180 to 240 a minute and steps out
+  at minutes 22 and 34; the run goes 50 minutes (its second arc stands at 34). Passes: the leading arc broken at minute
+  32, the claim back from 120 to 90 and held.
+- **Herd spit and wallgoal on seed 12345** (0.2.376). Two faults, both in the mod. A spitters' rear covering a withdrawal
+  waited at the breach told to answer what hit it, and so answered the herd's calls for help too (a bred unit calls
+  those within its call_for_help_radius, 50). On 12345 the herd broke in on a side face, a gun turret 32 tiles along the
+  wall shot a medium withdrawing inside, and all ten spitters left the gap for it and died at its reach, none of them hit
+  first; none came home. Told instead to attack what stood within their reach of the gap, they chewed the wall beside
+  it. Now the rear waits deaf, and once a second (herd.cover_tick) a rear that has lost health answers the nearest
+  fighting foe within its spitters' range of the gap (their prototype's), never a wall, then waits out the rest: 9 of 9
+  home. The observer (oplog.lua) read in only from where living members stood, every 30 ticks; in wallgoal the wave's
+  units were past the wall 0.2 s, between two looks, and died there, so the record said never in against the wave's own
+  claim. Now a member's death is read by the same test (attempt.inside) as where it stood: in at tick 7063 against the
+  claim's 7062. Checked on spit and wallgoal at 12345 and 777 and on herd at 12345 (fixed by a parallel agent in its own
+  worktree; herd.lua is at Lua's 200 locals, so its new names are fields).
+- **Crew island and walled read as given up** (0.2.376). Both outposts are given up unrouted at minute 3, before a truck
+  leaves, as before; with the camps' economy faster, walled's camp later grew its own depot 4 tiles from the abandoned
+  site (counted as placed there), and island's trucks to a far mine at -393,181 stuck in a forest (97 trees within 12),
+  counted camp-wide as its. Both checks now read the crew stats and the site as the outpost is given up. Open: a truck
+  stuck in a forest on its way to a mine.
+- **Scenario cordon rail judged the train too late** (0.2.376). Its train, driven toward the camp at minute 14, came to
+  rest 3 tiles out from the outermost gate, as the line should make it. The camp, at war with the player, then
+  intercepted and raided it there, and it was destroyed by minute 17, while the check read the train at minute 19 and
+  found none ("the train at false"). The rails were never razed: all 81 stood when the train was placed. Now the test
+  records where the train comes to rest and the outermost gate at that moment, and judges that. The check was seen
+  failing with the train run backwards (at -115, the gate at -205.5); plain cordon and cordon breach still pass.
 - **The prowl plans its way** (0.2.375). Its buggy died inside the guns every prowl since 0.2.370's site: probed leg by leg
   (request_path, its box and mask), the engine's ways all kept 65 or more from spawn, past the guns' 58, except five legs
   running in the south-west with no straight way (a barrier, a cliff most likely, unconfirmed), where the buggy's own

@@ -269,7 +269,27 @@ local function build(b)
   local job = b.queue[1]
   if not job then return end
   -- A module beyond every yard goes to a crew (crew.lua), which takes its jobs off the queue or holds them for one.
-  if base.crew_take and base.crew_take(b, job) then return end
+  -- Held there (still the head: waiting for a crew or for parts), what makes parts behind it goes first, as past a job
+  -- waiting for parts below: a young camp's drill behind the line's first arc (60 jobs, its posts a crew's) waited 34
+  -- minutes, the camp at four drills and 60 ore a minute all that while (cordon broken).
+  if base.crew_take and base.crew_take(b, job) then
+    if b.queue[1] == job then
+      for i = 2, #b.queue do
+        local q = b.queue[i]
+        -- (Its whole module with it, in its order: the drills alone came ahead of their belts, and 34 drills mined into
+        -- nothing, the camp's intake still 60 a minute.)
+        if q.module ~= job.module and q.name and not q.tiles and makes_parts(b, shared.kind_of(q.name))
+          and b.parts >= (shared.cost[q.name] or 0) then
+          local mod, ahead, rest = q.module, {}, {}
+          for _, r in ipairs(b.queue) do table.insert(r.module == mod and ahead or rest, r) end
+          for _, r in ipairs(rest) do table.insert(ahead, r) end
+          b.queue = ahead
+          break
+        end
+      end
+    end
+    return
+  end
   local cost = shared.cost[job.name] or 0
   -- (What makes parts and power builds below the reserve: the reserve is for it.)
   local held = makes_parts(b, shared.kind_of(job.name or "")) and 0 or base.reserve(b, job.name)

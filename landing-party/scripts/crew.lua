@@ -38,6 +38,15 @@ local GIVE_UP = 3
 local CREW_BATCH = 40          -- jobs a crew takes at most (crew.take)
 local KEEP = 200               -- parts a compound's or the curtain's crews leave the camp (for rebuilds and sieges)
 local ECONOMY = {["lp-fabricator"] = true, ["lp-generator"] = true, ["lp-pylon"] = true, ["lp-drill"] = true}
+-- Short of parts, a mining module's bins and belts go out with its drills (their ore goes nowhere else). Its drills alone
+-- went, paid as the parts came, and its bins never: 21 drills mining into nothing, a young camp's intake 60 a minute for
+-- 30 minutes (cordon broken). Only then: counted as economy in every batch, a mining module was never held for the
+-- reserve, and the camps spent to the bone on far mining (crew doomed, island and walled and tap natural failed).
+local MINE_HAUL = {["lp-bin"] = true, ["lp-belt"] = true}
+local function economic(m, name)
+  local k = shared.kind_of(name or "")
+  return ECONOMY[k] or (m and m.kind == "mining" and MINE_HAUL[k]) or false
+end
 local function corp_crews(b) return shared.CORPS[b.corp].crews end
 -- (The drone its own prototype, lp-constructor: the scout drone passing through other fliers, units.lua.)
 local function body(b) return corp_crews(b) == "drone" and "lp-constructor" or shared.variant(b.corp, "lp-hauler") end
@@ -132,7 +141,7 @@ function crew.take(b, job)
     -- for the reserve, and Kessler-Hayashi's camp never made a part on seed 4242, 2026-10-24).
     local ejobs, ebill = {}, 0
     for _, q in ipairs(b.queue) do
-      if q.module == m and q.name and ECONOMY[shared.kind_of(q.name)] and #ejobs < CREW_BATCH then
+      if q.module == m and q.name and economic(m, q.name) and #ejobs < CREW_BATCH then
         local c = shared.cost[q.name] or 0
         if ebill + c > b.parts then break end
         table.insert(ejobs, q)

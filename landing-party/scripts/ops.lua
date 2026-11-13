@@ -948,8 +948,12 @@ local function finish(b, outcome, trace, army)
         if l.damage and shared.AREA_DAMAGE[l.damage] then area = area + (l.value or 1) end
       end
     end
+    -- (A theft's take counts as what it got: a strip razes nothing, and its first, 267 ore home, was a failure there, the
+    -- next strip at that patch set aside by the ladder without a word, never left alone twice; strip LP_MIX=claim. A
+    -- thieves' raid's goods and buildings carried off too.)
+    local took = (op.kind == "strip" and (op.cargo or 0) > 0) or (op.loot and ((op.loot.items or 0) > 0 or (op.loot.dismantled or 0) > 0))
     local e = {sent = op.sent_worth or launched,
-      spent = (op.sent_worth or launched) * (launched - alive(op)) / launched, got = got, inside = got > 0, sig = op.sig,
+      spent = (op.sent_worth or launched) * (launched - alive(op)) / launched, got = got, inside = got > 0 or took and true or false, sig = op.sig,
       -- (Got there: a member within REACHED of its target, a siege that fired, anything razed. Its attack begun was not
       -- enough: a raid of 2 attacked from its staging and died to the nests on its 7 waypoints, none near.)
       reached = ((op.closest or math.huge) <= REACHED or (op.shells_fired or 0) > 0 or got > 0) and true or false,
@@ -2134,7 +2138,10 @@ function ops.tick(b, tick, trace, army)
     end
     -- (Its howitzer is the step past what failed there: not set aside by the ladder that called it, siege_plan.)
     if ls < tactics.LADDER_HOLD and spiece ~= "lp-howitzer" then skey = nil end
-    if lt < tactics.LADDER_HOLD then tkey = nil end
+    if lt < tactics.LADDER_HOLD then
+      if tkey then trace(b, string.format("holds its strip at %s: it failed there lately (ladder %.2f)", tkey, lt)) end
+      tkey = nil
+    end
     if key then options[#options + 1] = {"raid", (rs or 0) * (prefer.raid or 1) * lr} end
     if skey then options[#options + 1] = {"siege", (ss or 0) * (prefer.siege or 0) * ls} end
     if tkey then options[#options + 1] = {"strip", (ts or 0) * (prefer.strip or 0) * lt} end

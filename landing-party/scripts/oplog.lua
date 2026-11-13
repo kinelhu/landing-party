@@ -174,6 +174,14 @@ function oplog.on_died(e)
     table.insert(s.live[key].deaths, {t = minute(), at = xy(ent.position), name = ent.name,
       killer = c and c.name or (e.force and e.force.name) or "?"})
     s.live[key].attempt.lost = s.live[key].attempt.lost + attempt.worth(ent.name) * shared.rank_scale(ent)
+    -- Where it died, read as where it stood: one killed past the wall was in. Looked at every INSIDE_EVERY, a wave that
+    -- got past the wall for 0.2 s, between two looks, and died there read as never in, its own claim of in a lie by the
+    -- contract (herd test, wallgoal, seed 12345, 0.2.375).
+    local rec = s.live[key]
+    if not rec.attempt.inside and rec.target and attempt.inside(ent.surface, rec.force, rec.staging or rec.camp, rec.target,
+      {ent.position}, rec.attempt.wall_f or nil) then
+      rec.attempt.inside, rec.attempt.t_inside, rec.attempt.tick_inside = true, minute(), game.tick
+    end
   end
   local c = e.cause and e.cause.valid and e.cause or nil
   local by = c and c.unit_number and s.member[c.unit_number]
