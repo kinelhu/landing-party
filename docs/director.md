@@ -5,7 +5,7 @@ envision some freak events with 3 landings at once for instance, or coordinated 
 of the first draft: "it seems we are mostly talking about landings. Shouldn't the director cover the possible operations
 stemming from all camps in play?"
 
-Nothing here is built or tested. The user's decisions are in section 9. A Fable design consult on the first draft, the
+Step 1 (section 10) is built (0.2.372, scripts/director.lua; scenario director); the rest is not. The user's decisions are in section 9. A Fable design consult on the first draft, the
 landings (part one), and on the operations (part two), is in `docs/reviews/2026-11-13-director-consult.md`; its
 corrections are folded in here.
 

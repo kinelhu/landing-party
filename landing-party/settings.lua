@@ -27,6 +27,8 @@ data:extend{
   preset("lp-difficulty", "b-a", shared.DIFFICULTY_LEVELS),
   range("lp-landing-interval", shared.LANDING_MINUTES, "b-b"),
   switch("lp-revenge-landings", "b-c"),
+  -- The director (director.lua; docs/director.md): its personality, steady by default, off for today's game.
+  preset("lp-director", "b-d", shared.DIRECTOR_PERSONALITIES, "steady"),
 }
 
 -- Each faction: on or off (shared.enabled), when it comes, and the multipliers (shared.TUNE: 0.5 to 2):

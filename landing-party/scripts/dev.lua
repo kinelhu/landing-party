@@ -4,6 +4,9 @@
 --   list                     every settlement: id, corporation, where, garrison, parts, operation, perimeter, hull
 --   raid|siege|strip [id]    that operation now, at your structure nearest you (ops.force: temper, budget,
 --                            cadence and stock waived; the infantry it lacks are given)
+--   director                 the director's debug panel: its state, readings and beats; buttons to force them
+--   airraid [id]             an air raid now, at your structure nearest you: laser drones enough given, mustered
+--                            and in together (the user, 2026-11-13, to see one on their own save)
 --   perimeter [id]           Serenity's line steps out now (notice every third step, warning one step ahead)
 --   land <corp> [tiles] [now]  a corporation arrives this far from you (default 200), with 2000 parts: as its own
 --                            landings do, its pod first and its lander after (landfx.lua draws the descent); `now`
@@ -115,7 +118,11 @@ function dev.run(player, args)
   local id = tonumber(args[#args])
   if what == "list" or what == nil then
     list(player)
-  elseif what == "raid" or what == "siege" or what == "strip" then
+  elseif what == "director" then
+    -- The director's debug panel (director_gui.lua).
+    local open = require("__landing-party__.scripts.director_gui").toggle(player)
+    player.print(open and "director panel open" or "director panel closed") -- notice-ok: the dev tool's reply to its caller
+  elseif what == "raid" or what == "siege" or what == "strip" or what == "airraid" then
     local b = pick(player, id, what == "strip" and function(b) return (shared.CORPS[b.corp].temper or {}).strips end)
     if not b then return player.print("no settlement for that") end
     if not has_depot(b) then dev.depot(b) end

@@ -139,7 +139,9 @@ function ops.perimeter(b, tick)
   for _, f in ipairs(shared.player_forces()) do
     if stance.standing(b.corp, f.name) == "truce" then return end
   end
+  -- (Not while the director is on: the floor is its, director.lua.)
   local quiet = tick - (storage.threat_last or 0) > FLOOR_TICKS and tick - (b.perimeter_floor or 0) > FLOOR_TICKS
+    and not (storage.director and storage.director.active)
   if tick < (b.perimeter_next or 0) and not quiet then return end
   if quiet and tick < (b.perimeter_next or 0) then b.perimeter_floor = tick end
   b.perimeter_next = tick + every

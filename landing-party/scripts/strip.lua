@@ -116,7 +116,7 @@ local function launch_strip(b, key, site, trace, army)
     if tt then tt.cool = game.tick + COOL_TICKS end
     trace(b, string.format("%s to %.0f,%.0f: no way round biter country; not sent", "strip camp", site[1], site[2]))
     b.next_strip = game.tick + 2 * 3600
-    b.next_op = game.tick + 2 * 3600
+    b.next_op, b.next_op_why = game.tick + 2 * 3600, "hold"
     return false
   end
   local hcmds = {}

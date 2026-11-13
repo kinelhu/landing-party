@@ -7240,6 +7240,140 @@ scenarios.arcguard = function()
   end)
 end
 
+-- Director (director.lua; docs/director.md, step 1): forced on with short beats (sprees of 6 minutes, lulls of 12, a fill of a
+-- spree every 5), Serenity at war from landing, four undefended player outposts 140 to 200 tiles toward spawn. A spree
+-- starts and is told (its notice kept: shared KEEP), its corporation's pace halved (tune.sooner, read mid-spree), then a
+-- lull holds every operation against the player (none launched in it), then it fills again. LP_MIX=off: the director
+-- off, the pace untouched and no beat. LP_MIX=hurt: the player's losses past its share of the factory's worth, and it
+-- holds its threats (no spree).
+scenarios.director = function()
+  local off, hurt = params.mix == "off", params.mix == "hurt"
+  -- LP_MIX=cmd: its debug panel's hand (director.cmd, remote director_cmd), each action and what it did: on, a spree for
+  -- Serenity (its pace halved), the beat ended (its pace back), a lull (every truce on), ended (the truces off), the
+  -- budget filled and emptied, off (not active).
+  if params.mix == "cmd" then
+    local function pace() return lp("sooner", "serenity", 3600) end
+    schedule(120, function()
+      S.r = {}
+      S.r.on = lp("director_cmd", "on")
+      S.r.spree = lp("director_cmd", "spree", "serenity")
+      S.r.pace_spree = pace()
+      S.r.ended = lp("director_cmd", "end")
+      S.r.pace_end = pace()
+      S.r.lull = lp("director_cmd", "lull")
+      S.r.phase_lull = (lp("director") or {}).phase
+      S.r.ended2 = lp("director_cmd", "end")
+      S.r.phase_end = (lp("director") or {}).phase
+      S.r.fill = lp("director_cmd", "fill")
+      S.r.budget_full = (lp("director") or {}).budget
+      S.r.empty = lp("director_cmd", "empty")
+      S.r.budget_empty = (lp("director") or {}).budget
+      S.r.off = lp("director_cmd", "off")
+      S.r.active_off = (lp("director") or {}).active
+    end)
+    schedule(END - 60, function()
+      local r = S.r or {}
+      info("director cmd: " .. serpent.line(r))
+      check("director: cmd, a spree halves Serenity's pace and ending it gives it back", r.pace_spree == 1800 and r.pace_end == 3600,
+        string.format("%s then %s", tostring(r.pace_spree), tostring(r.pace_end)))
+      check("director: cmd, a lull and its end", r.phase_lull == "lull" and r.phase_end == "fill",
+        string.format("%s then %s", tostring(r.phase_lull), tostring(r.phase_end)))
+      check("director: cmd, the budget filled and emptied", r.budget_full == 4 and r.budget_empty == 0,
+        string.format("%s then %s", tostring(r.budget_full), tostring(r.budget_empty)))
+      check("director: cmd, off", r.active_off == false, tostring(r.active_off))
+    end)
+    return
+  end
+  schedule(60, function()
+    -- (The loss share past reach but in hurt: its outposts are raided all along, more than 2% of a test's small factory,
+    -- and the guard, not the dials, would be all it showed.)
+    -- (Lulls of 12, longer than a raid's gap after it is done, 5: with lulls of 6 and no truce at all, none of four
+    -- raids fell in one by chance and the check passed; seen failing at 12.)
+    lp("debug_tune", {director = not off and "steady" or false, director_tune = {grace = 0, spree_minutes = 6,
+      lull_minutes = 12, fill = 0.2, loss_share = hurt and 0.02 or 100}})
+    for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end
+    local o = lp("stats", storage.id).origin
+    -- The player's factory core across spawn from the camp, past its sensors: its worth for the loss share.
+    local fc = {math.floor(-o.x), math.floor(-o.y)}
+    flatten(fc[1] - 20, fc[2] - 20, fc[1] + 20, fc[2] + 20)
+    for x = -12, 12, 4 do for y = -12, 12, 4 do
+      surface().create_entity{name = "assembling-machine-1", position = {fc[1] + x + 0.5, fc[2] + y + 0.5}, force = "player"}
+    end end
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    S.outposts = {}
+    for k, d in ipairs({140, 160, 180, 200}) do
+      local side = (k % 2 == 0) and 30 or -30
+      local c = {math.floor(o.x - o.x / len * d - o.y / len * side), math.floor(o.y - o.y / len * d + o.x / len * side)}
+      flatten(c[1] - 6, c[2] - 6, c[1] + 6, c[2] + 6)
+      for j = 0, 2 do surface().create_entity{name = "assembling-machine-1", position = {c[1] + 3 * j, c[2]}, force = "player"} end
+      S.outposts[#S.outposts + 1] = c
+    end
+  end)
+  -- (hurt: the player's buildings razed by the corporation, worth past the factory's share, before the first beat could.)
+  if hurt then
+    schedule(2 * 3600 + 30, function()
+      local n = 0
+      for _, c in ipairs(S.outposts) do
+        for _, e in pairs(surface().find_entities_filtered{force = "player", type = "assembling-machine", position = c, radius = 12}) do
+          e.die("lp-serenity"); n = n + 1
+        end
+      end
+      for k = 1, 12 do
+        local e = surface().create_entity{name = "assembling-machine-1", position = {-40 + 4 * k, -60}, force = "player"}
+        if e then e.die("lp-serenity"); n = n + 1 end
+      end
+      S.razed = n
+    end)
+  end
+  for t = 3600, END - 120, 600 do
+    schedule(t, function()
+      local d = lp("director")
+      if d and d.phase == "spree" and not S.sooner_mid then
+        S.sooner_mid = lp("sooner", "serenity", 3600)
+        S.sooner_bio = lp("sooner", "biotech", 3600)
+      end
+      if d and d.phase == "lull" then
+        S.lulls = S.lulls or {}
+        S.lulls[#S.lulls + 1] = game.tick
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local d = lp("director") or {}
+    local st = lp("stats", storage.id)
+    local off_pace = lp("sooner", "serenity", 3600)
+    -- The lulls' windows, from its log: none of its operations against the player launched in one.
+    local windows, in_lull = {}, 0
+    for _, l in ipairs(d.log or {}) do
+      if l.text:find("^lull") then windows[#windows + 1] = {l.tick, l.tick + 12 * 3600} end
+    end
+    for _, l in ipairs(st.ops.log or {}) do
+      if l.owner == "player" and l.started then
+        -- (After its first tick: a camp's step runs before the director's in a tick, and a raid launched in the spree's
+        -- last tick, the lull's first, was counted in it.)
+        for _, w in ipairs(windows) do if l.started > w[1] and l.started < w[2] then in_lull = in_lull + 1 end end
+      end
+    end
+    info(string.format("director%s: sprees %s, lulls %s, budget %.2f, held %s, pace mid-spree %s (biotech %s), after %s; %d ops, %d in a lull; read %s",
+      off and " off" or hurt and " hurt" or "", tostring(d.sprees), tostring(d.lulls), d.budget or -1, tostring(d.held_for),
+      tostring(S.sooner_mid), tostring(S.sooner_bio), tostring(off_pace), #(st.ops.log or {}), in_lull, serpent.line(d.read)))
+    if off then
+      check("director: off, no beat", not d.active and (d.sprees or 0) == 0, tostring(d.sprees))
+      check("director: off, its pace untouched (an hour at the default aggression)", off_pace == 3600, tostring(off_pace))
+    elseif hurt then
+      check("director: hurt, it holds its threats", (d.sprees or 0) == 0 and d.held_for == "hurt",
+        string.format("%s sprees, held %s, %s razed", tostring(d.sprees), tostring(d.held_for), tostring(S.razed)))
+    else
+      check("director: a spree, then a lull", (d.sprees or 0) >= 1 and (d.lulls or 0) >= 1,
+        string.format("%s sprees, %s lulls", tostring(d.sprees), tostring(d.lulls)))
+      check("director: its spree halves the corporation's pace, never Synthexis's", S.sooner_mid and S.sooner_bio
+        and S.sooner_mid * 2 <= S.sooner_bio + 1, string.format("%s against %s", tostring(S.sooner_mid), tostring(S.sooner_bio)))
+      check("director: no operation against the player launched in a lull", in_lull == 0 and #windows >= 1,
+        string.format("%d in %d lulls", in_lull, #windows))
+    end
+  end)
+end
+
 scenarios.dome = function()
   local mix = params.mix or ""
   schedule(60, function()
@@ -16727,8 +16861,15 @@ scenarios.airraid = function()
   local aa, off = params.mix == "aa", params.mix == "off"
   local detour = params.mix == "detour" or params.mix == "detour-straight"
   local gs = params.mix == "grubstake"
+  -- LP_MIX=cmd: its own air raids off, /lp airraid called at the radar (dev.lua, ops.force): it goes by air all the same.
+  local cmd = params.mix == "cmd"
+  if cmd then
+    schedule(8 * 3600 + 120, function()
+      S.cmd_reply = lp("dev", {"airraid", tostring(S.id)}, S.radar and {S.radar.position.x, S.radar.position.y} or {0, 0})
+    end)
+  end
   schedule(60, function()
-    lp("debug_tune", {era = 2, raids_off = true, history_off = true, provoke = true, air_off = off or nil,
+    lp("debug_tune", {era = 2, raids_off = true, history_off = true, provoke = true, air_off = (off or cmd) or nil,
       air_straight = params.mix == "detour-straight" or nil})
     -- (Grubstake across spawn from Serenity's camp: 270 tiles off it raided Serenity's fabricators, not the radar.)
     S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = gs and "grubstake" or "serenity", at = gs and across_first() or nil})
@@ -16857,6 +16998,11 @@ scenarios.airraid = function()
       serpent.line(S.sensed), S.raids or 0, S.air or 0, S.air_at and string.format("%.1f min", S.air_at / 3600) or "-",
       S.radar and S.radar.valid and "standing" or "razed", serpent.line(st.ops.log)))
     info("airraid: its build's tilt to fliers " .. tostring(S.tilt))
+    if cmd then
+      check("airraid: cmd, /lp airraid sent it by air at the radar", (st.ops.air_raids or 0) >= 1 and S.razed_at ~= nil,
+        string.format("%s air raids, radar razed at %s", tostring(st.ops.air_raids), tostring(S.razed_at)))
+      return
+    end
     if aa then
       check("airraid: aa, its fliers kept home where guns shoot up", (S.air or 0) == 0, tostring(S.air))
       check("airraid: aa, and its build not tilted to fliers", S.tilt == 1, tostring(S.tilt))

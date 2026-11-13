@@ -392,7 +392,14 @@ shared.TUNE = {["very-low"] = 0.5, low = 0.75, normal = 1, high = 1.5, ["very-hi
 shared.DIFFICULTY = {easy = 0.5, normal = 1, hard = 1.5, ["very-hard"] = 2}
 shared.DIFFICULTY_LEVELS = {"easy", "normal", "hard", "very-hard"}
 -- The levers' defaults and ranges (settings.lua makes the settings from them; the code reads the settings):
-shared.LANDING_MINUTES = {default = 90, min = 15, max = 600}  -- between a corporation's landings (faction.lua's cadence)
+shared.LANDING_MINUTES = {default = 90, min = 15, max = 600}
+-- The director's priors (director.lua; Fable's consult, part two): its budget in landings, at most cap; a spree costs
+-- spree_cost, makes the corporation's operations spree_factor times as often for spree_minutes, then a lull of
+-- lull_minutes holds every corporation's; no threat while the half hour's losses pass loss_share of the factory's worth;
+-- on grace minutes after the opening's arrival. Personalities multiply the fill. All to calibrate.
+shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20, lull_minutes = 15, loss_share = 0.02,
+  grace = 30, personality = {steady = 1}}
+shared.DIRECTOR_PERSONALITIES = {"steady", "off"}  -- between a corporation's landings (faction.lua's cadence)
 shared.MAX_CAMPS = {default = 3, min = 1, max = 10}           -- a corporation's standing camps, its headquarters counted
 shared.ARRIVE_EVO = {default = 0.25, min = 0, max = 0.95}     -- the wild evolution Synthexis comes at (farm.lua)
 shared.MAX_CULTURES = {default = 5, min = 1, max = 10}        -- Synthexis's cultures at once, its seeding's (farm.lua)
@@ -694,7 +701,9 @@ shared.TINT = {r = 0.62, g = 0.8, b = 1, a = 1}
 -- notice before a loss the player cannot see coming. None left: the perimeter's warning guards none since enclosure no
 -- longer provokes (ops.encroached); the rig's dig is 2.5 minutes with a dust line; a prospect plants a lit stake.
 -- (Always told: the army's two stuck-player hints, once each a force, command.lua; a tutorial's, not chatter.)
-local KEEP = {["lp.fallen"] = true, ["lp.hint-no-beacon"] = true, ["lp.hint-no-relay"] = true}
+local KEEP = {["lp.fallen"] = true, ["lp.hint-no-beacon"] = true, ["lp.hint-no-relay"] = true,
+  -- (A threat the director starts is always told: docs/director.md, fairness.)
+  ["lp.director-spree"] = true}
 -- Whether a faction may land (its setting lp-<id>-enabled, runtime-global, on by default): off, it never lands again
 -- (phases, faction.next_corp, farm's arrival); camps already standing stay. (The user, 2026-11-08: "We do need an on/off
 -- switch".)

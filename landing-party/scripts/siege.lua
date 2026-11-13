@@ -736,7 +736,7 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
     trace(b, string.format("%s to %.0f,%.0f: no way round biter country; not sent", "siege", site[1], site[2]))
     -- The settlement waits too (re-planned every 30 s, all night, visit).
     b.next_siege = game.tick + 2 * 3600
-    b.next_op = game.tick + 2 * 3600
+    b.next_op, b.next_op_why = game.tick + 2 * 3600, "hold"
     return false
   end
   -- A drop siege's guards wait where no gun reaches, as a wave stages (costmap.staging: the last cell of its way before the

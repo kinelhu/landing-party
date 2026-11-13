@@ -513,6 +513,22 @@ function faction.site(surface, from, distance, count, outer)
     return best
   end
   local last = fallback or among or dense
+  -- Held, in a landing's pass (faction.hold_fallbacks): the best poor site of all its bands, tried only once no band had a
+  -- rich one. Returned at once, a first band's poor site beat a rich one further out: seed 101's camp landed by 1 candidate
+  -- with "little ore", its mines found no more cells 2 minutes in, and it stood at 4 drills at minute 30.
+  if faction.hold_fallbacks then
+    if last then
+      local kind = fallback and 1 or among and 2 or 3
+      local q = fallback and fallback_n or among and -among_density or -(dense_density or 0)
+      local h = faction.held
+      if not h or kind < h.kind or (kind == h.kind and q > h.q) then
+        faction.held = {pos = last, kind = kind, q = q, label = string.format("%s (pass %s, held over its bands), %d guns in reach",
+          fallback and "the richest clear" or among and "among nests" or "the least dense nest field", faction.pass or "?",
+          guns_on(last))}
+      end
+    end
+    return nil
+  end
   if last then
     faction.site_scored = string.format("%s (pass %s), %d guns in reach", fallback and "the richest clear" or among and "among nests"
       or "the least dense nest field", faction.pass or "?", guns_on(last))
@@ -641,7 +657,16 @@ function faction.arrive(surface, from, opts, quiet)
     for _, e in ipairs(rings) do if e <= DENSE_SEARCH then schedule[#schedule + 1] = {e, false} end end
     for _, e in ipairs(rings) do if e <= DENSE_SEARCH then schedule[#schedule + 1] = {e, true} end end
     for _, e in ipairs(rings) do if e > DENSE_SEARCH then schedule[#schedule + 1] = {e, true} end end
+    -- Its bands' poor sites held till the last (faction.site): the best of them tried once no band had a rich one.
+    faction.hold_fallbacks, faction.held = true, nil
+    schedule[#schedule + 1] = {"held"}
     for _, ring in ipairs(schedule) do
+      if ring[1] == "held" then
+        faction.hold_fallbacks = false
+        pos = faction.held and faction.held.pos
+        if pos then faction.site_scored = faction.held.label end
+        faction.held = nil
+      else
       local extra = ring[1]
       faction.dense_ok = ring[2]
       faction.site_corp = (opts and opts.corp) or shared.DEFAULT_CORP
@@ -651,6 +676,7 @@ function faction.arrive(surface, from, opts, quiet)
       local d0 = (opts and opts.distance) or DISTANCE
       pos = faction.site(surface, from, d0 + extra, f.landings, nxt and d0 + nxt - SITE_SEARCH or d0 + extra + SITE_SEARCH)
       faction.site_corp = nil
+      end
       -- An armed landing refuses a site with no way over land to the player (its way's map, read once a landing: water no
       -- way): nwa's site by this search lay across a lake from the factory, and its sieges besieged nothing. Ranking
       -- every site by its way's price instead (0.2.154 to 0.2.156) moved nw's from where it had razed most to a nest
@@ -666,7 +692,7 @@ function faction.arrive(surface, from, opts, quiet)
       if pos and faction.dry and wait_for(surface, pos, 7) then pos = nil end
       if faction.pending then
         faction.ignore_nests, faction.under_guns, faction.pact_site, faction.approach_max = false, false, false, nil
-        faction.dense_ok = false
+        faction.dense_ok, faction.hold_fallbacks, faction.held = false, false, nil
         return nil, "pending"
       end
       -- Site only (a landing that comes by cargo pod): where it would land, nothing placed.
@@ -674,7 +700,7 @@ function faction.arrive(surface, from, opts, quiet)
         local at = layout.find_pad(surface, pos)
         if at then
           faction.ignore_nests, faction.under_guns, faction.pact_site, faction.approach_max = false, false, false, nil
-          faction.dense_ok = false
+          faction.dense_ok, faction.hold_fallbacks, faction.held = false, false, nil
           return nil, "site", pos, at
         end
         pos = nil; refuse("no pad fits")
@@ -690,6 +716,7 @@ function faction.arrive(surface, from, opts, quiet)
     if b then break end
     ::next_pass::
   end
+  faction.hold_fallbacks, faction.held = false, nil
   -- (Its way checked: the sites refused for having none, traced; f.by_way counts the landings checked, `armed`.)
   if b and landing_cm then
     f.by_way = (f.by_way or 0) + 1

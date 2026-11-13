@@ -5,7 +5,7 @@ digraph ai {
   subgraph cluster_0 { label="Seams (leaves)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "stance" [label="stance\n80 lines", width=0.89, fillcolor="#eef2f7"];
     "pool" [label="pool\n142 lines", width=0.96, fillcolor="#d9f0d9"];
-    "tune" [label="tune\n36 lines", width=0.84, fillcolor="#d9f0d9"];
+    "tune" [label="tune\n42 lines", width=0.85, fillcolor="#d9f0d9"];
     "rng" [label="rng\n56 lines", width=0.86, fillcolor="#d9f0d9"];
     "names" [label="names\n54 lines", width=0.86, fillcolor="#eef2f7"];
     "chart" [label="chart\n114 lines", width=0.93, fillcolor="#d9f0d9"];
@@ -29,8 +29,12 @@ digraph ai {
     "know" [label="know\n239 lines", width=1.07, fillcolor="#d9f0d9"];
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
-  subgraph cluster_3 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "faction" [label="faction\n1148 lines", width=2.08, fillcolor="#f7dede"];
+  subgraph cluster_3 { label="The director (above every faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+    "director" [label="director\n252 lines", width=1.08, fillcolor="#eef2f7"];
+    "director_gui" [label="director_gui\n98 lines", width=0.91, fillcolor="#eef2f7"];
+  }
+  subgraph cluster_4 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+    "faction" [label="faction\n1175 lines", width=2.11, fillcolor="#f7dede"];
     "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
     "war" [label="war\n628 lines", width=1.50, fillcolor="#eef2f7"];
     "standing" [label="standing\n114 lines", width=0.93, fillcolor="#eef2f7"];
@@ -40,7 +44,7 @@ digraph ai {
     "phases" [label="phases\n269 lines", width=1.10, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
-  subgraph cluster_4 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+  subgraph cluster_5 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "base" [label="base\n929 lines", width=1.83, fillcolor="#eef2f7"];
     "construction" [label="construction\n426 lines", width=1.27, fillcolor="#d9f0d9"];
     "planner" [label="planner\n380 lines", width=1.22, fillcolor="#eef2f7"];
@@ -53,14 +57,14 @@ digraph ai {
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
     "crew" [label="crew\n497 lines", width=1.35, fillcolor="#eef2f7"];
     "cordon" [label="cordon\n388 lines", width=1.23, fillcolor="#eef2f7"];
-    "perimeter" [label="perimeter\n327 lines", width=1.16, fillcolor="#d9f0d9"];
+    "perimeter" [label="perimeter\n329 lines", width=1.17, fillcolor="#d9f0d9"];
     "road" [label="road\n143 lines", width=0.96, fillcolor="#eef2f7"];
     "prospect" [label="prospect\n392 lines", width=1.24, fillcolor="#eef2f7"];
     "belts" [label="belts\n86 lines", width=0.90, fillcolor="#d9f0d9"];
   }
-  subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+  subgraph cluster_6 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n1055 lines", width=1.97, fillcolor="#f7dede"];
-    "ops" [label="ops\n2231 lines", width=3.28, fillcolor="#f7dede"];
+    "ops" [label="ops\n2247 lines", width=3.30, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n295 lines", width=1.13, fillcolor="#eef2f7"];
     "airraid" [label="airraid\n127 lines", width=0.94, fillcolor="#eef2f7"];
@@ -82,7 +86,7 @@ digraph ai {
     "aim" [label="aim\n81 lines", width=0.89, fillcolor="#d9f0d9"];
     "power" [label="power\n175 lines", width=0.99, fillcolor="#eef2f7"];
   }
-  subgraph cluster_6 { label="Heists (Grubstake)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+  subgraph cluster_7 { label="Heists (Grubstake)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "jumper" [label="jumper\n314 lines", width=1.15, fillcolor="#eef2f7"];
     "tap" [label="tap\n375 lines", width=1.22, fillcolor="#eef2f7"];
     "skim" [label="skim\n422 lines", width=1.27, fillcolor="#eef2f7"];
@@ -90,17 +94,17 @@ digraph ai {
     "bait" [label="bait\n59 lines", width=0.87, fillcolor="#d9f0d9"];
     "marker" [label="marker\n70 lines", width=0.88, fillcolor="#eef2f7"];
   }
-  subgraph cluster_7 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+  subgraph cluster_8 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "herd" [label="herd\n4479 lines", width=3.80, fillcolor="#f7dede"];
     "herd_learn" [label="herd_learn\n253 lines", width=1.08, fillcolor="#eef2f7"];
     "farm" [label="farm\n2511 lines", width=3.59, fillcolor="#f7dede"];
     "creep" [label="creep\n614 lines", width=1.48, fillcolor="#eef2f7"];
     "cell" [label="cell\n438 lines", width=1.29, fillcolor="#eef2f7"];
   }
-  subgraph cluster_8 { label="The map"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+  subgraph cluster_9 { label="The map"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
   }
-  subgraph cluster_9 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+  subgraph cluster_10 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "command" [label="command\n968 lines", width=1.88, fillcolor="#d9f0d9"];
     "cards" [label="cards\n406 lines", width=1.25, fillcolor="#eef2f7"];
     "scanner" [label="scanner\n98 lines", width=0.91, fillcolor="#eef2f7"];
@@ -108,9 +112,9 @@ digraph ai {
     "achievements" [label="achievements\n34 lines", width=0.84, fillcolor="#d9f0d9"];
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
-  subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1274 lines", width=2.22, fillcolor="#f7dede"];
-    "dev" [label="dev\n603 lines", width=1.47, fillcolor="#eef2f7"];
+  subgraph cluster_11 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+    "control" [label="control\n1286 lines", width=2.23, fillcolor="#f7dede"];
+    "dev" [label="dev\n610 lines", width=1.48, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n189 lines", width=1.01, fillcolor="#eef2f7"];
   }
@@ -161,6 +165,11 @@ digraph ai {
   "crew" -> "ops";
   "crew" -> "standing";
   "cuts" -> "pool";
+  "director" -> "faction";
+  "director" -> "ops";
+  "director" -> "stance";
+  "director" -> "valuemap";
+  "director_gui" -> "director";
   "dome" -> "base";
   "dome" -> "lights";
   "dome" -> "ops";

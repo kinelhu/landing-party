@@ -17,7 +17,7 @@ document still says Serenity where it records history.
 | Area | State | Tested by (headless scenario) |
 |---|---|---|
 | Arrival on first launch, repeated landings, sites apart | built | `faction` |
-| Director (a storyteller above the corporations: drop waves, coordinated raids, pincers; budget and pacing; the user, 2026-11-13: "think rimworld storyteller") | proposed (`docs/director.md`), not built; questions for the user open | none yet |
+| Director (a storyteller above the corporations: it paces every camp's operations on the player, sprees and lulls, then waves; budget and pacing; the user, 2026-11-13: "think rimworld storyteller") | step 1 built 0.2.372 (state, budget, readings, tempo and lull, the floor; steady and off), uncalibrated; steps 2 to 5 proposed (`docs/director.md`) | `director` (and off, hurt) |
 | Opening: signs (radar), survey party (oil), arrival (launch or blue science) | built | `phases` (two) |
 | Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
 | Levers (settings; the user, 2026-11-08: "expose some levers... That's how vanilla does it with biters"): a difficulty preset times every faction's strength, aggression and income; each faction's own on top; when each arrives; its most camps; the time between landings; revenge landings; Kessler-Hayashi's orbital strikes, Grubstake's theft, Synthexis's most cultures, largest wave and learning | built 0.2.223, uncalibrated (after the playtest) | `levers`, `phases` (grubprod, interval, camps), `farm` (late, smallwaves, unlearned, seedcap), `grudge` norevenge, `orbital` nostrike, `skim`/`strip` notheft |
@@ -7278,6 +7278,39 @@ Bugs and surprises the headless runs caught, each kept as a check:
   stood. herd spit and wallgoal fail on 12345 only: 777, 4242 and 101 pass both (the fight's outcome with the rest of the
   map changed, not the arena: its fort is placed by the camp's axis, the same for the old site and the new). Open:
   prowl, cordon (base, rail, broken), crew grown (trucks stuck among few trees), tap natural, clear culture.
+- **A landing's poor site held till the last** (0.2.372; the user, of the first camp's weaker economy on 12345: "scale
+  income to ore patch coverage %?", then "a part infusion scaling on lander distance from ore?"). Measured first, each
+  guess in turn: ore kind does nothing (a bin's ore is feedstock by count, whatever it is); forest is razed under every
+  building (clear_area), it slows only what moves; the new site's coverage round it was more than the old's (5.5% within
+  60 to 3.2%); a pylon is 2 parts a 24-tile span, so distance is cheap in parts. What a seed's camp does at 30 minutes,
+  unpressed (scenario grow), varies most with its seed: across eight, the old search 70,351 mined, the grid's 67,383, the
+  grid with the lander kept within half a yard of its patch 69,518 (four seeds better, four worse: not kept). And each
+  search had one camp near dead: the old's seed 555 at 2 drills, the grid's seed 101 at 4. 101's search found one
+  candidate in its first band, "little ore", and landed there as that band's fallback; its mines found no more cells two
+  minutes in. Each band's poor site (the richest clear, a site among nests, the least dense field) is held now, the best
+  of a pass's bands, and tried only once no band had a rich one: across the eight, 71,785 mined, the worst a working camp
+  (555 at 16 drills; 101 from 4 drills to 20). Other callers of faction.site keep its fallback at once.
+- **The director, step 1** (0.2.372; docs/director.md, Fable's consult part two's order). scripts/director.lua, a minute's
+  step: its readings (the era, the factory's worth by LuaForce.get_entity_count over 26 prototypes, its guns, its losses
+  over half an hour fed from the raze handler beside storage.player_razed), its budget in landings ((1 + era / 2) times
+  the difficulty and the personality a landing interval, at most 4: shared.DIRECTOR), and its beats: a spree (one
+  corporation at war with a camp standing, the one longest without one, its pace twice as fast for 20 minutes through
+  tune.sooner, never Synthexis's and never its aggression, its camps' next operations pulled in where they wait on a
+  pace and not a hold: b.next_op_why), then a lull (every corporation's truce on that player for 15 minutes: no raid,
+  siege, answer, strip, tap, skim or relief), then filling again. No threat while the half hour's losses pass 2% of the
+  factory's worth; the fill halves while its guns are fewer than an hour ago. The pressure floor (20 minutes without an
+  operation: ops.choose, the perimeter's step) is the director's while it is on. Every spree told (a kept notice);
+  setting lp-director, steady by default, off for today's game; on 30 minutes after the opening's staged arrival
+  (storage.phases.arrived), so every scenario but its own runs without it. Scenario director (sprees of 6 and lulls of
+  12 forced): three sprees, the corporation's pace halved mid-spree and Synthexis's not, no operation launched in a lull
+  (seen failing with the truce taken out: 1 in 2; with lulls of 6 none of four raids fell in one and the check had
+  passed blind); off: no beat, the pace an hour; hurt: it holds. Uncalibrated (the consult's two-hour steady-against-off
+  reading, five seeds, is the next measure). And /lp airraid (an air raid now at the structure nearest you, laser
+  drones given; scenario airraid LP_MIX=cmd). Its debug panel (the user: "For the director i would appreciate a debug
+  UI for testing"): /lp director, scripts/director_gui.lua; its state, phase and time left, budget, readings, each
+  corporation's tempo and truce, its last beats, every second; buttons on director.cmd (force on with no grace, off, as
+  the setting says, a spree now for a corporation, a lull now, the budget full or empty, the beat ended). Scenario
+  director LP_MIX=cmd drives each action through the remote director_cmd; the panel's look is for the game window.
 - **Maps built without a stutter** (0.2.370; the user: "think about when each map is built, and how to avoid stutters").
   Measured on nwa (helpers.create_profiler): an armed landing's way to the player (firemap, the player's edge, the cost
   map over 2,210 tiles) took 620 ms in one tick. Now a landing job builds it in slices before its search, stepped every

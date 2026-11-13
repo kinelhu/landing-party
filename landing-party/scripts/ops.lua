@@ -418,7 +418,7 @@ end
 -- or a raid broken by its leader's death holds the thief's next operation back SETBACK.
 local SETBACK = 10 * 3600
 function ops.setback(b, why)
-  b.next_op = math.max(b.next_op or 0, game.tick + SETBACK)
+  b.next_op, b.next_op_why = math.max(b.next_op or 0, game.tick + SETBACK), "hold"
   b.setbacks = (b.setbacks or 0) + 1
   if ops.trace then ops.trace(b, "setback: " .. why .. "; its next operation held 10 minutes") end
 end
@@ -581,7 +581,8 @@ local function choose(b, army)
     end
   end
   local in_flight = ops.player_ops()
-  local floor = game.tick - (storage.threat_last or 0) > FLOOR_TICKS
+  -- (The floor is the director's while it is on: it ends its own valleys, director.lua.)
+  local floor = game.tick - (storage.threat_last or 0) > FLOOR_TICKS and not (storage.director and storage.director.active)
   -- Its fliers at home: by air only with AIRRAID.MIN at least (airraid.lua).
   local fliers, air_worth = airraid.fliers(b)
   local by_air = not storage.air_off and #fliers >= airraid.MIN
@@ -904,6 +905,8 @@ local function finish(b, outcome, trace, army)
   b.next_op = game.tick + tune.sooner(b.corp, (outcome == "done" or outcome == "spent" or outcome == "claimed") and GAP_DONE
     or GAP_ABORTED)
     + math.floor(lost / 5) * GAP_PER_5_LOST
+  -- (Why it waits, for the director: a pace it may pull in, never a hold after a failure to launch, director.lua.)
+  b.next_op_why = "pace"
   if op.clearance then b.next_op = game.tick + 3600 end
   -- A reprisal still owed keeps its pace: the losses that called it were often this op's own raiders, and its end set
   -- the next op ten minutes off (reprisal, 2026-10-23: paid back 13.6 minutes later).
@@ -1361,7 +1364,7 @@ local function launch(b, key, trace, army, opts)
   if not stage then
     for _, u in ipairs(members) do table.insert(b.garrison, u) end
     t.cool = game.tick + 15 * 3600
-    b.next_op = game.tick + 2 * 3600
+    b.next_op, b.next_op_why = game.tick + 2 * 3600, "hold"
     trace(b, string.format("raid on %s at %.0f,%.0f: no staging point on dry land; not sent", t.kind, t.pos[1], t.pos[2]))
     return false
   end
@@ -1509,7 +1512,7 @@ local function launch(b, key, trace, army, opts)
     -- Behind turrets it cannot get round: guarded, whatever stands by it (a substation inside a laser wall counted as
     -- undefended, and Grubstake's flares, which go at guarded targets, never knew of one, visit nw).
     if why and not why:find("turrets = 0[,}]") then t.exposure = math.max(t.exposure or 0, 1) end
-    b.next_op = game.tick + 2 * 3600
+    b.next_op, b.next_op_why = game.tick + 2 * 3600, "hold"
     trace(b, string.format("raid on %s at %.0f,%.0f: no way round the turrets or biter country; not sent (%s)", t.kind, t.pos[1], t.pos[2],
       why or ""))
     return false
@@ -2153,6 +2156,19 @@ function ops.force(b, kind, pos, trace, army, owner)
   b.parts = math.max(b.parts or 0, SIEGE_COST)
   -- (A raid as its launch sizes it, ops.raid_want: by the defence alone, a forced raid fielded 4 where a mended wall
   -- asked 32, and launch, asking 32, sent none; mended serenity.)
+  -- (/lp airraid: fliers enough for an air raid, laser drones its corporation's, then launched by air, its muster and all.)
+  if kind == "airraid" then
+    local proto = shared.variant(b.corp, "lp-laser-drone")
+    local have = 0
+    for _, u in ipairs(b.garrison) do if u.valid and airraid.is_flier(u.name) then have = have + 1 end end
+    for _ = have + 1, math.max(airraid.MIN, 6) do
+      local p = army.spawn_point(b, proto, {h.position.x, h.position.y + 4}, 20)
+      local u = p and s.create_entity{name = proto, position = p, force = h.force}
+      if u then table.insert(b.garrison, u); pool.enlist(b, u) end
+    end
+    if not launch_air(b, best, trace, army) then return "launch failed (too few fliers)" end
+    return
+  end
   local want = (kind == "raid" and ops.raid_want(b, t) or SIEGE_GUARDS) + math.ceil(RESERVE * cap(b, army))
   local n = 0
   for _, u in ipairs(b.garrison) do if u.valid and u.type == "unit" and shared.kind_of(u.name) ~= "lp-hauler" then n = n + 1 end end

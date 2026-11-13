@@ -26,8 +26,14 @@ function tune.strength(corp) return lever(corp, "strength") end
 function tune.aggression(corp) return lever(corp, "aggression") end
 function tune.income(corp) return lever(corp, "income") end
 
--- A span of ticks shortened by aggression (at least one tick).
-function tune.sooner(corp, ticks) return math.max(1, math.floor(ticks / tune.aggression(corp))) end
+-- A span of ticks shortened by aggression (at least one tick), and by the director's tempo while a spree of this
+-- corporation's lasts (director.lua; never Synthexis's, decision 2; never its aggression, which also runs the ladder).
+function tune.sooner(corp, ticks)
+  local t = corp ~= "biotech" and storage.director and storage.director.active and storage.director.tempo
+    and storage.director.tempo[corp]
+  local f = (t and game.tick < t.till) and t.factor or 1
+  return math.max(1, math.floor(ticks / (tune.aggression(corp) * f)))
+end
 
 function tune.corp_of_force(force_name)
   for corp, c in pairs(shared.CORPS) do if c.force == force_name then return corp end end

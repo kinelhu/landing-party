@@ -13,6 +13,7 @@ LEVERS = {"strength": ["grubstake", "serenity"], "aggression": ["grubstake", "se
           "income": ["grubstake", "serenity", "biotech"]}
 TUNE_NAMES = {"very-low": "Very low", "low": "Low", "normal": "Normal", "high": "High", "very-high": "Very high"}
 DIFFICULTY_NAMES = {"easy": "Easy", "normal": "Normal", "hard": "Hard", "very-hard": "Very hard"}
+DIRECTOR_NAMES = {"steady": "Steady", "off": "Off"}
 ARRIVAL_NAMES = {"oil-processing": "On researching oil processing",
                  "chemical-science-pack": "On the first chemical science pack",
                  "production-science-pack": "On the first production science pack",
@@ -58,6 +59,12 @@ def section():
                 if key not in tune:
                     sys.exit(f"settings_locale: level {key} not in shared.TUNE")
                 lines.append(f"lp-{corp}-{lever}-{key}={label}{times(tune[key])}")
+    # The director's personalities (shared.DIRECTOR_PERSONALITIES, settings.lua's lp-director).
+    m = re.search(r'^shared\.DIRECTOR_PERSONALITIES = \{([^}]*)\}', src, re.M)
+    for key in re.findall(r'"([\w-]+)"', m.group(1) if m else ""):
+        if key not in DIRECTOR_NAMES:
+            sys.exit(f"settings_locale: no label for director personality {key}")
+        lines.append(f"lp-director-{key}={DIRECTOR_NAMES[key]}")
     for corp, allowed in arr.items():
         for key in allowed:
             if key not in ARRIVAL_NAMES:

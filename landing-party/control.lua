@@ -61,6 +61,8 @@ local herd = require("__landing-party__.scripts.herd")
 local firemap = require("__landing-party__.scripts.firemap")
 local threat = require("__landing-party__.scripts.threat")
 local valuemap = require("__landing-party__.scripts.valuemap")
+local director = require("__landing-party__.scripts.director")
+local director_gui = require("__landing-party__.scripts.director_gui")
 local costmap = require("__landing-party__.scripts.costmap")
 local feeds = require("__landing-party__.scripts.feeds")
 -- Synthexis's scouts take the corporations' way round turrets (herd.lua; a hook, not a require: ops is the corporations').
@@ -119,7 +121,7 @@ local WATCH_DEPS = {
 script.on_event(defines.events.on_tick, function(e)
   -- (First: a promotion swaps a unit before any module walks its lists this tick.)
   veterancy.tick(e.tick)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); cards.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); road.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); separate.tick(e.tick); ram.tick(e.tick); ram.charge_tick(e.tick); cannon.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); cards.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); road.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); separate.tick(e.tick); ram.tick(e.tick); ram.charge_tick(e.tick); cannon.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick); director.tick(e.tick); director_gui.tick(e.tick)
   oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
 end)
@@ -246,6 +248,7 @@ script.on_event("lp-retire", function(e) command.retire(e.player_index); command
 script.on_event(defines.events.on_gui_click, function(e)
   if e.element and e.element.valid and e.element.name == "lp_army_retire" then command.retire(e.player_index); command.gui_tick() end
   if cards.on_click(e) then command.gui_tick() end
+  director_gui.on_click(e)
   if e.element and e.element.valid and (e.element.name == "lp_army_all" or e.element.name == "lp_army_idle") then
     cards.select_army(e.player_index, e.element.name == "lp_army_idle"); cards.refresh(e.player_index); command.gui_tick()
   end
@@ -410,6 +413,7 @@ script.on_event(defines.events.on_entity_died, function(e)
       storage.player_razed = storage.player_razed or {}
       local k = ent.force.name .. ":" .. ent.type
       storage.player_razed[k] = (storage.player_razed[k] or 0) + 1
+      director.note_loss(ent.force.name, ent)
       local corp = standing.corp_of_force(e.force.name)
       if corp then standing.incident(corp, "razed", ent.position, ent.name) end
     end
@@ -653,6 +657,9 @@ remote.add_interface("landing-party", {
     if t.berth_off ~= nil then storage.berth_off = t.berth_off end
     -- Tests: no lander's stores (base.lua; watchdog economy stalls a camp on purpose).
     if t.stores_off ~= nil then storage.stores_off = t.stores_off end
+    -- The director forced on with a personality (no opening, no grace), its priors overridden (shared.DIRECTOR's keys).
+    if t.director ~= nil then storage.director_force = t.director or nil end
+    if t.director_tune ~= nil then storage.director_tune = t.director_tune end
     if t.quiet_minutes then storage.quiet_ticks = t.quiet_minutes * 3600 end
     for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end
   end,
@@ -1203,6 +1210,11 @@ remote.add_interface("landing-party", {
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,
   achieved = function() return storage.lp_achieved or {} end,
   pact_state = function() return storage.pact_state end,
+  director = function() return director.state() end,
+  -- Tests and the debug panel: director.cmd (on, off, auto, spree [corp], lull, fill, empty, end).
+  director_cmd = function(action, arg) return director.cmd(action, arg) end,
+  -- Tests: a span as a corporation's pace gives it now (tune.sooner, the director's tempo in it).
+  sooner = function(corp, ticks) return tune.sooner(corp, ticks) end,
   notice_counts = function() return storage.notice_counts or {told = 0, held = 0} end,
   debug_notice = function(key) shared.notice(game.forces.player, {key, "test", "test"}) end,
   -- Tests only: one entity of kind `name` placed and registered for settlement `id` as its yard places it (scripts/lp-shots).

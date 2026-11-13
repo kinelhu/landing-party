@@ -79,6 +79,7 @@ LAYERS = {
     "Seams (leaves)": ["stance", "pool", "tune", "rng", "names", "chart", "ground", "threat", "unit_prior", "lights", "landfx", "burstfx", "veterancy"],
     "Perception and attempts (any attacker)": ["firemap", "valuemap", "costmap", "feeds", "attempt", "tactics"],
     "Knowledge and strategy (per faction)": ["know", "strategy"],
+    "The director (above every faction)": ["director", "director_gui"],
     "Corporation": ["faction", "pods", "war", "standing", "pact", "ledger", "rd", "phases", "biters"],
     "Settlement": ["base", "construction", "planner", "layout", "wfc", "wfc_serenity", "lots_grubstake", "site", "blocks", "modules", "crew", "cordon", "perimeter",
                    "road", "prospect", "belts"],
