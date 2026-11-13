@@ -7273,6 +7273,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   2 s apart at most (mustered 0.5 s, Grubstake's eight 1.5; sent as before, 3.0 s, seen failing); Grubstake's chest check
   now takes a full load of buildings as its theft too (in together, they took the radar first). And the open list's dome
   battery (shells past those caught) and cards (1.5 tiles: 1.29 and 1.43 from runs that differed elsewhere) fixed.
+  The 0.2.371 regression: 10 of 331 failing. rivals read Grubstake's own prototypes at the end too, after Serenity took
+  its lander at minute 30 in two runs running (it had stood before: a balance question, open); now at their most while it
+  stood. herd spit and wallgoal fail on 12345 only: 777, 4242 and 101 pass both (the fight's outcome with the rest of the
+  map changed, not the arena: its fort is placed by the camp's axis, the same for the old site and the new). Open:
+  prowl, cordon (base, rail, broken), crew grown (trucks stuck among few trees), tap natural, clear culture.
 - **Maps built without a stutter** (0.2.370; the user: "think about when each map is built, and how to avoid stutters").
   Measured on nwa (helpers.create_profiler): an armed landing's way to the player (firemap, the player's edge, the cost
   map over 2,210 tiles) took 620 ms in one tick. Now a landing job builds it in slices before its search, stepped every

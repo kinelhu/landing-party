@@ -3929,6 +3929,11 @@ scenarios.rivals = function()
         if tt.get_inventory(defines.inventory.turret_ammo).get_item_count() > 0 then fed = fed + 1 end
       end
       if guns > 0 then S.g_guns, S.g_fed = guns, fed end
+      local own = 0
+      for _, e in pairs(surface().find_entities_filtered{force = "lp-grubstake"}) do
+        if e.name:sub(1, 13) == "lp-grubstake-" then own = own + 1 end
+      end
+      S.g_own = math.max(S.g_own or 0, own)
     end)
   end
   -- Three depots each (a field of 21): a drop's escort and corner turrets turned back the one-depot raids (a field
@@ -3961,6 +3966,8 @@ scenarios.rivals = function()
       elseif e.name:sub(1, 13) == "lp-grubstake-" then own = own + 1
       elseif e.name:sub(1, 3) == "lp-" then plain = plain + 1; S.plain_names = (S.plain_names or "") .. " " .. e.name end
     end
+    -- (Its own counted at its most while it stood, as its turrets are: fallen to Serenity, 11 were left at the end.)
+    own = math.max(own, S.g_own or 0)
     check("rivals: Grubstake builds its own prototypes", own > 20 and plain == 0, own .. " its own, " .. plain .. " plain" .. (S.plain_names or ""))
     local gravel = surface().count_tiles_filtered{name = "lp-grubstake-road"}
     -- Floor livery: each corporation's trim round its paved yards and depots (Serenity black, Grubstake hazard).
