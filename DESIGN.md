@@ -7333,6 +7333,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   buggy had the same). Cordon rail: none of 21 spots along its track takes a locomotive (its rails razed by Serenity at
   war, unconfirmed), open. Still open with them: cordon broken (a young camp's parts all on a line stepping each minute),
   prowl, and herd spit and wallgoal (12345 only).
+- **Fliers fly in legs** (0.2.374). The cordon's stuck constructor, probed: its order became wander within 30 ticks of
+  every order, no group, no failed command, none of the mod's wander orders; a path asked of the engine for its own
+  collision mask (only the lp-air layer) from where it stood to its site 130 tiles off: none. To a point 10 tiles off, 8
+  waypoints; to halfway, 63; from north of its camp to the site, 62. A path that long is not found for that layer (the
+  ground layers' long paths are; the engine's long-range search for a custom layer is the likely reason, inferred). So a
+  flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
+  way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
+  as before. The prowl's buggy, a ground unit, is not this.
 - **Maps built without a stutter** (0.2.370; the user: "think about when each map is built, and how to avoid stutters").
   Measured on nwa (helpers.create_profiler): an armed landing's way to the player (firemap, the player's edge, the cost
   map over 2,210 tiles) took 620 ms in one tick. Now a landing job builds it in slices before its search, stepped every

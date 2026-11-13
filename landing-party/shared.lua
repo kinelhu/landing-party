@@ -12,6 +12,22 @@ local shared = {}
 -- combat robots. Their losses to these buy each corporation its anti-air.
 local shared_fliers = {"lp-harrier", "lp-scavenger", "lp-laser-drone", "destroyer", "defender", "distractor"}
 shared.FLIERS = shared_fliers
+-- A flier's long way in legs of AIR_LEG tiles at most: the engine's pathfinder found no path for the lp-air layer from a
+-- camp to a site 130 tiles off (cordon: a constructor 16 tiles from its lander, every order of it dropped to wander) while
+-- it found both halves, 63 and 62 waypoints (probed with request_path, 0.2.373). Its points along the straight line.
+shared.AIR_LEG = 48
+function shared.air_legs(from, to)
+  local fx, fy = from.x or from[1], from.y or from[2]
+  local tx, ty = to.x or to[1], to.y or to[2]
+  local d = math.sqrt((tx - fx) ^ 2 + (ty - fy) ^ 2)
+  local n = math.floor(d / shared.AIR_LEG)
+  local out = {}
+  for k = 1, n do
+    local t = k / (n + 1)
+    out[#out + 1] = {fx + (tx - fx) * t, fy + (ty - fy) * t}
+  end
+  return out
+end
 -- The player's infantry, as the research ledger names a killer: what the corporations' anti-infantry answers.
 local shared_infantry = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "character"}
 shared.INFANTRY = shared_infantry

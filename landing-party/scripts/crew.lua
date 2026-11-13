@@ -83,7 +83,8 @@ end
 -- a sneaking raid's is (ops.route: out of every known turret's reach, round nests and water), followed as waypoints.
 -- No way: nil, and nothing is sent. A drone flies straight: {}.
 local function way(b, from, to)
-  if corp_crews(b) == "drone" then return {} end
+  -- A drone flies straight, in legs the pathfinder finds (shared.air_legs).
+  if corp_crews(b) == "drone" then return shared.air_legs(from, to) end
   return ops.route(b, from, to, {turrets = true, nests = true})
 end
 

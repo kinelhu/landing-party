@@ -1264,15 +1264,31 @@ local function launch_air(b, key, trace, army)
     return false
   end
   local target = s.find_entities_filtered{name = t.kind, position = t.pos, radius = 1.5, limit = 1}[1]
+  -- Its muster (below), where its way starts.
+  local hx0, hy0 = h.position.x, h.position.y
+  local first0 = (t.air_way and t.air_way[1]) or t.pos
+  local dx0, dy0 = first0[1] - hx0, first0[2] - hy0
+  local dl0 = math.max(1, math.sqrt(dx0 * dx0 + dy0 * dy0))
+  local muster_at = {hx0 + dx0 / dl0 * AIR_MUSTER, hy0 + dy0 / dl0 * AIR_MUSTER}
   local cmds = {}
-  -- (Its way's turns first, airraid.route: round what shoots up, not straight over it.)
-  for _, p in ipairs(t.air_way or {}) do
-    cmds[#cmds + 1] = {type = defines.command.go_to_location, destination = {p[1], p[2]}, radius = 6,
-      distraction = defines.distraction.none}
+  -- (Its way's turns first, airraid.route: round what shoots up, not straight over it; each leg cut to what the
+  -- pathfinder finds for fliers, shared.air_legs: from the muster on.)
+  local last = muster_at
+  local function leg_to(p, r)
+    for _, q in ipairs(shared.air_legs(last, p)) do
+      cmds[#cmds + 1] = {type = defines.command.go_to_location, destination = q, radius = 6, distraction = defines.distraction.none}
+    end
+    cmds[#cmds + 1] = {type = defines.command.go_to_location, destination = {p[1], p[2]}, radius = r, distraction = defines.distraction.none}
+    last = p
   end
+  for _, p in ipairs(t.air_way or {}) do leg_to(p, 6) end
   -- A thief's fliers (Grubstake's scrap drones; the user, 2026-11-10: "They could perhaps do some air theft too?") land
   -- among what it can carry and take it (ops.loot, the attack phase, as on foot), shooting only what hits them; with
   -- nothing left, they attack (dismantle turns them).
+  -- And to the target itself in legs.
+  for _, q in ipairs(shared.air_legs(last, t.pos)) do
+    cmds[#cmds + 1] = {type = defines.command.go_to_location, destination = q, radius = 6, distraction = defines.distraction.none}
+  end
   local tcmd, thief = thief_cmd(b, t, t.pos, s)
   if thief then
     cmds[#cmds + 1] = tcmd
@@ -1286,11 +1302,7 @@ local function launch_air(b, key, trace, army)
   -- AIR_MUSTER tiles out from home toward the target, till AIR_GATHER of them are there or AIR_WAIT has passed.
   -- (Toward its way's first turn, where it has one: on the straight line to the target, the muster sent a detour's
   -- fliers from there across the picket it was routed round, airraid LP_MIX=detour.)
-  local hx, hy = h.position.x, h.position.y
-  local first = (t.air_way and t.air_way[1]) or t.pos
-  local dx, dy = first[1] - hx, first[2] - hy
-  local dl = math.max(1, math.sqrt(dx * dx + dy * dy))
-  local muster = {hx + dx / dl * AIR_MUSTER, hy + dy / dl * AIR_MUSTER}
+  local muster = muster_at
   order_all(members, {type = defines.command.go_to_location, destination = muster, radius = 6,
     distraction = defines.distraction.by_damage})
   b.op = {kind = "raid", air = true, overflight = true, target = key, phase = "muster", members = members, launched = #members,
