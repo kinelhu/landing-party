@@ -349,6 +349,12 @@ function ops.request_answer(corp_force, by, at, kind)
   end
   if not best or best.answer or game.tick < (best.next_answer or 0) then return end
   best.answer = {owner = by, pos = {x, y}, tick = game.tick, kind = kind or "loss"}
+  -- A building that trespassed is seen there: the answer's siege looks for a turret of theirs it knows, and one built
+  -- inside its claim beyond its sensors' sweep was unknown two seconds on ("no turret of theirs known there", a squad
+  -- sent; line LP_MIX=turret at 0.2.370's site, the turret 182 tiles out).
+  if kind == "trespass" and type(at) == "userdata" then
+    ops.sense_at(best, {x, y}, 8)
+  end
 end
 
 -- The ladder (docs/reviews/2026-10-14-megabase-pressure-consult.md; the user: "even if they don't punch through, they

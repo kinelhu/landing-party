@@ -109,6 +109,34 @@ local function find(b)
     end
   end
   b.prospect_why = why
+  -- On its ore, not the chunk's middle: the claim's drills go on ore within 8 tiles of it (claim), and a patch in a
+  -- chunk's corner got none (prospect, 0.2.370's site on 12345: three claims standing, 0 drills on the patches, 0 ore
+  -- home). The ore nearest the chunk's ore's middle.
+  if best then
+    local cx, cy = math.floor(best.x / CHUNK), math.floor(best.y / CHUNK)
+    local ores = s.find_entities_filtered{area = {{cx * CHUNK, cy * CHUNK}, {cx * CHUNK + CHUNK, cy * CHUNK + CHUNK}},
+      type = "resource", name = best.ore}
+    if #ores > 0 then
+      local sx, sy = 0, 0
+      for _, o in ipairs(ores) do sx, sy = sx + o.position.x, sy + o.position.y end
+      sx, sy = sx / #ores, sy / #ores
+      local near, nd
+      for _, o in ipairs(ores) do
+        local d = (o.position.x - sx) ^ 2 + (o.position.y - sy) ^ 2
+        if not nd or d < nd then near, nd = o, d end
+      end
+      best.x, best.y = near.position.x, near.position.y
+    end
+    -- Not a patch called off (its stake pulled): a patch across two chunks was claimed again from the other, now that a
+    -- claim stands on its ore (prospect LP_MIX=pulled, drills {0, 3, 3} on the patch left alone).
+    for _, q in ipairs(b.prospect_off or {}) do
+      if (q[1] - best.x) ^ 2 + (q[2] - best.y) ^ 2 <= 24 * 24 then
+        b.prospected = b.prospected or {}
+        b.prospected[best.key] = true
+        return nil
+      end
+    end
+  end
   return best
 end
 
@@ -268,6 +296,8 @@ local function step(b)
       b.stakes_pulled = (b.stakes_pulled or 0) + 1
       standing.incident(b.corp, "stake pulled", {p.x, p.y}, p.ore)
       base.trace(b, string.format("prospect: the stake at %.0f,%.0f was pulled down; the claim is off", p.x, p.y))
+      b.prospect_off = b.prospect_off or {}
+      table.insert(b.prospect_off, {p.x, p.y})
       b.prospect = nil
       b.next_prospect = game.tick + (storage.prospect_pace or PACE)
       return

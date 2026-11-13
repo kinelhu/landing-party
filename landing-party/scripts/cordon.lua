@@ -372,9 +372,12 @@ ops.cordon_check = cordon.check
 
 function cordon.stats(b)
   local c = b.cordon
-  local built = 0
-  for _, m in ipairs(c and c.posts or {}) do if m.built then built = built + 1 end end
+  local built, unbuilt = 0, {}
+  for _, m in ipairs(c and c.posts or {}) do
+    if m.built then built = built + 1 else unbuilt[#unbuilt + 1] = {m.center[1], m.center[2]} end
+  end
   return {arcs = b.cordon_arcs or 0, posts = b.cordon_posts or 0, pending = c and #c.posts or 0, pending_built = built,
+    pending_at = unbuilt,
     radius = c and c.radius, perimeter = b.perimeter, bearings = b.cordon_bearings or {}, recovered = b.cordon_recovered or 0,
     contact = b.cordon_contact or 0, gates = b.cordon_gates or 0, ore = b.cordon_ore or 0, severed = b.severed or 0,
     broken = b.line_broken or 0, ring = b.ring and b.ring.radius,

@@ -303,8 +303,11 @@ function ops.perimeter_advance(b, new, near, nd)
   b.perimeter_steps = (b.perimeter_steps or 0) + 1
   if ops.claim_map then ops.claim_map(b) end
   local where = string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y, surface.name)
-  -- One step ahead: the structure the next step will enclose, named.
-  local warn = near and near.valid and near.type ~= "resource" and nd and nd > new and nd <= new + PERIMETER_STEP and b.warned ~= near.unit_number
+  -- One step ahead: the structure the next step will enclose, named. The next steps out from the claim as it now stands
+  -- (claim_map, just above), a few tiles past the line: measured from the line, a relay 180.7 out was 30.7 past the arc
+  -- at 150, unnamed, and the next arc at 183 took it (line, 0.2.370's site on 12345, all four variants).
+  local reach = math.max(new, b.claim_radius or new) + PERIMETER_STEP
+  local warn = near and near.valid and near.type ~= "resource" and nd and nd > new and nd <= reach and b.warned ~= near.unit_number
   if warn then b.warned = near.unit_number end
   for _, f in ipairs(enemies(game.forces[b.force])) do
     if #f.players > 0 and not shared.is_corp(f.name) then

@@ -60,10 +60,25 @@ local function make_way(b, surface, name, pos)
     else
       for i, g in ipairs(b.drop_gens or {}) do
         if g == e then
+          -- Moved aside while the camp's own generators are fewer than the drop's: its hull counts them. Destroyed, the
+          -- one a tree had nudged two tiles in, onto the pad's pylon, took the hull down from the fourth second (0.2.370's
+          -- sites on 12345: dome's lander fell to the guns it should hold). Put on its exact spot instead, every camp's
+          -- first minute changed and six scenarios with it (the bisect on the Studio).
+          local own = #b.gens - #b.drop_gens
+          local to
+          if own < #b.drop_gens then
+            local ex, ey = e.position.x - pos[1], e.position.y - pos[2]
+            local el = math.max(1, math.sqrt(ex * ex + ey * ey))
+            local w = cb.right_bottom.x - cb.left_top.x + 4
+            to = surface.find_non_colliding_position(e.name, {e.position.x + ex / el * w, e.position.y + ey / el * w}, 10, 1)
+          end
           table.remove(b.drop_gens, i)
           for j = #b.gens, 1, -1 do if b.gens[j] == e then table.remove(b.gens, j) end end
           storage.owner[e.unit_number] = nil
+          local name, f = e.name, e.force
           e.destroy()
+          local g2 = to and surface.create_entity{name = name, position = to, force = f}
+          if g2 then register(b, g2, nil); table.insert(b.drop_gens, g2) end
           break
         end
       end

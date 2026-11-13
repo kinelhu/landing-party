@@ -74,13 +74,21 @@ local function answer(b, trace, army)
       return false
     end
     -- At the turret nearest the spot: the siege's target is a turret of its (siege_site).
-    local tkey, td
+    -- Else a cell its guns cover (intel names a cell for its most valuable building: a turret beside a radar is the
+    -- radar's cell, and line LP_MIX=turret, its turret built by the relays, found "no turret of theirs known there"
+    -- once 0.2.370's site put the two in one cell).
+    local tkey, td, gkey, gd
     for k, x in pairs(b.intel.targets) do
-      if x.owner == a.owner and prototypes.entity[x.kind] and prototypes.entity[x.kind].type:find("turret") then
+      if x.owner == a.owner then
         local d = (x.pos[1] - a.pos[1]) ^ 2 + (x.pos[2] - a.pos[2]) ^ 2
-        if d <= 40 * 40 and (not td or d < td) then tkey, td = k, d end
+        if d <= 40 * 40 then
+          if prototypes.entity[x.kind] and prototypes.entity[x.kind].type:find("turret") then
+            if not td or d < td then tkey, td = k, d end
+          elseif (x.defence or 0) > 0 and (not gd or d < gd) then gkey, gd = k, d end
+        end
       end
     end
+    tkey = tkey or gkey
     local site = tkey and siege_site(b, b.intel.targets[tkey])
     if not site then
       trace(b, said .. (tkey and "no siege (no mortar site)" or "no siege (no turret of theirs known there)"))

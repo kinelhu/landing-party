@@ -17,6 +17,7 @@ document still says Serenity where it records history.
 | Area | State | Tested by (headless scenario) |
 |---|---|---|
 | Arrival on first launch, repeated landings, sites apart | built | `faction` |
+| Director (a storyteller above the corporations: drop waves, coordinated raids, pincers; budget and pacing; the user, 2026-11-13: "think rimworld storyteller") | proposed (`docs/director.md`), not built; questions for the user open | none yet |
 | Opening: signs (radar), survey party (oil), arrival (launch or blue science) | built | `phases` (two) |
 | Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
 | Levers (settings; the user, 2026-11-08: "expose some levers... That's how vanilla does it with biters"): a difficulty preset times every faction's strength, aggression and income; each faction's own on top; when each arrives; its most camps; the time between landings; revenge landings; Kessler-Hayashi's orbital strikes, Grubstake's theft, Synthexis's most cultures, largest wave and learning | built 0.2.223, uncalibrated (after the playtest) | `levers`, `phases` (grubprod, interval, camps), `farm` (late, smallwaves, unlearned, seedcap), `grudge` norevenge, `orbital` nostrike, `skim`/`strip` notheft |
@@ -7218,6 +7219,57 @@ Bugs and surprises the headless runs caught, each kept as a check:
   water (no way over land 4). So pass 2, under the guns. The map has more ground than that: the search samples one spot
   per point, and a spot refused drops its whole window. The "0 candidate sites" of podded landings was the trace's: the pod's
   landing ran the search's reset again (now not at a chosen site).
+- **The landing search on an ore grid** (0.2.370, 2026-11-13; the user: "can we not use a resource map overlay just like
+  our cost map and reward map?"). Each ring is a band (to the next ring's), every chunk in it read once from the map
+  generator's ore noise (four points a chunk, ranked by its ore and the eight round it; cached, the noise never changes);
+  the player's artillery listed once, not queried a spot. Candidates by direction as before (eight sectors, the old ring
+  points' order turned by the landing count, so camps still spread round the player), richest first in each: SITE_SCAN
+  (400) cells a band through the cheap refusals, SITE_LOOK (12) through the costly ones, their ground asked for at once.
+  nwa seed 2, the second KH camp: 12 candidates where there were 2, landed at -815,965 with no guns in reach and no
+  nests on the way, scored 2.65 (it had landed under 3 guns). Found on the way: the weighed search's best was never
+  returned (a `local best` in the loop shadowed it, and every weighed landing took the richest clear fallback); and a
+  landing handed its site crashed its trace on counters not saved (0.2.369; caught by pool and heist, which now land so).
+  The tests' camp moved (seed 12345, -343,-3 to -344,215), and the regression's failures were its geometry: nests,
+  country and clearing placed on water or ground not generated (`dry_ground`, generating first); dev's trailer scenes
+  flattened the camp, lander and all (placed now where furthest from every camp); pool, heist and prospect met Serenity's
+  raids 270 tiles off (`across_first`); tap counted pylons within 20 of a gun that reaches 18 (its range read now);
+  cordon met a post going up (pads of unbuilt posts, `pending_at`); bombard's way in dearer (a third depot). One real:
+  a trespassing turret in a radar's cell was no turret the siege answer knew (intel names a cell for its dearest
+  building): the answer takes a cell its guns cover, and senses the trespass where it stands (line LP_MIX=turret).
+  And more real ones the new site showed, found over three full regressions (49, 38, then 14 of 331 failing):
+  - A drop generator nudged two tiles by a tree stood where the pad's pylon goes, gave way to it in the fourth second
+    (make_way) and the hull was down from then on (dome's lander fell to the guns it should hold; labs, hazard,
+    counterbattery the same). Placed on its exact spot instead, every camp's first minute changed and six scenarios
+    with it (bisected on the Studio: the lazy cost map read the same as one with no bins at all). Now a drop generator
+    in a build's way moves aside, not away, while the camp's own generators are fewer than the drop's.
+  - The perimeter named the structure its next step would enclose only within one step of the line, measured from the
+    line; the next steps from the claim, a few tiles past it, and a relay 180.7 out was taken unnamed (line, all four).
+  - A prospect claim stood at its chunk's middle and drilled only ore within 8 tiles: a patch in a chunk's corner got
+    no drill and no ore went home (prospect, road). It stands on its chunk's ore now; and a patch across two chunks,
+    its stake pulled, was claimed again from the other (prospect pulled): a chunk whose ore lies by a pulled claim is
+    passed over.
+  - The prowl: a leg across a dropped point cut inside the ring; its way home crossed the base; its buggy, its order
+    done at a point, was set wandering by the engine and drove at the guns (its order seen as wander between steps).
+    Each leg checked and cut to 20 tiles, the ring closed before home, its order go-then-stand and kept. Still open:
+    its buggy is still drawn inside the guns, 15 tiles off a leg that reads clear.
+  The tests' own geometry (the camp across a lake on its far side, natural ore nearer than the test's, Serenity's camp
+  beside Grubstake's): `dry_bearing` (hazard, bait), the natural ore cleared before landing (prospect), `across_first`
+  (airraid, unitnode, road), troopers enough (plate, unitnode), expansion off and the nests closer (hazard), units and
+  the lander's health counted as shelled (dome), a truck's load the skim's floor, Grubstake's turrets read while it
+  stands (rivals). Open at the commit (seed 12345): cards (formation spacing), prowl, dome battery, mended dozers, clear
+  culture, tap natural, crew grown, cordon (base, rail, broken), herd spit and wallgoal. Noted to follow: a camp's survey
+  of a patch can go stale when its ore changes under it.
+- **Maps built without a stutter** (0.2.370; the user: "think about when each map is built, and how to avoid stutters").
+  Measured on nwa (helpers.create_profiler): an armed landing's way to the player (firemap, the player's edge, the cost
+  map over 2,210 tiles) took 620 ms in one tick. Now a landing job builds it in slices before its search, stepped every
+  tick (faction.tick) and kept in the job, in storage (a game saved or joined midway goes on from where it was; nothing
+  that decides when a landing waits is in a module's memory): its guns read WAYS_FIRE tiles a step; the cost map's
+  entities read by block (costmap BLOCK, 4 cells a side) only as the search reaches them, out from the player's edge,
+  cheapest first (the user: "should we spiral from origin?": the search's own front is the order), at most WAYS_BLOCKS
+  blocks and WAYS_CELLS cells a step, its sources a few a step. 314 steps over about 5 s, the worst 7.6 ms, 341 ms in all
+  (less than read whole: the trees no way came near are never read); the same site. costmap.read is the same search
+  run to its end, for every other caller. The ore bands' noise is kept per band (it had been read again for each
+  landing's turn): 9 ms at most, once a band. Left: a band's twelve candidates' checks, 10 to 15 ms in one tick.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

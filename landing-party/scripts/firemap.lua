@@ -50,6 +50,42 @@ function firemap.read(surface, at, radius, forces, price, types)
   return {list = list, cells = cells, size = size, surface = surface, forces = forces}
 end
 
+-- The same read sliced (a landing's way, costmap.start): the box round `at` read a strip of `rows` tiles a step. `prior`
+-- prices each by threat.prior (a number, not a function: the job is kept in storage). Returns the map once done.
+function firemap.start(surface, at, radius, forces, prior, types)
+  local x, y = xy(at)
+  local r = radius + threat.far()
+  return {surface = surface, x = x, y = y, r = r, y1 = y - r, forces = forces, prior = prior, types = types or threat.FIRE,
+    map = {list = {}, cells = {}, size = cell_size(), surface = surface, forces = forces}}
+end
+function firemap.step(job, rows)
+  local map, r = job.map, job.r
+  local y0 = job.y1
+  local y1 = rows and math.min(job.y + r, y0 + rows) or job.y + r
+  for _, t in ipairs(job.surface.find_entities_filtered{area = {{job.x - r, y0}, {job.x + r, y1}}, type = job.types,
+    force = job.forces}) do
+    local px, py = t.position.x, t.position.y
+    -- (Its own strip's alone: one on the line between two is read by the first.)
+    if py >= y0 and (py < y1 or y1 >= job.y + r) and (px - job.x) ^ 2 + (py - job.y) ^ 2 <= r * r
+      and threat.firing(t) and threat.reach(t) > 0 then
+      local e = {x = px, y = py, r = threat.reach(t), p = job.prior and threat.prior(t, job.prior) or firemap.AFFORD, e = t}
+      local prof = threat.profile(t.name)
+      if prof then
+        if prof.arc and prof.arc < 1 then e.arc, e.o = prof.arc, (t.direction or 0) / 16 end
+        if (prof.min_reach or 0) > 0 then e.r0 = prof.min_reach end
+        e.burn = prof.burn
+      end
+      map.list[#map.list + 1] = e
+      local k = math.floor(e.x / map.size) .. "," .. math.floor(e.y / map.size)
+      map.cells[k] = map.cells[k] or {}
+      table.insert(map.cells[k], e)
+    end
+  end
+  job.y1 = y1
+  if y1 >= job.y + r then return map end
+  return nil
+end
+
 -- Whether a turret's arc takes in (x, y), d tiles off, with `give` tiles of slack across (a box's half).
 local function in_arc(t, x, y, d, give)
   if not t.arc or d <= (give or 0) + 1 then return true end

@@ -18,9 +18,9 @@ digraph ai {
     "veterancy" [label="veterancy\n408 lines", width=1.25, fillcolor="#eef2f7"];
   }
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];
+    "firemap" [label="firemap\n206 lines", width=1.03, fillcolor="#eef2f7"];
     "valuemap" [label="valuemap\n208 lines", width=1.03, fillcolor="#eef2f7"];
-    "costmap" [label="costmap\n451 lines", width=1.30, fillcolor="#eef2f7"];
+    "costmap" [label="costmap\n559 lines", width=1.42, fillcolor="#eef2f7"];
     "feeds" [label="feeds\n227 lines", width=1.05, fillcolor="#eef2f7"];
     "attempt" [label="attempt\n91 lines", width=0.90, fillcolor="#eef2f7"];
     "tactics" [label="tactics\n279 lines", width=1.11, fillcolor="#eef2f7"];
@@ -30,7 +30,7 @@ digraph ai {
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "faction" [label="faction\n1014 lines", width=1.93, fillcolor="#f7dede"];
+    "faction" [label="faction\n1148 lines", width=2.08, fillcolor="#f7dede"];
     "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
     "war" [label="war\n628 lines", width=1.50, fillcolor="#eef2f7"];
     "standing" [label="standing\n114 lines", width=0.93, fillcolor="#eef2f7"];
@@ -42,7 +42,7 @@ digraph ai {
   }
   subgraph cluster_4 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "base" [label="base\n929 lines", width=1.83, fillcolor="#eef2f7"];
-    "construction" [label="construction\n411 lines", width=1.26, fillcolor="#d9f0d9"];
+    "construction" [label="construction\n426 lines", width=1.27, fillcolor="#d9f0d9"];
     "planner" [label="planner\n380 lines", width=1.22, fillcolor="#eef2f7"];
     "layout" [label="layout\n1747 lines", width=2.74, fillcolor="#f7dede"];
     "wfc" [label="wfc\n380 lines", width=1.22, fillcolor="#d9f0d9"];
@@ -52,15 +52,15 @@ digraph ai {
     "blocks" [label="blocks\n76 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
     "crew" [label="crew\n497 lines", width=1.35, fillcolor="#eef2f7"];
-    "cordon" [label="cordon\n385 lines", width=1.23, fillcolor="#eef2f7"];
-    "perimeter" [label="perimeter\n324 lines", width=1.16, fillcolor="#d9f0d9"];
+    "cordon" [label="cordon\n388 lines", width=1.23, fillcolor="#eef2f7"];
+    "perimeter" [label="perimeter\n327 lines", width=1.16, fillcolor="#d9f0d9"];
     "road" [label="road\n143 lines", width=0.96, fillcolor="#eef2f7"];
-    "prospect" [label="prospect\n362 lines", width=1.20, fillcolor="#eef2f7"];
+    "prospect" [label="prospect\n392 lines", width=1.24, fillcolor="#eef2f7"];
     "belts" [label="belts\n86 lines", width=0.90, fillcolor="#d9f0d9"];
   }
   subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n1055 lines", width=1.97, fillcolor="#f7dede"];
-    "ops" [label="ops\n2196 lines", width=3.24, fillcolor="#f7dede"];
+    "ops" [label="ops\n2202 lines", width=3.25, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n295 lines", width=1.13, fillcolor="#eef2f7"];
     "airraid" [label="airraid\n127 lines", width=0.94, fillcolor="#eef2f7"];
@@ -68,7 +68,7 @@ digraph ai {
     "siege" [label="siege\n2135 lines", width=3.17, fillcolor="#f7dede"];
     "assault" [label="assault\n142 lines", width=0.96, fillcolor="#eef2f7"];
     "strip" [label="strip\n238 lines", width=1.06, fillcolor="#eef2f7"];
-    "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
+    "answers" [label="answers\n138 lines", width=0.95, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
     "strike" [label="strike\n68 lines", width=0.88, fillcolor="#eef2f7"];
     "jammer" [label="jammer\n75 lines", width=0.88, fillcolor="#eef2f7"];
@@ -86,7 +86,7 @@ digraph ai {
     "jumper" [label="jumper\n314 lines", width=1.15, fillcolor="#eef2f7"];
     "tap" [label="tap\n375 lines", width=1.22, fillcolor="#eef2f7"];
     "skim" [label="skim\n422 lines", width=1.27, fillcolor="#eef2f7"];
-    "prowl" [label="prowl\n150 lines", width=0.97, fillcolor="#eef2f7"];
+    "prowl" [label="prowl\n217 lines", width=1.04, fillcolor="#eef2f7"];
     "bait" [label="bait\n59 lines", width=0.87, fillcolor="#d9f0d9"];
     "marker" [label="marker\n70 lines", width=0.88, fillcolor="#eef2f7"];
   }

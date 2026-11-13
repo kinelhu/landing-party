@@ -48,6 +48,8 @@ local DENSE_RADIUS, DENSE_MAX, DENSE_SEARCH = 150, 30, 480
 local POD_WAIT = 20 * 60          -- a landing's pod takes 6.65 s to come down; past this, it lands without it
 local APART = 200                -- a new landing keeps this far from every standing lander
 local SITE_SEARCH = 120
+local SITE_SCAN = 400             -- cells a band at most through the cheap ones (a lander's, the guns', the factory's)
+local SITE_LOOK = 12              -- candidates a band, the richest, through the costly checks
 local SQUAT_DISTANCE = 60         -- Grubstake's distance from the player's turrets and units
 local SITE_MIN_ORE = 300
 local ARTILLERY_SPARE = 20       -- past its artillery's reach (threat.artillery_reach: its prototypes, its research)
@@ -102,22 +104,33 @@ local function approach(surface, spot, from)
   local ax, ay, bx, by = spot[1], spot[2], from.x, from.y
   local dx, dy = bx - ax, by - ay
   local len2 = math.max(1, dx * dx + dy * dy)
-  local n = 0
-  for _, e in pairs(surface.find_entities_filtered{area = {{math.min(ax, bx) - APPROACH_WIDTH, math.min(ay, by) - APPROACH_WIDTH},
-    {math.max(ax, bx) + APPROACH_WIDTH, math.max(ay, by) + APPROACH_WIDTH}}, type = "unit-spawner", force = "enemy"}) do
-    local p = e.position
-    local f = math.max(0, math.min(1, ((p.x - ax) * dx + (p.y - ay) * dy) / len2))
-    local qx, qy = ax + dx * f - p.x, ay + dy * f - p.y
-    if qx * qx + qy * qy <= APPROACH_WIDTH ^ 2 and (p.x - ax) ^ 2 + (p.y - ay) ^ 2 > APPROACH_BURN ^ 2 then n = n + 1 end
+  local n, seen = 0, {}
+  -- In boxes along the way, not the box round it: a diagonal way 1,150 tiles long read every spawner in a square of
+  -- that side, and twelve candidates' searches took 22 to 30 ms (nwa, 0.2.370's timing).
+  local len = math.sqrt(len2)
+  local steps = math.max(1, math.ceil(len / (2 * APPROACH_WIDTH)))
+  for k = 0, steps - 1 do
+    local f0, f1 = k / steps, (k + 1) / steps
+    local x0, y0, x1, y1 = ax + dx * f0, ay + dy * f0, ax + dx * f1, ay + dy * f1
+    for _, e in pairs(surface.find_entities_filtered{area = {{math.min(x0, x1) - APPROACH_WIDTH, math.min(y0, y1) - APPROACH_WIDTH},
+      {math.max(x0, x1) + APPROACH_WIDTH, math.max(y0, y1) + APPROACH_WIDTH}}, type = "unit-spawner", force = "enemy"}) do
+      if not seen[e.unit_number] then
+        seen[e.unit_number] = true
+        local p = e.position
+        local f = math.max(0, math.min(1, ((p.x - ax) * dx + (p.y - ay) * dy) / len2))
+        local qx, qy = ax + dx * f - p.x, ay + dy * f - p.y
+        if qx * qx + qy * qy <= APPROACH_WIDTH ^ 2 and (p.x - ax) ^ 2 + (p.y - ay) ^ 2 > APPROACH_BURN ^ 2 then n = n + 1 end
+      end
+    end
   end
   return n
 end
 faction.approach = approach
 
--- A landing site about `distance` from `from`: in the first of eight directions (seeded order, turned by
--- the landing count) with a rich enough patch within SITE_SEARCH tiles of the ring and no lander within
--- APART. A single point per direction found no ore at 300 tiles on most maps (seed 2: 7 of 8 empty).
-local ORE_CACHE, ORE_CACHE_N = {}, 0
+-- A landing site about `distance` from `from`, its band to `outer`: the richest cells of ore in it (ore_band) with no
+-- lander within APART, out of the player's guns and factory, by the passes' rules on nests. Eight points a ring, one
+-- spot each, until 0.2.370 (a point per direction had found no ore at 300 tiles on most maps, seed 2: 7 of 8 empty;
+-- then the window round it, and on nwa 2 sites of 56 points).
 
 -- Its candidates scored (faction AI step 6; docs/reviews/2026-10-23-faction-ai-audit.md), by its corporation's mind
 -- (shared.CORPS[corp].mind.site): the ore by it (to three times SITE_MIN_ORE), the nests on the way to the player, the
@@ -160,7 +173,14 @@ local function player_edge(surface, from, radius)
   return #out > 0 and out or {{from.x, from.y}}
 end
 
-local function landing_ways(surface, from, radius, corp)
+-- Built in slices (ways_start, ways_step): read at once, the 2,210-tile box of nwa's landings stalled the game about 620
+-- ms (its firemap 65, its search 550; 0.2.370's timing). A landing job steps it every tick (faction.tick) before its
+-- search, WAYS_FIRE tiles of the box's guns, then WAYS_CELLS cells of the search, its ground read WAYS_BLOCKS blocks at most
+-- a step; kept in the job (storage), so a game saved or joined midway goes on from where it was.
+-- (At 160, 3 and 120 its steps on nwa took up to 28 ms; a frame is 16.7.)
+-- (At 40 cells, peaks of 9.7 ms; at 24, about 6, the whole about 8 s.)
+local WAYS_FIRE, WAYS_BLOCKS, WAYS_CELLS = 64, 2, 24
+local function ways_start(surface, from, radius, corp)
   local own = shared.CORPS[corp] and game.forces[shared.CORPS[corp].force]
   local shooters, types, deaths = {}, {"ammo-turret", "electric-turret", "fluid-turret", "unit"}, nil
   for _, f in pairs(game.forces) do
@@ -175,9 +195,123 @@ local function landing_ways(surface, from, radius, corp)
       deaths[#deaths + 1] = {e.position.x, e.position.y, ops.PER_TURRET}
     end
   end
-  local fmap = #shooters > 0 and firemap.read(surface, from, radius, shooters, function(e) return threat.prior(e, ops.PER_TURRET) end, types) or nil
-  return costmap.read(surface, from, radius, {}, {sources = player_edge(surface, from, radius), n = 24, fire = fmap,
-    deaths = deaths, cell = radius > 1200 and costmap.CELL * 3 or costmap.CELL * 2})
+  return {phase = "fire", surface = surface, from = {x = from.x, y = from.y}, radius = radius, deaths = deaths,
+    fire = #shooters > 0 and firemap.start(surface, from, radius, shooters, ops.PER_TURRET, types) or nil}
+end
+-- One step (all of it, `whole`): returns the map once done.
+local function ways_step(w, whole)
+  if w.phase == "fire" then
+    if w.fire then
+      local m = firemap.step(w.fire, not whole and WAYS_FIRE or nil)
+      if not m then return nil end
+      w.fmap, w.fire = m, nil
+    end
+    w.phase = "cost"
+    w.cm = costmap.start(w.surface, w.from, w.radius, {}, {sources = player_edge(w.surface, w.from, w.radius), n = 24,
+      fire = w.fmap, deaths = w.deaths, cell = w.radius > 1200 and costmap.CELL * 3 or costmap.CELL * 2, sliced = true})
+    if not whole then return nil end
+  end
+  if w.phase == "cost" then
+    local m = costmap.step(w.cm, not whole and {blocks = WAYS_BLOCKS, cells = WAYS_CELLS} or nil)
+    if not m then return nil end
+    w.map, w.cm, w.phase = m, nil, "done"
+  end
+  return w.map
+end
+local function landing_ways(surface, from, radius, corp)
+  -- (Its landing job's, built in slices, when it has one: faction.ways_ready.)
+  if faction.ways_ready then return faction.ways_ready end
+  return ways_step(ways_start(surface, from, radius, corp), true)
+end
+-- The way's box: out to the furthest ring (faction.arrive's far_ring) and 60 more.
+local function ways_radius(opts)
+  local d0 = (opts and opts.distance) or DISTANCE
+  local far = d0
+  for _, e in ipairs(storage.rings or {0, 120, 240, 480, 800, 1200, 1800}) do far = math.max(far, d0 + e) end
+  return far + 60
+end
+-- Whether a landing comes armed (faction.arrive's test, without its side effects).
+local function armed_for(corp, opts)
+  local armed_era = (shared.CORPS[corp] or {}).armed_era
+  if not armed_era or storage.armed == false or (opts and opts.uplink) then return false end
+  local era = storage.era_override
+  if not era then
+    era = 0
+    for _, pf in pairs(game.forces) do if shared.is_player_force(pf) then era = math.max(era, ops.era(pf)) end end
+  end
+  return era >= armed_era
+end
+
+-- The ore round the player by band (faction.site): each chunk whose centre lies from `lo` to `hi` tiles from `from`, its
+-- ore from the map generator's noise at four points (every 16 tiles), ranked by the ore of it and the eight round it,
+-- ties in an order turned by the landing count. The noise is the map's and never changes: kept (ORE_BANDS), which
+-- changes no result, only the time.
+local ORE_BANDS, ORE_BANDS_N, ORE_RAW = {}, 0, {}
+local function ore_band(surface, from, lo, hi, turn)
+  local raw_key = string.format("%d:%d:%d:%d:%d", surface.index, math.floor(from.x / 32), math.floor(from.y / 32),
+    math.floor(lo), math.floor(hi))
+  local key = raw_key .. ":" .. turn
+  if ORE_BANDS[key] then return ORE_BANDS[key] end
+  -- (The noise read once a band, sorted again for each turn: keyed by the turn alone, each landing read it again.)
+  local raw = ORE_RAW[raw_key]
+  if raw then
+    local list = {}
+    for i, c in ipairs(raw) do list[i] = {c[1], c[2], c[3], (c[5] - turn) % 8, c[5]} end
+    table.sort(list, function(a, b)
+      if a[4] ~= b[4] then return a[4] < b[4] end
+      if a[3] ~= b[3] then return a[3] > b[3] end
+      if a[1] ~= b[1] then return a[1] < b[1] end
+      return a[2] < b[2] end)
+    ORE_BANDS[key] = list
+    return list
+  end
+  local cells, pts, of = {}, {}, {}
+  for cx = math.floor((from.x - hi) / 32), math.floor((from.x + hi) / 32) do
+    for cy = math.floor((from.y - hi) / 32), math.floor((from.y + hi) / 32) do
+      local d2 = (cx * 32 + 16 - from.x) ^ 2 + (cy * 32 + 16 - from.y) ^ 2
+      if d2 >= lo * lo and d2 < hi * hi then
+        cells[#cells + 1] = {cx, cy}
+        for _, o in ipairs({{8, 8}, {24, 8}, {8, 24}, {24, 24}}) do
+          pts[#pts + 1] = {cx * 32 + o[1], cy * 32 + o[2]}; of[#pts] = #cells
+        end
+      end
+    end
+  end
+  local names = {}
+  for _, ore in ipairs(site.ORES) do names[#names + 1] = "entity:" .. ore .. ":probability" end
+  local props = pts[1] and surface.calculate_tile_properties(names, pts) or {}
+  local n = {}
+  for i = 1, #pts do
+    for _, v in pairs(props) do
+      if v[i] > 0 then n[of[i]] = (n[of[i]] or 0) + 1; break end
+    end
+  end
+  local grid = {}
+  for i, c in ipairs(cells) do if n[i] then grid[c[1] .. ":" .. c[2]] = n[i] end end
+  local list = {}
+  for i, c in ipairs(cells) do
+    if n[i] then
+      local rich = 0
+      for x = -1, 1 do for y = -1, 1 do rich = rich + (grid[(c[1] + x) .. ":" .. (c[2] + y)] or 0) end end
+      -- Its direction, one of eight (centred on the rings' old points), tried in the order the landing count turns:
+      -- landings spread round the player as they did, not all to the richest ground.
+      local ang = math.atan2(c[2] * 32 + 16 - from.y, c[1] * 32 + 16 - from.x)
+      local dir = math.floor(ang / (math.pi / 4) + 0.5) % 8
+      list[#list + 1] = {c[1], c[2], rich, (dir - turn) % 8, dir}
+    end
+  end
+  table.sort(list, function(a, b)
+    if a[4] ~= b[4] then return a[4] < b[4] end
+    if a[3] ~= b[3] then return a[3] > b[3] end
+    if a[1] ~= b[1] then return a[1] < b[1] end
+    return a[2] < b[2] end)
+  ORE_BANDS_N = ORE_BANDS_N + 1
+  if ORE_BANDS_N > 60 then ORE_BANDS, ORE_BANDS_N, ORE_RAW = {}, 1, {} end
+  ORE_BANDS[key] = list
+  local copy = {}
+  for i, c in ipairs(list) do copy[i] = c end
+  ORE_RAW[raw_key] = copy
+  return list
 end
 
 -- Why each spot the search looked at was refused, by pass (the landing's trace): nwa's second camp took a site under
@@ -190,7 +324,7 @@ local function refuse(why)
 end
 faction.refuse_tally = function() return faction.refused end
 
-function faction.site(surface, from, distance, count)
+function faction.site(surface, from, distance, count, outer)
   local mind = faction.site_corp and shared.CORPS[faction.site_corp] and shared.CORPS[faction.site_corp].mind
   local weigh = faction.dry and mind and mind.site
   local best, best_score
@@ -212,61 +346,34 @@ function faction.site(surface, from, distance, count)
     end
     return n
   end
-  for i = 0, 7 do
-    local a = 2 * math.pi * ((start + i) % 8) / 8
-    local p = {from.x + distance * math.cos(a), from.y + distance * math.sin(a)}
-    -- Ore from the map generator's noise, sampled every 8 tiles: generating the search area round up to eight
-    -- ring points stalled each landing for up to 1.4 s; the noise costs about 2 ms and matched the generated
-    -- ore point for point (a spike, 625 of 625). Only the chosen ground is generated (base.land).
-    -- The noise is the map's, the same every time: kept per ring point (ORE_CACHE). A landing waiting for its ground
-    -- ran this whole search again every second, 8 directions at about 2 ms each, and stalled 100 to 150 ms a try on a
-    -- deathworld visit. The cache changes no result (only the time), so it is no state to keep in step.
-    local ck = surface.index .. ":" .. math.floor(p[1]) .. ":" .. math.floor(p[2])
-    local noise = ORE_CACHE[ck]
-    if not noise then
-      local pts = {}
-      for x = -SITE_SEARCH, SITE_SEARCH, 8 do
-        for y = -SITE_SEARCH, SITE_SEARCH, 8 do
-          if x * x + y * y <= SITE_SEARCH * SITE_SEARCH then table.insert(pts, {p[1] + x, p[2] + y}) end
-        end
+  -- Every cell of the band with ore, richest first (ore_band), not one point a direction: nwa's second camp's search
+  -- looked at 56 points and found 2 sites, both across water, and landed under the player's guns (0.2.369's trace).
+  local lo, hi = math.max(0, distance - SITE_SEARCH), outer or (distance + SITE_SEARCH)
+  local cands = ore_band(surface, from, lo, hi, start)
+  -- The player's artillery, listed once (its reach by its research, threat.artillery_reach).
+  local arty = {}
+  for _, pf in pairs(game.forces) do
+    if not shared.is_corp(pf.name) and not shared.is_biters(pf.name) and pf.name ~= "neutral" then
+      local reach = threat.artillery_reach(pf) + ARTILLERY_SPARE
+      for _, g in pairs(surface.find_entities_filtered{force = pf, type = {"artillery-turret", "artillery-wagon"},
+        area = {{from.x - hi - reach, from.y - hi - reach}, {from.x + hi + reach, from.y + hi + reach}}}) do
+        arty[#arty + 1] = {g.position.x, g.position.y, reach}
       end
-      local names = {}
-      for _, ore in ipairs(site.ORES) do table.insert(names, "entity:" .. ore .. ":probability") end
-      local props = surface.calculate_tile_properties(names, pts)
-      noise = {}
-      for i, q in ipairs(pts) do
-        for _, v in pairs(props) do
-          if v[i] > 0 then
-            local k = math.floor(q[1] / 32) .. ":" .. math.floor(q[2] / 32)
-            noise[k] = (noise[k] or 0) + 1
-            break
-          end
-        end
-      end
-      ORE_CACHE_N = ORE_CACHE_N + 1
-      if ORE_CACHE_N > 400 then ORE_CACHE, ORE_CACHE_N = {}, 1 end
-      ORE_CACHE[ck] = noise
     end
-    local per = {}
-    for k, n in pairs(noise) do per[k] = n end
+  end
+  local looked, waiting = 0, {}
+  for i, cell in ipairs(cands) do
+    if looked >= SITE_LOOK or i > SITE_SCAN then break end
+    local cx, cy = cell[1], cell[2]
     -- A chunk already generated holds what is really there (the player may have mined it out).
-    for k in pairs(per) do
-      local cx, cy = k:match("(-?%d+):(-?%d+)")
-      cx, cy = tonumber(cx), tonumber(cy)
-      if surface.is_chunk_generated{cx, cy} and surface.count_entities_filtered{area = {{cx * 32, cy * 32},
-        {cx * 32 + 32, cy * 32 + 32}}, type = "resource", name = site.ORES, limit = 1} == 0 then
-        per[k] = nil
-      end
-    end
-    local best, bn = nil, 0
-    for k, n in pairs(per) do
-      if n > bn or (n == bn and best and k < best) then best, bn = k, n end
-    end
-    if not best then refuse(next(noise) and "ore gone" or "no ore") end
-    if best then
-      local cx, cy = best:match("(-?%d+):(-?%d+)")
-      local c = {tonumber(cx) * 32 + 16, tonumber(cy) * 32 + 16}
-      -- Land beside the patch, not on it: a third of the way back towards the ring point.
+    if surface.is_chunk_generated{cx, cy} and surface.count_entities_filtered{area = {{cx * 32, cy * 32},
+      {cx * 32 + 32, cy * 32 + 32}}, type = "resource", name = site.ORES, limit = 1} == 0 then
+      refuse("ore gone")
+    else
+      local c = {cx * 32 + 16, cy * 32 + 16}
+      -- Beside the patch, not on it: a third of the way back towards its direction's point on the ring.
+      local a = 2 * math.pi * cell[5] / 8
+      local p = {from.x + distance * math.cos(a), from.y + distance * math.sin(a)}
       local spot = {c[1] + (p[1] - c[1]) / 3, c[2] + (p[2] - c[2]) / 3}
       local clear = true
       for _, l in ipairs(avoid) do
@@ -276,14 +383,8 @@ function faction.site(surface, from, distance, count)
       -- Not under the player's artillery (it fires on military targets by itself, about 224 tiles, more with
       -- research): a settlement landed there would die unseen. Against a megabase they ring it, just outside.
       if clear and not faction.under_guns then
-        for _, pf in pairs(game.forces) do
-          if clear and not shared.is_corp(pf.name) and not shared.is_biters(pf.name) and pf.name ~= "neutral"
-            -- Its range research too (a factory with 210 technologies outranged 224 tiles: eleven landings in three
-            -- hours died within 25 seconds, visit).
-            and surface.count_entities_filtered{position = spot, radius = threat.artillery_reach(pf) + ARTILLERY_SPARE,
-              force = pf, type = {"artillery-turret", "artillery-wagon"}, limit = 1} > 0 then
-            clear = false; refuse("artillery")
-          end
+        for _, g in ipairs(arty) do
+          if (g[1] - spot[1]) ^ 2 + (g[2] - spot[2]) ^ 2 <= g[3] * g[3] then clear = false; refuse("artillery"); break end
         end
       end
       -- Not on the player's army: units or turrets within 100 tiles, as it keeps out of the player's artillery. A
@@ -311,12 +412,16 @@ function faction.site(surface, from, distance, count)
         end
       end
       -- The candidate's own ground, generated now: nests and the ore count below need real entities.
-      if clear and faction.dry and wait_for(surface, spot, 2) then return nil end
+      -- (Dry: every candidate's ground asked for at once, below, not one a second.)
+      if clear and faction.dry and not ground_ready(surface, spot, 2) then
+        waiting[#waiting + 1] = spot; looked = looked + 1; clear = false
+      end
       if clear then
         -- Counted for the landing's trace (each is up to 25 chunks generated within the tick).
         faction.generated = (faction.generated or 0) + (surface.is_chunk_generated{math.floor(spot[1] / 32),
           math.floor(spot[2] / 32)} and 0 or 1)
         faction.candidates = (faction.candidates or 0) + 1
+        looked = looked + 1
         surface.request_to_generate_chunks(spot, 2)
         surface.force_generate_chunk_requests()
       end
@@ -324,8 +429,8 @@ function faction.site(surface, from, distance, count)
       -- Further from them as they evolve: 60 tiles, 100 at full evolution (200 left a maximum-evolution world no site
       -- at all, visit). On a second pass (faction.arrive) nests do not refuse a site: the lander clears its ground.
       local evo = game.forces.enemy and game.forces.enemy.get_evolution_factor(surface) or 0
-      local nested = surface.count_entities_filtered{position = spot, radius = 60 + 40 * evo, type = "unit-spawner",
-        limit = 1} > 0
+      local nested = clear and surface.count_entities_filtered{position = spot, radius = 60 + 40 * evo,
+        type = "unit-spawner", limit = 1} > 0
       -- And not in a nest field: nests and worms within DENSE_RADIUS (the ground generated round a candidate). Serenity
       -- landed on nw with none within 100 and 132 within 250, and spent three hours at war with biters: 369 turrets
       -- and 227 units lost, nothing left for the player. Too many and the site is "among nests", where the least dense
@@ -360,7 +465,10 @@ function faction.site(surface, from, distance, count)
         clear = false; refuse("nest field")
       end
       if clear then
-        local n = surface.count_entities_filtered{position = c, radius = 60, type = "resource", name = site.ORES}
+        -- (Counted to three times SITE_MIN_ORE, where its score stops rising: a rich patch's thousands were most of a
+        -- candidate's checks, nwa.)
+        local n = surface.count_entities_filtered{position = c, radius = 60, type = "resource", name = site.ORES,
+          limit = 3 * SITE_MIN_ORE + 1}
         if n <= SITE_MIN_ORE then refuse("little ore") end
         if n > SITE_MIN_ORE then
           refuse("usable")
@@ -388,6 +496,11 @@ function faction.site(surface, from, distance, count)
       end
     end
     ::next_dir::
+  end
+  if waiting[1] then
+    for _, w in ipairs(waiting) do surface.request_to_generate_chunks(w, 2) end
+    faction.pending = true
+    return nil
   end
   -- No direction rich and clear: the best clear one seen (seed 2024 once landed blind on two drills' worth); by
   -- approach, a site among nests next.
@@ -497,7 +610,9 @@ function faction.arrive(surface, from, opts, quiet)
   if storage.era_override then late = storage.era_override >= 3 end
   -- (Not at a site already chosen: its pod's landing runs this again with opts.at, and reset here the trace read "0
   -- candidate sites" of every podded landing, nwa's second camp's among them.)
-  if not (opts and opts.at) then faction.generated, faction.candidates, faction.refused = 0, 0, {} end
+  -- (Kept only where they are: they are not saved, and a podded landing whose search came before a load, or one handed
+  -- its site, found them nil and crashed the trace; pool and heist at 0.2.370.)
+  if not (opts and opts.at) or not faction.candidates then faction.generated, faction.candidates, faction.refused = 0, 0, {} end
   faction.pending = false
   faction.pact_site = opts and opts.corp and pact.has(opts.corp) or false
   -- Here (its pod touched down at this site): no search; failing that (built over meanwhile), the search as ever.
@@ -530,7 +645,11 @@ function faction.arrive(surface, from, opts, quiet)
       local extra = ring[1]
       faction.dense_ok = ring[2]
       faction.site_corp = (opts and opts.corp) or shared.DEFAULT_CORP
-      pos = faction.site(surface, from, ((opts and opts.distance) or DISTANCE) + extra, f.landings)
+      -- Its band reaches to the next ring's (the rings' bands meet; the last SITE_SEARCH past it).
+      local nxt
+      for _, r in ipairs(rings) do if r > extra and (not nxt or r < nxt) then nxt = r end end
+      local d0 = (opts and opts.distance) or DISTANCE
+      pos = faction.site(surface, from, d0 + extra, f.landings, nxt and d0 + nxt - SITE_SEARCH or d0 + extra + SITE_SEARCH)
       faction.site_corp = nil
       -- An armed landing refuses a site with no way over land to the player (its way's map, read once a landing: water no
       -- way): nwa's site by this search lay across a lake from the factory, and its sieges besieged nothing. Ranking
@@ -738,6 +857,15 @@ local function landing_jobs()
   if not surface then table.remove(jobs, 1); return end
   job.opts = job.opts or {}
   local late = game.tick - job.since > LANDING_PATIENCE
+  -- An armed landing's way to the player first, in slices (faction.tick steps it); late, the rest at once.
+  local corp = job.opts.corp or shared.DEFAULT_CORP
+  if not job.opts.at and not job.pod and not storage.reach_off and armed_for(corp, job.opts) then
+    job.ways = job.ways or ways_start(surface, job.from, ways_radius(job.opts), corp)
+    if job.ways.phase ~= "done" then
+      if not late then job.waits = job.waits + 1; return end
+      ways_step(job.ways, true)
+    end
+  end
   -- By cargo pod (Space Age): the site first, a pod sent down to it, and the landing where it touches down (a pod lost
   -- or late by POD_WAIT, it lands all the same).
   if job.pod then
@@ -745,8 +873,10 @@ local function landing_jobs()
     job.opts.at, job.pod = job.site, nil
   elseif not storage.pods_off then
     faction.dry, faction.site_only = not late, true
+    faction.ways_ready = job.ways and job.ways.map
     local _, why, pos, at = faction.arrive(surface, job.from, job.opts, job.quiet)
     faction.dry, faction.site_only = false, false
+    faction.ways_ready = nil
     if why == "pending" then job.waits = job.waits + 1; return end
     if why == "site" then
       local corp = (job.opts and job.opts.corp) or shared.DEFAULT_CORP
@@ -765,8 +895,10 @@ local function landing_jobs()
     end
   end
   faction.dry = not late and not job.opts.at
+  faction.ways_ready = job.ways and job.ways.map
   local b, why = faction.arrive(surface, job.from, job.opts, job.quiet)
   faction.dry = false
+  faction.ways_ready = nil
   job.opts.at = nil
   if why == "pending" then job.waits = job.waits + 1; return end
   table.remove(jobs, 1)
@@ -780,6 +912,8 @@ local function landing_jobs()
 end
 
 function faction.tick(tick)
+  local lj = storage.landing_jobs and storage.landing_jobs[1]
+  if lj and lj.ways and lj.ways.phase ~= "done" then ways_step(lj.ways) end
   if tick % 60 == 0 then landing_jobs() end
   if tick % 600 ~= 0 then return end
   for _, b in pairs(storage.bases) do

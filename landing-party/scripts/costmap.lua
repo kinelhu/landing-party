@@ -56,6 +56,62 @@ local ground   -- below: whether a cell holds the foe's buildings
 -- Whether a cell or one round it holds anything of a kind (map.bins, read once over the box): a cell where none does needs
 -- no query of its own for it, the same answer for a fraction of the calls (a weighing of the user's fort read every cell
 -- of 16 tiles with six or seven queries, 92 ms of its 235 in one tick; 2026-10-31).
+-- The box's entities read by block (BLOCK cells a side) as the search reaches them, not the whole box first: read whole,
+-- a landing's 4,400-tile box spent its time on trees no way to the player came near, and a strip of it at a time still
+-- took 13 ms a step (nwa, 0.2.370). The order of its reads is the search's own: out from where it starts, cheapest first.
+local BLOCK = 4
+local function read_block(map, bi, bj)
+  local key = bi * 4096 + bj
+  if map.blocks_read[key] then return end
+  map.blocks_read[key] = true
+  map.block_reads = (map.block_reads or 0) + 1
+  local size, hh = map.size, map.h + 2
+  local area = {{map.x0 + bi * BLOCK * size, map.y0 + bj * BLOCK * size},
+    {map.x0 + (bi + 1) * BLOCK * size, map.y0 + (bj + 1) * BLOCK * size}}
+  local s = map.surface
+  local function bin(b, list)
+    for _, e in ipairs(list) do
+      local i, j = math.floor((e.position.x - map.x0) / size), math.floor((e.position.y - map.y0) / size)
+      b[(i + 1) * hh + (j + 1)] = true
+    end
+  end
+  bin(map.bins.tree, s.find_entities_filtered{area = area, type = "tree"})
+  bin(map.bins.cliff, s.find_entities_filtered{area = area, type = "cliff"})
+  bin(map.bins.wall, s.find_entities_filtered{area = area, type = WALLS, force = map.wall_forces or map.forces})
+  bin(map.bins.mine, s.find_entities_filtered{area = area, type = "land-mine", force = map.forces})
+  bin(map.bins.ground, s.find_entities_filtered{area = area, type = GROUND, force = map.forces})
+  map.wet[key] = s.count_tiles_filtered{area = area, collision_mask = "water_tile", limit = 1} > 0
+end
+-- The blocks of a cell and the eight round it (near reads them all).
+local function read_round(map, i, j)
+  if not map.blocks_read then return end
+  local b0, b1 = math.floor((i - 1) / BLOCK), math.floor((i + 1) / BLOCK)
+  local c0, c1 = math.floor((j - 1) / BLOCK), math.floor((j + 1) / BLOCK)
+  for bi = b0, b1 do for bj = c0, c1 do read_block(map, bi, bj) end end
+end
+-- The blocks a cell's expansion reads (its neighbours and theirs, two cells round it), within `left` reads: false when
+-- the budget ran out first (a sliced step stops there, before the cell, and goes on next step).
+local function read_ahead(map, i, j, left)
+  if not map.blocks_read then return true end
+  for bi = math.floor((i - 2) / BLOCK), math.floor((i + 2) / BLOCK) do
+    for bj = math.floor((j - 2) / BLOCK), math.floor((j + 2) / BLOCK) do
+      if not map.blocks_read[bi * 4096 + bj] then
+        if left <= 0 then return false end
+        read_block(map, bi, bj)
+        left = left - 1
+      end
+    end
+  end
+  return true
+end
+costmap.read_ahead = read_ahead
+
+-- Whether a cell's block holds any water (none: the cell asks nothing).
+local function wet(map, i, j)
+  if not map.blocks_read then return not map.dry end
+  return map.wet[math.floor(i / BLOCK) * 4096 + math.floor(j / BLOCK)]
+end
+
 local function near(map, kind, i, j)
   local b = map.bins and map.bins[kind]
   if not b then return true end
@@ -88,6 +144,7 @@ cell_cost_ = function(map, i, j, k)
   local size = map.size
   local cx, cy = map.x0 + (i + 0.5) * size, map.y0 + (j + 0.5) * size
   local s = map.surface
+  if not map.air then read_round(map, i, j) end
   -- No way: ground its herds found none through (opts.blocked), or water at its middle or over WATER_SHARE of it (water at
   -- its middle only, a lake's strait read as open, and a herd sent across it was taken round the lake by the pathfinder;
   -- 2026-10-27).
@@ -98,7 +155,7 @@ cell_cost_ = function(map, i, j, k)
       fire = fire + t.p * size / (2 * (t.r + map.margin) + size)
     end
     c = size * costmap.WALK + fire * map.scale + costmap.DEATH * (map.deaths[k] or 0)
-  elseif map.blocked[k] or (not map.dry and (s.count_tiles_filtered{position = {cx, cy}, radius = 2, collision_mask = "water_tile", limit = 1} > 0
+  elseif map.blocked[k] or (wet(map, i, j) and (s.count_tiles_filtered{position = {cx, cy}, radius = 2, collision_mask = "water_tile", limit = 1} > 0
     or s.count_tiles_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}},
       collision_mask = "water_tile"} > costmap.WATER_SHARE * size * size)) then
     c = costmap.WATER
@@ -156,6 +213,7 @@ ground = function(map, i, j)
   if v == nil then
     local size = map.size
     local cx, cy = map.x0 + (i + 0.5) * size, map.y0 + (j + 0.5) * size
+    read_round(map, i, j)
     v = near(map, "ground", i, j) and map.surface.count_entities_filtered{area = {{cx - size / 2, cy - size / 2},
       {cx + size / 2, cy + size / 2}}, force = map.forces, type = GROUND, limit = 1} > 0
     map.ground[k] = v
@@ -185,7 +243,46 @@ end
 -- to what the fire map cannot show, mines, burning ground, units, each weighing w: the first wave into a minefield pays
 -- for it, the next goes round; on a megabase's mined wall waves of 25 to 42 lost 24 to 37 each at the breach to mines no
 -- turret reading saw, 2026-10-27).
-function costmap.read(surface, center, radius, forces, opts)
+-- The search, resumable (costmap.start, costmap.step): a landing's way to the player reads a box 4,400 tiles across, and
+-- read in one tick it stalled the game 550 ms (nwa, 0.2.370; its firemap 65 more). Started, its box's entities are binned a
+-- strip of BIN_ROWS cells a step, then the search goes on BUDGET cells a step; costmap.read runs it to the end at once, as
+-- every caller had. Its state is plain data (no closures), so a sliced one can be kept in storage.
+local function push(heap, c, k)
+  local n = #heap + 1
+  heap[n] = {c, k}
+  while n > 1 do
+    local p = math.floor(n / 2)
+    if heap[p][1] <= heap[n][1] then break end
+    heap[p], heap[n] = heap[n], heap[p]
+    n = p
+  end
+end
+local function pop(heap)
+  local top, last = heap[1], table.remove(heap)
+  if #heap > 0 then
+    heap[1] = last
+    local n = 1
+    while true do
+      local l, r, m = 2 * n, 2 * n + 1, n
+      if heap[l] and heap[l][1] < heap[m][1] then m = l end
+      if heap[r] and heap[r][1] < heap[m][1] then m = r end
+      if m == n then break end
+      heap[m], heap[n] = heap[n], heap[m]
+      n = m
+    end
+  end
+  return top
+end
+
+local function seed(job, i, j, base)
+  local map = job.map
+  local k = i * map.h + j
+  local c = cell_cost(map, i, j)
+  if c == costmap.WATER then return end
+  if not map.cost[k] or base + c < map.cost[k] then map.cost[k] = base + c; push(job.heap, base + c, k) end
+end
+
+function costmap.start(surface, center, radius, forces, opts)
   local size = opts.cell or costmap.CELL
   local x, y = xy(center)
   local w = math.ceil(2 * radius / size)
@@ -196,29 +293,7 @@ function costmap.read(surface, center, radius, forces, opts)
     -- (Walls of these, not its target's alone: a corporation's camp walls on its way it walks into, and stuck on them under
     -- their flamers its herd lost 66 and left half behind; 2026-10-28.)
     wall_forces = opts.wall_forces, air = opts.air}
-  if storage.biotech_time_parts then map.prof, map.prof_fire = helpers.create_profiler(true), helpers.create_profiler(true) end
-  -- What stands in the box, by kind, binned by cell once (near): trees, cliffs, walls, mines, the foe's ground; and
-  -- whether it holds any water at all (none: no cell asks).
-  if not map.air then
-    local area = {{map.x0 - size, map.y0 - size}, {map.x0 + (w + 1) * size, map.y0 + (w + 1) * size}}
-    local hh = w + 2
-    local function bin(list)
-      local b = {}
-      for _, e in ipairs(list) do
-        local i, j = math.floor((e.position.x - map.x0) / size), math.floor((e.position.y - map.y0) / size)
-        b[(i + 1) * hh + (j + 1)] = true
-      end
-      return b
-    end
-    map.bins = {
-      tree = bin(surface.find_entities_filtered{area = area, type = "tree"}),
-      cliff = bin(surface.find_entities_filtered{area = area, type = "cliff"}),
-      wall = bin(surface.find_entities_filtered{area = area, type = WALLS, force = map.wall_forces or forces}),
-      mine = bin(surface.find_entities_filtered{area = area, type = "land-mine", force = forces}),
-      ground = bin(surface.find_entities_filtered{area = area, type = GROUND, force = forces}),
-    }
-    map.dry = surface.count_tiles_filtered{area = area, collision_mask = "water_tile", limit = 1} == 0
-  end
+  if storage.biotech_time_parts and not opts.sliced then map.prof, map.prof_fire = helpers.create_profiler(true), helpers.create_profiler(true) end
   for _, b in ipairs(opts.blocked or {}) do
     local i, j = math.floor((b[1] - map.x0) / size), math.floor((b[2] - map.y0) / size)
     if i >= 0 and j >= 0 and i < w and j < w then map.blocked[i * map.h + j] = true end
@@ -227,79 +302,105 @@ function costmap.read(surface, center, radius, forces, opts)
     local i, j = math.floor((d[1] - map.x0) / size), math.floor((d[2] - map.y0) / size)
     if i >= 0 and j >= 0 and i < w and j < w then map.deaths[i * map.h + j] = (map.deaths[i * map.h + j] or 0) + (d[3] or 1) end
   end
-
-  -- Dijkstra on a binary heap.
-  local heap = {}
-  local function push(c, k)
-    local n = #heap + 1
-    heap[n] = {c, k}
-    while n > 1 do
-      local p = math.floor(n / 2)
-      if heap[p][1] <= heap[n][1] then break end
-      heap[p], heap[n] = heap[n], heap[p]
-      n = p
-    end
-  end
-  local function pop()
-    local top, last = heap[1], table.remove(heap)
-    if #heap > 0 then
-      heap[1] = last
-      local n = 1
-      while true do
-        local l, r, m = 2 * n, 2 * n + 1, n
-        if heap[l] and heap[l][1] < heap[m][1] then m = l end
-        if heap[r] and heap[r][1] < heap[m][1] then m = r end
-        if m == n then break end
-        heap[m], heap[n] = heap[n], heap[m]
-        n = m
-      end
-    end
-    return top
-  end
-  local function seed(i, j, base)
-    local k = i * map.h + j
-    local c = cell_cost(map, i, j)
-    if c == costmap.WATER then return end
-    if not map.cost[k] or base + c < map.cost[k] then map.cost[k] = base + c; push(base + c, k) end
-  end
+  local job = {map = map, heap = {}, done = {}, phase = "seed"}
+  -- Where the search starts, kept as data (opts.seed, a function, is read now: what reaching the box's edge costs).
   if opts.sources then
-    -- (From several points at once, each at no cost: what reaching the nearest of them costs, read backwards.)
-    for _, q in ipairs(opts.sources) do
-      local qx, qy = xy(q)
-      local i, j = math.floor((qx - map.x0) / size), math.floor((qy - map.y0) / size)
-      if i >= 0 and j >= 0 and i < w and j < w then seed(i, j, 0) end
-    end
+    job.sources = {}
+    for _, q in ipairs(opts.sources) do local qx, qy = xy(q); job.sources[#job.sources + 1] = {qx, qy} end
   elseif opts.from then
     local fx, fy = xy(opts.from)
-    local fi, fj = math.max(0, math.min(w - 1, math.floor((fx - map.x0) / size))), math.max(0, math.min(w - 1, math.floor((fy - map.y0) / size)))
-    seed(fi, fj, 0)
+    job.from = {fx, fy}
+  else
+    job.edge = {}
+    local function base(i, j)
+      return opts.seed and opts.seed(map.x0 + (i + 0.5) * size, map.y0 + (j + 0.5) * size) or 0
+    end
+    for i = 0, w - 1 do job.edge[#job.edge + 1] = {i, 0, base(i, 0)}; job.edge[#job.edge + 1] = {i, w - 1, base(i, w - 1)} end
+    for j = 1, w - 2 do job.edge[#job.edge + 1] = {0, j, base(0, j)}; job.edge[#job.edge + 1] = {w - 1, j, base(w - 1, j)} end
+  end
+  if not map.air then
+    -- What stands in the box, by kind, binned by cell once (near): trees, cliffs, walls, mines, the foe's ground; and
+    -- whether it holds any water at all (none: no cell asks).
+    map.bins = {tree = {}, cliff = {}, wall = {}, mine = {}, ground = {}}
+    map.blocks_read, map.wet = {}, {}
+  end
+  return job
+end
+
+local function seed_all(job)
+  local map = job.map
+  local size, w = map.size, map.w
+  if job.sources then
+    -- (From several points at once, each at no cost: what reaching the nearest of them costs, read backwards.)
+    for _, q in ipairs(job.sources) do
+      local i, j = math.floor((q[1] - map.x0) / size), math.floor((q[2] - map.y0) / size)
+      if i >= 0 and j >= 0 and i < w and j < w then seed(job, i, j, 0) end
+    end
+  elseif job.from then
+    local fi = math.max(0, math.min(w - 1, math.floor((job.from[1] - map.x0) / size)))
+    local fj = math.max(0, math.min(w - 1, math.floor((job.from[2] - map.y0) / size)))
+    seed(job, fi, fj, 0)
     -- Its cell water (a shore: any water in it reads as none), from the nearest cells round it that are not: from a scout
     -- dead on a lake's edge nothing was seeded, no way anywhere, and its wave fell back on the nearest building, by a
     -- minefield (2026-10-27).
     for r = 1, FROM_RING do
-      if next(heap) then break end
+      if next(job.heap) then break end
       for i = fi - r, fi + r do
         for j = fj - r, fj + r do
           if (math.abs(i - fi) == r or math.abs(j - fj) == r) and i >= 0 and j >= 0 and i < w and j < w then
-            seed(i, j, r * size * costmap.WALK)
+            seed(job, i, j, r * size * costmap.WALK)
           end
         end
       end
     end
   else
-    -- (opts.seed(x, y): what reaching the box's edge there costs, the walk from far off; else nothing.)
-    local function base(i, j)
-      return opts.seed and opts.seed(map.x0 + (i + 0.5) * size, map.y0 + (j + 0.5) * size) or 0
-    end
-    for i = 0, w - 1 do seed(i, 0, base(i, 0)); seed(i, w - 1, base(i, w - 1)) end
-    for j = 1, w - 2 do seed(0, j, base(0, j)); seed(w - 1, j, base(w - 1, j)) end
+    for _, q in ipairs(job.edge) do seed(job, q[1], q[2], q[3]) end
   end
-  local done = {}
-  while #heap > 0 do
-    local top = pop()
+end
+
+-- Steps it: `budget` {rows =, cells =} for a step, nil to the end. Returns the map once done, else nil.
+function costmap.step(job, budget)
+  local map = job.map
+  if job.phase == "seed" then
+    if budget and job.sources and #job.sources > 0 then
+      -- (A few of its sources a step: each reads the blocks round it, and 24 at once took 51 ms.)
+      local map = job.map
+      local size, w = map.size, map.w
+      job.next_source = job.next_source or 1
+      local reads = budget.blocks or 2
+      while job.next_source <= #job.sources do
+        local q = job.sources[job.next_source]
+        local i, j = math.floor((q[1] - map.x0) / size), math.floor((q[2] - map.y0) / size)
+        if i >= 0 and j >= 0 and i < w and j < w then
+          local before = map.block_reads or 0
+          if not read_ahead(map, i, j, reads) then return nil end
+          reads = reads - ((map.block_reads or 0) - before)
+          seed(job, i, j, 0)
+        end
+        job.next_source = job.next_source + 1
+      end
+    else
+      seed_all(job)
+    end
+    job.phase = "search"
+    if budget then return nil end
+  end
+  local heap, done, w = job.heap, job.done, map.w
+  local left = budget and (budget.cells or 200) or math.huge
+  local reads = budget and (budget.blocks or 2) or math.huge
+  while #heap > 0 and left > 0 do
+    -- (Its blocks read before it is taken, within the step's reads: else the next step.)
+    local tk = heap[1][2]
+    if budget and not done[tk] then
+      local before = map.block_reads or 0
+      if not read_ahead(map, math.floor(tk / map.h), tk % map.h, reads) then break end
+      reads = reads - ((map.block_reads or 0) - before)
+    end
+    local top = pop(heap)
     local c, k = top[1], top[2]
     if not done[k] and c <= map.cost[k] then
       done[k] = true
+      left = left - 1
       local i, j = math.floor(k / map.h), k % map.h
       for _, d in ipairs(NEIGHBOURS) do
         local ni, nj = i + d[1], j + d[2]
@@ -321,7 +422,7 @@ function costmap.read(surface, center, radius, forces, opts)
               if map.hidden > 0 and held(map, ni, nj) and not held(map, i, j) then nc = nc + map.hidden end
               if not map.cost[nk] or nc < map.cost[nk] then
                 map.cost[nk], map.came[nk] = nc, k
-                push(nc, nk)
+                push(heap, nc, nk)
               end
             end
           end
@@ -329,8 +430,15 @@ function costmap.read(surface, center, radius, forces, opts)
       end
     end
   end
+  if #heap > 0 then return nil end
+  job.phase = "done"
   if map.prof then helpers.write_file("landing-party/timing.txt", {"", string.format("    its %d cells' costs: ", map.cells_read or 0), map.prof, ", their fire: ", map.prof_fire, "\n"}, true); map.prof, map.prof_fire = nil, nil end
   return map
+end
+
+function costmap.read(surface, center, radius, forces, opts)
+  local job = costmap.start(surface, center, radius, forces, opts)
+  return costmap.step(job, nil)
 end
 
 local function key_of(map, pos)
