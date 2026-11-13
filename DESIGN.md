@@ -7362,7 +7362,7 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the same leg points (shared.air_legs, 0.2.374), they crowded each. Now each flies the way shifted by where it stood in
   the muster (at most AIR_NEAR from its centre), side by side: 3 s; the check's bound 3.5 s (seen failing at 6). As one
   engine unit group, 15 s: the thieves' own orders broke it up. The rest is each flier's wait on a path at each leg:
-  open. Synthexis's three: 0.5 s.
+  open. Kessler-Hayashi's three laser drones (the scenario's own corporation): 0.5 s.
 - **Maps built without a stutter** (0.2.370; the user: "think about when each map is built, and how to avoid stutters").
   Measured on nwa (helpers.create_profiler): an armed landing's way to the player (firemap, the player's edge, the cost
   map over 2,210 tiles) took 620 ms in one tick. Now a landing job builds it in slices before its search, stepped every

@@ -174,15 +174,15 @@ The director gates on the opening (`phases.arrived`) or a test's switch, so no e
 
 ## 9. Decisions (the user, 2026-11-13)
 
-1. **Wave camps are an expedition that can settle**, not counted against the cap on landing. Open: how it settles
-   (question below).
+1. **Wave camps are an expedition that can settle**, not counted against the cap on landing. How it settles: the rule
+   below (the user, 2026-11-14: "Ok on your suggestion for the camps").
 2. **Synthexis keeps its own wave cadence; the director reads it** and never stacks a beat on a large wave.
 3. **The personality is a map setting, steady by default, with "off".**
 4. **No alliance strike in the first version;** a shared grudge triggers it if it comes.
 5. **The director waits for the opening, then about 30 minutes** after the first landing.
 6. **It covers every camp in play, not only landings:** it paces operations through the dials of section 5.
 
-Recommended, awaiting the user: an expedition camp still standing at about 45 minutes settles if its corporation has
+Decided (2026-11-14): an expedition camp still standing at about 45 minutes settles if its corporation has
 room under the cap. Without room, it takes the place of the corporation's weakest standing camp only if it has
 out-exported that camp and the player has not fought that camp in the last half hour; the camp displaced leaves
 quietly ("Kessler-Hayashi's camp at [gps] has departed."; no command cores, no fall). Else the expedition withdraws. At
