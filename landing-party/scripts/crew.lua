@@ -268,6 +268,18 @@ local function step(b, i)
   if c.phase == "drive" then
     local d = (p.x - c.site[1]) ^ 2 + (p.y - c.site[2]) ^ 2
     if d < c.best - 1 then c.best, c.best_at = d, game.tick end
+    -- Its order kept: one dropped (a way the engine could not find, or done short of the site) left the unit wandering
+    -- by its camp till it was called stuck (cordon, 0.2.370's site on 12345: its constructor 16 tiles from its lander,
+    -- set wandering, a minute, "stuck"); the prowl's buggy had the same. Ordered again, a truck by a new way at most
+    -- once a minute.
+    local cmd = c.unit.commandable and c.unit.commandable.command
+    local t = cmd and cmd.type
+    if not (t == defines.command.compound or t == defines.command.go_to_location) and game.tick - (c.reordered or 0) > 3600 then
+      c.reordered = game.tick
+      c.reorders = (c.reorders or 0) + 1
+      b.crews_reordered = (b.crews_reordered or 0) + 1
+      order(c.unit, way(b, {p.x, p.y}, c.site) or {}, c.site)
+    end
     -- On a planned way, a detour may lead away from the site a while: stuck is standing still.
     if c.routed then
       local a = c.anchor
@@ -412,6 +424,7 @@ end
 function crew.stats(b)
   return {sent = b.crews_sent or 0, done = b.crews_done or 0, lost = b.crews_lost or 0, stuck = b.crews_stuck or 0,
     gave_up = b.crews_gave_up or 0, unrouted = b.crews_unrouted or 0, far = b.crews_far or 0,
+    reordered = b.crews_reordered or 0,
     out = #(b.crews or {})}
 end
 

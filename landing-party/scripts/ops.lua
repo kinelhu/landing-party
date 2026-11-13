@@ -804,7 +804,8 @@ local function finish(b, outcome, trace, army)
   end
   if op.label and op.label.valid then op.label.destroy() end
   if op.leader_mark and op.leader_mark.valid then op.leader_mark.destroy() end
-  if op.kind == "siege" then b.next_siege = game.tick + (op.clearance and 2 * 3600 or SIEGE_COOL) end
+  -- (Its cooldown a pace too: a spree's sieges come sooner, director.lua; and the aggression lever's, tune.lua.)
+  if op.kind == "siege" then b.next_siege = game.tick + (op.clearance and 2 * 3600 or tune.sooner(b.corp, SIEGE_COOL)) end
   if op.kind == "strip" then
     b.next_strip = game.tick + (storage.strip_fast and 2 * 3600 or STRIP_COOL)
     for _, e in ipairs(op.camp or {}) do if e.valid then e.destroy() end end

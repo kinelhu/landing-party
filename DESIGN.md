@@ -7311,6 +7311,28 @@ Bugs and surprises the headless runs caught, each kept as a check:
   corporation's tempo and truce, its last beats, every second; buttons on director.cmd (force on with no grace, off, as
   the setting says, a spree now for a corporation, a lull now, the budget full or empty, the beat ended). Scenario
   director LP_MIX=cmd drives each action through the remote director_cmd; the panel's look is for the game window.
+- **The director: adaptation, and where its dials reach** (0.2.373; the user, 2026-11-13: "Yes to the climb. And think
+  about where the levers exert their influence (in case we are missing some places)"). Adaptation (RimWorld's): the
+  fill's multiple climbs adapt_climb (0.1) an hour while the player goes unhurt, to adapt_max (2), and is 1 again once
+  hurt. The audit, each pressure on the player against the two dials: raids, sieges and strips (the gap after one),
+  answers, skims, taps and claim jumps were already the spree's (tune.sooner) and the lull's (the truce). Not reached,
+  now reached: a siege's cooldown (15 minutes), an orbital strike's (15) and the line's step (10), each through
+  tune.sooner (so the aggression lever's too, as it should have been: "how soon it acts"). Reached wrongly: the ladder's
+  clock ran on through a lull and a lull of 15 minutes bought every corporation a rung, the next peak desperate; now a
+  lull's time is moved off storage.last_raze when it ends (director.end_lull). Not built from decision 2: no spree while
+  a Synthexis wave is out or due within it (farm.wave_soon). Left alone by design: reliefs (they fuel a war, not its
+  pace; a lull stops them), the prowl and prospecting (scouting and unclaimed ground), the landing cadence and revenge
+  landings (step 3), Synthexis's own waves (decision 2). Scenario director: its adaptation climbs unhurt and is 1 hurt;
+  a lull's time off the ladder; LP_MIX=wave, a farm's wave holds a spree off.
+  The regression's tail, looked into (0.2.373): crew grown's two stuck trucks were Grubstake's, its town reaching toward
+  Serenity's camp 270 tiles off (landed across spawn now, it passes). A crew whose order was dropped was left wandering
+  by its camp till called stuck; it is ordered again now (a truck by a new way, once a minute at most; crew_stats
+  reordered). Cordon's one stuck drone: an lp-constructor 16 tiles from its lander, 120 from its site, its order seen as
+  wander, re-ordered 24 times and still stuck; no command of it failed (on_ai_command_completed, probed), and none of the
+  mod's wander orders touches a crew: what turns it to wandering is open (the engine's idle unit, most likely; the prowl's
+  buggy had the same). Cordon rail: none of 21 spots along its track takes a locomotive (its rails razed by Serenity at
+  war, unconfirmed), open. Still open with them: cordon broken (a young camp's parts all on a line stepping each minute),
+  prowl, and herd spit and wallgoal (12345 only).
 - **Maps built without a stutter** (0.2.370; the user: "think about when each map is built, and how to avoid stutters").
   Measured on nwa (helpers.create_profiler): an armed landing's way to the player (firemap, the player's edge, the cost
   map over 2,210 tiles) took 620 ms in one tick. Now a landing job builds it in slices before its search, stepped every

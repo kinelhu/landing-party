@@ -2480,6 +2480,16 @@ function farm.debug_wave(n, deep, decide)
   return any
 end
 
+-- Whether a wave is out or due within `within` ticks (the director keeps its sprees off Synthexis's waves, decision 2).
+function farm.wave_soon(within)
+  local tick = game.tick
+  for id, f in pairs(st().list) do
+    if herd.out(id) then return true end
+    if f.last_wave and tick + within - f.last_wave >= tune.sooner("biotech", WAVE_GAP) then return true end
+  end
+  return false
+end
+
 function farm.state()
   local s = st()
   local out = {next_arrival = s.next_arrival, landing = s.landing, farms = {}, fell = s.fell or 0}

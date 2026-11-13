@@ -7248,6 +7248,23 @@ end
 -- holds its threats (no spree).
 scenarios.director = function()
   local off, hurt = params.mix == "off", params.mix == "hurt"
+  -- LP_MIX=wave: a Synthexis farm landed too: no spree while one of its waves is out or due within it (decision 2).
+  local wave = params.mix == "wave"
+  -- (Its nests first: a farm lands on nests, and the test's map has none.)
+  if wave then
+    schedule(90, function()
+      local o = lp("stats", storage.id).origin
+      local len = math.sqrt(o.x * o.x + o.y * o.y)
+      local c = {math.floor(o.y / len * 600), math.floor(-o.x / len * 600)}
+      surface().request_to_generate_chunks(c, 4)
+      surface().force_generate_chunk_requests()
+      for k = 0, 5 do
+        local q = surface().find_non_colliding_position("biter-spawner", {c[1] + (k % 3) * 12, c[2] + math.floor(k / 3) * 12}, 20, 1)
+        if q then surface().create_entity{name = "biter-spawner", position = q, force = "enemy"} end
+      end
+      S.farm = lp("farm_arrive", 1)
+    end)
+  end
   -- LP_MIX=cmd: its debug panel's hand (director.cmd, remote director_cmd), each action and what it did: on, a spree for
   -- Serenity (its pace halved), the beat ended (its pace back), a lull (every truce on), ended (the truces off), the
   -- budget filled and emptied, off (not active).
@@ -7363,6 +7380,11 @@ scenarios.director = function()
     elseif hurt then
       check("director: hurt, it holds its threats", (d.sprees or 0) == 0 and d.held_for == "hurt",
         string.format("%s sprees, held %s, %s razed", tostring(d.sprees), tostring(d.held_for), tostring(S.razed)))
+      check("director: hurt, its adaptation back to 1", d.read and d.read.adapt == 1, tostring(d.read and d.read.adapt))
+    elseif wave then
+      local held = false
+      for _, l in ipairs(d.log or {}) do if l.text:find("Synthexis wave") then held = true end end
+      check("director: wave, it held a spree off Synthexis's wave", S.farm ~= nil and held, tostring(S.farm))
     else
       check("director: a spree, then a lull", (d.sprees or 0) >= 1 and (d.lulls or 0) >= 1,
         string.format("%s sprees, %s lulls", tostring(d.sprees), tostring(d.lulls)))
@@ -7370,6 +7392,8 @@ scenarios.director = function()
         and S.sooner_mid * 2 <= S.sooner_bio + 1, string.format("%s against %s", tostring(S.sooner_mid), tostring(S.sooner_bio)))
       check("director: no operation against the player launched in a lull", in_lull == 0 and #windows >= 1,
         string.format("%d in %d lulls", in_lull, #windows))
+      check("director: unhurt, its adaptation climbs", d.read and (d.read.adapt or 1) > 1, tostring(d.read and d.read.adapt))
+      check("director: a lull's time off the ladder's clock", (d.ladder_paused or 0) > 0, tostring(d.ladder_paused))
     end
   end)
 end
@@ -9872,8 +9896,14 @@ scenarios.cordon = function()
         if not outer or g.position.x > outer then outer = g.position.x end
       end
       if outer then sx = math.min(S.o.x + 240, outer + 40) end
-      local l = surface().create_entity{name = "locomotive", position = {math.floor(sx / 2) * 2 + 1, S.ry},
-        direction = defines.direction.west, force = "player"}
+      -- (The first spot that takes it, on east along the track: from 0.2.370's site its first was taken, no train came
+      -- and the check read "the train at false".)
+      local l
+      for k = 0, 20 do
+        l = surface().create_entity{name = "locomotive", position = {math.floor(sx / 2) * 2 + 1 + 2 * k, S.ry},
+          direction = defines.direction.west, force = "player"}
+        if l then break end
+      end
       if l then
         l.insert{name = "coal", count = 50}
         l.train.manual_mode = true
@@ -10076,7 +10106,10 @@ scenarios.crew = function()
   local at = (grown and 20 or 3) * 3600
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true, raids_off = not answered})
-    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = corp, doctrine = grown and "bastion" or nil})
+    -- (grown: across spawn from Serenity's camp: from 0.2.370's site on 12345 its town reached toward Serenity's and two of
+    -- its trucks stalled there, home with their parts.)
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = corp, doctrine = grown and "bastion" or nil,
+      at = grown and corp == "grubstake" and across_first() or nil})
     for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
   end)
   schedule(at, function()

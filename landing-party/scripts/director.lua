@@ -17,6 +17,7 @@ local valuemap = require("__landing-party__.scripts.valuemap")
 local ops = require("__landing-party__.scripts.ops")
 local stance = require("__landing-party__.scripts.stance")
 local faction = require("__landing-party__.scripts.faction")
+local farm = require("__landing-party__.scripts.farm")
 
 local director = {}
 
@@ -142,11 +143,18 @@ function director.tick(tick)
   local rate = (storage.director_tune and storage.director_tune.fill)
     or (1 + era / 2) * d * (tun("personality")[director.personality()] or 1) / math.max(1, interval)
   if falling then rate = rate / 2 end
+  -- Adaptation (RimWorld's; the user, 2026-11-13: "Yes to the climb"): a player who goes unhurt is pressed harder as the
+  -- hours pass, adapt_climb more an hour up to adapt_max; hurt (the loss window), back to 1.
+  if hurt then s.adapt = 1
+  else s.adapt = math.min(tun("adapt_max"), (s.adapt or 1) + tun("adapt_climb") / 60) end
+  rate = rate * s.adapt
+  s.read.adapt = s.adapt
   s.budget = math.min(tun("cap"), s.budget + rate)
   -- Its beats: a spree, then a lull, then filling again.
   if s.phase == "spree" and tick >= s.phase_till then
     director.start_lull(s, owner, tick)
   elseif s.phase == "lull" and tick >= s.phase_till then
+    director.end_lull(s, tick)
     s.phase, s.phase_till = "fill", nil
     trace(string.format("fill: budget %.2f", s.budget))
   end
@@ -156,6 +164,11 @@ function director.tick(tick)
         s.held_for = "hurt"
         trace(string.format("holds: %s lost %.0f of %.0f worth in half an hour", owner, lost, w))
       end
+      return
+    end
+    -- Never on Synthexis's waves (decision 2): none out, none due within the spree.
+    if farm.wave_soon(tun("spree_minutes") * 3600) then
+      if s.held_for ~= "wave" then s.held_for = "wave"; trace("holds: a Synthexis wave out or due within a spree") end
       return
     end
     local corp = pick(s, owner, tick)
@@ -172,9 +185,23 @@ function director.start_lull(s, owner, tick)
   storage.truces = storage.truces or {}
   for corp in pairs(shared.CORPS) do storage.truces[corp .. "|" .. owner] = tick + minutes * 3600 end
   s.phase, s.phase_till = "lull", tick + minutes * 3600
+  s.lull_from, s.lull_owner = tick, owner
   s.lulls = (s.lulls or 0) + 1
   trace(string.format("lull: every corporation's operations against %s held %d minutes", owner, minutes))
   tell(owner, "lp.director-lull", minutes)
+end
+
+-- A lull's time does not count on the ladder (stance.rung: minutes since the last raze): its clock moved on by the lull,
+-- else a lull of 15 minutes bought every corporation a rung and the next peak came in desperate (the consult).
+function director.end_lull(s, tick)
+  local owner, from = s.lull_owner, s.lull_from
+  if not (owner and from) then return end
+  local held = tick - from
+  for k, t in pairs(storage.last_raze or {}) do
+    if k == owner or k:sub(1, #owner + 1) == owner .. "|" then storage.last_raze[k] = t + held end
+  end
+  s.lull_from, s.lull_owner = nil, nil
+  s.ladder_paused = (s.ladder_paused or 0) + held
 end
 
 -- A spree now: `corp`'s operations against `owner` spree_factor times as often for spree_minutes.
@@ -235,6 +262,7 @@ function director.cmd(action, arg)
   elseif action == "end" then
     if s.phase == "lull" and owner then
       for corp in pairs(shared.CORPS) do (storage.truces or {})[corp .. "|" .. owner] = tick end
+      director.end_lull(s, tick)
     end
     for _, t in pairs(s.tempo) do t.till = tick end
     s.phase, s.phase_till = "fill", nil

@@ -30,7 +30,7 @@ digraph ai {
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="The director (above every faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "director" [label="director\n252 lines", width=1.08, fillcolor="#eef2f7"];
+    "director" [label="director\n280 lines", width=1.11, fillcolor="#eef2f7"];
     "director_gui" [label="director_gui\n98 lines", width=0.91, fillcolor="#eef2f7"];
   }
   subgraph cluster_4 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -55,16 +55,16 @@ digraph ai {
     "site" [label="site\n171 lines", width=0.99, fillcolor="#eef2f7"];
     "blocks" [label="blocks\n76 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
-    "crew" [label="crew\n497 lines", width=1.35, fillcolor="#eef2f7"];
+    "crew" [label="crew\n510 lines", width=1.37, fillcolor="#eef2f7"];
     "cordon" [label="cordon\n388 lines", width=1.23, fillcolor="#eef2f7"];
-    "perimeter" [label="perimeter\n329 lines", width=1.17, fillcolor="#d9f0d9"];
+    "perimeter" [label="perimeter\n331 lines", width=1.17, fillcolor="#eef2f7"];
     "road" [label="road\n143 lines", width=0.96, fillcolor="#eef2f7"];
     "prospect" [label="prospect\n392 lines", width=1.24, fillcolor="#eef2f7"];
     "belts" [label="belts\n86 lines", width=0.90, fillcolor="#d9f0d9"];
   }
   subgraph cluster_6 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n1055 lines", width=1.97, fillcolor="#f7dede"];
-    "ops" [label="ops\n2247 lines", width=3.30, fillcolor="#f7dede"];
+    "ops" [label="ops\n2248 lines", width=3.30, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n295 lines", width=1.13, fillcolor="#eef2f7"];
     "airraid" [label="airraid\n127 lines", width=0.94, fillcolor="#eef2f7"];
@@ -77,7 +77,7 @@ digraph ai {
     "strike" [label="strike\n68 lines", width=0.88, fillcolor="#eef2f7"];
     "jammer" [label="jammer\n75 lines", width=0.88, fillcolor="#eef2f7"];
     "dome" [label="dome\n433 lines", width=1.28, fillcolor="#eef2f7"];
-    "orbital" [label="orbital\n379 lines", width=1.22, fillcolor="#eef2f7"];
+    "orbital" [label="orbital\n381 lines", width=1.22, fillcolor="#eef2f7"];
     "scorcher" [label="scorcher\n224 lines", width=1.05, fillcolor="#d9f0d9"];
     "stun" [label="stun\n145 lines", width=0.96, fillcolor="#eef2f7"];
     "fall" [label="fall\n101 lines", width=0.91, fillcolor="#eef2f7"];
@@ -97,7 +97,7 @@ digraph ai {
   subgraph cluster_8 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "herd" [label="herd\n4479 lines", width=3.80, fillcolor="#f7dede"];
     "herd_learn" [label="herd_learn\n253 lines", width=1.08, fillcolor="#eef2f7"];
-    "farm" [label="farm\n2511 lines", width=3.59, fillcolor="#f7dede"];
+    "farm" [label="farm\n2521 lines", width=3.60, fillcolor="#f7dede"];
     "creep" [label="creep\n614 lines", width=1.48, fillcolor="#eef2f7"];
     "cell" [label="cell\n438 lines", width=1.29, fillcolor="#eef2f7"];
   }
@@ -166,6 +166,7 @@ digraph ai {
   "crew" -> "standing";
   "cuts" -> "pool";
   "director" -> "faction";
+  "director" -> "farm";
   "director" -> "ops";
   "director" -> "stance";
   "director" -> "valuemap";
@@ -268,9 +269,11 @@ digraph ai {
   "ops" -> "veterancy";
   "orbital" -> "achievements";
   "orbital" -> "threat";
+  "orbital" -> "tune";
   "pact" -> "base";
   "pact" -> "lights";
   "pact" -> "rng";
+  "perimeter" -> "tune";
   "phases" -> "faction";
   "planner" -> "rd";
   "power" -> "threat";

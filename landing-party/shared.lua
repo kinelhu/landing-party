@@ -398,7 +398,9 @@ shared.LANDING_MINUTES = {default = 90, min = 15, max = 600}
 -- lull_minutes holds every corporation's; no threat while the half hour's losses pass loss_share of the factory's worth;
 -- on grace minutes after the opening's arrival. Personalities multiply the fill. All to calibrate.
 shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20, lull_minutes = 15, loss_share = 0.02,
-  grace = 30, personality = {steady = 1}}
+  grace = 30, personality = {steady = 1},
+  -- Adaptation: the fill's multiple grows adapt_climb an hour the player goes unhurt, to adapt_max; hurt, back to 1.
+  adapt_climb = 0.1, adapt_max = 2}
 shared.DIRECTOR_PERSONALITIES = {"steady", "off"}  -- between a corporation's landings (faction.lua's cadence)
 shared.MAX_CAMPS = {default = 3, min = 1, max = 10}           -- a corporation's standing camps, its headquarters counted
 shared.ARRIVE_EVO = {default = 0.25, min = 0, max = 0.95}     -- the wild evolution Synthexis comes at (farm.lua)

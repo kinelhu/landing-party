@@ -3,6 +3,7 @@
 -- outpost easiest to cut off: strangling), and the step's map and notices. The code is as it was in ops; install runs
 -- it with ops' helpers bound (K) and returns what ops calls.
 local shared = require("__landing-party__.shared")
+local tune = require("__landing-party__.scripts.tune")
 
 local perimeter = {}
 
@@ -144,7 +145,8 @@ function ops.perimeter(b, tick)
     and not (storage.director and storage.director.active)
   if tick < (b.perimeter_next or 0) and not quiet then return end
   if quiet and tick < (b.perimeter_next or 0) then b.perimeter_floor = tick end
-  b.perimeter_next = tick + every
+  -- (A pace: a spree's line steps sooner, director.lua; the aggression lever's too.)
+  b.perimeter_next = tick + tune.sooner(b.corp, every)
   local surface = game.surfaces[b.surface]
   local cur = b.claim_radius
   local cap = PERIMETER_MAX

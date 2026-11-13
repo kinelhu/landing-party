@@ -11,6 +11,7 @@
 local shared = require("__landing-party__.shared")
 local threat = require("__landing-party__.scripts.threat")
 local achievements = require("__landing-party__.scripts.achievements")
+local tune = require("__landing-party__.scripts.tune")
 
 local orbital = {}
 local PAINT = 12 * 60
@@ -86,7 +87,8 @@ function orbital.call(b, op)
   end
   if not spotter then return false end
   op.strike_called = true
-  b.strike_next = game.tick + COOL
+  -- (A pace: a spree's strikes come sooner, director.lua.)
+  b.strike_next = game.tick + tune.sooner(b.corp, COOL)
   orbital.start(b, s, fs, center, math.atan2(dy, dx) + math.pi / 2, spotter)
   -- Its siege told at once (its step runs every 5 s, too coarse for a 12 s paint): its guards move up behind it.
   op.strike_center, op.strike_paint, op.step_at = center, game.tick, game.tick + 1
