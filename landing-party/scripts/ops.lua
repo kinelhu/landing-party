@@ -1661,10 +1661,41 @@ local function step(b, trace, army)
       if u.valid and (u.position.x - op.muster[1]) ^ 2 + (u.position.y - op.muster[2]) ^ 2 < AIR_NEAR * AIR_NEAR then near = near + 1 end
     end
     if near >= AIR_GATHER * n or game.tick - op.phase_at > AIR_WAIT then
-      order_all(op.members, op.air_cmd)
+      -- In formation: each flier flies the way's points shifted by where it stands in the muster (within AIR_NEAR of
+      -- its centre), on lines side by side. Sent all to the same points, they crowded each and jostled: Grubstake's
+      -- eight, all mustered 95 to 104 tiles out, came in over 6 s; side by side, 3 s (scenario airraid
+      -- LP_MIX=grubstake). As one unit group, 15 s: its thieves' own orders broke it up.
+      local cx, cy, m = 0, 0, 0
+      for _, u in ipairs(op.members) do
+        if u.valid then cx, cy, m = cx + u.position.x, cy + u.position.y, m + 1 end
+      end
+      cx, cy = cx / math.max(1, m), cy / math.max(1, m)
+      for _, u in ipairs(op.members) do
+        if u.valid then
+          local ox, oy = u.position.x - cx, u.position.y - cy
+          local ol = math.sqrt(ox * ox + oy * oy)
+          if ol > AIR_NEAR then ox, oy = ox / ol * AIR_NEAR, oy / ol * AIR_NEAR end
+          local cmds = {}
+          for i, c in ipairs(op.air_cmd.commands) do
+            if c.type == defines.command.go_to_location then
+              local d = c.destination
+              c = {type = c.type, destination = {(d[1] or d.x) + ox, (d[2] or d.y) + oy}, radius = c.radius, distraction = c.distraction}
+            end
+            cmds[i] = c
+          end
+          u.commandable.set_command({type = op.air_cmd.type, structure_type = op.air_cmd.structure_type, commands = cmds})
+        end
+      end
       op.phase, op.phase_at, op.last_kill, op.kills_at = "attack", game.tick, game.tick, b.razed
       alert(b, t, "lp.alert-raid")
       trace(b, string.format("air raid: %d of %d mustered at %.0f,%.0f; in together", near, n, op.muster[1], op.muster[2]))
+      do
+        local d = {}
+        for _, u in ipairs(op.members) do
+          if u.valid then d[#d + 1] = string.format("%d %.0f", u.unit_number, math.sqrt((u.position.x - t.pos[1]) ^ 2 + (u.position.y - t.pos[2]) ^ 2)) end
+        end
+        trace(b, "air raid: each flier's distance to its target " .. table.concat(d, ", "))
+      end
     end
     return
   end

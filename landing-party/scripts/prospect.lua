@@ -384,7 +384,8 @@ prospect.worked = worked
 
 function prospect.stats(b)
   return {prospects = b.prospects or 0, claimed = b.prospects_claimed or 0, answered = b.prospects_answered or 0,
-    pulled = b.stakes_pulled or 0, driven = b.stakes_driven or 0, trucks_lost = b.stake_trucks_lost or 0, stake = b.prospect and b.prospect.stake and b.prospect.stake.valid or false,
+    pulled = b.stakes_pulled or 0, driven = b.stakes_driven or 0, trucks_lost = b.stake_trucks_lost or 0,
+    truck = b.prospect and b.prospect.truck and b.prospect.truck.valid and b.prospect.truck.unit_number or nil, stake = b.prospect and b.prospect.stake and b.prospect.stake.valid or false,
     red = b.prospect and b.prospect.red and b.prospect.stake and b.prospect.stake.valid or false,
     phase = b.prospect and b.prospect.phase, at = b.prospect and {b.prospect.x, b.prospect.y}}
 end

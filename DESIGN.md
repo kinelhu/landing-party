@@ -7341,6 +7341,28 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The prowl plans its way** (0.2.375). Its buggy died inside the guns every prowl since 0.2.370's site: probed leg by leg
+  (request_path, its box and mask), the engine's ways all kept 65 or more from spawn, past the guns' 58, except five legs
+  running in the south-west with no straight way (a barrier, a cliff most likely, unconfirmed), where the buggy's own
+  order found a way round through the base. Told only its points, a unit takes the engine's way between them. Now a
+  prowl asks its ring's legs of the engine first, both ways round (home to the first point, then point to point; and
+  home to the last, back), waits for the answers (PLAN_WAIT), and follows the engine's way as given (its points
+  PATH_GAP, 16, apart; one point per waypoint, 785 of them, was 26 minutes' trip and starved the guards: strip claim and
+  plate grubstake failed with it): out one way till a leg has no way or a gun reaches it (its reach and PATH_SPARE, 2; SPARE, 8, is the
+  points' margin, and the ways round what stands on them bent a tile or two inside it), back; the other way, back. And
+  each prowl's ring is BAND (90) further out than the last, BANDS (3) of them, then the edge again: a ring at the guns'
+  edge sees SIGHT (60) either side, and the test's outpost lay 150 from spawn past one at 70. Scenario prowl (50 minutes
+  now, for two prowls): the first 27 of 34 legs and home, the second all 49 a band out, the outpost learned; off as
+  before. A failed order skips to the next point too (on_ai_command_completed, beside the herd's). Its buggy home, two
+  tests had counted on it dead: prospect truck killed the buggy nearest the patch, the prowl's, and the claim went on
+  (now the stake truck by its unit number, prospect stats); skim raid destroyed the yard at minute 24, empty that run
+  (now once it holds goods). Checked on the 29 Grubstake scenarios: all pass but strip claim, which fails the same way
+  on 0.2.374 (one strip at minute 16, none after it in 40 minutes; nightly, so no regression ran it): open.
+- **An air raid flies in formation** (0.2.375). Mustered all eight, Grubstake's fliers still came in over 6 s: sent to
+  the same leg points (shared.air_legs, 0.2.374), they crowded each. Now each flies the way shifted by where it stood in
+  the muster (at most AIR_NEAR from its centre), side by side: 3 s; the check's bound 3.5 s (seen failing at 6). As one
+  engine unit group, 15 s: the thieves' own orders broke it up. The rest is each flier's wait on a path at each leg:
+  open. Synthexis's three: 0.5 s.
 - **Maps built without a stutter** (0.2.370; the user: "think about when each map is built, and how to avoid stutters").
   Measured on nwa (helpers.create_profiler): an armed landing's way to the player (firemap, the player's edge, the cost
   map over 2,210 tiles) took 620 ms in one tick. Now a landing job builds it in slices before its search, stepped every

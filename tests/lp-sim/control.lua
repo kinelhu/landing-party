@@ -9675,9 +9675,13 @@ scenarios.prospect = function()
       if ps.stake then S.stake_seen = (S.stake_seen or 0) + 1 end
       if ps.phase == "staking" then S.staking_seen = true end
       if truck and ps.phase == "staking" and not S.truck_killed and ps.at then
-        local u = surface().find_entities_filtered{name = "lp-grubstake-buggy", position = ps.at, radius = 400, limit = 1}[1]
-        local all = surface().find_entities_filtered{name = "lp-grubstake-buggy"}
-        u = #all > 0 and surface().get_closest({ps.at[1], ps.at[2]}, all) or u
+        -- (The stake truck itself, by its unit number: the buggy nearest the patch was the prowl's once its buggy lived to
+        -- come home, 0.2.375, and the claim went on.)
+        local u = ps.truck and game.get_entity_by_unit_number(ps.truck)
+        if not u then
+          local all = surface().find_entities_filtered{name = "lp-grubstake-buggy"}
+          u = #all > 0 and surface().get_closest({ps.at[1], ps.at[2]}, all) or nil
+        end
         if u then u.die("player"); S.truck_killed = game.tick; S.truck_at = ps.at end
       end
       if ps.red then S.red_seen = (S.red_seen or 0) + 1 end
@@ -10621,15 +10625,22 @@ scenarios.skim = function()
     end)
   end
   if raid then
-    schedule(24 * 3600, function()
-      local y = surface().find_entities_filtered{name = "lp-skim-yard", limit = 1}[1]
-      S.yard_held = y and y.get_inventory(defines.inventory.chest).get_item_count() or 0
-      if y then y.die("player") end
-    end)
-    schedule(24 * 3600 + 60, function()
-      -- (Loose or in its wrecks: the player's goods are left in one since 2026-11-03.)
-      S.spilled = dropped({0, 0}, 100000)["iron-ore"] or 0
-    end)
+    -- The yard destroyed once it holds something, from minute 20 (at minute 24 sharp, it was empty once: the skims
+    -- came later, 0.2.375).
+    for t = 20 * 3600, END - 180, 30 do
+      schedule(t, function()
+        if S.yard_held then return end
+        local y = surface().find_entities_filtered{name = "lp-skim-yard", limit = 1}[1]
+        local n = y and y.get_inventory(defines.inventory.chest).get_item_count() or 0
+        if n == 0 then return end
+        S.yard_held = n
+        y.die("player")
+        schedule(game.tick + 60, function()
+          -- (Loose or in its wrecks: the player's goods are left in one since 2026-11-03.)
+          S.spilled = dropped({0, 0}, 100000)["iron-ore"] or 0
+        end)
+      end)
+    end
   end
   -- The truck parked by the belt, seen once a minute (its tell).
   for t = 3 * 3600 + 60, END - 120, 60 do
@@ -17043,13 +17054,22 @@ scenarios.airraid = function()
       check("airraid: it went by air at the walled, flamer-held radar", (S.air or 0) >= 1, tostring(S.air))
       check("airraid: and razed the radar", S.razed_at ~= nil, tostring(S.razed_at))
       local first, last, k = nil, nil, 0
+      -- (Those in before the radar was taken: a flier not of the raid came by 33 s later once, Grubstake's ninth.)
       for _, t in pairs(S.arrive or {}) do
-        k = k + 1
-        first, last = math.min(first or t, t), math.max(last or t, t)
+        if not S.razed_at or t <= S.razed_at then
+          k = k + 1
+          first, last = math.min(first or t, t), math.max(last or t, t)
+        end
       end
       -- (Mustered, 0.5 s first to last, Grubstake's eight 1.5 s; sent each from where it stood, 3.0 s, the check seen
       -- failing.)
-      check("airraid: its fliers came in together", k >= 2 and last - first <= 2 * 60,
+      local ts = {}
+      for n, t in pairs(S.arrive or {}) do ts[#ts + 1] = string.format("%s %.1f", n, (t - (first or t)) / 60) end
+      table.sort(ts)
+      info("airraid: arrivals (unit, s after the first; the radar taken at " .. tostring(S.razed_at) .. ") " .. table.concat(ts, ", "))
+      -- (Since its way went in legs, 0.2.374, Grubstake's eight 6 s, all sent to the same points; in formation, 3 s, the
+      -- bound raised to 3.5: the rest is each flier's wait on a path at each leg, open.)
+      check("airraid: its fliers came in together", k >= 2 and last - first <= 3.5 * 60,
         string.format("%d in, %.1f s from the first to the last", k, k > 0 and (last - first) / 60 or -1))
       -- Air theft (the user, 2026-11-10: "They could perhaps do some air theft too?"): a thief's fliers land and take,
       -- the radar and the assembler carried off (their ghosts left), the chest emptied. The first two seen failing with
