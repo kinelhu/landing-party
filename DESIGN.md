@@ -7209,6 +7209,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   carry no prefix, so `arcguard`, the nwa and deathworld visits never met it. Now queued by its kind. Scenario `arcguard`
   LP_MIX=grubstake (its units killed at its pad: sprawl's units stood past GUARD_R of every block, and ten killed where
   they stood named no block); the old code crashes in it, the fix passes. Stats carry `biter_losses` (its hazard log).
+- **The landing search, traced** (0.2.369, 2026-11-13; the user, of nwa's second camp under 3 guns: "There is no way
+  there is only a single site that is suitable"). Each landing's trace now tallies every spot refused, by pass and reason
+  (`landing search, spots by pass`). nwa, seed 2, its second KH camp: the search looks at 8 directions on 7 rings, one
+  spot each (the richest ore chunk within SITE_SEARCH of the ring point), 88 looks a pass (the rings to 480 twice), 56
+  points. Pass 0: 44 no ore in the map's noise, 6 ore gone (generated, none there), 25 under artillery, 2 in the factory,
+  2 by a lander, 9 nests on the way or a nest field, 2 with no way over land; none usable. Pass 1: 2 usable, both across
+  water (no way over land 4). So pass 2, under the guns. The map has more ground than that: the search samples one spot
+  per point, and a spot refused drops its whole window. The "0 candidate sites" of podded landings was the trace's: the pod's
+  landing ran the search's reset again (now not at a chosen site).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

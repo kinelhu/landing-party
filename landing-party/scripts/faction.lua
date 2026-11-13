@@ -180,6 +180,16 @@ local function landing_ways(surface, from, radius, corp)
     deaths = deaths, cell = radius > 1200 and costmap.CELL * 3 or costmap.CELL * 2})
 end
 
+-- Why each spot the search looked at was refused, by pass (the landing's trace): nwa's second camp took a site under
+-- its guns, and no record said what refused the rest.
+local function refuse(why)
+  local r = faction.refused
+  if not r then return end
+  local k = "p" .. (faction.pass or "?") .. " " .. why
+  r[k] = (r[k] or 0) + 1
+end
+faction.refuse_tally = function() return faction.refused end
+
 function faction.site(surface, from, distance, count)
   local mind = faction.site_corp and shared.CORPS[faction.site_corp] and shared.CORPS[faction.site_corp].mind
   local weigh = faction.dry and mind and mind.site
@@ -252,6 +262,7 @@ function faction.site(surface, from, distance, count)
     for k, n in pairs(per) do
       if n > bn or (n == bn and best and k < best) then best, bn = k, n end
     end
+    if not best then refuse(next(noise) and "ore gone" or "no ore") end
     if best then
       local cx, cy = best:match("(-?%d+):(-?%d+)")
       local c = {tonumber(cx) * 32 + 16, tonumber(cy) * 32 + 16}
@@ -261,6 +272,7 @@ function faction.site(surface, from, distance, count)
       for _, l in ipairs(avoid) do
         if (l.x - spot[1]) ^ 2 + (l.y - spot[2]) ^ 2 < APART * APART then clear = false end
       end
+      if not clear then refuse("by a lander") end
       -- Not under the player's artillery (it fires on military targets by itself, about 224 tiles, more with
       -- research): a settlement landed there would die unseen. Against a megabase they ring it, just outside.
       if clear and not faction.under_guns then
@@ -270,7 +282,7 @@ function faction.site(surface, from, distance, count)
             -- hours died within 25 seconds, visit).
             and surface.count_entities_filtered{position = spot, radius = threat.artillery_reach(pf) + ARTILLERY_SPARE,
               force = pf, type = {"artillery-turret", "artillery-wagon"}, limit = 1} > 0 then
-            clear = false
+            clear = false; refuse("artillery")
           end
         end
       end
@@ -283,7 +295,7 @@ function faction.site(surface, from, distance, count)
           if clear and not shared.is_corp(pf.name) and not shared.is_biters(pf.name) and pf.name ~= "neutral"
             and surface.count_entities_filtered{position = spot, radius = keep, force = pf,
               type = {"unit", "electric-turret", "ammo-turret", "fluid-turret", "car", "spider-vehicle"}, limit = 1} > 0 then
-            clear = false
+            clear = false; refuse("army")
           end
         end
       end
@@ -294,7 +306,7 @@ function faction.site(surface, from, distance, count)
           if clear and not shared.is_corp(pf.name) and not shared.is_biters(pf.name) and pf.name ~= "neutral"
             and surface.count_entities_filtered{position = spot, radius = CLEAR_OF_FACTORY, force = pf,
               type = FACTORY, limit = 1} > 0 then
-            clear = false
+            clear = false; refuse("factory")
           end
         end
       end
@@ -328,7 +340,9 @@ function faction.site(surface, from, distance, count)
       -- between it and the player, not those beside it (camps landed nest-free 1,000 to 2,100 tiles out had 130 nests
       -- on the way and razed nothing in three hours, visit). Too many on the way refuse the site; nests beside it are
       -- allowed (its landing burns them), a nest-free site in the same ring preferred.
-      if clear and faction.approach_max and approach(surface, spot, from) > faction.approach_max then clear = false end
+      if clear and faction.approach_max and approach(surface, spot, from) > faction.approach_max then
+        clear = false; refuse("nests on the way")
+      end
       -- A corporation with a pact with the biters (Grubstake) lands among them: they let it be.
       if clear and nested and not (faction.ignore_nests or faction.dense_ok) and not faction.pact_site then
         if faction.approach_max then
@@ -338,16 +352,18 @@ function faction.site(surface, from, distance, count)
             among, among_density = spot, density
           end
         end
-        clear = false
+        clear = false; refuse(density > DENSE_MAX and "nest field" or "nests beside")
       end
       -- Nests allowed (the last pass): a nest field is still the last choice, the least dense of them.
       if clear and (faction.ignore_nests or faction.dense_ok) and density > DENSE_MAX then
         if not dense or density < dense_density then dense, dense_density = spot, density end
-        clear = false
+        clear = false; refuse("nest field")
       end
       if clear then
         local n = surface.count_entities_filtered{position = c, radius = 60, type = "resource", name = site.ORES}
+        if n <= SITE_MIN_ORE then refuse("little ore") end
         if n > SITE_MIN_ORE then
+          refuse("usable")
           if faction.under_guns and not weigh then
             local g = guns_on(spot)
             if not under or g < under_guns then under, under_guns = spot, g end
@@ -479,7 +495,9 @@ function faction.arrive(surface, from, opts, quiet)
     if shared.is_player_force(pf) and ops.era(pf) >= 3 then late = true end
   end
   if storage.era_override then late = storage.era_override >= 3 end
-  faction.generated, faction.candidates = 0, 0
+  -- (Not at a site already chosen: its pod's landing runs this again with opts.at, and reset here the trace read "0
+  -- candidate sites" of every podded landing, nwa's second camp's among them.)
+  if not (opts and opts.at) then faction.generated, faction.candidates, faction.refused = 0, 0, {} end
   faction.pending = false
   faction.pact_site = opts and opts.corp and pact.has(opts.corp) or false
   -- Here (its pod touched down at this site): no search; failing that (built over meanwhile), the search as ever.
@@ -522,7 +540,7 @@ function faction.arrive(surface, from, opts, quiet)
         landing_cm = landing_cm or landing_ways(surface, from, far_ring + 60, (opts and opts.corp) or shared.DEFAULT_CORP)
         if not costmap.cost(landing_cm, {x = pos[1], y = pos[2]}) then
           faction.reach_refused = (faction.reach_refused or 0) + 1
-          pos = nil
+          pos = nil; refuse("no way over land")
         end
       end
       -- Dry: the settlement's reach (base.land's 15x15 chunks) made by the engine first.
@@ -540,9 +558,10 @@ function faction.arrive(surface, from, opts, quiet)
           faction.dense_ok = false
           return nil, "site", pos, at
         end
-        pos = nil
+        pos = nil; refuse("no pad fits")
       end
       b = pos and base.land(surface, pos, opts)
+      if pos and not b then refuse("land failed") end
       if b then
         if pass == 0 then b.approach = approach(surface, pos, from) end
         if pass == 2 then b.under_guns = true; base.trace(b, "landed under the player's guns (inside its artillery's reach)") end
@@ -604,6 +623,14 @@ function faction.arrive(surface, from, opts, quiet)
   base.trace(b, string.format("landing %d of the faction (tier %d): %d candidate sites, %d on new ground; %s%s", f.landings,
     f.tier, faction.candidates, faction.generated, b.approach and (b.approach .. " nests on the way to the player")
     or "by the older passes", faction.site_scored and ("; the best of its candidates, " .. faction.site_scored) or ""))
+  if faction.refused and next(faction.refused) then
+    local ks = {}
+    for k in pairs(faction.refused) do ks[#ks + 1] = k end
+    table.sort(ks)
+    local parts = {}
+    for _, k in ipairs(ks) do parts[#parts + 1] = k .. " " .. faction.refused[k] end
+    base.trace(b, "landing search, spots by pass: " .. table.concat(parts, ", "))
+  end
   faction.site_scored = nil
   if not quiet then announce(b, surface) end
   return b
