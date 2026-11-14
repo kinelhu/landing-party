@@ -1928,6 +1928,15 @@ local function siege_step(b, trace, army)
       -- Its reserve too: the barrage paid for and won, the camp commits (with the pool counting the guards out against
       -- the cap, a tier-1 siege's guards and spare came to 21 of the 22 needed, and it went home, bombard).
       local home_n = (function() local f, r = field(b, army) return f + r end)()
+      -- Under a director's tempo, the units the assault lacks sent by pod, once a siege, and it waits a minute for them
+      -- (ops.pay_gap; its raids' were paid and its sieges' never, the consult part three).
+      if want and not spec.assault and n + home_n < want and not op.gap_asked and ops.pay_gap and t_owner_player(b, op) then
+        op.gap_asked = true
+        if ops.pay_gap(b, t.owner, want - (n + home_n), army.cap(b)) then
+          op.assault_cool = game.tick + 3600
+          return
+        end
+      end
       if want and not spec.assault and n + home_n < want and not op.told_short then
         op.told_short = true
         trace(b, string.format("siege: no assault (%d needed, %d guards and %d at home)", want, n, home_n))

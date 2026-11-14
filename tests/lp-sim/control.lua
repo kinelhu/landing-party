@@ -3182,11 +3182,11 @@ scenarios.contact = function()
       local ms = {}
       for k, v in pairs(miss) do ms[#ms + 1] = k .. " " .. v end
       table.sort(ms)
-      info(string.format("director at %d min: %s %s, budget %.2f, adapt %.2f, era %s, worth %.0f, guns %s, lost %.0f (usual %.0f)%s, depth %s, sprees %d, surges %d, focus %d, waves %d, supplies %d, lulls %d, ops %d; under its tempo %d decisions, %d launched, missed: %s; gap paid %d units",
+      info(string.format("director at %d min: %s %s, budget %.2f, adapt %.2f, era %s, worth %.0f, guns %s, lost %.0f (usual %.0f)%s, depth %s, sprees %d, surges %d, focus %d, waves %d, supplies %d, lulls %d, ops %d; under its tempo %d decisions, %d launched, missed: %s; gap paid %d units; razed worth %.0f",
         math.floor(t / 3600), d.active and "on" or "off", tostring(d.phase), d.budget or 0, d.adapt or 1, tostring(r.era),
         r.worth or 0, tostring(r.guns), r.lost or 0, r.usual or 0, r.hurt and " HURT" or "", tostring(r.depth), d.sprees or 0,
         d.surges or 0, d.focuses or 0, d.waves or 0, d.supply_n or 0, d.lulls or 0, launched, tries, went, table.concat(ms, ", "),
-        d.gap_paid or 0))
+        d.gap_paid or 0, (d.lost_total or {}).player or 0))
     end)
   end
   -- Era bases (docs/reviews/2026-10-13-campaign-review.md section 6): "spread" (era 2: three outposts, robots),
@@ -3197,7 +3197,10 @@ scenarios.contact = function()
   local careful = params.mix == "robots" or params.mix == "walled" or params.mix == "spread" or params.mix == "late"
     or campaign
   local walled = params.mix == "walled" or params.mix == "late"
-  local era = ({spread = 2, late = 4, campaign = 2})[params.mix] or 0
+  -- (spread, late and campaign model their eras; the others' read from the research their base needs, below: forced to 0,
+  -- the walled player's 60 laser turrets and 560 walls faced camps landed and sized for a fresh start, the attack cap 1
+  -- and the siege tier 1, its walls out of every camp's reach; the user, 2026-11-14: "Wrong test gives wrong results".)
+  local era = ({spread = 2, late = 4, campaign = 2})[params.mix] or false
   -- The player's base goes down at the strike (minute 20 by default), before the faction can have seen it
   -- (the first raid came at minute 38): every variant then shares one fork of the faction's growth.
   local AT = params.strike > 0 and STRIKE or 30
@@ -3247,7 +3250,38 @@ scenarios.contact = function()
         store.insert{name = name, count = n}
       end
     end
+    -- The research its buildings need: each tech that unlocks a recipe of what stands or is stored, and what it requires.
+    local want = {}
+    for _, e in pairs(surface().find_entities_filtered{force = "player"}) do want[e.name] = true end
+    for _, n in ipairs({"laser-turret", "stone-wall", "construction-robot", "repair-pack", "substation", "roboport",
+      "assembling-machine-2", "electric-furnace", "storage-chest", "big-electric-pole", "radar", "lab"}) do want[n] = true end
+    if params.mix == "late" then want["artillery-turret"], want["artillery-shell"] = true, true end
+    local function research(t)
+      if t.researched then return end
+      for _, pre in pairs(t.prerequisites) do research(pre) end
+      t.researched = true
+    end
+    local function packs(t) local k = 0 for _ in pairs(t.research_unit_ingredients or {}) do k = k + 1 end return k end
+    local n0, top = 0, 0
+    for _, t in pairs(pf.technologies) do
+      for _, eff in pairs(t.prototype.effects or {}) do
+        if eff.type == "unlock-recipe" then
+          local r = prototypes.recipe[eff.recipe]
+          for _, prod in pairs(r and r.products or {}) do
+            if want[prod.name] and not t.researched then research(t); n0 = n0 + 1; top = math.max(top, packs(t)) end
+          end
+        end
+      end
+    end
+    -- (And broadly, as a player does: every finite tech of fewer kinds of pack than the most its buildings needed. Its
+    -- nine on the way alone read era 0, a tier passed at 60% of its techs, ops.era.)
+    for _, t in pairs(pf.technologies) do
+      if t.prototype.max_level < 4294967295 and packs(t) > 0 and packs(t) < top then research(t) end
+    end
     lp("debug_tune", {era = era})
+    S.era_read = lp("debug_readings", "player")
+    info(string.format("contact: the player's research for its base, %d techs unlocking its buildings; era %s", n0,
+      tostring(S.era_read and S.era_read.era)))
     if params.mix == "late" then
       local art = put("artillery-turret", 10, 10)
       if art then art.insert{name = "artillery-shell", count = 30} end
@@ -7564,55 +7598,80 @@ scenarios.director = function()
       S.cap_before = lp("ops_budget", "player")
       -- (A target the camps know, the one farthest from their homes: a focus weighs only what a camp knows, and one on
       -- an outpost neither had seen drew nobody; nearer ones are what they go for unfocused.)
-      local best, bd
+      -- (Known to every camp: a target only the first camp knew could draw only it, 0.2.386.)
+      local known, ncamps = {}, 0
       for _, id in ipairs(lp("bases") or {}) do
+        ncamps = ncamps + 1
         local st = lp("stats", id)
-        local o = st and st.origin
         for _, pt in ipairs(st and st.ops and st.ops.player_targets or {}) do
           local x, y = pt:match("@(%-?[%d%.]+),(%-?[%d%.]+)")
           x, y = tonumber(x), tonumber(y)
-          if x and o then
-            local d = 0
-            for _, id2 in ipairs(lp("bases") or {}) do
-              local o2 = lp("stats", id2).origin
-              d = d + math.sqrt((x - o2.x) ^ 2 + (y - o2.y) ^ 2)
-            end
-            if not bd or d > bd then best, bd = {x, y}, d end
+          if x then
+            local key = math.floor(x / 8) .. "," .. math.floor(y / 8)
+            known[key] = known[key] or {x = x, y = y, n = 0, last = nil}
+            if known[key].last ~= id then known[key].n, known[key].last = known[key].n + 1, id end
           end
         end
       end
+      local best, bd, bn
+      for _, k in pairs(known) do
+        local d = 0
+        for _, id2 in ipairs(lp("bases") or {}) do
+          local o2 = lp("stats", id2).origin
+          d = d + math.sqrt((k.x - o2.x) ^ 2 + (k.y - o2.y) ^ 2)
+        end
+        if not bn or k.n > bn or (k.n == bn and d > bd) then best, bd, bn = {k.x, k.y}, d, k.n end
+      end
+      S.focus_known_by = bn
       S.focus_pos = best or S.outposts[2]
+      -- (Six more assemblers there: of three, the first camp's raid of 4 razed it all before the second, out on a raid
+      -- when the focus began, came home to choose, and nothing was left to draw it; 0.2.386, raids sized smaller.)
+      for k = 0, 5 do
+        local q = surface().find_non_colliding_position("assembling-machine-1",
+          {S.focus_pos[1] + 5 * math.cos(k), S.focus_pos[2] + 5 * math.sin(k)}, 8, 1)
+        if q then surface().create_entity{name = "assembling-machine-1", position = q, force = "player"} end
+      end
+      -- (And sensed by every camp: unknown, they drew nobody once the three known were razed.)
+      for _, id in ipairs(lp("bases") or {}) do lp("debug_needed", id, {S.focus_pos[1], S.focus_pos[2]}) end
       S.said = lp("director_cmd", "focus", S.focus_pos)
       S.cap_during = lp("ops_budget", "player")
       S.pace = lp("sooner", "serenity", 3600)
       S.first = {}
     end)
-    for t = 8 * 3600 + 30, END - 120, 30 do
-      schedule(t, function()
-        for _, id in ipairs(lp("bases") or {}) do
-          local st = lp("stats", id)
-          local o = st and st.ops
-          if o and not S.first[id] and o.op_started and o.op_started >= S.focus_at and o.op_owner == "player" and o.op_pos then
-            local dx, dy = o.op_pos[1] - S.focus_pos[1], o.op_pos[2] - S.focus_pos[2]
-            S.first[id] = {pos = o.op_pos, d = math.sqrt(dx * dx + dy * dy), at = (o.op_started - S.focus_at) / 60}
-          end
-        end
-      end)
-    end
+    -- The focus as the camps weigh it, read at once: one camp's relevance of a target at the focus against one outside
+    -- it. (Read by its next operations at first: the second camp, out on a raid when the focus began, came home to a
+    -- spot its raid had pruned from what it knew, and the first had razed it; four fixes of the scene each met another
+    -- of its timings, 0.2.386. The weight is what a focus is; where the camps go is the choice's.)
+    schedule(8 * 3600 + 1, function()
+      local outside
+      for _, c in ipairs(S.outposts or {}) do
+        if (c[1] - S.focus_pos[1]) ^ 2 + (c[2] - S.focus_pos[2]) ^ 2 > 40 * 40 then outside = c; break end
+      end
+      local id = (lp("bases") or {})[1]
+      S.rel_in = id and lp("debug_relevance", id, S.focus_pos)
+      S.rel_out = id and outside and lp("debug_relevance", id, outside)
+    end)
     schedule(END - 60, function()
       local n, near = 0, 0
       for _, f in pairs(S.first or {}) do
         n = n + 1
         if f.d <= 24 then near = near + 1 end
       end
-      info(string.format("director %s: %s at %s; cap %s then %s, pace %s; firsts %s; outposts %s", params.mix, tostring(S.said),
-        serpent.line(S.focus_pos), tostring(S.cap_before), tostring(S.cap_during), tostring(S.pace), serpent.line(S.first),
+      info(string.format("director %s: %s at %s (known by %s camps); cap %s then %s, pace %s; firsts %s; outposts %s", params.mix, tostring(S.said),
+        serpent.line(S.focus_pos), tostring(S.focus_known_by), tostring(S.cap_before), tostring(S.cap_during), tostring(S.pace), serpent.line(S.first),
         serpent.line(S.outposts)))
+      for _, id in ipairs(lp("bases") or {}) do
+        local st = lp("stats", id)
+        info(string.format("director %s: camp %d under the tempo %d decisions, %d launched, missed %s; op %s; knows %s of the player's: %s", params.mix, id,
+          st.dir_tries or 0, st.dir_launched or 0, serpent.line(st.dir_miss), tostring(st.ops and st.ops.op_phase),
+          tostring(st.ops and st.ops.known_player), serpent.line(st.ops and st.ops.player_targets)))
+      end
       check("director: a surge raises the cap on operations at once and halves the pace",
         S.cap_before and S.cap_during == S.cap_before + 1 and S.pace == 1800,
         string.format("cap %s then %s, pace %s", tostring(S.cap_before), tostring(S.cap_during), tostring(S.pace)))
-      check("director: a focus strike draws the camps' next operations to its point", n >= 2 and near == n,
-        string.format("%d of %d camps' first operations at it (within 24)", near, n))
+      check("director: a focus strike weighs a target at its point focus_weight times one outside it",
+        S.rel_in and S.rel_out and S.rel_out > 0 and math.abs(S.rel_in / S.rel_out - 4) < 0.01,
+        string.format("%s at the focus, %s outside", tostring(S.rel_in), tostring(S.rel_out)))
     end)
     return
   end

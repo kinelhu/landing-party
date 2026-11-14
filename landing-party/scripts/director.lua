@@ -69,39 +69,19 @@ end
 
 -- A loss of the player's, for the half hour's window (control.lua, beside storage.player_razed).
 function director.note_loss(owner, ent)
-  if not (storage.director and storage.director.active) then return end
+  -- (Every loss's worth, on or off: the calibration's measure, razed worth an hour; the consult part three.)
   local s = st()
-  table.insert(s.losses, {game.tick, owner, valuemap.razed_of(ent)})
+  local v = valuemap.razed_of(ent)
+  s.lost_total = s.lost_total or {}
+  s.lost_total[owner] = (s.lost_total[owner] or 0) + v
+  if not s.active then return end
+  table.insert(s.losses, {game.tick, owner, v})
 end
 
--- Every prototype valuemap weighs (by name or by type: a mod's buildings too) and every turret, built once from the
--- prototypes (the same on every peer; only time is saved by keeping it). (Until 0.2.384 the 26 names above: on the
--- user's saves 1.2 to 2.4 times less than this, the belts, inserters, poles and accumulators unseen; the user,
+-- Every building valuemap weighs, a mod's too, and every turret (valuemap.force_worth). (Until 0.2.384 the 26 names
+-- above: on the user's saves 1.2 to 2.4 times less, the belts, inserters, poles and accumulators unseen; the user,
 -- 2026-11-14: "We are not monitoring building amounts?")
-local VALUED, TURRETS
-local TURRET_TYPES = {["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true, ["artillery-turret"] = true}
-local function valued()
-  if VALUED then return VALUED, TURRETS end
-  VALUED, TURRETS = {}, {}
-  for name, p in pairs(prototypes.entity) do
-    local wt = valuemap.NAMES[name] or valuemap.WORTH[p.type]
-    if wt then VALUED[#VALUED + 1] = {name, wt} end
-    if TURRET_TYPES[p.type] then TURRETS[#TURRETS + 1] = name end
-  end
-  table.sort(VALUED, function(a, b) return a[1] < b[1] end)
-  table.sort(TURRETS)
-  return VALUED, TURRETS
-end
-local function worth_of(force)
-  local w, guns = 0, 0
-  local v, t = valued()
-  for _, e in ipairs(v) do
-    local c = force.get_entity_count(e[1])
-    if c > 0 then w = w + c * e[2] end
-  end
-  for _, n in ipairs(t) do guns = guns + force.get_entity_count(n) end
-  return w, guns
-end
+local function worth_of(force) return valuemap.force_worth(force) end
 -- The 26 names' worth, for the readings beside it.
 local function worth_26(force)
   local w = 0
@@ -195,7 +175,8 @@ local function draw(s, owner)
   if not s.rng then s.rng = {s = rng.new((game.surfaces[1] and game.surfaces[1].map_gen_settings.seed or 1) + 7919).s} end
   local _, camps = at_war(owner)
   local w = (tun("weights_of") or {})[director.personality()] or tun("beat_weights")
-  local list = camps >= 2 and {"spree", "surge", "focus", "wave", "supply"} or {"spree", "wave", "supply"}
+  -- (A surge with one camp too: its intensity is the cap on that camp's siege tier, the consult; a focus wants two.)
+  local list = camps >= 2 and {"spree", "surge", "focus", "wave", "supply"} or {"spree", "surge", "wave", "supply"}
   local total = 0
   for _, k in ipairs(list) do total = total + (w[k] or 0) end
   local x = rng.next(s.rng) * total
@@ -327,7 +308,17 @@ function director.tick(tick)
   director.supplies(s, tick)
   -- Its beats: a spree, a surge or a focus strike, then a lull, then filling again; or a drop wave.
   if (s.phase == "spree" or s.phase == "surge") and tick >= s.phase_till then
-    director.start_lull(s, owner, tick)
+    -- A lull only when earned: the player lost something in the beat (lull_if_razed); else straight to filling.
+    local lost_in = 0
+    for _, l in ipairs(s.losses) do if l[2] == owner and l[1] >= (s.beat_from or 0) then lost_in = lost_in + l[3] end end
+    if not tun("lull_if_razed") or lost_in > 0 then
+      director.start_lull(s, owner, tick)
+    else
+      s.phase, s.phase_till, s.next_beat = "fill", nil, nil
+      s.unearned = (s.unearned or 0) + 1
+      trace("no lull: nothing of the player's lost in the beat; filling")
+    end
+  elseif false then
   elseif s.phase == "lull" and tick >= s.phase_till then
     director.end_lull(s, tick)
     s.phase, s.phase_till = "fill", nil
@@ -356,10 +347,10 @@ function director.tick(tick)
       return
     end
     local why = string.format("era %d, worth %.0f, guns %d", era, w, guns)
-    if s.next_beat == "surge" or s.next_beat == "focus" then
-      -- (Two camps or more at war still: else the beat drawn is a spree after all.)
+    if s.next_beat == "focus" then
+      -- (Two camps or more at war still: else the focus drawn is a surge after all.)
       local _, camps = at_war(owner)
-      if camps < 2 then s.next_beat = "spree" end
+      if camps < 2 then s.next_beat = "surge" end
     end
     if s.next_beat == "supply" then
       s.held_for = nil
@@ -459,7 +450,9 @@ function director.supplies(s, tick)
       local where = sp.pos and string.format("[gps=%.0f,%.0f,%s]", sp.pos[1], sp.pos[2], b and game.surfaces[b.surface].name or "nauvis") or ""
       if sp.crate and sp.crate.valid and b and not b.fallen then
         sp.crate.destroy()
-        b.parts = (b.parts or 0) + tun("supply_parts")
+        -- (An armed camp's into its siege fund, which buys its shells: siege_tier's purse; else its parts.)
+        if b.armed then b.siege_fund = (b.siege_fund or 0) + tun("supply_parts")
+        else b.parts = (b.parts or 0) + tun("supply_parts") end
         s.supplied = (s.supplied or 0) + 1
         trace(string.format("supply drop %d reached camp %d: %d parts", n, b.id, tun("supply_parts")))
         tell(sp.owner, "lp.director-supply-in", shared.CORPS[b.corp].name, where)
@@ -604,6 +597,7 @@ function director.start_surge(s, owner, tick, focused, why, at)
   if focused and not at then focused = false end
   s.focus = at and {owner = owner, pos = at, radius = tun("focus_radius"), weight = tun("focus_weight"), till = till} or nil
   s.phase, s.phase_till = "surge", till
+  s.beat_from = tick
   s.beats = s.beats + 1
   if focused then s.focuses = (s.focuses or 0) + 1 else s.surges = (s.surges or 0) + 1 end
   trace(string.format("%s: %s against %s %dx as often, %d more at once, for %d minutes%s (budget %.2f left; %s)",
@@ -648,6 +642,9 @@ function director.start_spree(s, owner, corp, tick, why)
   local minutes = tun("spree_minutes")
   s.tempo[corp] = {factor = tun("spree_factor"), till = tick + minutes * 3600}
   s.last_spree[corp] = tick
+  -- Its intensity too (the consult: at era 0 the cap of 1 held every second operation and the siege at tier 1).
+  s.intensity = {owner = owner, add = tun("spree_add"), till = tick + minutes * 3600}
+  s.beat_from = tick
   -- Its kind's operations preferred for the spree (ops' prefer: Grubstake's strips and raids, Kessler-Hayashi's sieges).
   local mix = (tun("spree_mix") or {})[corp]
   s.mix = s.mix or {}

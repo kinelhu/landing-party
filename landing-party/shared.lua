@@ -455,7 +455,18 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- bar (ops' desperate); under any tempo a camp that chose a raid it could not field is sent the units it lacks by pod
   -- from headquarters, gap_share of its own garrison cap at most a beat (41 of 62 decisions under the tempo were short of
   -- units; a flat 12 left a raid on the walled player 13 short of its 25).
-  beat_minutes = 35, gap_share = 0.5}
+  beat_minutes = 35, gap_share = 0.5,
+  -- Fable's consult part three (2026-11-14; reach, not pace): a spree raises the cap on operations against the player
+  -- (ops' budget, which caps a siege's tier too) by spree_add, as a surge does; a lull follows a beat only if the player
+  -- lost something in it (lull_if_razed); an armed camp's supply drop goes to its siege fund (siege_tier's purse).
+  spree_add = 1, lull_if_razed = true}
+-- A landing matched to what it lands against (the user, 2026-11-14: "Is it an artifact of landing our camps naked on a
+-- late base? Should we land with a bigger budget?"): on top of its fixed escort and START_PARTS, by the strongest player
+-- force's guns and worth (valuemap.force_worth): escort_per_gun more units (escort_max at most), parts_per_worth more parts
+-- (parts_max), and an armed camp fund_per_gun into its siege fund (fund_max: a tier 2 siege 220, tier 3 400). A
+-- headquarters' landing apart. (On the user's saves: start 19 guns and 555 worth, +1 unit and +111 parts; nwa 2,774 and
+-- 75,156, +30 and +3,000.)
+shared.MATCH = {escort_per_gun = 0.1, escort_max = 30, parts_per_worth = 0.2, parts_max = 3000, fund_per_gun = 4, fund_max = 800}
 shared.DIRECTOR_PERSONALITIES = {"steady", "gentle", "chaotic", "off"}  -- between a corporation's landings (faction.lua's cadence)
 shared.MAX_CAMPS = {default = 3, min = 1, max = 10}           -- a corporation's standing camps, its headquarters counted
 shared.ARRIVE_EVO = {default = 0.25, min = 0, max = 0.95}     -- the wild evolution Synthexis comes at (farm.lua)

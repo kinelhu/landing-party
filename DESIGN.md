@@ -7341,6 +7341,21 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **What limits the pressure, and a wrong test** (0.2.386; Fable's consult part three,
+  docs/reviews/2026-11-14-director-pressure-consult.md). A raid's proven size (tactics.best_size) was any attempt that
+  got in and razed one building, however many it lost: a raid of 8 that lost 7 became the size asked for after, about
+  25 units against an outpost with no gun left; now proven only at PROVEN_LOSS (0.5) or less lost, and not against a
+  defence since lost (tactics.weaker); Synthexis's waves keep the old rule (meant to be spent). On 12345 walled, "units
+  short" 27 to 1, the spree's raid 4 units razing 9. Then the consult's others: a spree raises the cap on operations at
+  once (spree_add 1, the siege tier with it), a surge drawn with one camp too, a siege's assault paid as a raid is, a
+  lull only when the player lost something in the beat, an armed camp's supply drop into its siege fund. And the test:
+  contact's players were forced to era 0 (era_override), the walled one's 60 laser turrets and 560 walls facing camps
+  sized for a fresh start; now they research what their buildings need, broadly (every finite tech of fewer kinds of
+  pack than the most they needed): era 3. On it, with the director off, the camps raze 78 to 158 worth in two hours,
+  most attempts in; with it on, within noise of off, 0 to 2 beats in 85 minutes, mostly supply drops. A landing is
+  matched to what it lands against (shared.MATCH: escort, parts and an armed camp's siege fund by the strongest
+  player's guns and worth, capped; valuemap.force_worth). The focus test now reads the weight itself (debug_relevance:
+  a target at the focus 4 times one outside, focusoff 1), after four fixes of its scene each met another of its timings.
 - **Over the camps' judgement, and paid for** (0.2.385; the user: "able to start doomed ops ... if we give bonus income";
   agreed past their judgement, not into hopeless fights; docs/director.md 9d). Its fill at least a spree's cost every
   beat_minutes (35): one beat in 85 minutes before, a second spree 35 minutes after the first now. During a surge or a

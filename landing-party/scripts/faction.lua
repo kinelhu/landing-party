@@ -5,6 +5,7 @@
 --   Tier: parts exported by mature settlements, faction-wide. Each tier unlocks units, adds damage and
 --   garrison room (army.lua reads it).
 local shared = require("__landing-party__.shared")
+local valuemap = require("__landing-party__.scripts.valuemap")
 local threat = require("__landing-party__.scripts.threat")
 local names = require("__landing-party__.scripts.names")
 local site = require("__landing-party__.scripts.site")
@@ -751,6 +752,24 @@ function faction.arrive(surface, from, opts, quiet)
     -- Evolution: up to ten more at full (at maximum evolution, a biter or two ate the camps).
     local evo = game.forces.enemy and game.forces.enemy.get_evolution_factor(surface) or 0
     local n = 6 + 4 * (faction.corp(b.corp).level or 0) + math.floor(10 * evo)
+    -- Matched to what it lands against (shared.MATCH): the strongest player force's guns and worth.
+    local guns, worth = 0, 0
+    for _, pf in pairs(game.forces) do
+      if shared.is_player_force(pf) then
+        local w, g = valuemap.force_worth(pf)
+        if g > guns then guns = g end
+        if w > worth then worth = w end
+      end
+    end
+    local M = shared.MATCH
+    local more = math.min(M.escort_max, math.floor(guns * M.escort_per_gun))
+    local parts = math.min(M.parts_max, math.floor(worth * M.parts_per_worth))
+    n = n + more
+    b.parts = b.parts + parts
+    if armed_for(b.corp, opts) then b.siege_fund = (b.siege_fund or 0) + math.min(M.fund_max, guns * M.fund_per_gun) end
+    b.matched = {guns = guns, worth = math.floor(worth), escort = more, parts = parts}
+    base.trace(b, string.format("matched to the player's %d guns and %.0f worth: %d more in its escort, %d more parts", guns, worth,
+      more, parts))
     b.escort_due = b.grudge and shared.GRUDGE_ESCORT * n or n
   end
   ops.heard_landing(b)

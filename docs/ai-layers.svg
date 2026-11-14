@@ -36,7 +36,7 @@
 <title>Perception and attempts (any attacker)</title>
 <path fill="#eef2f7" stroke="black" d="M733,-131.75C733,-131.75 555,-131.75 555,-131.75 549,-131.75 543,-125.75 543,-119.75 543,-119.75 543,-107.75 543,-107.75 543,-101.75 549,-95.75 555,-95.75 555,-95.75 733,-95.75 733,-95.75 739,-95.75 745,-101.75 745,-107.75 745,-107.75 745,-119.75 745,-119.75 745,-125.75 739,-131.75 733,-131.75"/>
 <text xml:space="preserve" text-anchor="middle" x="644" y="-115.3" font-family="Helvetica,sans-Serif" font-size="11.00">Perception and attempts (any attacker)</text>
-<text xml:space="preserve" text-anchor="middle" x="644" y="-103.3" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1570 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="644" y="-103.3" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1607 lines</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Seams (leaves) -->
 <g id="edge18" class="edge">
@@ -64,8 +64,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M771.88,-235.5C771.88,-235.5 620.12,-235.5 620.12,-235.5 614.12,-235.5 608.12,-229.5 608.12,-223.5 608.12,-223.5 608.12,-203.5 608.12,-203.5 608.12,-197.5 614.12,-191.5 620.12,-191.5 620.12,-191.5 771.88,-191.5 771.88,-191.5 777.88,-191.5 783.88,-197.5 783.88,-203.5 783.88,-203.5 783.88,-223.5 783.88,-223.5 783.88,-229.5 777.88,-235.5 771.88,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="696" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="696" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">22 modules, 9685 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="696" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">army 1055, ops 2408, siege 2135</text>
+<text xml:space="preserve" text-anchor="middle" x="696" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">22 modules, 9700 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="696" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">army 1055, ops 2414, siege 2144</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
 <g id="edge16" class="edge">
@@ -79,7 +79,7 @@
 <title>The director (above every faction)</title>
 <path fill="#eef2f7" stroke="black" d="M315.62,-834C315.62,-834 162.38,-834 162.38,-834 156.38,-834 150.38,-828 150.38,-822 150.38,-822 150.38,-810 150.38,-810 150.38,-804 156.38,-798 162.38,-798 162.38,-798 315.62,-798 315.62,-798 321.62,-798 327.62,-804 327.62,-810 327.62,-810 327.62,-822 327.62,-822 327.62,-828 321.62,-834 315.62,-834"/>
 <text xml:space="preserve" text-anchor="middle" x="239" y="-817.55" font-family="Helvetica,sans-Serif" font-size="11.00">The director (above every faction)</text>
-<text xml:space="preserve" text-anchor="middle" x="239" y="-805.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 867 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="239" y="-805.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 864 lines</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Seams (leaves) -->
 <g id="edge31" class="edge">
@@ -100,8 +100,8 @@
 <title>Corporation</title>
 <path fill="#f7dede" stroke="black" d="M1091.12,-339.25C1091.12,-339.25 994.88,-339.25 994.88,-339.25 988.88,-339.25 982.88,-333.25 982.88,-327.25 982.88,-327.25 982.88,-307.25 982.88,-307.25 982.88,-301.25 988.88,-295.25 994.88,-295.25 994.88,-295.25 1091.12,-295.25 1091.12,-295.25 1097.12,-295.25 1103.12,-301.25 1103.12,-307.25 1103.12,-307.25 1103.12,-327.25 1103.12,-327.25 1103.12,-333.25 1097.12,-339.25 1091.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="1043" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="1043" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">9 modules, 3141 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="1043" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">faction 1186</text>
+<text xml:space="preserve" text-anchor="middle" x="1043" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">9 modules, 3160 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="1043" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">faction 1205</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Corporation -->
 <g id="edge29" class="edge">
@@ -142,9 +142,9 @@
 <!-- Corporation&#45;&gt;Perception and attempts (any attacker) -->
 <g id="edge9" class="edge">
 <title>Corporation&#45;&gt;Perception and attempts (any attacker)</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.5" d="M1037.29,-294.84C1033.27,-283.36 1026.81,-269.71 1017,-260.5 944.38,-192.38 836.29,-154.86 755.13,-135.03"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.5" points="756.11,-131.66 745.57,-132.75 754.49,-138.47 756.11,-131.66"/>
-<text xml:space="preserve" text-anchor="middle" x="987.45" y="-209.82" font-family="Helvetica,sans-Serif" font-size="9.00">2</text>
+<path fill="none" stroke="#8899aa" stroke-width="1.8" d="M1037.29,-294.84C1033.27,-283.36 1026.81,-269.71 1017,-260.5 944.53,-192.52 836.73,-155.02 755.63,-135.15"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.8" points="756.55,-131.77 746.01,-132.86 754.93,-138.58 756.55,-131.77"/>
+<text xml:space="preserve" text-anchor="middle" x="987.45" y="-209.82" font-family="Helvetica,sans-Serif" font-size="9.00">3</text>
 </g>
 <!-- Corporation&#45;&gt;Knowledge and strategy (per faction) -->
 <g id="edge8" class="edge">

@@ -588,7 +588,8 @@ remote.add_interface("landing-party", {
     if t.raids_off ~= nil then storage.raids_off = t.raids_off end
     if t.ops_off ~= nil then storage.ops_off = t.ops_off end
     if t.phases_fast ~= nil then storage.phases_fast = t.phases_fast end
-    if t.era ~= nil then storage.era_override = t.era end
+    -- (false clears it: the era read from the player's research, ops.era.)
+    if t.era ~= nil then storage.era_override = t.era or nil end
     if t.hq_fast ~= nil then storage.hq_fast = t.hq_fast end
     if t.strip_fast ~= nil then storage.strip_fast = t.strip_fast end
     if t.perimeter_fast ~= nil then storage.perimeter_fast = t.perimeter_fast end
@@ -1192,6 +1193,19 @@ remote.add_interface("landing-party", {
   snapshot = snapshot,
   rd = function(corp) return rd.summary(corp) end,
   debug_needed = function(id, pos) return ops.debug_needed(storage.bases[id], {x = pos[1], y = pos[2]}) end,
+  -- Tests: the relevance a camp gives the target it knows nearest pos (sensed there first), as its choice weighs it
+  -- against the player: the director's focus in it (scenario director LP_MIX=focus).
+  debug_relevance = function(id, pos)
+    local b = storage.bases[id]
+    if not b then return nil end
+    ops.debug_needed(b, {x = pos[1], y = pos[2]})
+    local best, bd
+    for _, t in pairs(b.intel and b.intel.targets or {}) do
+      local d = (t.pos[1] - pos[1]) ^ 2 + (t.pos[2] - pos[2]) ^ 2
+      if not bd or d < bd then best, bd = t, d end
+    end
+    return best and ops.relevance(b, best, {player = true, rung = 0}) or nil
+  end,
   -- Tests: the /lp dev tools (scripts/dev.lua) at a position, as a player standing there would use them.
   dev = function(args, pos, surface_index) dev.remote(args, pos, surface_index) end,
   -- Tests and films only: an operation of settlement id forced now at the structure of `owner` (a rival corporation's

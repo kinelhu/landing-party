@@ -205,4 +205,29 @@ function valuemap.hearts(map, fire, n, from, reach, opts)
   return out
 end
 
+-- A force's worth and guns, read cheaply (LuaForce.get_entity_count over every prototype weighed here, by name or type,
+-- a mod's too; its guns every turret). The director's reading and a landing's match (faction.arrive). The prototype
+-- lists are built once (the same on every peer).
+local VALUED, TURRETS
+local TURRET_TYPES = {["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true, ["artillery-turret"] = true}
+function valuemap.force_worth(force)
+  if not VALUED then
+    VALUED, TURRETS = {}, {}
+    for name, p in pairs(prototypes.entity) do
+      local wt = valuemap.NAMES[name] or valuemap.WORTH[p.type]
+      if wt then VALUED[#VALUED + 1] = {name, wt} end
+      if TURRET_TYPES[p.type] then TURRETS[#TURRETS + 1] = name end
+    end
+    table.sort(VALUED, function(a, b) return a[1] < b[1] end)
+    table.sort(TURRETS)
+  end
+  local w, guns = 0, 0
+  for _, e in ipairs(VALUED) do
+    local c = force.get_entity_count(e[1])
+    if c > 0 then w = w + c * e[2] end
+  end
+  for _, n in ipairs(TURRETS) do guns = guns + force.get_entity_count(n) end
+  return w, guns
+end
+
 return valuemap

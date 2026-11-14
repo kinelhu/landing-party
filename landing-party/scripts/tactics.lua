@@ -55,6 +55,13 @@ end
 -- Whether a defence stands stronger now than an attempt met it: more guns or more walls by over SIG_CHANGE. (Weaker, the
 -- attempt holds: a hole left open is its to come back through. The user, 2026-10-30: "are we not at risk of perpetual
 -- identical actions?"; a record of a siege that razed 45 outlived the guns put there after.)
+-- The other way: fewer guns now than the attempt met (by as much as stronger reads more). A size proven against a
+-- defence since lost is no size for what stands now (tactics' best_size, ops.raid_want).
+function tactics.weaker(now, was)
+  if not (now and was) then return false end
+  return now.guns < was.guns - tactics.SIG_CHANGE * math.max(was.guns, 3)
+end
+
 function tactics.stronger(now, was)
   if not (now and was) then return false end
   return now.guns > was.guns + tactics.SIG_CHANGE * math.max(was.guns, 3)
@@ -82,10 +89,15 @@ end
 
 -- Of attempts that got in and got `least` or more, the one that got most for what it spent: what it sent, and the
 -- specialists it brought (rams).
-function tactics.best_size(r, least, sig)
+-- (`max_loss`: proven only if it came home, at most that share of what it sent lost; the corporations' raids pass
+-- PROVEN_LOSS, Synthexis's waves, meant to be spent, none. A raid of 8 that lost 7 and razed 2 lasers
+-- was the size asked for after, about 25 units against the same outpost with no gun left, where 4 would have done: the
+-- director's "units short", 41 of 62 decisions; Fable's consult, 2026-11-14.)
+tactics.PROVEN_LOSS = 0.5
+function tactics.best_size(r, least, sig, max_loss)
   local best, bv
   for _, a in ipairs(tactics.history(r, sig)) do
-    if a.inside and a.got >= least then
+    if a.inside and a.got >= least and (not max_loss or (a.spent or 0) <= max_loss * (a.sent or 0)) then
       local v = a.got / math.max(1, a.spent)
       if not bv or v > bv then best, bv = a, v end
     end

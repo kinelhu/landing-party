@@ -1288,11 +1288,15 @@ end
 function ops.raid_want(b, t)
   local want = math.max(needed(defence(b, t)), ops.mended_floor(b, t))
   if t and t.pos then
-    local near = tactics.history_near(b.corp, t.owner or "player", t.pos, "raid",
-      attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos))
+    local now = attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos)
+    local near = tactics.history_near(b.corp, t.owner or "player", t.pos, "raid", now)
     local r = tactics.attempt(b.corp, t.owner or "player", t.pos, "raid")
     if r then for _, h in ipairs(r.hist or {}) do if not h.breach then near[#near + 1] = h end end end
-    local proven = tactics.best_size({hist = near}, 1, nil)
+    -- (Not against a defence since lost: tactics.weaker.)
+    local kept = {}
+    for _, h in ipairs(near) do if not tactics.weaker(now, h.sig) then kept[#kept + 1] = h end end
+    near = kept
+    local proven = tactics.best_size({hist = near}, 1, nil, tactics.PROVEN_LOSS)
     if proven then
       local per = attempt.worth(shared.variant(b.corp, "lp-infantry"))
       want = math.max(1, math.ceil(proven / math.max(0.1, per)))
@@ -2144,7 +2148,9 @@ local function dir_measure(b, tick)
       b.dir_launched = (b.dir_launched or 0) + 1
     else
       local w = b.choose_why or {}
-      local why = b.dir_short and "units short" or (w.seen or 0) + (w.held or 0) + (w.cool or 0) == 0 and "no target"
+      -- (Not reached: the decision returned before its choice of a raid, a counter-battery or a hazard first.)
+      local why = b.dir_short and "units short" or not b.choose_why and "not reached"
+        or (w.seen or 0) + (w.held or 0) + (w.cool or 0) == 0 and "no target"
         or (w.seen or 0) > 0 and (w.odds or 0) >= (w.seen or 0) and "odds"
         or (w.seen or 0) == 0 and (w.held or 0) > 0 and "held"
         or (w.seen or 0) == 0 and "cooling" or "other"
@@ -2190,7 +2196,7 @@ function ops.tick(b, tick, trace, army)
       if dt and tick < dt.till then
         b.dir_tries = (b.dir_tries or 0) + 1
         b.dir_try = {launched = b.ops_launched or 0}
-        b.dir_short = nil
+        b.dir_short, b.choose_why = nil, nil
       end
     end
     -- Counter-battery first: a battery it knows is besieged before anything else (a raid on a substation was
