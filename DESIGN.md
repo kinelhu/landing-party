@@ -7341,6 +7341,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The event stream** (0.2.389; the user: "Ensure you have a rich enough logging? We need to monitor everything that
+  happens meaningfully"). shared.event writes one line of JSON an event to events.jsonl while tracing (sims and
+  visits): the director's beats with their parameters (kind, corporations, minutes, strike force and its lead camp,
+  mix, focus), its text, and its state a minute (phase, budget, next beat, held, adaptation, era, worth, guns, losses
+  against the usual, hurt, depth, intensity, focus) with the minute's losses by force and kind (the neutral force's
+  cleared trees and rocks left out); every notice as the player would read it (told with no player there while tracing:
+  in a sim no player was connected and none was recorded); landings with their matched kit, falls, departures,
+  stand-downs. sim.sh and visit.sh copy it out; visits take LP_DIRECTOR (its setting in the run's name).
 - **Gentle between off and steady; beats every 20 minutes; the ground on the pages** (0.2.388). Gentle's doubled lulls
   razed less than no director at all (470 against 609); the user: gentle between them. Its lulls now as long as the
   others' (it keeps half the fill and half the strike force), and the fill a spree's cost at least every 20 minutes

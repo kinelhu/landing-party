@@ -574,6 +574,7 @@ local function quiet(tick)
         local losing = (b.fail_streak or 0) >= streak
         if tick - since >= span * tune.aggression(b.corp) or losing then
           b.quiescent = tick
+          shared.event("stood_down", {base = b.id, corp = b.corp, losing = losing and true or false})
           b.stood_down_streak = losing and (b.stood_down_streak or 0) + 1 or b.stood_down_streak
           b.stood_down = (b.stood_down or 0) + 1
           -- A rival again (Grubstake; Serenity never forgets): standing.lua.

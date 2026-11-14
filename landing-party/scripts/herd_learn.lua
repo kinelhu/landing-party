@@ -242,7 +242,7 @@ function herd.develop_bursters()
       game.tick, held), true)
   end
   for _, f in pairs(game.forces) do
-    if #f.players > 0 and shared.is_player_force(f) then shared.notice(f, {"lp.biotech-bursters"}) end
+    if (#f.players > 0 or storage.trace) and shared.is_player_force(f) then shared.notice(f, {"lp.biotech-bursters"}) end
   end
 end
 function herd.bursters_developed() return know.of("biotech").bursters ~= nil end

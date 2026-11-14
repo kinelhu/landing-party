@@ -768,6 +768,8 @@ function faction.arrive(surface, from, opts, quiet)
     b.parts = b.parts + parts
     if armed_for(b.corp, opts) then b.siege_fund = (b.siege_fund or 0) + math.min(M.fund_max, guns * M.fund_per_gun) end
     b.matched = {guns = guns, worth = math.floor(worth), escort = more, parts = parts}
+    shared.event("landed", {base = b.id, corp = b.corp, at = {b.lander.position.x, b.lander.position.y}, matched = b.matched,
+      wave = opts and opts.wave or nil, hq = opts and opts.hq or nil})
     base.trace(b, string.format("matched to the player's %d guns and %.0f worth: %d more in its escort, %d more parts", guns, worth,
       more, parts))
     b.escort_due = b.grudge and shared.GRUDGE_ESCORT * n or n
@@ -1000,7 +1002,7 @@ end
 -- Headquarters: consolidation, the landing, withdrawal (see the constants above).
 local function tell(key, ...)
   for _, force in pairs(game.forces) do
-    if #force.players > 0 then shared.notice(force, {key, ...}) end
+    if #force.players > 0 or (storage.trace and shared.is_player_force(force)) then shared.notice(force, {key, ...}) end
   end
 end
 
@@ -1076,7 +1078,7 @@ function faction.grudge(b, by, at)
   d.grudge = by
   base.trace(b, "grudge: every corporation provoked by " .. by .. "; the next landing comes angry")
   local f = game.forces[by]
-  if f and #f.players > 0 then shared.notice(f, {"lp.grudge", shared.corp_label(b.corp)}) end
+  if f and (#f.players > 0 or storage.trace) then shared.notice(f, {"lp.grudge", shared.corp_label(b.corp)}) end
 end
 
 -- The next landing after a grudge carries it (called by arrive).

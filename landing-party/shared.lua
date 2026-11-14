@@ -798,13 +798,30 @@ function shared.notices_on()
   local s = settings.global["lp-chat-notices"]
   return s and s.value or false
 end
+-- The event stream (the user, 2026-11-14: "We need to monitor everything that happens meaningfully"): one line of JSON an
+-- event to script-output/landing-party/events.jsonl, only while tracing (sims and visits; never a real game's unless
+-- /lp-trace): the director's beats and its state a minute, notices, landings, falls, departures, stand-downs, losses.
+function shared.event(kind, fields)
+  if not storage.trace then return end
+  local e = fields or {}
+  e.k, e.t = kind, game.tick
+  helpers.write_file("landing-party/events.jsonl", helpers.table_to_json(e) .. "\n", true)
+end
+
 function shared.notice(target, msg)
   storage.notice_counts = storage.notice_counts or {told = 0, held = 0}
-  if (type(msg) == "table" and KEEP[msg[1]]) or shared.notices_on() then
+  local told = (type(msg) == "table" and KEEP[msg[1]]) or shared.notices_on()
+  if told then
     target.print(msg)
     storage.notice_counts.told = storage.notice_counts.told + 1
   else
     storage.notice_counts.held = storage.notice_counts.held + 1
+  end
+  -- (Its key and arguments as the player would read them, told or held.)
+  if storage.trace and type(msg) == "table" then
+    local args = {}
+    for i = 2, #msg do args[#args + 1] = type(msg[i]) == "table" and tostring(msg[i][1]) or tostring(msg[i]) end
+    shared.event("notice", {key = msg[1], args = args, told = told and true or false})
   end
 end
 -- A reply to the player's own act (a stake, a breaker, a beacon, a tribute): floating text at the spot, as Factorio says

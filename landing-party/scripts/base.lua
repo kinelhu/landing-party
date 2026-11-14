@@ -409,6 +409,7 @@ function base.depart(b, why)
   for _, o in ipairs({b.claim_fill, b.claim_edge}) do if o and o.valid then o.destroy() end end
   chart.clear(b.claim_marks)
   trace(b, string.format("departs (%s): %d buildings lifted out, no fall", why or "-", n))
+  shared.event("departed", {base = b.id, corp = b.corp, why = why, at = {b.origin.x, b.origin.y}})
   return true
 end
 
@@ -737,6 +738,7 @@ function base.fall(lander)
         trace(b, string.format("the yard bursts: %d stolen items spill", n))
       end
       trace(b, string.format("lander destroyed: the settlement falls (%d generators to fail)", #b.cascade))
+      shared.event("fell", {base = b.id, corp = b.corp, at = {b.origin.x, b.origin.y}})
       local f = game.forces.player
       if f and #f.players > 0 then
         shared.notice(f, {"lp.fallen", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y,

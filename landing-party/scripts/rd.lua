@@ -183,7 +183,7 @@ end
 
 local function notify(corp, key, ...)
   for _, f in pairs(game.forces) do
-    if #f.players > 0 and not shared.is_corp(f.name) then shared.notice(f, {key, shared.corp_label(corp), ...}) end
+    if (#f.players > 0 or (storage.trace and shared.is_player_force(f))) and not shared.is_corp(f.name) then shared.notice(f, {key, shared.corp_label(corp), ...}) end
   end
 end
 

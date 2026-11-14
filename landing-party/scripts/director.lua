@@ -47,6 +47,7 @@ end
 local function trace(text)
   if storage.trace then
     helpers.write_file("landing-party/decisions.txt", string.format("%8d director  %s\n", game.tick, text), true)
+    shared.event("director", {text = text})
   end
   local s = st()
   s.log = s.log or {}
@@ -232,12 +233,23 @@ end
 
 local function tell(owner, key, ...)
   local f = game.forces[owner]
-  if f and #f.players > 0 then shared.notice(f, {key, ...}) end
+  -- (While tracing, told with no player there too: the event stream records what the player would have read.)
+  if f and (#f.players > 0 or storage.trace) then shared.notice(f, {key, ...}) end
 end
 
 function director.tick(tick)
   if tick % 3600 ~= 0 then return end
   local s = st()
+  -- (Its state a minute, on or off, and the minute's losses on each side: the event stream.)
+  if storage.trace then
+    local ev = storage.ev_minute or {}
+    storage.ev_minute = {}
+    local r = s.read or {}
+    shared.event("minute", {active = s.active or false, phase = s.phase, budget = s.budget, next_beat = s.next_beat,
+      held_for = s.held_for, adapt = s.adapt, era = r.era, worth = r.worth, guns = r.guns, lost = r.lost, usual = r.usual,
+      hurt = r.hurt or false, depth = r.depth, intensity = s.intensity and tick < s.intensity.till and s.intensity.add or 0,
+      focus = s.focus and tick < s.focus.till and s.focus.pos or nil, losses = ev})
+  end
   local active = on(tick)
   if active ~= s.active then
     s.active = active
@@ -503,6 +515,7 @@ function director.start_wave(s, owner, corp, tick, why)
   s.beats = s.beats + 1
   s.last_spree[corp] = tick
   trace(string.format("drop wave %d: %d landings of %s (budget %.2f left; %s)", s.waves, n, corp, s.budget, why or "forced"))
+  shared.event("beat", {kind = "wave", corp = corp, n = n, wave = s.waves})
   tell(owner, "lp.director-wave", shared.CORPS[corp].name, n)
   return true
 end
@@ -643,6 +656,8 @@ function director.start_surge(s, owner, tick, focused, why, at)
   s.commit = {owner = owner, corps = set, till = till}
   -- Its strike force first, by pod from each camp's headquarters (threat points: strike_units).
   local sent = strike(s, owner, corps, tick)
+  shared.event("beat", {kind = focused and "focus" or "surge", corps = corps, minutes = tun("surge_minutes"),
+    strike = sent, lead = s.strike_lead, focus = s.focus and s.focus.pos or nil})
   at = focused and (at or focus_point(owner)) or nil
   if focused and not at then focused = false end
   s.focus = at and {owner = owner, pos = at, radius = tun("focus_radius"), weight = tun("focus_weight"), till = till} or nil
@@ -670,6 +685,7 @@ function director.start_lull(s, owner, tick)
   s.phase, s.phase_till = "lull", tick + minutes * 3600
   s.lull_from, s.lull_owner = tick, owner
   s.lulls = (s.lulls or 0) + 1
+  shared.event("beat", {kind = "lull", minutes = minutes})
   trace(string.format("lull: every corporation's operations against %s held %d minutes", owner, minutes))
   tell(owner, "lp.director-lull", minutes)
 end
@@ -702,6 +718,8 @@ function director.start_spree(s, owner, corp, tick, why)
   s.phase, s.phase_till = "spree", tick + minutes * 3600
   s.beats, s.sprees = s.beats + 1, (s.sprees or 0) + 1
   local sent = strike(s, owner, {corp}, tick)
+  shared.event("beat", {kind = "spree", corp = corp, minutes = minutes, factor = tun("spree_factor"), strike = sent,
+    lead = s.strike_lead, mix = s.mix and s.mix[corp] or nil})
   -- A spree pulls its camps' next operations in (a pace, never a hold: ops.finish's gaps, b.next_op_why).
   for _, b in pairs(storage.bases or {}) do
     if b.corp == corp and not b.fallen and b.next_op_why == "pace" and (b.next_op or 0) > tick then

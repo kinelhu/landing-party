@@ -28,7 +28,7 @@ end
 
 local function tell(key, ...)
   for _, f in ipairs(players()) do
-    if #f.players > 0 then shared.notice(f, {key, ...}) end
+    if #f.players > 0 or (storage.trace and shared.is_player_force(f)) then shared.notice(f, {key, ...}) end
   end
 end
 

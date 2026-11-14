@@ -12,7 +12,7 @@ set -euo pipefail
 source "$(dirname "$0")/env.sh"
 SAVE="${1:?usage: scripts/visit.sh <save.zip> [minutes]}"; MINUTES="${2:-180}"
 NAME="$(basename "$SAVE" .zip)"
-V="$HOME/Library/Application Support/factorio-lp-visit/$NAME${LP_MIX:+-$LP_MIX}"
+V="$HOME/Library/Application Support/factorio-lp-visit/$NAME${LP_MIX:+-$LP_MIX}${LP_DIRECTOR:+-dir-$LP_DIRECTOR}"
 case "$V" in *"/factorio/"*) echo "refusing: $V is inside the real profile"; exit 1;; esac
 # A game already on this profile (a play-visit.sh window, another visit): touching its mods and saves under it
 # unlinked Landing Party from a game being played (2026-10-17).
@@ -61,8 +61,9 @@ b_avg=$(grep -oE "avg: [0-9.]+ ms" "$V/run.out" | head -1 | grep -oE "[0-9.]+" |
 # The visit.
 ln -sfn "$REPO/landing-party" "$V/mods/landing-party"
 rm -rf "$V/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$V/mods/lp-sim"
-printf 'return {scenario = "visit", minutes = %s, every = %s, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "%s"}\n' \
-  "$MINUTES" "$MINUTES" "${LP_MIX:-}" > "$V/mods/lp-sim/params.lua"
+# (LP_DIRECTOR=off|gentle|steady|chaotic: the director's personality, on 30 minutes after the first camp: sim.sh's.)
+printf 'return {scenario = "visit", minutes = %s, every = %s, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "%s", director = "%s"}\n' \
+  "$MINUTES" "$MINUTES" "${LP_MIX:-}" "${LP_DIRECTOR:-}" > "$V/mods/lp-sim/params.lua"
 echo "{\"mods\": [$base, {\"name\": \"landing-party\", \"enabled\": true}, {\"name\": \"lp-sim\", \"enabled\": true}]}" > "$V/mods/mod-list.json"
 out="$V/script-output/landing-party"
 rm -rf "$out"
@@ -76,7 +77,7 @@ if [ -n "${LP_PROFILE:-}" ]; then
   echo "baseline $b_prof" >> "$out/results.txt"
   echo "visit $(summarise "$V/run.out")" >> "$out/results.txt"
 fi
-dest="$REPO/docs/sim/visit-$NAME${LP_MIX:+-$LP_MIX}"
+dest="$REPO/docs/sim/visit-$NAME${LP_MIX:+-$LP_MIX}${LP_DIRECTOR:+-dir-$LP_DIRECTOR}"
 mkdir -p "$dest"
 cp "$out/results.txt" "$out/decisions.txt" "$dest/" 2>/dev/null || true
 # Each operation followed from launch to end (landing-party/scripts/oplog.lua), drawn by scripts/ops_review.py.
@@ -85,4 +86,5 @@ if [ -s "$out/ops.jsonl" ]; then cp "$out/ops.jsonl" "$dest/"; uv run --quiet --
 # LP_MIX=record: the run written down for scripts/visit_map.py.
 [ -s "$out/rec.jsonl" ] && cp "$out/rec.jsonl" "$dest/"
 [ -s "$out/terrain.json" ] && cp "$out/terrain.json" "$dest/"
+[ -s "$out/events.jsonl" ] && cp "$out/events.jsonl" "$dest/"
 grep -E "INFO visit|PASS|FAIL|METRIC|PROFILE" "$out/results.txt"

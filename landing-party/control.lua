@@ -278,6 +278,13 @@ script.on_event({defines.events.on_player_display_resolution_changed, defines.ev
 -- destroy is counted razed (attributed through the unit that did it).
 script.on_event(defines.events.on_entity_died, function(e)
   local ent = e.entity
+  -- (The minute's losses by force and kind, for the event stream: shared.event, director.tick.)
+  if storage.trace and ent.valid and ent.force.name ~= "neutral" then
+    storage.ev_minute = storage.ev_minute or {}
+    local f = ent.force.name
+    local k = f .. ":" .. (ent.type == "unit" and "unit" or "building")
+    storage.ev_minute[k] = (storage.ev_minute[k] or 0) + 1
+  end
   fall.skip(e)
   -- What the factions know: every loss of theirs, by whom (scripts/know.lua).
   know.loss(e)
