@@ -7417,6 +7417,63 @@ scenarios.director = function()
   -- focus strike forced on the farthest outpost (one the camps would not go for first). The surge raises the cap on
   -- operations against the player by one and halves the pace; each camp's first operation against the player after it
   -- goes at the focus. LP_MIX=focusoff: the same, the focus weighing 1 (the check seen failing).
+  -- LP_MIX=drop (step 3, 0.2.378): a drop wave of Kessler-Hayashi's forced at minute 2, its fill nought: three landings,
+  -- each an expedition, the landing clock untouched; at minute 12 they are resolved: with one camp standing and the cap
+  -- at three, two settle and the third withdraws, quietly (nothing of it left standing, nothing dropped, no fall).
+  if params.mix == "drop" then
+    schedule(61, function()
+      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, loss_share = 100}})
+    end)
+    schedule(2 * 3600, function()
+      S.next0 = (lp("faction") or {}).next
+      S.said = lp("director_cmd", "wave", "serenity")
+    end)
+    schedule(12 * 3600, function()
+      S.next1 = (lp("faction") or {}).next
+      S.exp = {}
+      for _, id in ipairs(lp("bases") or {}) do
+        local st = lp("stats", id)
+        if st.expedition then S.exp[#S.exp + 1] = id end
+      end
+      S.resolved = lp("director_cmd", "resolve")
+    end)
+    schedule(13 * 3600, function()
+      S.settled, S.gone, S.left, S.dropped, S.fell = 0, 0, 0, 0, 0
+      for _, id in ipairs(S.exp or {}) do
+        local st = lp("stats", id)
+        if st.departed then
+          S.gone = S.gone + 1
+          local o = st.origin
+          S.left = S.left + surface().count_entities_filtered{force = "lp-serenity", position = o, radius = 30,
+            type = {"assembling-machine", "electric-pole", "ammo-turret", "electric-turret", "wall", "container", "unit",
+              "simple-entity-with-owner", "electric-energy-interface", "radar", "lamp"}}
+          S.what = S.what or {}
+          for _, e in pairs(surface().find_entities_filtered{force = "lp-serenity", position = o, radius = 30}) do
+            S.what[e.name] = (S.what[e.name] or 0) + 1
+          end
+          for k, n in pairs(dropped({o.x, o.y}, 40)) do S.dropped = S.dropped + n; S.what["item " .. k] = n end
+          if st.ruins then S.fell = S.fell + 1 end
+        elseif not st.expedition and not st.fallen then
+          S.settled = S.settled + 1
+        end
+      end
+    end)
+    schedule(END - 60, function()
+      local d = lp("director") or {}
+      info("director drop: what stood or lay at the withdrawn camp " .. serpent.line(S.what))
+      info(string.format("director drop: %s; expeditions %s, clock %s then %s; %s; settled %d, gone %d (left %d, dropped %d, ruins %d); director settled %s, withdrawn %s",
+        tostring(S.said), serpent.line(S.exp), tostring(S.next0), tostring(S.next1), tostring(S.resolved), S.settled or -1,
+        S.gone or -1, S.left or -1, S.dropped or -1, S.fell or -1, tostring(d.settled), tostring(d.withdrawn)))
+      check("director: a drop wave lands three expeditions, the landing clock untouched", #(S.exp or {}) == 3 and S.next0 == S.next1,
+        string.format("%d expeditions, clock %s then %s", #(S.exp or {}), tostring(S.next0), tostring(S.next1)))
+      check("director: under the cap two settle, the third withdraws", S.settled == 2 and S.gone == 1,
+        string.format("%s settled, %s gone", tostring(S.settled), tostring(S.gone)))
+      check("director: the withdrawal is quiet (nothing standing, nothing dropped, no ruins)", S.gone == 1 and S.left == 0
+        and S.dropped == 0 and S.fell == 0, string.format("left %s, dropped %s, ruins %s", tostring(S.left), tostring(S.dropped),
+        tostring(S.fell)))
+    end)
+    return
+  end
   local focus, focusoff = params.mix == "focus", params.mix == "focusoff"
   if focus or focusoff then
     schedule(61, function()

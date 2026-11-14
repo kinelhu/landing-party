@@ -120,7 +120,7 @@ local function draw(s, owner)
   if not s.rng then s.rng = {s = rng.new((game.surfaces[1] and game.surfaces[1].map_gen_settings.seed or 1) + 7919).s} end
   local _, camps = at_war(owner)
   local w = tun("beat_weights")
-  local list = camps >= 2 and {"spree", "surge", "focus"} or {"spree"}
+  local list = camps >= 2 and {"spree", "surge", "focus", "wave"} or {"spree", "wave"}
   local total = 0
   for _, k in ipairs(list) do total = total + (w[k] or 0) end
   local x = rng.next(s.rng) * total
@@ -132,7 +132,8 @@ local function draw(s, owner)
 end
 
 local function cost_of(beat)
-  return tun((beat == "surge" and "surge_cost") or (beat == "focus" and "focus_cost") or "spree_cost")
+  return tun((beat == "surge" and "surge_cost") or (beat == "focus" and "focus_cost") or (beat == "wave" and "wave_cost")
+    or "spree_cost")
 end
 
 -- The place on the player's ground its camps know best: their targets against the player, by cell of focus_radius,
@@ -219,7 +220,8 @@ function director.tick(tick)
   rate = rate * s.adapt
   s.read.adapt = s.adapt
   s.budget = math.min(tun("cap"), s.budget + rate)
-  -- Its beats: a spree, a surge or a focus strike, then a lull, then filling again.
+  director.expeditions(s, owner, tick)
+  -- Its beats: a spree, a surge or a focus strike, then a lull, then filling again; or a drop wave.
   if (s.phase == "spree" or s.phase == "surge") and tick >= s.phase_till then
     director.start_lull(s, owner, tick)
   elseif s.phase == "lull" and tick >= s.phase_till then
@@ -251,6 +253,15 @@ function director.tick(tick)
       local _, camps = at_war(owner)
       if camps < 2 then s.next_beat = "spree" end
     end
+    if s.next_beat == "wave" then
+      local corp = pick(s, owner, tick)
+      if not corp then return end
+      s.held_for = nil
+      s.budget = s.budget - tun("wave_cost")
+      director.start_wave(s, owner, corp, tick, why)
+      s.phase, s.next_beat = "fill", nil
+      return
+    end
     if s.next_beat == "surge" or s.next_beat == "focus" then
       s.held_for = nil
       local beat = s.next_beat
@@ -263,6 +274,77 @@ function director.tick(tick)
     s.held_for = nil
     s.budget = s.budget - tun("spree_cost")
     director.start_spree(s, owner, corp, tick, why)
+  end
+end
+
+-- A drop wave now: wave_size landings of `corp` queued at once (faction.request, kind "wave": the landing queue lands
+-- them one after another, each seeing the last, APART for free), each an expedition (faction's after.wave). Told
+-- first, factually; each landing tells itself as any does.
+function director.start_wave(s, owner, corp, tick, why)
+  local f = faction.state()
+  local surface = f.surface and game.surfaces[f.surface]
+  if not (surface and f.from) then return false end
+  local n = tun("wave_size")
+  s.waves = (s.waves or 0) + 1
+  for _ = 1, n do
+    faction.request(surface, f.from, {corp = corp, wave = true}, storage.quiet, "wave", {wave = s.waves})
+  end
+  s.beats = s.beats + 1
+  s.last_spree[corp] = tick
+  trace(string.format("drop wave %d: %d landings of %s (budget %.2f left; %s)", s.waves, n, corp, s.budget, why or "forced"))
+  tell(owner, "lp.director-wave", shared.CORPS[corp].name, n)
+  return true
+end
+
+-- Its expeditions resolved at expedition_minutes (the user's rule, 2026-11-14): one settles where its corporation has
+-- room under the camp cap; else it takes the place of its corporation's weakest standing camp (fewest parts exported)
+-- if it has exported more and the player has not hurt that camp in fought_minutes, that camp departing; else it
+-- withdraws. Each told factually.
+function director.expeditions(s, owner, tick)
+  local base = director.base
+  local due = tun("expedition_minutes") * 3600
+  local ids = {}
+  for id, b in pairs(storage.bases or {}) do
+    if b.expedition and not b.fallen and b.lander.valid and tick - b.expedition.since >= due then ids[#ids + 1] = id end
+  end
+  table.sort(ids)
+  for _, id in ipairs(ids) do
+    local b = storage.bases[id]
+    local surface = game.surfaces[b.surface]
+    local where = string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y, surface.name)
+    local name = shared.CORPS[b.corp].name
+    if faction.alive(b.corp) < faction.camps(b.corp) then
+      b.expedition = nil
+      s.settled = (s.settled or 0) + 1
+      trace(string.format("expedition %d settles: %s has room (%d of %d camps)", id, b.corp, faction.alive(b.corp) - 1,
+        faction.camps(b.corp)))
+      tell(owner, "lp.director-settled", name, where)
+    else
+      local weakest
+      for _, o in pairs(storage.bases) do
+        if o.corp == b.corp and not o.expedition and not o.fallen and not o.hq and o.lander.valid
+          and (not weakest or (o.exported or 0) < (weakest.exported or 0)) then weakest = o end
+      end
+      local fought = weakest and weakest.player_hit_at and tick - weakest.player_hit_at < tun("fought_minutes") * 3600
+      if weakest and (b.exported or 0) > (weakest.exported or 0) and not fought then
+        local ws = game.surfaces[weakest.surface]
+        local wwhere = string.format("[gps=%d,%d,%s]", weakest.origin.x, weakest.origin.y, ws.name)
+        base.depart(weakest, "replaced by expedition " .. id)
+        b.expedition = nil
+        s.settled, s.replaced = (s.settled or 0) + 1, (s.replaced or 0) + 1
+        trace(string.format("expedition %d settles in place of camp %d (exported %d against %d)", id, weakest.id,
+          b.exported or 0, weakest.exported or 0))
+        tell(owner, "lp.director-departed", name, wwhere)
+        tell(owner, "lp.director-settled", name, where)
+      else
+        base.depart(b, "expedition withdrawn")
+        s.withdrawn = (s.withdrawn or 0) + 1
+        trace(string.format("expedition %d withdraws: no room, and %s", id, not weakest and "no camp to replace"
+          or fought and string.format("camp %d was fought lately", weakest.id)
+          or string.format("exported %d, no more than camp %d's %d", b.exported or 0, weakest.id, weakest.exported or 0)))
+        tell(owner, "lp.director-departed", name, where)
+      end
+    end
   end
 end
 
@@ -382,6 +464,15 @@ function director.cmd(action, arg)
     local at = type(arg) == "table" and {arg[1] or arg.x, arg[2] or arg.y} or nil
     if not director.start_surge(s, owner, tick, action == "focus", "forced", at) then return "no corporation at war with a camp standing" end
     return action == "focus" and (s.focus and "focus strike" or "surge (no focus known)") or "surge"
+  elseif action == "wave" then
+    local corp = (type(arg) == "string" and shared.CORPS[arg] and arg) or pick(s, owner, tick)
+    if not corp then return "no corporation at war with a camp standing" end
+    return director.start_wave(s, owner, corp, tick, "forced") and ("drop wave: " .. corp) or "no landing ground known"
+  elseif action == "resolve" then
+    -- (Tests and the panel: every expedition due now.)
+    for _, b in pairs(storage.bases or {}) do if b.expedition then b.expedition.since = tick - tun("expedition_minutes") * 3600 end end
+    director.expeditions(s, owner, tick)
+    return "expeditions resolved"
   elseif action == "lull" then
     director.start_lull(s, owner, tick)
     return "lull"

@@ -368,7 +368,48 @@ function base.on_damaged(e)
   local b = own and storage.bases[own.base]
   -- A fallen settlement raises no alarm (damage in the tick its lander died crashed the intel, which read the
   -- surface through the dead lander).
-  if b and not b.fallen and b.lander.valid then army.alarm(b, e.position, trace) end
+  if b and not b.fallen and b.lander.valid then
+    -- (When a player last hurt it: an expedition takes the place only of a camp left alone, director.lua.)
+    if e.force and shared.is_player_force(e.force) then b.player_hit_at = game.tick end
+    army.alarm(b, e.position, trace)
+  end
+end
+
+-- A camp leaves (a director's expedition withdrawn, or the camp it replaced): its units and buildings lifted out,
+-- quietly, no fall (no cascade, no ruins, no command cores: the lander destroyed, not killed). Marked fallen and
+-- departed, so every loop over camps passes it by.
+function base.depart(b, why)
+  if b.fallen then return false end
+  b.fallen, b.departed = game.tick, game.tick
+  b.queue, b.rebuild, b.cascade = {}, {}, nil
+  local function gone(u) if u and u.valid then u.destroy() end end
+  for _, u in ipairs(b.garrison or {}) do gone(u) end
+  -- (Every unit it owns, the roster: its patrols, escorts and pickets are in no other list; three stood on after it.)
+  for _, u in pairs(b.roster or {}) do gone(u) end
+  b.roster = {}
+  if b.op then
+    for _, u in ipairs(b.op.members or {}) do gone(u) end
+    gone(b.op.hauler)
+    b.op = nil
+  end
+  for _, c in ipairs(b.crews or {}) do gone(c.unit) end
+  b.crews = {}
+  for _, r in ipairs(b.raids or {}) do for _, u in ipairs(r.members or {}) do gone(u) end end
+  b.raids = {}
+  local n = 0
+  for _, m in ipairs(b.modules or {}) do
+    for _, e in ipairs(m.entities or {}) do if e.valid then n = n + 1; e.destroy() end end
+    if m.marks then chart.clear(m.marks) end
+  end
+  for _, list in ipairs({b.turrets, b.gens, b.depots, b.pylons, b.walls, b.bins, b.fabs, b.drills}) do
+    for _, e in ipairs(list or {}) do if e.valid then n = n + 1; e.destroy() end end
+  end
+  gone(b.lander)
+  for _, t in pairs(b.tags or {}) do if t.valid then t.destroy() end end
+  for _, o in ipairs({b.claim_fill, b.claim_edge}) do if o and o.valid then o.destroy() end end
+  chart.clear(b.claim_marks)
+  trace(b, string.format("departs (%s): %d buildings lifted out, no fall", why or "-", n))
+  return true
 end
 
 function base.network(b)
@@ -934,7 +975,7 @@ function base.stats(b)
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
-    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius, claims_settled = b.claims_settled, landed = b.landed, gens_max = b.gens_max, hull_down = b.hull_down, perimeter = b.perimeter, perimeter_steps = b.perimeter_steps, warned = b.warned,
+    fallen = b.fallen, departed = b.departed, expedition = b.expedition ~= nil, exported = b.exported, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius, claims_settled = b.claims_settled, landed = b.landed, gens_max = b.gens_max, hull_down = b.hull_down, perimeter = b.perimeter, perimeter_steps = b.perimeter_steps, warned = b.warned,
     grudge = b.grudge, grudge_till = b.grudge_till, cap = army.cap(b), escort = b.escort, gens_counted = b.gens_counted,
     cleared = b.cleared, under_guns = b.under_guns, reinforced = b.reinforced or 0, on_footing = b.on_footing,
     columns_arrived = b.columns_arrived or 0, quiescent = b.quiescent, stood_down = b.stood_down or 0,

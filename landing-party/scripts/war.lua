@@ -165,6 +165,8 @@ end
 
 local POD_LOAD = 4                -- units a relief pod carries
 local function send(b, owner, rung)
+  -- (No relief for an expedition, a director's drop wave: director.lua.)
+  if b.expedition then return false end
   local d = corp_state(b.corp)
   local n = RELIEF_PER_RUNG * rung
   local sister = b.corp == "serenity" and nearest_sister(b)

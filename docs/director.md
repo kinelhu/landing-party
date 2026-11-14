@@ -210,6 +210,25 @@ Step 2 (0.2.377):
   so the notice comes first in effect; a warning phase is an open question.
 - **At war:** stance "enemy" only, as the spree's pick: Grubstake while only a rival is not in a surge.
 
+Step 3 (0.2.378):
+- **Drop wave:** `wave_size` 3 landings of one corporation, the one the spree's pick would take (at war, a camp
+  standing, longest without a beat), queued at once on the landing queue as `faction.request` jobs of kind "wave":
+  they land one after another, 10 to 30 s apart, each seeing the last. `wave_cost` 3, weighted 0.15 in the draw (also
+  with one camp at war: it is how a second and third camp come). Told first: "__1__ is landing __2__ camps."; each
+  landing tells itself as any does.
+- **Off the clock:** a wave landing neither sets the next landing's time nor counts in the faction's landings (which
+  gate the second corporation's entry), as a headquarters' landing does not.
+- **Expedition:** each wave camp flagged; not counted by `faction.alive` (the cap, the cadence's choice, the director's
+  own camp count), no reliefs (`war.lua`). Resolved at `expedition_minutes` 45 by the user's rule: room under the cap,
+  it settles; else it takes the place of its corporation's weakest standing camp (fewest parts exported, never the
+  headquarters) if it has exported more and the player has not hurt that camp in `fought_minutes` 30, that camp
+  departing; else it withdraws. Told: "__1__'s camp at [gps] is staying." / "... has departed."
+- **Departure:** `base.depart`: its whole roster, crews and operation, every building of its modules and lists, and its
+  lander destroyed, not killed: no fall, no cascade, no ruins, no command cores. Marked fallen and departed.
+- Not tested yet: the branch where an expedition takes another camp's place (the scenario's camps export nothing in
+  its 16 minutes), and the settle-or-withdraw split was not seen failing. Expeditions are resolved only while the
+  director is on: turned off with expeditions standing, they stand uncounted.
+
 ## 10. Build order
 
 1. The director's state, budget and readings; personality steady and off; tempo and lull, the two dials that act from

@@ -740,7 +740,8 @@ function faction.arrive(surface, from, opts, quiet)
     end
     return nil
   end
-  f.landings = f.landings + 1
+  -- (A drop wave's landing is off the count, as off the clock below: director.lua.)
+  if not (opts and opts.wave) then f.landings = f.landings + 1 end
   faction.angry(b)
   -- A world already far along: the corporation arrives with the research it would have pushed it to (rd.history).
   rd.history(b.corp, surface)
@@ -761,8 +762,9 @@ function faction.arrive(surface, from, opts, quiet)
     b.hq = true
     b.lander.destructible = false
   end
-  -- A headquarters lands off the clock: the faction's origin and next landing stay as they were.
-  if not (opts and opts.hq) then
+  -- A headquarters lands off the clock: the faction's origin and next landing stay as they were; so does a director's
+  -- drop wave (its landings an expedition, director.lua).
+  if not (opts and (opts.hq or opts.wave)) then
     f.surface, f.from = surface.index, {x = from.x, y = from.y}
     f.next = game.tick + cadence(f)
   end
@@ -809,11 +811,13 @@ local function alive(corp)
   local n = 0
   for _, b in pairs(storage.bases) do
     -- A settlement stood down (war.lua) leaves its place to a new landing.
-    if b.lander.valid and not b.quiescent and (not corp or b.corp == corp) then n = n + 1 end
+    -- (Nor an expedition, a director's drop wave, till it settles: director.lua.)
+    if b.lander.valid and not b.quiescent and not b.expedition and (not corp or b.corp == corp) then n = n + 1 end
   end
   return n
 end
 faction.alive = alive
+faction.camps = camps
 
 -- Which corporation the clock lands: of those in the region (the first; the second from the third landing),
 -- not withdrawn, under its cap, the one with fewer settlements standing (ties: the one that landed longer ago).
@@ -936,6 +940,13 @@ local function landing_jobs()
       math.floor((game.tick - job.since) / 60), job.waits, late and ", the last forced" or ""))
   end
   if after[job.kind] then after[job.kind](job, b) end
+end
+
+-- A director's drop wave's landing (director.start_wave): an expedition from its landing (director.lua resolves it).
+after.wave = function(job, b)
+  if not b then return end
+  b.expedition = {since = game.tick, wave = job.wave}
+  base.trace(b, string.format("an expedition of drop wave %s", tostring(job.wave)))
 end
 
 function faction.tick(tick)

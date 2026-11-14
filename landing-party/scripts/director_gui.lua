@@ -24,6 +24,10 @@ local function lines(p)
   out[#out + 1] = string.format("budget %.2f of %d; next beat %s; sprees %d, surges %d, focus strikes %d, lulls %d%s", s.budget or 0,
     director.tune("cap"), tostring(s.next_beat or "-"), s.sprees or 0, s.surges or 0, s.focuses or 0, s.lulls or 0,
     s.held_for and (", held: " .. s.held_for) or "")
+  local exp = 0
+  for _, b in pairs(storage.bases or {}) do if b.expedition and not b.fallen then exp = exp + 1 end end
+  out[#out + 1] = string.format("drop waves %d; expeditions standing %d, settled %d (in another's place %d), withdrawn %d",
+    s.waves or 0, exp, s.settled or 0, s.replaced or 0, s.withdrawn or 0)
   local i, fo = s.intensity, s.focus
   out[#out + 1] = string.format("intensity %s; focus %s",
     (i and tick < i.till) and string.format("+%d, %s left", i.add, mmss(i.till - tick)) or "-",
@@ -54,7 +58,8 @@ local function build(p)
   body.style.vertical_spacing = 2
   local row = f.add{type = "flow", name = "lp_dir_row1", direction = "horizontal"}
   for _, b in ipairs({{"on", "Force on"}, {"off", "Force off"}, {"auto", "As setting"}, {"lull", "Lull now"},
-    {"surge", "Surge now"}, {"focus", "Focus strike"}, {"fill", "Fill budget"}, {"empty", "Empty budget"}, {"end", "End beat"}}) do
+    {"surge", "Surge now"}, {"focus", "Focus strike"}, {"wave", "Drop wave"}, {"resolve", "Resolve expeditions"},
+    {"fill", "Fill budget"}, {"empty", "Empty budget"}, {"end", "End beat"}}) do
     row.add{type = "button", name = "lp_dir_" .. b[1], caption = b[2], tags = {lp_dir = b[1]}}
   end
   local row2 = f.add{type = "flow", name = "lp_dir_row2", direction = "horizontal"}

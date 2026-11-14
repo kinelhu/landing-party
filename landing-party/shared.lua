@@ -425,7 +425,13 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- focus_radius of one point focus_weight times as relevant to every camp); a beat drawn at each fill by these weights,
   -- a surge or a focus only with two camps at war or more.
   surge_cost = 2, surge_factor = 2, surge_add = 1, surge_minutes = 15, focus_cost = 3, focus_weight = 4, focus_radius = 64,
-  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2}}
+  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2, wave = 0.15},
+  -- Step 3 (decided overnight 2026-11-14, for review): a drop wave, wave_size landings of one corporation at once (the
+  -- landing queue, each seeing the last), wave_cost; its camps an expedition (not counted against the camp cap, no
+  -- reliefs, the landing clock untouched) until expedition_minutes, then the user's settle rule (2026-11-14): settles
+  -- with room under the cap; else takes the place of its corporation's weakest camp if it has exported more and the
+  -- player has not hurt that camp in fought_minutes; else withdraws. Departures quiet: no fall, no cores.
+  wave_cost = 3, wave_size = 3, expedition_minutes = 45, fought_minutes = 30}
 shared.DIRECTOR_PERSONALITIES = {"steady", "off"}  -- between a corporation's landings (faction.lua's cadence)
 shared.MAX_CAMPS = {default = 3, min = 1, max = 10}           -- a corporation's standing camps, its headquarters counted
 shared.ARRIVE_EVO = {default = 0.25, min = 0, max = 0.95}     -- the wild evolution Synthexis comes at (farm.lua)

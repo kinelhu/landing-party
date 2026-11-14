@@ -21,7 +21,7 @@
 <title>Settlement</title>
 <path fill="#f7dede" stroke="black" d="M950.12,-642.5C950.12,-642.5 847.88,-642.5 847.88,-642.5 841.88,-642.5 835.88,-636.5 835.88,-630.5 835.88,-630.5 835.88,-610.5 835.88,-610.5 835.88,-604.5 841.88,-598.5 847.88,-598.5 847.88,-598.5 950.12,-598.5 950.12,-598.5 956.12,-598.5 962.12,-604.5 962.12,-610.5 962.12,-610.5 962.12,-630.5 962.12,-630.5 962.12,-636.5 956.12,-642.5 950.12,-642.5"/>
 <text xml:space="preserve" text-anchor="middle" x="899" y="-628.05" font-family="Helvetica,sans-Serif" font-size="11.00">Settlement</text>
-<text xml:space="preserve" text-anchor="middle" x="899" y="-616.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 6427 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="899" y="-616.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 6468 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="899" y="-604.05" font-family="Helvetica,sans-Serif" font-size="11.00">layout 1747</text>
 </g>
 <!-- Seams (leaves)&#45;&gt;Settlement -->
@@ -79,7 +79,7 @@
 <title>The director (above every faction)</title>
 <path fill="#eef2f7" stroke="black" d="M315.62,-834C315.62,-834 162.38,-834 162.38,-834 156.38,-834 150.38,-828 150.38,-822 150.38,-822 150.38,-810 150.38,-810 150.38,-804 156.38,-798 162.38,-798 162.38,-798 315.62,-798 315.62,-798 321.62,-798 327.62,-804 327.62,-810 327.62,-810 327.62,-822 327.62,-822 327.62,-828 321.62,-834 315.62,-834"/>
 <text xml:space="preserve" text-anchor="middle" x="239" y="-817.55" font-family="Helvetica,sans-Serif" font-size="11.00">The director (above every faction)</text>
-<text xml:space="preserve" text-anchor="middle" x="239" y="-805.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 518 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="239" y="-805.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 614 lines</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Seams (leaves) -->
 <g id="edge31" class="edge">
@@ -100,8 +100,8 @@
 <title>Corporation</title>
 <path fill="#f7dede" stroke="black" d="M1091.12,-339.25C1091.12,-339.25 994.88,-339.25 994.88,-339.25 988.88,-339.25 982.88,-333.25 982.88,-327.25 982.88,-327.25 982.88,-307.25 982.88,-307.25 982.88,-301.25 988.88,-295.25 994.88,-295.25 994.88,-295.25 1091.12,-295.25 1091.12,-295.25 1097.12,-295.25 1103.12,-301.25 1103.12,-307.25 1103.12,-307.25 1103.12,-327.25 1103.12,-327.25 1103.12,-333.25 1097.12,-339.25 1091.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="1043" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="1043" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">9 modules, 3110 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="1043" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">faction 1175</text>
+<text xml:space="preserve" text-anchor="middle" x="1043" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">9 modules, 3123 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="1043" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">faction 1186</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Corporation -->
 <g id="edge29" class="edge">

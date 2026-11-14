@@ -17,7 +17,7 @@ document still says Serenity where it records history.
 | Area | State | Tested by (headless scenario) |
 |---|---|---|
 | Arrival on first launch, repeated landings, sites apart | built | `faction` |
-| Director (a storyteller above the corporations: it paces every camp's operations on the player, sprees and lulls, then waves; budget and pacing; the user, 2026-11-13: "think rimworld storyteller") | step 1 built 0.2.372 (state, budget, readings, tempo and lull, the floor; steady and off); step 2 0.2.377 (intensity, focus, surge, focus strike, drawn beats; its calls listed for review, `docs/director.md` 9b); calibration running; steps 3 and 4 overnight, 5 the user's | `director` (and off, hurt, cmd, wave, focus) |
+| Director (a storyteller above the corporations: it paces every camp's operations on the player, sprees and lulls, then waves; budget and pacing; the user, 2026-11-13: "think rimworld storyteller") | step 1 built 0.2.372 (state, budget, readings, tempo and lull, the floor; steady and off); step 2 0.2.377 (intensity, focus, surge, focus strike, drawn beats); step 3 0.2.378 (drop wave, expeditions, the settle rule, quiet departures); their calls listed for review, `docs/director.md` 9b; calibration running; step 4 overnight, 5 the user's | `director` (and off, hurt, cmd, wave, focus, drop) |
 | Opening: signs (radar), survey party (oil), arrival (launch or blue science) | built | `phases` (two) |
 | Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
 | Levers (settings; the user, 2026-11-08: "expose some levers... That's how vanilla does it with biters"): a difficulty preset times every faction's strength, aggression and income; each faction's own on top; when each arrives; its most camps; the time between landings; revenge landings; Kessler-Hayashi's orbital strikes, Grubstake's theft, Synthexis's most cultures, largest wave and learning | built 0.2.223, uncalibrated (after the playtest) | `levers`, `phases` (grubprod, interval, camps), `farm` (late, smallwaves, unlearned, seedcap), `grudge` norevenge, `orbital` nostrike, `skim`/`strip` notheft |
@@ -7341,6 +7341,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The director, step 3** (0.2.378; overnight; its calls in docs/director.md 9b). The drop wave: three landings of
+  one corporation queued at once on the landing queue (kind "wave"), each seeing the last; off the landing clock and
+  the landing count (the clock moved 324000 to 333000 in the first run: a landing set it whatever its kind; now a wave's
+  does not, as a headquarters' does not). Its camps expeditions: not counted against the camp cap, no reliefs; at 45
+  minutes the user's settle rule. A quiet departure (base.depart): its roster, crews, operation and buildings lifted
+  out, the lander destroyed, not killed (no fall, no cores). Its first run left three units standing (in the roster
+  only: patrols and escorts are in no other list); now the roster goes too. Scenario director LP_MIX=drop: three
+  expeditions, the clock untouched, resolved at minute 12 with one camp standing and the cap at three, two settle and
+  the third withdraws, nothing of it left standing or dropped, no ruins. Untested: the branch where an expedition takes
+  another camp's place.
 - **The director, step 2** (0.2.377; overnight, the user agreed; its calls listed in docs/director.md 9b for review).
   Intensity (the cap on operations against a player at once, ops' budget, a surge's surge_add higher) and focus (a
   target near a focus point focus_weight times as relevant to every camp, ops' relevance), both read from the
