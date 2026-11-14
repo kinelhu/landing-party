@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.393
+Date: 2026-11-15
+  Changes:
+    - The director tells every beat and lull, and steady and gentle tell the next beat and who brings it, at least 10 minutes ahead.
+    - A strike force is told 2 minutes before it lands, with its place marked on the map; it attacks buildings and guns, then walks back to be lifted out, and can be destroyed on the way.
+    - A lull follows every beat, longer the more the beat cost you.
+    - Steady's fourth beat is a climax: a focus strike with twice the strike force, told 5 minutes ahead, then the longest lull.
+  Bugfixes:
+    - A focus strike's strike force went for the previous focus.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.392
 Date: 2026-11-14
   Changes:

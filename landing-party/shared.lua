@@ -424,7 +424,8 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- (Gentle's lulls the others' length since 0.2.388: doubled, it razed less than no director at all, 470 against 609;
   -- the user: gentle between off and steady.)
   grace = 30, personality = {steady = 1, gentle = 0.5, chaotic = 1}, lull_scale = {},
-  weights_of = {gentle = {spree = 0.6, surge = 0.4}, chaotic = {spree = 0.25, surge = 0.25, focus = 0.25, wave = 0.25}},
+  weights_of = {gentle = {spree = 0.6, surge = 0.4}, chaotic = {spree = 0.25, surge = 0.25, focus = 0.25, wave = 0.25,
+    climax = 0.1}},
   chaos_minutes = 30,
   -- Adaptation: the fill's multiple grows adapt_climb an hour the player goes unhurt, to adapt_max; hurt, back to 1.
   adapt_climb = 0.1, adapt_max = 2,
@@ -433,7 +434,8 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- focus_radius of one point focus_weight times as relevant to every camp); a beat drawn at each fill by these weights,
   -- a surge or a focus only with two camps at war or more.
   surge_cost = 2, surge_factor = 2, surge_add = 1, surge_minutes = 15, focus_cost = 3, focus_weight = 4, focus_radius = 64,
-  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2, wave = 0.15, supply = 0},
+  -- (supply back in steady's draw at 0.1, 0.2.393: the one beat the player can win outright, its pod tagged.)
+  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2, wave = 0.15, supply = 0.1},
   -- Step 3 (decided overnight 2026-11-14, for review): a drop wave, wave_size landings of one corporation at once (the
   -- landing queue, each seeing the last), wave_cost; its camps an expedition (not counted against the camp cap, no
   -- reliefs, the landing clock untouched) until expedition_minutes, then the user's settle rule (2026-11-14): settles
@@ -450,7 +452,7 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- hour's losses past hurt_factor times the player's usual half hour (over hurt_hours) and past hurt_floor of the
   -- factory's worth; depth (infinite levels by packs) raises its pace by min(depth_max, 1 + log10(1 + depth /
   -- depth_scale)): on the user's saves b 1.06, nw 1.33, nwaoo 1.77, nwa 2; its first beat first_minutes after it comes on.
-  hurt_factor = 2, hurt_hours = 2, hurt_floor = 0.05, depth_scale = 30, depth_max = 2, first_minutes = 15,
+  hurt_factor = 3, hurt_hours = 2, hurt_floor = 0.01, depth_scale = 30, depth_max = 2, first_minutes = 15,
   -- Over the camps' judgement (the user, 2026-11-14: "able to start doomed ops ... if we give bonus income"; agreed
   -- past their judgement, not into hopeless fights): its fill at least a spree's cost every beat_minutes (one beat in
   -- 85 minutes in the calibration); during a surge or a focus strike the camps at war take the ladder's desperate odds
@@ -468,8 +470,19 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- player's worth, times the difficulty, the personality and the adaptation, points_max a camp at most (on the user's
   -- saves at steady: start about 11, nwa the cap). Its first beat a spree; supply drops out of steady's draw.
   points_per_worth = 0.02, points_max = 40,
-  -- A strike force's time in the field before it is lifted out (director.strikes).
-  strike_minutes = 8}
+  -- A strike force's time in the field before it walks back to its landing point (director.strikes), and the most it
+  -- takes to get there before what is left is lifted out.
+  strike_minutes = 8, lift_minutes = 3,
+  -- A fun director (Fable's consult, docs/reviews/2026-11-15-fun-director-consult.md; the user: "please do your best to
+  -- create a fun director"). Telegraphed: a strike force told warn_minutes before its pods (the orbital cannon's paint
+  -- the precedent), a climax's climax_warn; steady and gentle tell each beat as they draw it, forecast_minutes at least
+  -- before it comes (chaotic says nothing: Randy). Recovery: a lull after every beat, lull_floor minutes at least, an
+  -- earned one lull_minutes times the beat's losses over the player's usual, lull_max at most; hurt a late base can
+  -- reach (hurt_floor of worth: 0.05 was 3,750 on nwa, never reached on railbase_end in three hours). A cycle: steady's
+  -- every climax_every-th beat the climax, a focus strike costing the cap, its strike force climax_points times, then
+  -- lull_max; chaotic draws it at weights_of.chaotic.climax.
+  warn_minutes = 2, climax_warn = 5, forecast_minutes = 10, lull_floor = 5, lull_max = 30, climax_every = 4,
+  climax_points = 2}
 -- A landing matched to what it lands against (the user, 2026-11-14: "Is it an artifact of landing our camps naked on a
 -- late base? Should we land with a bigger budget?"): on top of its fixed escort and START_PARTS, by the strongest player
 -- force's guns and worth (valuemap.force_worth): escort_per_gun more units (escort_max at most), parts_per_worth more parts
@@ -780,8 +793,14 @@ shared.TINT = {r = 0.62, g = 0.8, b = 1, a = 1}
 -- longer provokes (ops.encroached); the rig's dig is 2.5 minutes with a dust line; a prospect plants a lit stake.
 -- (Always told: the army's two stuck-player hints, once each a force, command.lua; a tutorial's, not chatter.)
 local KEEP = {["lp.fallen"] = true, ["lp.hint-no-beacon"] = true, ["lp.hint-no-relay"] = true,
-  -- (A threat the director starts is always told: docs/director.md, fairness.)
-  ["lp.director-spree"] = true}
+  -- (A threat the director starts is always told, and its lulls: docs/director.md, fairness. Until 0.2.393 the spree
+  -- alone: at default settings the surge, the focus, the wave, the supply drop and the lulls were held, and the player
+  -- met the director as one chat line a spree; Fable's fun consult.)
+  ["lp.director-spree"] = true, ["lp.director-surge"] = true, ["lp.director-focus"] = true, ["lp.director-wave"] = true,
+  ["lp.director-lull"] = true, ["lp.director-lull-many"] = true, ["lp.director-supply"] = true,
+  ["lp.director-supply-in"] = true, ["lp.director-supply-lost"] = true, ["lp.director-strike-warn"] = true,
+  ["lp.director-next-spree"] = true, ["lp.director-next-surge"] = true, ["lp.director-next-wave"] = true,
+  ["lp.director-next-climax"] = true, ["lp.director-climax"] = true}
 -- Whether a faction may land (its setting lp-<id>-enabled, runtime-global, on by default): off, it never lands again
 -- (phases, faction.next_corp, farm's arrival); camps already standing stay. (The user, 2026-11-08: "We do need an on/off
 -- switch".)
@@ -825,6 +844,7 @@ function shared.notice(target, msg)
     for i = 2, #msg do args[#args + 1] = type(msg[i]) == "table" and tostring(msg[i][1]) or tostring(msg[i]) end
     shared.event("notice", {key = msg[1], args = args, told = told and true or false})
   end
+  return told
 end
 -- A reply to the player's own act (a stake, a breaker, a beacon, a tribute): floating text at the spot, as Factorio says
 -- "cannot build here", to each of the force's connected players; in chat too when notices are on.

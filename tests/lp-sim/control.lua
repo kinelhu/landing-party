@@ -7432,8 +7432,13 @@ scenarios.director = function()
     -- and the guard, not the dials, would be all it showed.)
     -- (Lulls of 12, longer than a raid's gap after it is done, 5: with lulls of 6 and no truce at all, none of four
     -- raids fell in one by chance and the check passed; seen failing at 12.)
-    lp("debug_tune", {director = not off and "steady" or false, director_tune = {grace = 0, spree_minutes = 6,
-      lull_minutes = 12, fill = 0.2, hurt_floor = hurt and 0.02 or 100}})
+    -- (LP_MIX=climax: its cycle quickened, beats and lulls of minutes, so the fourth beat, the climax, comes in the run.)
+    local quick = params.mix == "climax" and {forecast_minutes = 2, lull_floor = 2, lull_max = 7, surge_minutes = 4,
+      climax_warn = 3} or {}
+    local t = {grace = 0, spree_minutes = params.mix == "climax" and 4 or 6, lull_minutes = params.mix == "climax" and 3 or 12,
+      fill = 0.2, hurt_floor = hurt and 0.02 or 100}
+    for k, v in pairs(quick) do t[k] = v end
+    lp("debug_tune", {director = not off and "steady" or false, director_tune = t})
     for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end
     local o = lp("stats", storage.id).origin
     -- The player's factory core across spawn from the camp, past its sensors: its worth for the loss share.
@@ -7696,7 +7701,9 @@ scenarios.director = function()
     -- The lulls' windows, from its log: none of its operations against the player launched in one.
     local windows, in_lull = {}, 0
     for _, l in ipairs(d.log or {}) do
-      if l.text:find("^lull") then windows[#windows + 1] = {l.tick, l.tick + 12 * 3600} end
+      -- (Its minutes from the line: lulls vary with the beat's cost since 0.2.393.)
+      local m = l.text:match("^lull.- held (%d+) minutes")
+      if m then windows[#windows + 1] = {l.tick, l.tick + tonumber(m) * 3600} end
     end
     for _, l in ipairs(st.ops.log or {}) do
       if l.owner == "player" and l.started then
@@ -7715,6 +7722,18 @@ scenarios.director = function()
       check("director: hurt, it holds its threats", (d.sprees or 0) == 0 and d.held_for == "hurt",
         string.format("%s sprees, held %s, %s razed", tostring(d.sprees), tostring(d.held_for), tostring(S.razed)))
       check("director: hurt, its adaptation back to 1", d.read and d.read.adapt == 1, tostring(d.read and d.read.adapt))
+    elseif params.mix == "climax" then
+      -- (Steady's cycle, 0.2.393: three beats, then the climax, a focus strike of twice the strike force, then lull_max.)
+      local c = (d.climax_log or {})[1]
+      local after
+      for _, l in ipairs(d.log or {}) do
+        local m = c and l.tick > c.tick and l.text:match("^lull.- held (%d+) minutes")
+        if m and not after then after = tonumber(m) end
+      end
+      info(string.format("director climax: %s; beats %s; lull after %s; log %s", serpent.line(d.climax_log), tostring(d.beats),
+        tostring(after), serpent.line(d.log)))
+      check("director: climax, steady's fourth beat, followed by lull_max", c ~= nil and (d.beats or 0) >= 4 and after == 7,
+        string.format("%s climaxes, %s beats, lull after %s", tostring(d.climaxes), tostring(d.beats), tostring(after)))
     elseif wave then
       local held = false
       for _, l in ipairs(d.log or {}) do if l.text:find("Synthexis wave") then held = true end end
@@ -7731,6 +7750,17 @@ scenarios.director = function()
       check("director: a lull's time off the ladder's clock", (d.ladder_paused or 0) > 0, tostring(d.ladder_paused))
       -- (Its strike force once joined the lead camp's garrison and filled its cap with cheap units: on railbase_end steady
       -- razed 0.67 times off; 0.2.391 made it an operation of its own.)
+      -- (A fun director, 0.2.393, Fable's consult: told, warned, recovered. Until then at default settings the spree
+      -- alone was told, a strike team's pods landed in the tick of its notice, and a lull followed only a costly beat.)
+      local short = 0
+      for _, l in ipairs(d.strike_leads or {}) do if l < lp("director_prior", "warn_minutes") * 3600 then short = short + 1 end end
+      check("director: every beat and lull told at default settings", (d.tell_held or 0) == 0 and (d.tell_told or 0) >= 2,
+        string.format("%s told, %s held %s", tostring(d.tell_told), tostring(d.tell_held), serpent.line(d.tell_held_keys)))
+      check("director: its strike forces warned before they hit, warn_minutes at least",
+        #(d.strike_leads or {}) >= 1 and short == 0, string.format("leads %s", serpent.line(d.strike_leads)))
+      check("director: a lull after every beat but one under way, each forecast first",
+        (d.lulls or 0) >= (d.beats or 0) - 1 and (d.forecasts or 0) >= (d.beats or 0),
+        string.format("%s beats, %s lulls, %s forecasts", tostring(d.beats), tostring(d.lulls), tostring(d.forecasts)))
       check("director: its strike teams land, stay out of the garrison and are lifted out",
         (d.strike_landed or 0) >= 1 and (d.strikes_over or 0) >= 1 and (d.strike_enlisted or 0) == 0,
         string.format("%s landed, %s teams over, %s lifted, %s in a garrison", tostring(d.strike_landed),

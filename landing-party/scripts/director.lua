@@ -87,6 +87,15 @@ function director.note_loss(owner, ent, cause, corp)
   if cause and cause.valid and cause.unit_number and s.strike_unit and s.strike_unit[cause.unit_number] then
     s.lost_strike = s.lost_strike or {}
     s.lost_strike[owner] = (s.lost_strike[owner] or 0) + v
+    -- (Its first hit, for the warning's lead: told to first loss.)
+    local key = s.strike_unit[cause.unit_number]
+    local k = s.strikes and s.strikes[key]
+    if k and not k.hit then
+      k.hit = game.tick
+      shared.event("strike_hit", {key = key, lead = game.tick - k.warned, pos = {ent.position.x, ent.position.y}})
+      s.strike_leads = s.strike_leads or {}
+      table.insert(s.strike_leads, game.tick - k.warned)
+    end
   end
   if not s.active then return end
   table.insert(s.losses, {game.tick, owner, v})
@@ -196,7 +205,8 @@ local function draw(s, owner)
   local _, camps = at_war(owner)
   local w = (tun("weights_of") or {})[director.personality()] or tun("beat_weights")
   -- (A surge with one camp too: its intensity is the cap on that camp's siege tier, the consult; a focus wants two.)
-  local list = camps >= 2 and {"spree", "surge", "focus", "wave", "supply"} or {"spree", "surge", "wave", "supply"}
+  local list = camps >= 2 and {"spree", "surge", "focus", "wave", "supply", "climax"} or {"spree", "surge", "wave", "supply",
+    "climax"}
   local total = 0
   for _, k in ipairs(list) do total = total + (w[k] or 0) end
   local x = rng.next(s.rng) * total
@@ -207,7 +217,14 @@ local function draw(s, owner)
   return list[#list]
 end
 
+-- Whether a told beat still waits out its forecast (forecast_minutes from the telling; untold, it waits to be told).
+local function kind_told_wait(s, tick)
+  if not s.next_beat then return false end
+  return not s.told_at or tick < s.told_at + tun("forecast_minutes") * 3600
+end
+
 local function cost_of(beat)
+  if beat == "climax" then return tun("cap") end
   return tun((beat == "surge" and "surge_cost") or (beat == "focus" and "focus_cost") or (beat == "wave" and "wave_cost")
     or (beat == "supply" and "supply_cost") or "spree_cost")
 end
@@ -247,7 +264,12 @@ end
 local function tell(owner, key, ...)
   local f = game.forces[owner]
   -- (While tracing, told with no player there too: the event stream records what the player would have read.)
-  if f and (#f.players > 0 or storage.trace) then shared.notice(f, {key, ...}) end
+  -- (Told or held, counted: every beat told at default settings, scenario director's check.)
+  if f and (#f.players > 0 or storage.trace) then
+    local s = st()
+    if shared.notice(f, {key, ...}) then s.tell_told = (s.tell_told or 0) + 1
+    else s.tell_held = (s.tell_held or 0) + 1; s.tell_held_keys = s.tell_held_keys or {}; s.tell_held_keys[key] = true end
+  end
 end
 
 function director.tick(tick)
@@ -338,6 +360,10 @@ function director.tick(tick)
   director.expeditions(s, owner, tick)
   director.supplies(s, tick)
   director.strikes(s, tick)
+  if s.focus_tag and tick >= (s.focus_tag_till or 0) then
+    if s.focus_tag.valid then s.focus_tag.destroy() end
+    s.focus_tag, s.focus_tag_till = nil, nil
+  end
   -- Its beats: a spree, a surge or a focus strike, then a lull, then filling again; or a drop wave.
   if (s.phase == "spree" or s.phase == "surge") and tick >= s.phase_till then
     -- A lull only when earned: the beat pushed the player's losses past their usual for as long (lull_if_razed; the
@@ -346,28 +372,73 @@ function director.tick(tick)
     local lost_in = 0
     for _, l in ipairs(s.losses) do if l[2] == owner and l[1] >= (s.beat_from or 0) then lost_in = lost_in + l[3] end end
     local usual = (s.read and s.read.usual or 0) * (tick - (s.beat_from or tick)) / (30 * 3600)
-    if not tun("lull_if_razed") or (lost_in > 0 and lost_in > usual) then
-      director.start_lull(s, owner, tick, s.beat_corps)
+    -- (A lull after every beat since 0.2.393, its length the beat's cost to the player: lull_floor unearned, lull_minutes
+    -- times the losses over the usual earned, lull_max at most and after a climax. Fable's fun consult: recovery the
+    -- player can learn and plan around.)
+    local minutes
+    if s.climax_beat then minutes = tun("lull_max")
+    elseif not tun("lull_if_razed") or (lost_in > 0 and lost_in > usual) then
+      minutes = usual > 0 and math.min(tun("lull_max"), math.max(tun("lull_minutes"), tun("lull_minutes") * lost_in / usual))
+        or tun("lull_minutes")
     else
-      s.phase, s.phase_till, s.next_beat = "fill", nil, nil
+      minutes = tun("lull_floor")
       s.unearned = (s.unearned or 0) + 1
-      trace(string.format("no lull: the beat's losses %.0f, the player's usual for as long %.0f; filling", lost_in, usual))
+      trace(string.format("short lull: the beat's losses %.0f, the player's usual for as long %.0f", lost_in, usual))
     end
+    s.climax_beat = nil
+    director.start_lull(s, owner, tick, s.beat_corps, minutes)
   elseif false then
   elseif s.phase == "lull" and tick >= s.phase_till then
     director.end_lull(s, tick)
     s.phase, s.phase_till = "fill", nil
-    s.next_beat = nil
     trace(string.format("fill: budget %.2f", s.budget))
   end
-  if s.phase == "fill" and not s.next_beat then
+  -- (Drawn and told as the lull begins, the lull the forecast's lead: drawn after it, the forecast's wait came on top of
+  -- every lull and a run's beats fell from 6 to 2, scenario director, 0.2.393.)
+  if (s.phase == "fill" or s.phase == "lull") and not s.next_beat then
     -- (Its first a spree: drawn, a first surge at twice the cost came at minute 80.)
     s.next_beat = (s.beats or 0) == 0 and "spree" or draw(s, owner)
+    -- (Steady's cycle: every climax_every-th beat the climax.)
+    if director.personality() == "steady" and ((s.beats or 0) + 1) % tun("climax_every") == 0 then s.next_beat = "climax" end
+    s.next_corp, s.told_at = nil, nil
     -- (Chaotic: each beat held a random while past its cost, up to chaos_minutes.)
     s.hold_till = director.personality() == "chaotic" and tick + math.floor(rng.next(rng_of(s)) * tun("chaos_minutes") * 3600) or nil
     trace(string.format("next beat: %s (costs %d; budget %.2f)%s", s.next_beat, cost_of(s.next_beat), s.budget,
       s.hold_till and string.format(", held till %d min", math.floor(s.hold_till / 3600)) or ""))
   end
+  -- The forecast (RimWorld's intercepted transmission): steady and gentle tell the beat drawn, by whom, forecast_minutes
+  -- at least before it comes; told once its corporation is known (a camp at war standing). Chaotic tells nothing.
+  if (s.phase == "fill" or s.phase == "lull") and s.next_beat and not s.told_at and director.personality() ~= "chaotic" then
+    local kind = s.next_beat
+    -- (In a lull its truce makes no corporation at war: the held ones are named, those with a camp standing.)
+    local held = {}
+    if s.phase == "lull" then
+      for _, c in ipairs(s.lull_corps or {}) do if c ~= "biotech" and faction.alive(c) > 0 then held[#held + 1] = c end end
+    end
+    if kind == "spree" or kind == "wave" then
+      s.next_corp = pick(s, owner, tick)
+      if not s.next_corp and #held > 0 then
+        table.sort(held, function(a, b) return (s.last_spree[a] or -math.huge) < (s.last_spree[b] or -math.huge) end)
+        s.next_corp = held[1]
+      end
+      if s.next_corp then
+        tell(owner, "lp.director-next-" .. kind, shared.CORPS[s.next_corp].name)
+        s.told_at = tick
+      end
+    elseif kind == "surge" or kind == "focus" or kind == "climax" then
+      local corps = at_war(owner)
+      if #corps == 0 then table.sort(held); corps = held end
+      if #corps > 0 then
+        tell(owner, kind == "climax" and "lp.director-next-climax" or "lp.director-next-surge", names(corps))
+        s.told_at = tick
+      end
+    else s.told_at = tick end
+    if s.told_at then
+      s.forecasts = (s.forecasts or 0) + 1
+      shared.event("forecast", {kind = kind, corp = s.next_corp})
+    end
+  end
+  if s.phase == "fill" and director.personality() ~= "chaotic" and kind_told_wait(s, tick) then return end
   if s.phase == "fill" and s.hold_till and tick < s.hold_till then return end
   if s.phase == "fill" and s.budget >= cost_of(s.next_beat) then
     if hurt then
@@ -395,12 +466,22 @@ function director.tick(tick)
       return
     end
     if s.next_beat == "wave" then
-      local corp = pick(s, owner, tick)
+      local corp = s.next_corp and faction.alive(s.next_corp) > 0 and s.next_corp or pick(s, owner, tick)
       if not corp then return end
       s.held_for = nil
       s.budget = s.budget - tun("wave_cost")
       director.start_wave(s, owner, corp, tick, why)
       s.phase, s.next_beat = "fill", nil
+      return
+    end
+    if s.next_beat == "climax" then
+      if director.start_surge(s, owner, tick, true, why, nil, true) then
+        s.held_for = nil
+        s.budget = s.budget - cost_of("climax")
+      elseif s.held_for ~= "none at war" then
+        s.held_for = "none at war"
+        trace("holds: no corporation at war with a camp standing (stood down, or none landed)")
+      end
       return
     end
     if s.next_beat == "surge" or s.next_beat == "focus" then
@@ -415,7 +496,8 @@ function director.tick(tick)
       end
       return
     end
-    local corp = pick(s, owner, tick)
+    local corp = s.next_corp and faction.alive(s.next_corp) > 0 and stance.standing(s.next_corp, owner) == "enemy"
+      and s.next_corp or pick(s, owner, tick)
     if not corp then
       if s.held_for ~= "none at war" then
         s.held_for = "none at war"
@@ -532,7 +614,8 @@ function director.start_wave(s, owner, corp, tick, why)
   s.last_spree[corp] = tick
   trace(string.format("drop wave %d: %d landings of %s (budget %.2f left; %s)", s.waves, n, corp, s.budget, why or "forced"))
   shared.event("beat", {kind = "wave", corp = corp, n = n, wave = s.waves})
-  tell(owner, "lp.director-wave", shared.CORPS[corp].name, n)
+  tell(owner, "lp.director-wave", shared.CORPS[corp].name, n, string.format("[gps=%.0f,%.0f,%s]", f.from.x, f.from.y,
+    surface.name))
   return true
 end
 
@@ -618,16 +701,18 @@ local function strike_units(s, owner)
   return math.min(tun("points_max"), math.floor(w * tun("points_per_worth") * d * pers * (s.adapt or 1)))
 end
 -- The player's buildings a strike team goes for (its target when its camp knows none, and each minute after).
-local STRIKE_TYPES = {"assembling-machine", "furnace", "mining-drill", "electric-pole", "ammo-turret", "electric-turret",
-  "fluid-turret", "radar", "lab", "roboport", "solar-panel", "accumulator", "wall", "transport-belt", "inserter"}
+-- (Buildings that matter, and the guns placed to be shot at: no walls, belts, inserters or poles, which a team chewed
+-- one at a time, 138 rails for 16 of worth on railbase_end, 0.2.392; walls in its way still fall, its path's.)
+local STRIKE_TYPES = {"assembling-machine", "furnace", "mining-drill", "ammo-turret", "electric-turret", "fluid-turret",
+  "radar", "lab", "roboport", "solar-panel", "accumulator", "generator", "boiler", "reactor", "beacon", "rocket-silo"}
 local STRIKE_REACH = 600
 -- Its strike force (threat points, RimWorld's raid): a team of its own by pod behind one lead camp of `corps`
 -- (war.strike_team), sent at a target, fighting on to the nearest of the player's buildings each minute, lifted out after
 -- strike_minutes; never the camp's garrison. Its points the beat's, not a camp's. The lead: a camp with no operation out,
 -- nearest the focus if there is one, else nearest the player's spawn. Its target: the focus, else the lead camp's known
 -- target of the player's of most value.
-local function strike(s, owner, corps, tick)
-  local n = strike_units(s, owner)
+local function strike(s, owner, corps, tick, mult, warn)
+  local n = math.floor(strike_units(s, owner) * (mult or 1))
   if n <= 0 then return 0 end
   local set = {}
   for _, c in ipairs(corps) do set[c] = true end
@@ -670,14 +755,34 @@ local function strike(s, owner, corps, tick)
   s.strike_n = (s.strike_n or 0) + 1
   local key = s.strike_n
   s.strikes = s.strikes or {}
-  s.strikes[key] = {base = lead.id, owner = owner, target = {target[1] or target.x, target[2] or target.y}, units = {},
-    sent = n, at = tick, till = tick + tun("strike_minutes") * 3600}
-  local pods_sent = war.strike_team(lead, owner, n, key)
+  local tx, ty = target[1] or target.x, target[2] or target.y
+  local minutes = warn or tun("warn_minutes")
+  local k = {base = lead.id, owner = owner, corp = lead.corp, target = {tx, ty}, units = {}, sent = n, warned = tick,
+    pods_at = tick + minutes * 3600}
+  s.strikes[key] = k
   s.reinforced = (s.reinforced or 0) + n
   s.points_sent = (s.points_sent or 0) + n
   s.strike_lead = lead.id
-  trace(string.format("strike force %d: %d units by %d pods behind camp %d, at %.0f,%.0f for %d minutes", key, n, pods_sent,
-    lead.id, s.strikes[key].target[1], s.strikes[key].target[2], tun("strike_minutes")))
+  -- Told first (who, what, where, when), the pods minutes later: a chart tag at its target until it is over, an alert on
+  -- the player's building nearest it, a notice with its place. (Until 0.2.393 the pods came down in the tick of the
+  -- notice, out of radar cover, and the player learnt of it from the engine's alerts; Fable's fun consult.)
+  local surface = lead.lander.surface
+  local c = shared.CORPS[lead.corp]
+  local gps = string.format("[gps=%.0f,%.0f,%s]", tx, ty, surface.name)
+  if f then
+    k.tag = f.add_chart_tag(surface, {position = {tx, ty}, text = c.name .. " strike force",
+      icon = {type = "virtual", name = c.icon}})
+    local e = surface.find_entities_filtered{position = {tx, ty}, radius = 60, force = f, type = STRIKE_TYPES, limit = 1}[1]
+    if e then
+      for _, p in pairs(f.players) do
+        p.add_custom_alert(e, {type = "virtual", name = c.icon}, {"lp.director-strike-warn", c.name, n, minutes, gps}, true) -- notice-ok: a fair warning, the director's
+      end
+    end
+  end
+  tell(owner, "lp.director-strike-warn", c.name, n, minutes, gps)
+  shared.event("strike_warn", {key = key, corp = lead.corp, n = n, pos = {tx, ty}, minutes = minutes, base = lead.id})
+  trace(string.format("strike force %d: %d units behind camp %d, at %.0f,%.0f, told %d minutes before its pods", key, n,
+    lead.id, tx, ty, minutes))
   return n
 end
 
@@ -688,51 +793,98 @@ war.on_strike_landed = function(key, units)
   if not k then for _, u in ipairs(units) do if u.valid then u.destroy() end end; return end
   s.strike_landed = (s.strike_landed or 0) + #units
   s.strike_unit = s.strike_unit or {}
+  if not k.landed_at and units[1] then
+    k.landed_at = {units[1].position.x, units[1].position.y}
+    shared.event("strike_landed", {key = key, n = #units, pos = k.landed_at})
+  end
   for _, u in ipairs(units) do
     k.units[#k.units + 1] = u
     s.strike_unit[u.unit_number] = key
     u.commandable.set_command{type = defines.command.attack_area, destination = k.target, radius = 32,
-      distraction = defines.distraction.by_anything}
+      distraction = defines.distraction.by_enemy}
   end
 end
 
--- Each minute: its teams fight on to the nearest of the player's buildings within 80 of them; after strike_minutes, or
--- all dead, the rest lifted out.
+-- Each minute: its teams' pods sent once their warning has run (a camp fallen meanwhile, none); its teams fight on to the
+-- nearest of the player's buildings within 80 of them; at strike_minutes they walk back to where they landed and are
+-- lifted out there, or wherever they are lift_minutes on. A team all dead first is the player's: finished.
+local function strike_over(s, key, k, why)
+  local b, mine = storage.bases[k.base], {}
+  local live = {}
+  for _, u in ipairs(k.units) do if u.valid then live[#live + 1] = u end end
+  for _, u in ipairs(live) do mine[u.unit_number] = true end
+  -- (Its units counted in the lead camp's garrison, if any were: a team that joined it, scenario director's check.)
+  for _, g in ipairs(b and b.garrison or {}) do
+    if g.valid and mine[g.unit_number] then s.strike_enlisted = (s.strike_enlisted or 0) + 1 end
+  end
+  s.strike_lifted = (s.strike_lifted or 0) + #live
+  s.strikes_over = (s.strikes_over or 0) + 1
+  if why == "finished" then s.strikes_finished = (s.strikes_finished or 0) + 1 end
+  for _, u in ipairs(live) do u.destroy() end
+  if k.tag and k.tag.valid then k.tag.destroy() end
+  trace(string.format("strike force %d over (%s): %d of %d lifted out", key, why, #live, k.sent))
+  shared.event("strike_over", {key = key, left = #live, sent = k.sent, why = why})
+  s.strikes[key] = nil
+  for un, kk in pairs(s.strike_unit or {}) do if kk == key then s.strike_unit[un] = nil end end
+end
 function director.strikes(s, tick)
   for key, k in pairs(s.strikes or {}) do
-    local live, cx, cy = {}, 0, 0
-    for _, u in ipairs(k.units) do if u.valid then live[#live + 1] = u; cx, cy = cx + u.position.x, cy + u.position.y end end
-    k.units = live
-    local landed = tick - k.at > 2 * 3600
-    if tick >= k.till or (landed and #live == 0) then
-      -- (Its units counted in the lead camp's garrison, if any were: a team that joined it, scenario director's check.)
-      local b, mine = storage.bases[k.base], {}
-      for _, u in ipairs(live) do mine[u.unit_number] = true end
-      for _, g in ipairs(b and b.garrison or {}) do
-        if g.valid and mine[g.unit_number] then s.strike_enlisted = (s.strike_enlisted or 0) + 1 end
+    if not k.at then
+      if tick >= k.pods_at then
+        local b = storage.bases[k.base]
+        local pods_sent = b and war.strike_team(b, k.owner, k.sent, key) or 0
+        if pods_sent == 0 then strike_over(s, key, k, "no camp")
+        else
+          k.at, k.till = tick, tick + tun("strike_minutes") * 3600
+          trace(string.format("strike force %d: %d pods behind camp %d, %d minutes in the field", key, pods_sent, k.base,
+            tun("strike_minutes")))
+        end
       end
-      s.strike_lifted = (s.strike_lifted or 0) + #live
-      s.strikes_over = (s.strikes_over or 0) + 1
-      for _, u in ipairs(live) do u.destroy() end
-      trace(string.format("strike force %d over: %d of %d lifted out", key, #live, k.sent))
-      shared.event("strike_over", {key = key, left = #live, sent = k.sent})
-      s.strikes[key] = nil
-      for un, kk in pairs(s.strike_unit or {}) do if kk == key then s.strike_unit[un] = nil end end
-    elseif #live > 0 then
-      local c = {cx / #live, cy / #live}
-      local surface = live[1].surface
-      local near = surface.find_entities_filtered{position = c, radius = 80, force = k.owner, type = STRIKE_TYPES, limit = 40}
-      local best, bd
-      for _, e in ipairs(near) do
-        local d = (e.position.x - c[1]) ^ 2 + (e.position.y - c[2]) ^ 2
-        if not bd or d < bd then best, bd = e, d end
-      end
-      local dest = best and {best.position.x, best.position.y} or k.target
-      for _, u in ipairs(live) do
-        local cmd = u.commandable and u.commandable.command
-        if not cmd or cmd.type ~= defines.command.attack_area then
-          u.commandable.set_command{type = defines.command.attack_area, destination = dest, radius = 32,
-            distraction = defines.distraction.by_anything}
+    else
+      local live, cx, cy = {}, 0, 0
+      for _, u in ipairs(k.units) do if u.valid then live[#live + 1] = u; cx, cy = cx + u.position.x, cy + u.position.y end end
+      k.units = live
+      local landed = tick - k.at > 2 * 3600
+      if landed and #live == 0 then strike_over(s, key, k, k.lift_at and "lifted" or "finished")
+      elseif k.lift_at then
+        -- Walking back: lifted where they landed, or wherever they are at lift_at.
+        if tick >= k.lift_at then strike_over(s, key, k, "lifted")
+        else
+          local back = {}
+          for _, u in ipairs(live) do
+            if (u.position.x - k.landed_at[1]) ^ 2 + (u.position.y - k.landed_at[2]) ^ 2 <= 16 * 16 then
+              s.strike_lifted = (s.strike_lifted or 0) + 1
+              u.destroy()
+            else back[#back + 1] = u end
+          end
+          k.units = back
+          if #back == 0 then strike_over(s, key, k, "lifted") end
+        end
+      elseif tick >= k.till and k.landed_at then
+        k.lift_at = tick + tun("lift_minutes") * 3600
+        for _, u in ipairs(live) do
+          u.commandable.set_command{type = defines.command.go_to_location, destination = k.landed_at, radius = 8,
+            distraction = defines.distraction.by_enemy}
+        end
+        trace(string.format("strike force %d: %d walking back to %.0f,%.0f to be lifted", key, #live, k.landed_at[1],
+          k.landed_at[2]))
+      elseif tick >= k.till then strike_over(s, key, k, "lifted")
+      elseif #live > 0 then
+        local c = {cx / #live, cy / #live}
+        local surface = live[1].surface
+        local near = surface.find_entities_filtered{position = c, radius = 80, force = k.owner, type = STRIKE_TYPES, limit = 40}
+        local best, bd
+        for _, e in ipairs(near) do
+          local d = (e.position.x - c[1]) ^ 2 + (e.position.y - c[2]) ^ 2
+          if not bd or d < bd then best, bd = e, d end
+        end
+        local dest = best and {best.position.x, best.position.y} or k.target
+        for _, u in ipairs(live) do
+          local cmd = u.commandable and u.commandable.command
+          if not cmd or cmd.type ~= defines.command.attack_area then
+            u.commandable.set_command{type = defines.command.attack_area, destination = dest, radius = 32,
+              distraction = defines.distraction.by_enemy}
+          end
         end
       end
     end
@@ -743,7 +895,7 @@ end
 -- and the cap on operations against it at once surge_add higher (ops' budget), surge_minutes; with `focused`, a focus
 -- strike: targets within focus_radius of the place their camps know best focus_weight times as relevant to every camp
 -- (ops' relevance), so they converge on it from their own directions.
-function director.start_surge(s, owner, tick, focused, why, at)
+function director.start_surge(s, owner, tick, focused, why, at, climax)
   local corps = at_war(owner)
   if #corps == 0 then return false end
   local minutes = tun("surge_minutes")
@@ -763,23 +915,41 @@ function director.start_surge(s, owner, tick, focused, why, at)
   local set = {}
   for _, corp in ipairs(corps) do set[corp] = true end
   s.commit = {owner = owner, corps = set, till = till}
-  -- Its strike force first, by pod from each camp's headquarters (threat points: strike_units).
-  local sent = strike(s, owner, corps, tick)
-  shared.event("beat", {kind = focused and "focus" or "surge", corps = corps, minutes = tun("surge_minutes"),
-    strike = sent, lead = s.strike_lead, focus = s.focus and s.focus.pos or nil})
   at = focused and (at or focus_point(owner)) or nil
   if focused and not at then focused = false end
   s.focus = at and {owner = owner, pos = at, radius = tun("focus_radius"), weight = tun("focus_weight"), till = till} or nil
+  -- Its strike force, at the focus if it has one (threat points: strike_units; a climax's climax_points times, told
+  -- climax_warn ahead). (Sent before the focus was set until 0.2.393: a focus strike's team went for the last focus's
+  -- point or the camp's own target.)
+  local sent = strike(s, owner, corps, tick, climax and tun("climax_points") or 1, climax and tun("climax_warn") or nil)
+  -- The focus's area on the map while it lasts.
+  if at and game.forces[owner] then
+    local surface = game.surfaces[1]
+    if s.focus_tag and s.focus_tag.valid then s.focus_tag.destroy() end
+    s.focus_tag = surface and game.forces[owner].add_chart_tag(surface, {position = at, text = string.format(
+      "%s: attacks on this area, %d min", names(corps), minutes), icon = {type = "virtual", name = "signal-alert"}})
+    s.focus_tag_till = till
+  end
+  shared.event("beat", {kind = climax and "climax" or focused and "focus" or "surge", corps = corps, minutes = minutes,
+    strike = sent, lead = s.strike_lead, focus = s.focus and s.focus.pos or nil})
+  s.climax_beat = climax or nil
   s.phase, s.phase_till = "surge", till
   s.beat_from, s.beat_corps = tick, corps
+  s.next_beat, s.next_corp, s.told_at = nil, nil, nil
   s.beats = s.beats + 1
+  if climax then
+    s.climaxes = (s.climaxes or 0) + 1
+    s.climax_log = s.climax_log or {}
+    table.insert(s.climax_log, {tick = tick, strike = sent, focus = at})
+  end
   if focused then s.focuses = (s.focuses or 0) + 1 else s.surges = (s.surges or 0) + 1 end
   trace(string.format("%s: %s against %s %dx as often, %d more at once, for %d minutes%s (budget %.2f left; %s)",
     focused and "focus strike" or "surge", table.concat(corps, ", "), owner, factor, tun("surge_add"), minutes,
     at and string.format(", on %.0f,%.0f", at[1], at[2]) or "", s.budget, why or "forced"))
   if at then
     local surface = game.surfaces[1]
-    tell(owner, "lp.director-focus", names(corps), string.format("[gps=%.0f,%.0f,%s]", at[1], at[2], surface and surface.name or "nauvis"), minutes)
+    tell(owner, climax and "lp.director-climax" or "lp.director-focus", names(corps), string.format("[gps=%.0f,%.0f,%s]",
+      at[1], at[2], surface and surface.name or "nauvis"), minutes)
   else
     tell(owner, "lp.director-surge", names(corps), minutes)
   end
@@ -790,8 +960,8 @@ end
 -- `corps`: the corporations held, those of the beat that earned it (the user, 2026-11-14, agreed): the others keep
 -- their own pace. Held all, on the start save the lulls took more of Kessler-Hayashi's own pressure than its sprees
 -- added (the player's buildings lost: off 1,155, steady 607, chaotic 352). None given (the panel's "Lull now"): all.
-function director.start_lull(s, owner, tick, corps)
-  local minutes = tun("lull_minutes") * ((tun("lull_scale") or {})[director.personality()] or 1)
+function director.start_lull(s, owner, tick, corps, base_minutes)
+  local minutes = math.floor((base_minutes or tun("lull_minutes")) * ((tun("lull_scale") or {})[director.personality()] or 1))
   storage.truces = storage.truces or {}
   local held = {}
   if corps and #corps > 0 then held = corps else for corp in pairs(shared.CORPS) do held[#held + 1] = corp end; table.sort(held) end
@@ -833,6 +1003,7 @@ function director.start_spree(s, owner, corp, tick, why)
   s.mix = s.mix or {}
   if mix then s.mix[corp] = {till = tick + minutes * 3600, raid = mix.raid, siege = mix.siege, strip = mix.strip} end
   s.phase, s.phase_till = "spree", tick + minutes * 3600
+  s.next_beat, s.next_corp, s.told_at = nil, nil, nil
   s.beats, s.sprees = s.beats + 1, (s.sprees or 0) + 1
   local sent = strike(s, owner, {corp}, tick)
   shared.event("beat", {kind = "spree", corp = corp, minutes = minutes, factor = tun("spree_factor"), strike = sent,

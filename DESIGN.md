@@ -7341,6 +7341,30 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **A fun director: told, warned, recovered, a cycle** (0.2.393; the user, 2026-11-15: "please do your best to create a
+  fun director"; Fable's consult, docs/reviews/2026-11-15-fun-director-consult.md, its six changes built). Its
+  diagnosis, checked in the code: at default settings the director was silent but for the spree (shared.notice's
+  KEEP held one director key), a strike team's pods came down in the tick of the notice out of radar cover, its
+  targets were the nearest belt or pole (138 rails for 16 worth), its survivors vanished, recovery was not promised
+  (a lull only after a costly beat, its notice held), and the beats were alike on a 20-minute metronome. Now:
+  (1) a strike force is told warn_minutes (2) before its pods: a chart tag at its target until it is over, an alert on
+  the player's building nearest it, a notice with its place and size; its first hit timed (s.strike_leads). (2) Every
+  beat and lull told by default (KEEP), the focus's area tagged while it lasts, a drop wave with its place. (3) A team
+  goes for buildings that matter and the guns (no walls, belts, inserters or poles; walls in its way still fall),
+  distraction by_enemy, and at strike_minutes walks back to where it landed and is lifted out there, or wherever it is
+  lift_minutes (3) on: a team the player kills first is finished (s.strikes_finished). (4) A lull after every beat:
+  lull_floor (5) unearned, lull_minutes times the beat's losses over the usual earned, lull_max (30) at most and after a
+  climax; hurt at 3 times the usual and 0.01 of worth (0.05 was never reached on railbase_end). (5) The forecast:
+  steady and gentle tell the next beat and who (RimWorld's intercepted transmission) as it is drawn, at the lull's
+  start, forecast_minutes (10) at least before it; chaotic tells nothing. Drawn after the lull at first, the wait came
+  on top of every lull and scenario director's beats fell from 6 to 2; and in a lull's truce no corporation was at war
+  to be named (the held ones are named now). (6) Steady's cycle: every climax_every-th (4th) beat the climax, a focus
+  strike costing the cap with climax_points (2) times the strike force, told climax_warn (5) ahead, then lull_max;
+  chaotic draws it at 0.1. Supply drops back in steady's draw at 0.1. A bug found on the way: start_surge sent its
+  strike force before setting the focus, so a focus strike's team went for the last focus or the camp's own target.
+  Scenario director checks: every beat and lull told at default settings (8 told, none held), strike forces warned
+  warn_minutes before their first hit (lead 3.2 minutes), a lull after every beat and each forecast; LP_MIX=climax
+  (quickened): the fourth beat the climax, its lull lull_max.
 - **The visits measured the wrong thing** (0.2.392). Every visit comparison of the director, off against steady, read
   METRIC razed: the first camp's count of the player's buildings it razed, not the player's loss. It missed the other
   camps, the drop waves and the strike teams, so it read against steady (railbase_end's 0.67 and the five seeds of
