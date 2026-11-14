@@ -253,6 +253,37 @@ function war.reinforce(b, owner, n)
   return sent
 end
 
+-- A director's strike team (director.strike): n units of the camp's mix by pod behind it, from its headquarters, its own
+-- operation: never the camp's garrison nor its roster, so not counted against its cap. (Sent as reinforcements, they
+-- filled the cap with its mix's cheaper units and the camp built fewer harriers and scorchers: on railbase_end, five
+-- seeds, steady razed 0.67 times off, 1.23 without them, 0.2.391.) Its units come out where the pods touch down
+-- (pods.handlers.strike) and are the director's to order. Returns the pods sent.
+function war.strike_team(b, owner, n, key)
+  if storage.pods_off or b.fallen or not (b.lander and b.lander.valid) or n <= 0 then return 0 end
+  local names = detachment(b, n)
+  local at = behind(b, owner)
+  local sent = 0
+  for k = 1, #names, POD_LOAD do
+    local load = {}
+    for i = k, math.min(#names, k + POD_LOAD - 1) do load[#load + 1] = names[i] end
+    if pods.send(game.surfaces[b.surface], {at[1] + 3 * sent, at[2] + (sent % 2) * 3}, b.force,
+      {kind = "strike", base = b.id, names = load, key = key}) then sent = sent + 1 end
+  end
+  return sent
+end
+pods.handlers.strike = function(p, surface, pos)
+  local b = storage.bases[p.base]
+  if not (b and not b.fallen and b.lander and b.lander.valid) then return end
+  local units = {}
+  for _, name in ipairs(p.names) do
+    local proto = rd.unit(b.corp, name)
+    local q = surface.find_non_colliding_position(proto, pos, 16, 0.5)
+    local u = q and surface.create_entity{name = proto, position = q, force = b.force}
+    if u then units[#units + 1] = u end
+  end
+  if war.on_strike_landed then war.on_strike_landed(p.key, units) end
+end
+
 -- A relief pod's units come out where it touched down and make for the camp.
 pods.handlers.relief = function(p, surface, pos)
   local b = storage.bases[p.base]

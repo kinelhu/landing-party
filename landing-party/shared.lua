@@ -467,7 +467,9 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- surge's strike force from headquarters, by pod to the camps at war before it, points_per_worth units a point of the
   -- player's worth, times the difficulty, the personality and the adaptation, points_max a camp at most (on the user's
   -- saves at steady: start about 11, nwa the cap). Its first beat a spree; supply drops out of steady's draw.
-  points_per_worth = 0.02, points_max = 40}
+  points_per_worth = 0.02, points_max = 40,
+  -- A strike force's time in the field before it is lifted out (director.strikes).
+  strike_minutes = 8}
 -- A landing matched to what it lands against (the user, 2026-11-14: "Is it an artifact of landing our camps naked on a
 -- late base? Should we land with a bigger budget?"): on top of its fixed escort and START_PARTS, by the strongest player
 -- force's guns and worth (valuemap.force_worth): escort_per_gun more units (escort_max at most), parts_per_worth more parts

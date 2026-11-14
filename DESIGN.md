@@ -7341,6 +7341,23 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The strike force an operation of its own; lulls earned and held by the beat's corporations** (0.2.391; the user:
+  "Ok", 2026-11-14). The ablation had read the strike force as what lowered the pressure on mature saves (railbase_end,
+  steady razed 0.67 times off; without strike forces 1.23): sent as reinforcements to the lead camp, its units joined
+  the garrison and the army cap. Now director.strike sends a team by pod behind the lead camp (war.strike_team,
+  pods.handlers.strike), never enlisted, at the focus, else the lead camp's known target of most value, else the
+  player's building nearest it within 600 (scenario director: the camp's targets razed, four sprees in five had sent
+  none); each minute it goes on to the player's nearest building within 80; after strike_minutes (8) the rest are lifted
+  out. A lull now follows only a beat that cost the player something (losses past the usual pace over the beat) and
+  holds only the beat's corporations; LP_DTUNE overrides the director's priors in a run and LP_TUNETAG names it (a
+  false override had fallen through to the prior). Measured: railbase_end, five seeds, Synthexis out, three hours:
+  razed off 62, 576, 63, 286, 99; steady 96, 276, 106, 97, 189 (before: 39, 411, 42, 327, 171). Up on seeds 1, 3 and 5
+  (1.5 to 1.9 times off), down on 2 and 4, where off's own raids made most of its total: in sum 0.70 times off, by
+  geometric mean 0.96 (0.90 before). The steady runs branch from the first beat (a drop wave lands other camps), so five
+  seeds do not settle it. The campaign (contact LP_MIX=campaign, four hours): razed off 160 and 159, steady 321 and 300
+  (seeds 12345 and 777; 331 and 231 before). Teams of 40 on railbase_end lose 0 to 40 of their number in their 8
+  minutes. Scenario director checks that teams land, stay out of the garrison and are lifted out (seen failing with the
+  team joined to it: 2 in a garrison).
 - **A defender for visits** (tests/lp-sim, LP_MIX=defend; the user: "Perhaps this is a result of our harness. The save
   is too weak with an AFK player?", and Synthexis is not to be weakened). A visit's player answers a breach at a
   player's pace from the base's own logistic network: a cell of 32 tiles with 3 losses in 5 minutes, its first 5

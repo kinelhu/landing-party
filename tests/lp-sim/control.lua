@@ -7728,6 +7728,12 @@ scenarios.director = function()
         string.format("%d in %d lulls", in_lull, #windows))
       check("director: unhurt, its adaptation climbs", d.read and (d.read.adapt or 1) > 1, tostring(d.read and d.read.adapt))
       check("director: a lull's time off the ladder's clock", (d.ladder_paused or 0) > 0, tostring(d.ladder_paused))
+      -- (Its strike force once joined the lead camp's garrison and filled its cap with cheap units: on railbase_end steady
+      -- razed 0.67 times off; 0.2.391 made it an operation of its own.)
+      check("director: its strike teams land, stay out of the garrison and are lifted out",
+        (d.strike_landed or 0) >= 1 and (d.strikes_over or 0) >= 1 and (d.strike_enlisted or 0) == 0,
+        string.format("%s landed, %s teams over, %s lifted, %s in a garrison", tostring(d.strike_landed),
+          tostring(d.strikes_over), tostring(d.strike_lifted), tostring(d.strike_enlisted)))
     end
   end)
 end
@@ -19389,6 +19395,15 @@ if (params.director or "") ~= "" then
         table.insert(lines, string.format("INFO director forced %s at %d min (first camp seen at %d min)", params.director,
           math.floor(game.tick / 3600), math.floor(first / 3600)))
         if params.director == "off" then lp("director_cmd", "off") end
+        -- (LP_DTUNE="key=value,...": the director's priors overridden for the run, numbers or true/false; an ablation's.)
+        if (params.dtune or "") ~= "" then
+          local t = {}
+          for k, v in params.dtune:gmatch("([%w_]+)=([%w%._%-]+)") do
+            if v == "true" then t[k] = true elseif v == "false" then t[k] = false else t[k] = tonumber(v) or v end
+          end
+          lp("debug_tune", {director_tune = t})
+          table.insert(lines, "INFO director tuned " .. params.dtune)
+        end
       end
     end)
   end

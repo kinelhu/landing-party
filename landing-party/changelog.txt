@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.391
+Date: 2026-11-14
+  Changes:
+    - The director's strike force is an operation of its own: it lands by pod, attacks, and is lifted out after 8 minutes; it never joins a camp's garrison.
+    - The director's lulls follow only beats that cost the player, and hold only the corporations of that beat.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.390
 Date: 2026-11-14
   Features:
