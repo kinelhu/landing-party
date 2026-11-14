@@ -282,6 +282,23 @@ unsynchronised. Joint operations, a later step: first a muster and a launch time
 the nearest piece, within one camp), then one operation drawing several camps' units, with its ownership (whose ledger,
 whose units home where, a camp fallen mid-way) and its sizing against the combined force.
 
+## 9f. The breakthrough operation (proposed, the user, 2026-11-14)
+
+From the visits: a Synthexis wave through an uncovered gap broke up to 6,154 buildings, a corporation's raid or siege
+327 at most: a raid razes within 16 tiles of its target and goes home ("nothing left within 16"), a wave's biters each
+take their own target and push in up to 260 tiles for 240 s. The user: "Maybe that could be another type of operation,
+with its own triggers and possibly linked to director pressure." Proposed:
+- **Trigger:** a breach the camp knows, its own raid or siege in there with few losses and no gun covering it (the
+  tactics ledger's record); the breach a target till the player closes it.
+- **What it does:** in through the breach and out sweeping, target after target while the resistance stays low; out at
+  its time, past a loss share, or when the guns met grow. Kessler-Hayashi an armed sweep that razes; Grubstake a looting
+  spree that carries off.
+- **The director:** rare on a camp's own (risky and dear); in a surge or a focus strike a known breach the preferred
+  target and the strike force into the sweep; gentle never; chaotic any time.
+- **Fair warning:** a known breach marked on the player's map, so it can be closed first.
+Order: the defender answering within 1 to 2 minutes on the wave itself first (the harness), then this, checked on
+railbase_end and deathworld10x with Synthexis out.
+
 ## 10. Build order
 
 (The user, 2026-11-14: "once we're happy with the director on paper, a set of visits with various director settings on
