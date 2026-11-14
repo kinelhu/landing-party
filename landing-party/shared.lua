@@ -423,7 +423,9 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- up to chaos_minutes past its cost (RimWorld's Randy: longer gaps, bigger beats when they come).
   -- (Gentle's lulls the others' length since 0.2.388: doubled, it razed less than no director at all, 470 against 609;
   -- the user: gentle between off and steady.)
-  grace = 30, personality = {steady = 1, gentle = 0.5, chaotic = 1}, lull_scale = {},
+  -- (Gentle's lulls 1.5 times again since 0.2.394: their truce capped at truce_max, the longer quiet is the director's
+  -- alone and no longer holds the camps below off; with the truce capped, gentle's beats came as often as steady's.)
+  grace = 30, personality = {steady = 1, gentle = 0.5, chaotic = 1}, lull_scale = {gentle = 1.5},
   weights_of = {gentle = {spree = 0.6, surge = 0.4}, chaotic = {spree = 0.25, surge = 0.25, focus = 0.25, wave = 0.25,
     climax = 0.1}},
   chaos_minutes = 30,
@@ -452,7 +454,7 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- hour's losses past hurt_factor times the player's usual half hour (over hurt_hours) and past hurt_floor of the
   -- factory's worth; depth (infinite levels by packs) raises its pace by min(depth_max, 1 + log10(1 + depth /
   -- depth_scale)): on the user's saves b 1.06, nw 1.33, nwaoo 1.77, nwa 2; its first beat first_minutes after it comes on.
-  hurt_factor = 3, hurt_hours = 2, hurt_floor = 0.01, depth_scale = 30, depth_max = 2, first_minutes = 15,
+  hurt_factor = 3, hurt_hours = 2, hurt_floor = 0.03, depth_scale = 30, depth_max = 2, first_minutes = 15,
   -- Over the camps' judgement (the user, 2026-11-14: "able to start doomed ops ... if we give bonus income"; agreed
   -- past their judgement, not into hopeless fights): its fill at least a spree's cost every beat_minutes (one beat in
   -- 85 minutes in the calibration); during a surge or a focus strike the camps at war take the ladder's desperate odds
@@ -481,7 +483,9 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- reach (hurt_floor of worth: 0.05 was 3,750 on nwa, never reached on railbase_end in three hours). A cycle: steady's
   -- every climax_every-th beat the climax, a focus strike costing the cap, its strike force climax_points times, then
   -- lull_max; chaotic draws it at weights_of.chaotic.climax.
-  warn_minutes = 2, climax_warn = 5, forecast_minutes = 10, lull_floor = 5, lull_max = 30, climax_every = 4,
+  -- (truce_max: a lull's truce on the camps at most, the rest of it the director's own quiet; hurt_floor 0.03, at 0.01
+  -- a campaign's first 17 of 460 worth held it, 0.2.394.)
+  truce_max = 15, warn_minutes = 2, climax_warn = 5, forecast_minutes = 10, lull_floor = 5, lull_max = 30, climax_every = 4,
   climax_points = 2}
 -- A landing matched to what it lands against (the user, 2026-11-14: "Is it an artifact of landing our camps naked on a
 -- late base? Should we land with a bigger budget?"): on top of its fixed escort and START_PARTS, by the strongest player

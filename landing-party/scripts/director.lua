@@ -339,8 +339,11 @@ function director.tick(tick)
   local rate = (storage.director_tune and storage.director_tune.fill)
     or (1 + era / 2) * d * (tun("personality")[director.personality()] or 1) / math.max(1, interval)
   -- At least a spree's cost every beat_minutes (the calibration: one beat in 85 minutes at era 0 and 1).
+  -- (The cost of the beat drawn, since 0.2.394: a spree's alone, steady's dearer beats, a climax of 4 and a focus of 3,
+  -- took 80 and 60 minutes to afford, and in the campaign gentle's sprees razed as much as steady or more.)
   if not (storage.director_tune and storage.director_tune.fill) then
-    rate = math.max(rate, d * (tun("personality")[director.personality()] or 1) * tun("spree_cost") / tun("beat_minutes"))
+    local cost = s.next_beat and cost_of(s.next_beat) or tun("spree_cost")
+    rate = math.max(rate, d * (tun("personality")[director.personality()] or 1) * cost / tun("beat_minutes"))
   end
   -- Depth (infinite research): its pace up, by a capped logarithm, depth_max at most (the bounded era stays the camps').
   rate = rate * math.min(tun("depth_max"), 1 + math.log(1 + depth / tun("depth_scale"), 10))
@@ -464,6 +467,18 @@ function director.tick(tick)
       director.start_supply(s, owner, tick, why)
       s.phase, s.next_beat = "fill", nil
       return
+    end
+    -- (A forecast named a corporation that can no longer come: told again with the one that will, and waited out again;
+    -- a campaign's forecast named Grubstake and Serenity came, 0.2.394.)
+    if (s.next_beat == "wave" or s.next_beat == "spree") and s.next_corp and director.personality() ~= "chaotic"
+      and not (faction.alive(s.next_corp) > 0 and stance.standing(s.next_corp, owner) == "enemy") then
+      local again = pick(s, owner, tick)
+      if again and again ~= s.next_corp then
+        trace(string.format("forecast corrected: %s, not %s", again, s.next_corp))
+        s.next_corp, s.told_at = nil, nil
+        s.corrected = (s.corrected or 0) + 1
+        return
+      end
     end
     if s.next_beat == "wave" then
       local corp = s.next_corp and faction.alive(s.next_corp) > 0 and s.next_corp or pick(s, owner, tick)
@@ -962,16 +977,21 @@ end
 -- added (the player's buildings lost: off 1,155, steady 607, chaotic 352). None given (the panel's "Lull now"): all.
 function director.start_lull(s, owner, tick, corps, base_minutes)
   local minutes = math.floor((base_minutes or tun("lull_minutes")) * ((tun("lull_scale") or {})[director.personality()] or 1))
+  -- (Its truce on the camps truce_max at most, the rest of the lull the director's alone, no beat: a truce of 30 minutes
+  -- held the camps' own operations too, the pressure they make with the director off, and in the campaign steady fell
+  -- from twice off to 1.1 to 1.4 times; 0.2.394.)
+  local truce = math.min(minutes, tun("truce_max"))
   storage.truces = storage.truces or {}
   local held = {}
   if corps and #corps > 0 then held = corps else for corp in pairs(shared.CORPS) do held[#held + 1] = corp end; table.sort(held) end
-  for _, corp in ipairs(held) do storage.truces[corp .. "|" .. owner] = tick + minutes * 3600 end
+  for _, corp in ipairs(held) do storage.truces[corp .. "|" .. owner] = tick + truce * 3600 end
   s.phase, s.phase_till = "lull", tick + minutes * 3600
   s.lull_from, s.lull_owner, s.lull_corps = tick, owner, held
   s.lulls = (s.lulls or 0) + 1
-  shared.event("beat", {kind = "lull", minutes = minutes, corps = held})
-  trace(string.format("lull: %s's operations against %s held %d minutes", table.concat(held, ", "), owner, minutes))
-  tell(owner, #held > 1 and "lp.director-lull-many" or "lp.director-lull", names(held), minutes)
+  shared.event("beat", {kind = "lull", minutes = minutes, truce = truce, corps = held})
+  trace(string.format("lull: %s's operations against %s held %d minutes (no beat for %d)", table.concat(held, ", "), owner,
+    truce, minutes))
+  tell(owner, #held > 1 and "lp.director-lull-many" or "lp.director-lull", names(held), truce)
 end
 
 -- A lull's time does not count on the ladder (stance.rung: minutes since the last raze): its clock moved on by the lull,

@@ -19525,6 +19525,17 @@ schedule(END, function()
   local n = 0
   for _, v in pairs((lp("pressure") or {}).razed or {}) do n = n + v end
   metric("razed_count", n)
+  -- The fun consult's measures (docs/reviews/2026-11-15-fun-director-consult.md, section 3): its beats, lulls, forecasts
+  -- and climaxes; its strike forces' warning lead to their first hit (the least and the median, in seconds), and those the
+  -- player finished before their lift.
+  local leads = {}
+  for _, l in ipairs(dd.strike_leads or {}) do leads[#leads + 1] = l end
+  table.sort(leads)
+  metric("dir_beats", dd.beats or 0); metric("dir_lulls", dd.lulls or 0); metric("dir_forecasts", dd.forecasts or 0)
+  metric("dir_climaxes", dd.climaxes or 0); metric("dir_told", dd.tell_told or 0); metric("dir_held", dd.tell_held or 0)
+  metric("strikes_over", dd.strikes_over or 0); metric("strikes_finished", dd.strikes_finished or 0)
+  metric("strike_lead_min", leads[1] and math.floor(leads[1] / 60) or -1)
+  metric("strike_lead_median", leads[1] and math.floor(leads[math.ceil(#leads / 2)] / 60) or -1)
   table.insert(lines, "INFO " .. helpers.table_to_json(s))
   table.insert(lines, failed == 0 and "DONE ALL PASSED" or ("DONE " .. failed .. " FAILED"))
   helpers.write_file("landing-party/results.txt", table.concat(lines, "\n") .. "\n")

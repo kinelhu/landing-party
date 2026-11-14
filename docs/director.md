@@ -1,4 +1,4 @@
-# The director (proposed 2026-11-13, not built)
+# The director (proposed 2026-11-13; built in steps, 0.2.372 to 0.2.393)
 
 The user, 2026-11-13: "The site search seems to open up the possibilities for more varied landings too. Could even
 envision some freak events with 3 landings at once for instance, or coordinated raids (think rimworld storyteller)." And,
@@ -298,6 +298,24 @@ with its own triggers and possibly linked to director pressure." Proposed:
 - **Fair warning:** a known breach marked on the player's map, so it can be closed first.
 Order: the defender answering within 1 to 2 minutes on the wave itself first (the harness), then this, checked on
 railbase_end and deathworld10x with Synthexis out.
+
+## 9g. A fun director (built 0.2.393, the user, 2026-11-15)
+
+The user: "please do your best to create a fun director." Fable's consult (docs/reviews/2026-11-15-fun-director-consult.md)
+found section 7 unbuilt: at default settings only the spree was told, a strike team landed in the tick of its notice,
+went for belts and poles, and vanished; recovery was not promised; the beats were alike on a metronome. Built:
+- **Told.** Every beat and lull told by default (shared KEEP). Steady and gentle forecast the next beat and who brings
+  it as the lull begins, at least forecast_minutes (10) before it; chaotic stays silent.
+- **Warned.** A strike force told warn_minutes (2) before its pods: a chart tag at its target, an alert on the
+  player's nearest building, a notice with its size and place. A focus strike's area tagged while it lasts.
+- **Answerable, finishable.** A team goes for buildings that matter and the guns, fights what shoots it, then walks
+  back to its landing point to be lifted out: the player can catch it and finish it.
+- **Recovery.** A lull after every beat, lull_floor (5) to lull_max (30) by what the beat cost; hurt reachable on a
+  late base (0.01 of worth, three times the usual).
+- **A cycle.** Steady's every fourth beat the climax: a focus strike costing the whole budget, twice the strike force,
+  told five minutes ahead, then the longest lull.
+Measures (visits' metrics, section 3 of the consult): beats, lulls, forecasts, climaxes, notices told and held,
+strikes finished by the player, the warning's lead to the first hit.
 
 ## 10. Build order
 

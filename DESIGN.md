@@ -7341,6 +7341,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The fun director's cost, measured and paid back** (0.2.394). The campaign (contact LP_MIX=campaign, four hours;
+  off razed 160 and 159 worth on seeds 12345 and 777) with 0.2.393: steady 218 and 169, gentle 250 and 141, against
+  0.2.392's steady 321 and 300. Three causes, each fixed: a lull's truce of up to 30 minutes held the camps' own
+  operations too, the pressure off has (truce_max 15 now: the rest of a lull is the director's quiet alone, no beat);
+  the fill's floor paid for a spree, so steady's dearer beats (a climax 4, a focus 3) took 60 to 80 minutes to afford
+  (the floor now pays for the beat drawn: beat_minutes is the cadence whatever the kind); hurt at 0.01 of worth held
+  the director after the first 17 of 460 (0.03 now). A forecast that named a corporation no longer at war when its beat
+  came is told again with the one that will come ("forecast corrected", s.corrected), waited out again. With the truce
+  capped, gentle's beats came as often as steady's (both paced by beat and lull, not budget): gentle's lulls 1.5 times
+  (lull_scale). Measured on the way, 0.2.393's two runs of a seed differing by small changes gave 186 and 323: two seeds
+  do not order the settings; five each go to the Studio.
 - **A fun director: told, warned, recovered, a cycle** (0.2.393; the user, 2026-11-15: "please do your best to create a
   fun director"; Fable's consult, docs/reviews/2026-11-15-fun-director-consult.md, its six changes built). Its
   diagnosis, checked in the code: at default settings the director was silent but for the spree (shared.notice's

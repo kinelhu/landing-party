@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.394
+Date: 2026-11-15
+  Changes:
+    - A lull's truce on the corporations lasts 15 minutes at most; the rest of a long lull only delays the director's next beat.
+    - The director's beats come about as often whatever their kind; gentle's lulls are longer.
+    - A forecast is corrected if the corporation it named can no longer attack.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.393
 Date: 2026-11-15
   Changes:
