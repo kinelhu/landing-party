@@ -7341,6 +7341,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Over the camps' judgement, and paid for** (0.2.385; the user: "able to start doomed ops ... if we give bonus income";
+  agreed past their judgement, not into hopeless fights; docs/director.md 9d). Its fill at least a spree's cost every
+  beat_minutes (35): one beat in 85 minutes before, a second spree 35 minutes after the first now. During a surge or a
+  focus strike the camps at war decide as desperate camps do (ops.committed: the ladder's lower odds bar, their reserve
+  in the field). Under any tempo a camp short of units for a raid it chose is sent them by pod from headquarters
+  (ops.pay_gap, war.reinforce), gap_share (0.5) of its garrison cap at most a beat: against seed 12345's walled player,
+  where 28 of 30 decisions had been short, it was paid 5, 5, 5 and 8 as its cap grew and its raid of 24 went, razed 11
+  and came back whole (a flat 12 left it 13 short). Three tests the lane cutting (0.2.380) and the legs (0.2.381)
+  moved, bisected: strip found no four spare guards in 25 minutes (now every variant is given them, as claim);
+  levers read the lever through the camp's growth between its two windows, 2.79 (now the lever's own parts out over
+  parts in, exactly 2 at very high); country counted every unit the camp lost meanwhile, its raid back 4 of 4 (now the
+  raid's own).
 - **The director's readings remade** (0.2.384; the user: "We are not monitoring building amounts?", "an idea of player
   advancement from tech tree", "How would era interact with infinite tech?"). Readings of the user's saves first
   (scripts/readings.sh, a copy of each in its own profile): the worth from 26 names read 1.2 to 2.4 times less than

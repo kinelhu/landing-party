@@ -3182,10 +3182,11 @@ scenarios.contact = function()
       local ms = {}
       for k, v in pairs(miss) do ms[#ms + 1] = k .. " " .. v end
       table.sort(ms)
-      info(string.format("director at %d min: %s %s, budget %.2f, adapt %.2f, era %s, worth %.0f, guns %s, lost %.0f (usual %.0f)%s, depth %s, sprees %d, surges %d, focus %d, waves %d, supplies %d, lulls %d, ops %d; under its tempo %d decisions, %d launched, missed: %s",
+      info(string.format("director at %d min: %s %s, budget %.2f, adapt %.2f, era %s, worth %.0f, guns %s, lost %.0f (usual %.0f)%s, depth %s, sprees %d, surges %d, focus %d, waves %d, supplies %d, lulls %d, ops %d; under its tempo %d decisions, %d launched, missed: %s; gap paid %d units",
         math.floor(t / 3600), d.active and "on" or "off", tostring(d.phase), d.budget or 0, d.adapt or 1, tostring(r.era),
         r.worth or 0, tostring(r.guns), r.lost or 0, r.usual or 0, r.hurt and " HURT" or "", tostring(r.depth), d.sprees or 0,
-        d.surges or 0, d.focuses or 0, d.waves or 0, d.supply_n or 0, d.lulls or 0, launched, tries, went, table.concat(ms, ", ")))
+        d.surges or 0, d.focuses or 0, d.waves or 0, d.supply_n or 0, d.lulls or 0, launched, tries, went, table.concat(ms, ", "),
+        d.gap_paid or 0))
     end)
   end
   -- Era bases (docs/reviews/2026-10-13-campaign-review.md section 6): "spread" (era 2: three outposts, robots),
@@ -4983,7 +4984,9 @@ scenarios.strip = function()
     -- (The claim run: its guards given as its parts are, eight infantry. Its field stood at 2 or 3 of the strip's 4 for
     -- the first half hour once, its first strip at minute 30 and the second too late, when the prowl's gap changed its
     -- game, 0.2.377: the claim's outcome is the subject, not how soon a camp has four spare.)
-    if S.g and params.mix == "claim" then lp("debug_units", S.g, "lp-infantry", 8) end
+    -- (Every variant since 0.2.385: plain strip found no four spare in 25 minutes once its trucks cut lanes through a
+    -- forest, 0.2.380, and its camp grew otherwise.)
+    if S.g then lp("debug_units", S.g, "lp-infantry", 8) end
     -- The claim run isolates the camp: Serenity and the biters at peace with Grubstake (a second camp's guards
     -- were all killed by them, so nothing was left unanswered).
     if params.mix == "claim" then
@@ -17084,7 +17087,13 @@ scenarios.levers = function()
     local ratio = ga > 0 and gb / ga or 0
     info(string.format("levers income: grubstake %d then %d (%.2f), serenity at normal %d then %d (%.2f)", ga, gb, ratio,
       sa, sb, sa > 0 and sb / sa or 0))
-    check("levers: very high income, about twice the parts made", ratio > 1.6 and ratio < 2.6, string.format("%.2f", ratio))
+    -- (Over what its fabricators made before the lever in the same three minutes, not over the three before: its growth
+    -- between them came on top, 2.79 once its trucks cut lanes into a forest mine, 0.2.380. The lever's own ratio.)
+    local raw = (S.g14.lever_in or 0) - (S.g11.lever_in or 0)
+    local out = (S.g14.lever_out or 0) - (S.g11.lever_out or 0)
+    local lever = raw > 0 and out / raw or 0
+    info(string.format("levers income: %d out of the lever for %d in (%.2f)", out, raw, lever))
+    check("levers: very high income, about twice the parts made", lever > 1.9 and lever < 2.1, string.format("%.2f", lever))
     local g15, s15 = S.g15 or {}, S.s15 or {}
     check("levers: hard difficulty times every faction, its own lever on top", s15.strength == 1.5 and s15.income == 1.5
       and s15.aggression == 1.5 and g15.strength == 1.5 * 0.75, serpent.line({g = g15, s = s15}))
@@ -17648,7 +17657,12 @@ scenarios.country = function()
     info(string.format("country: %d waypoints, nearest %.0f tiles from a spawner; %d units lost; %s", #(S.route or {}),
       near, lost, serpent.line(st.ops.log[#st.ops.log])))
     check("country: the raid routed round the nests", S.route and #S.route > 0 and near > 30, string.format("%.0f", near))
-    check("country: and lost nothing to them", lost == 0, tostring(lost))
+    -- (The raid's own: launched less back, its log's. Counted as every unit the camp lost from its start, a unit lost
+    -- elsewhere in the camp failed it once, the raid back 4 of 4, 0.2.381.)
+    local l = st.ops.log[#st.ops.log] or {}
+    local raid_lost = (l.launched or 0) - (l.back or 0)
+    check("country: and lost nothing to them", l.launched and raid_lost == 0,
+      string.format("%d of the raid's %s (the camp's units lost meanwhile %d)", raid_lost, tostring(l.launched), lost))
   end)
 end
 

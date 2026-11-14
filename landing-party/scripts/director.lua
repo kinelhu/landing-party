@@ -304,6 +304,10 @@ function director.tick(tick)
   local d = shared.DIFFICULTY[shared.setting("lp-difficulty", "normal")] or 1
   local rate = (storage.director_tune and storage.director_tune.fill)
     or (1 + era / 2) * d * (tun("personality")[director.personality()] or 1) / math.max(1, interval)
+  -- At least a spree's cost every beat_minutes (the calibration: one beat in 85 minutes at era 0 and 1).
+  if not (storage.director_tune and storage.director_tune.fill) then
+    rate = math.max(rate, d * (tun("personality")[director.personality()] or 1) * tun("spree_cost") / tun("beat_minutes"))
+  end
   -- Depth (infinite research): its pace up, by a capped logarithm, depth_max at most (the bounded era stays the camps').
   rate = rate * math.min(tun("depth_max"), 1 + math.log(1 + depth / tun("depth_scale"), 10))
   if falling then rate = rate / 2 end
@@ -544,6 +548,26 @@ function director.expeditions(s, owner, tick)
   end
 end
 
+-- Headquarters pays the gap (ops.pay_gap, from launch): under its tempo, a camp short of units for a raid it chose is
+-- sent what it lacks by pod, gap_max at most a beat. Returns whether any were sent.
+ops.pay_gap = function(b, owner, gap, cap)
+  local s = storage.director
+  local t = s and s.active and s.tempo and s.tempo[b.corp]
+  if not (t and game.tick < t.till) or b.expedition or b.fallen then return false end
+  local key = t.till
+  if not b.gap_paid or b.gap_paid.key ~= key then b.gap_paid = {key = key, n = 0} end
+  local most = math.ceil(tun("gap_share") * (cap or 0))
+  local n = math.min(gap, most - b.gap_paid.n)
+  if n <= 0 then return false end
+  local sent = war.reinforce(b, owner, n)
+  if sent <= 0 then return false end
+  b.gap_paid.n = b.gap_paid.n + sent
+  s.gap_paid = (s.gap_paid or 0) + sent
+  trace(string.format("gap paid: %d units by pod to camp %d (short %d of a raid it chose; %d of %d this beat)", sent, b.id, gap,
+    b.gap_paid.n, most))
+  return true
+end
+
 -- A surge now: every corporation at war with `owner` (its camps standing, Synthexis apart) spree_factor times as often
 -- and the cap on operations against it at once surge_add higher (ops' budget), surge_minutes; with `focused`, a focus
 -- strike: targets within focus_radius of the place their camps know best focus_weight times as relevant to every camp
@@ -564,6 +588,10 @@ function director.start_surge(s, owner, tick, focused, why, at)
     end
   end
   s.intensity = {owner = owner, add = tun("surge_add"), till = till}
+  -- Committed: its camps at war decide as desperate camps do for the beat (ops.committed).
+  local set = {}
+  for _, corp in ipairs(corps) do set[corp] = true end
+  s.commit = {owner = owner, corps = set, till = till}
   -- Reinforcements first, by pod from each camp's headquarters (an off-map beat: war.reinforce).
   local sent = 0
   for _, b in pairs(storage.bases or {}) do
@@ -655,6 +683,7 @@ function director.cmd(action, arg)
     for _, t in pairs(s.tempo) do t.till = tick end
     if s.intensity then s.intensity.till = tick end
     if s.focus then s.focus.till = tick end
+    if s.commit then s.commit.till = tick end
     for _, m in pairs(s.mix or {}) do m.till = tick end
     trace("off (forced)")
     return "off"
@@ -706,6 +735,7 @@ function director.cmd(action, arg)
     for _, t in pairs(s.tempo) do t.till = tick end
     if s.intensity then s.intensity.till = tick end
     if s.focus then s.focus.till = tick end
+    if s.commit then s.commit.till = tick end
     for _, m in pairs(s.mix or {}) do m.till = tick end
     s.phase, s.phase_till = "fill", nil
     trace("beat ended (forced)")

@@ -336,6 +336,14 @@ local function budget(owner)
   return 1 + (f and (storage.era_override or ops.era(f)) or 0) + add
 end
 
+-- A director's beat committing this camp against `owner` (director.start_surge): it decides as a desperate camp does.
+local function committed(b, owner)
+  local d = storage.director
+  local c = d and d.active and d.commit
+  return c and game.tick < c.till and c.owner == owner and c.corps[b.corp] or false
+end
+ops.committed = committed
+
 -- Provocation (tempers): a player force that hurts a corporation's buildings or units is remembered for good. The one
 -- entry for every provoking act (docs/ai.md, section 4: reactions): `at`, the culprit (an entity, or a position), asks
 -- the corporation's settlement nearest it for an answer.
@@ -665,7 +673,7 @@ local function choose(b, army)
       local d = defence(b, t)
       -- Self-defence (a battery, or a static threat on its ground: turret creep) takes the reserve too: weighted,
       -- three upgraded creeping turrets needed 21 and a garrison of 28 kept 9 home (defend).
-      local desperate = player and ladder(t.owner, b.force) >= 3
+      local desperate = player and (ladder(t.owner, b.force) >= 3 or committed(b, t.owner))
       local mind = mind_of(b)
       local p = odds((battery(t) or threat_bonus(b, t) > 0) and cap(b, army) or max_field, d)
       -- (On foot below its odds, it may still go by air: weighed both ways, s 0 for a way it cannot take.)
@@ -1384,7 +1392,7 @@ local function launch(b, key, trace, army, opts)
   local d = defence(b, t)
   local want = ops.raid_want(b, t)
   local n, reserve = field(b, army)
-  local desperate = against_player(t.owner) and ladder(t.owner, b.force) >= 3
+  local desperate = against_player(t.owner) and (ladder(t.owner, b.force) >= 3 or committed(b, t.owner))
   local is_answer = opts and opts.answer
   if battery(t) or threat_bonus(b, t) > 0 or desperate or is_answer then n = n + reserve end
   -- Cost no object (the ladder): what the garrison has goes, however few.
@@ -1395,7 +1403,13 @@ local function launch(b, key, trace, army, opts)
   end
   -- An answer (ops.request_answer): at least ANSWER_MIN, what it has if fewer.
   if is_answer then want = math.min(math.max(want, ANSWER_MIN), n) end
-  if n < want or n == 0 then return false end
+  if n < want or n == 0 then
+    -- Under a director's tempo, the units it lacks sent by pod (director: ops.pay_gap), and it decides again in a minute.
+    if ops.pay_gap and against_player(t.owner) and ops.pay_gap(b, t.owner, want - n, cap(b, army)) then
+      b.next_op, b.next_op_why = game.tick + 3600, "pace"
+    end
+    return false
+  end
   -- Grubstake provoked (an enemy of that player, standing.lua) raids with half what it can field, not what the target's
   -- known defence calls for: its camps of 31 to 54 sent raids of 4 at the user's poles, and the user saw "no hostile
   -- action" (2026-10-17).

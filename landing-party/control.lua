@@ -1172,7 +1172,8 @@ remote.add_interface("landing-party", {
   debug_levers = function(id)
     local b = storage.bases[id]
     return {strength = tune.strength(b.corp), aggression = tune.aggression(b.corp), income = tune.income(b.corp),
-      cap = army.cap(b), hour = tune.sooner(b.corp, 3600 * 60), rung = stance.rung("player", b.force), made = b.made}
+      cap = army.cap(b), hour = tune.sooner(b.corp, 3600 * 60), rung = stance.rung("player", b.force), made = b.made,
+      lever_in = b.lever_in or 0, lever_out = b.lever_out or 0}
   end,
   debug_parts = function(id, parts) local b = storage.bases[id]; if b then b.parts = b.parts + parts end end,
   -- A town grown at once, for pictures (scripts/shots.sh town): machine lots with their machines queued, then streets.

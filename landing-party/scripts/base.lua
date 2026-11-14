@@ -501,9 +501,12 @@ local function economy(b)
   -- Its income lever (tune.income, times the difficulty preset): what its fabricators make, scaled, the fraction carried
   -- to the next look (no rounding by chance).
   if made > 0 then
+    -- (What went into the lever and what came out, for its test: levers.)
+    b.lever_in = (b.lever_in or 0) + made
     local scaled = made * tune.income(b.corp) + (b.income_carry or 0)
     made = math.floor(scaled)
     b.income_carry = scaled - made
+    b.lever_out = (b.lever_out or 0) + made
   end
   b.parts = b.parts + made
   b.made = b.made + made
