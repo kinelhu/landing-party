@@ -2117,6 +2117,12 @@ function ops.tick(b, tick, trace, army)
     -- the faction AI's comparison, docs/reviews/2026-10-23-faction-ai-audit.md): a fixed order had a raid on a pylon
     -- always beat a siege on a factory block, and a thief strip before anything.
     local prefer = (b.armed and mind_of(b).armed_prefer) or mind_of(b).prefer or {raid = 1, siege = 0.5, strip = 1}
+    -- A director's spree tilts its corporation to its kind for a while (director.start_spree, spree_mix): its mix.
+    local dm = storage.director and storage.director.active and storage.director.mix and storage.director.mix[b.corp]
+    if dm and game.tick < dm.till then
+      prefer = {raid = (prefer.raid or 1) * (dm.raid or 1), siege = (prefer.siege or 0) * (dm.siege or 1),
+        strip = (prefer.strip or 0) * (dm.strip or 1)}
+    end
     local skey, ssite, ss, spiece = choose_siege(b, army)
     -- An armed camp sieges no player before its ground first reads clear (war.lua sets b.ground_clear, once): its first
     -- siege went out 1.8 minutes after landing, and its hauler died to the nests round it every time (fed nw,

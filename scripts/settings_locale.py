@@ -13,7 +13,7 @@ LEVERS = {"strength": ["grubstake", "serenity"], "aggression": ["grubstake", "se
           "income": ["grubstake", "serenity", "biotech"]}
 TUNE_NAMES = {"very-low": "Very low", "low": "Low", "normal": "Normal", "high": "High", "very-high": "Very high"}
 DIFFICULTY_NAMES = {"easy": "Easy", "normal": "Normal", "hard": "Hard", "very-hard": "Very hard"}
-DIRECTOR_NAMES = {"steady": "Steady", "off": "Off"}
+DIRECTOR_NAMES = {"steady": "Steady", "gentle": "Gentle", "chaotic": "Chaotic", "off": "Off"}
 ARRIVAL_NAMES = {"oil-processing": "On researching oil processing",
                  "chemical-science-pack": "On the first chemical science pack",
                  "production-science-pack": "On the first production science pack",

@@ -28,6 +28,8 @@ local function lines(p)
   for _, b in pairs(storage.bases or {}) do if b.expedition and not b.fallen then exp = exp + 1 end end
   out[#out + 1] = string.format("drop waves %d; expeditions standing %d, settled %d (in another's place %d), withdrawn %d",
     s.waves or 0, exp, s.settled or 0, s.replaced or 0, s.withdrawn or 0)
+  out[#out + 1] = string.format("supply drops %d in, %d lost; reinforcements %d units", s.supplied or 0, s.supply_lost or 0,
+    s.reinforced or 0)
   local i, fo = s.intensity, s.focus
   out[#out + 1] = string.format("intensity %s; focus %s",
     (i and tick < i.till) and string.format("+%d, %s left", i.add, mmss(i.till - tick)) or "-",
@@ -58,15 +60,19 @@ local function build(p)
   body.style.vertical_spacing = 2
   local row = f.add{type = "flow", name = "lp_dir_row1", direction = "horizontal"}
   for _, b in ipairs({{"on", "Force on"}, {"off", "Force off"}, {"auto", "As setting"}, {"lull", "Lull now"},
-    {"surge", "Surge now"}, {"focus", "Focus strike"}, {"wave", "Drop wave"}, {"resolve", "Resolve expeditions"},
-    {"fill", "Fill budget"}, {"empty", "Empty budget"}, {"end", "End beat"}}) do
+    {"surge", "Surge now"}, {"focus", "Focus strike"}, {"fill", "Fill budget"}, {"empty", "Empty budget"}, {"end", "End beat"}}) do
     row.add{type = "button", name = "lp_dir_" .. b[1], caption = b[2], tags = {lp_dir = b[1]}}
   end
   local row2 = f.add{type = "flow", name = "lp_dir_row2", direction = "horizontal"}
   for corp, c in pairs(shared.CORPS) do
     row2.add{type = "button", name = "lp_dir_spree_" .. corp, caption = "Spree: " .. c.name, tags = {lp_dir = "spree", corp = corp}}
   end
-  row2.add{type = "button", name = "lp_dir_close", caption = "Close", tags = {lp_dir = "close"}}
+  local row3 = f.add{type = "flow", name = "lp_dir_row3", direction = "horizontal"}
+  for _, b in ipairs({{"wave", "Drop wave"}, {"resolve", "Resolve expeditions"}, {"supply", "Supply drop"},
+    {"collect", "Collect supplies"}}) do
+    row3.add{type = "button", name = "lp_dir_" .. b[1], caption = b[2], tags = {lp_dir = b[1]}}
+  end
+  row3.add{type = "button", name = "lp_dir_close", caption = "Close", tags = {lp_dir = "close"}}
   return f
 end
 

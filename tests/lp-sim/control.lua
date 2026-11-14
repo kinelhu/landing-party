@@ -7417,6 +7417,61 @@ scenarios.director = function()
   -- focus strike forced on the farthest outpost (one the camps would not go for first). The surge raises the cap on
   -- operations against the player by one and halves the pace; each camp's first operation against the player after it
   -- goes at the focus. LP_MIX=focusoff: the same, the focus weighing 1 (the check seen failing).
+  -- LP_MIX=step4 (0.2.379), by the director's own hand on one Kessler-Hayashi camp: gentle's lull twice the steady's;
+  -- chaotic's next beat held a while past its cost; a spree tilting its corporation's mix to its kind (sieges); a surge
+  -- sending reinforcements by pod; a supply drop's crate, left standing, its parts reaching the camp. LP_MIX=supplykill:
+  -- its crate destroyed as it lands, nothing reaches the camp.
+  if params.mix == "step4" or params.mix == "supplykill" then
+    local kill = params.mix == "supplykill"
+    S.r = {}
+    schedule(120, function()
+      lp("debug_tune", {director = "gentle", director_tune = {grace = 0, fill = 0, loss_share = 100}})
+      lp("director_cmd", "lull")
+      local d = lp("director")
+      S.r.gentle_lull = (d.phase_till - game.tick) / 3600
+      lp("director_cmd", "end")
+      lp("debug_tune", {director = "chaotic"})
+    end)
+    schedule(3 * 3600 + 30, function()
+      local d = lp("director")
+      S.r.chaotic_hold = d.hold_till and (d.hold_till - game.tick) / 3600 or false
+      lp("debug_tune", {director = "steady"})
+      lp("director_cmd", "spree", "serenity")
+      d = lp("director")
+      S.r.mix = d.mix and d.mix.serenity and d.mix.serenity.siege
+      lp("director_cmd", "end")
+      lp("director_cmd", "surge")
+      S.r.reinforced = lp("director").reinforced
+      lp("director_cmd", "end")
+    end)
+    schedule(5 * 3600, function() S.r.supply = lp("director_cmd", "supply") end)
+    schedule(5 * 3600 + 30 * 60, function()
+      local c = surface().find_entities_filtered{name = "iron-chest", force = "lp-serenity", limit = 1}[1]
+      S.r.crate = c ~= nil
+      if kill and c then c.die("player") end
+      S.r.parts0 = lp("stats", storage.id).parts
+      S.r.collect = lp("director_cmd", "collect")
+      S.r.parts1 = lp("stats", storage.id).parts
+      local d = lp("director")
+      S.r.supplied, S.r.lost = d.supplied or 0, d.supply_lost or 0
+    end)
+    schedule(END - 60, function()
+      local r = S.r
+      info("director " .. params.mix .. ": " .. serpent.line(r))
+      if kill then
+        check("director: a supply drop's crate destroyed, nothing reaches the camp", r.crate and r.lost == 1 and r.supplied == 0
+          and r.parts1 - r.parts0 < 300, serpent.line(r))
+        return
+      end
+      check("director: gentle's lull twice as long", r.gentle_lull == 30, tostring(r.gentle_lull))
+      check("director: chaotic holds its next beat a while", r.chaotic_hold and r.chaotic_hold > 0, tostring(r.chaotic_hold))
+      check("director: a spree tilts its corporation to its kind", r.mix == 2, tostring(r.mix))
+      check("director: a surge sends reinforcements first", (r.reinforced or 0) >= 1, tostring(r.reinforced))
+      check("director: a supply drop left standing reaches the camp", r.crate and r.supplied == 1 and r.parts1 - r.parts0 >= 300,
+        serpent.line(r))
+    end)
+    return
+  end
   -- LP_MIX=drop (step 3, 0.2.378): a drop wave of Kessler-Hayashi's forced at minute 2, its fill nought: three landings,
   -- each an expedition, the landing clock untouched; at minute 12 they are resolved: with one camp standing and the cap
   -- at three, two settle and the third withdraws, quietly (nothing of it left standing, nothing dropped, no fall).

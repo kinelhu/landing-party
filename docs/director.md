@@ -229,6 +229,25 @@ Step 3 (0.2.378):
   its 16 minutes), and the settle-or-withdraw split was not seen failing. Expeditions are resolved only while the
   director is on: turned off with expeditions standing, they stand uncounted.
 
+Step 4 (0.2.379), part of it:
+- **Personalities:** gentle, half the fill (`personality.gentle` 0.5), its lulls twice as long (`lull_scale`), its beats
+  only sprees and surges (`weights_of.gentle`: 0.6, 0.4); chaotic, the steady fill, its beats weighed evenly (spree,
+  surge, focus, wave, 0.25 each; supply not among them) and each held a random while up to `chaos_minutes` 30 past its
+  cost. Both in the setting.
+- **Mix:** a spree tilts its corporation's choice of operation (ops' prefer) to its kind for the spree, `spree_mix`:
+  Grubstake's strips 2x and raids 1.5x, Kessler-Hayashi's sieges 2x. Grubstake's spree waits for dusk (darkness
+  `dusk` 0.25, as its skims). Other corporations' sprees untilted.
+- **Reinforcements:** a surge first sends `surge_reinforce` 4 units by pod to each camp at war, from its headquarters
+  (not its chest: `war.reinforce`); none to an expedition.
+- **Supply drop:** an off-map beat, `supply_cost` 1, weighed 0.15 (steady): a crate by pod to the camp at war with the
+  fewest parts, `supply_out` 40 tiles from it toward the player, tagged on the player's map ("Supply drop"); after
+  `supply_wait` 3 minutes, if it stands, its `supply_parts` 300 reach the camp; destroyed or mined first, nothing does.
+  It holds 150 iron plates, the player's to take. Told: "__1__ is dropping supplies at [gps]." and the outcome.
+- **Not built:** the siege push (it needs `besieged`, one siege of a player at a time, made a count first), quiet events
+  with rewards, the bounty and the intercepted transmission.
+- Open: a drop wave or a supply drop now come in any long game the director runs in (30 minutes after the opening's
+  arrival); the regression is the first look at what they do to scenarios that never expected them.
+
 ## 10. Build order
 
 1. The director's state, budget and readings; personality steady and off; tempo and lull, the two dials that act from

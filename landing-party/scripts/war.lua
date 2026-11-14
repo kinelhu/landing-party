@@ -235,6 +235,24 @@ local function send(b, owner, rung)
   return true
 end
 
+-- A director's reinforcements before its surge (director.start_surge): n units by pod behind the camp, from its
+-- headquarters, not its chest (an off-map beat). Pods only (Space Age); returns the units sent.
+function war.reinforce(b, owner, n)
+  if storage.pods_off or b.fallen or b.expedition or not (b.lander and b.lander.valid) then return 0 end
+  local names = detachment(b, n)
+  local at = behind(b, owner)
+  local sent = 0
+  for k = 1, #names, POD_LOAD do
+    local load = {}
+    for i = k, math.min(#names, k + POD_LOAD - 1) do load[#load + 1] = names[i] end
+    if pods.send(game.surfaces[b.surface], {at[1] + 3 * sent, at[2] + (sent % 2) * 3}, b.force,
+      {kind = "relief", base = b.id, names = load}) then sent = sent + #load end
+  end
+  b.reinforced = (b.reinforced or 0) + sent
+  base.trace(b, string.format("reinforcements: %d units by pod to %.0f,%.0f (the director's, before a surge)", sent, at[1], at[2]))
+  return sent
+end
+
 -- A relief pod's units come out where it touched down and make for the camp.
 pods.handlers.relief = function(p, surface, pos)
   local b = storage.bases[p.base]

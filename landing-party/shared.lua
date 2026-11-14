@@ -417,7 +417,12 @@ shared.LANDING_MINUTES = {default = 90, min = 15, max = 600}
 -- lull_minutes holds every corporation's; no threat while the half hour's losses pass loss_share of the factory's worth;
 -- on grace minutes after the opening's arrival. Personalities multiply the fill. All to calibrate.
 shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20, lull_minutes = 15, loss_share = 0.02,
-  grace = 30, personality = {steady = 1},
+  -- Step 4's personalities (decided overnight 2026-11-14, for review): gentle, half the fill, its lulls twice as long,
+  -- no focus strike and no drop wave; chaotic, the same fill, its beats weighed evenly and each held a random while
+  -- up to chaos_minutes past its cost (RimWorld's Randy: longer gaps, bigger beats when they come).
+  grace = 30, personality = {steady = 1, gentle = 0.5, chaotic = 1}, lull_scale = {gentle = 2},
+  weights_of = {gentle = {spree = 0.6, surge = 0.4}, chaotic = {spree = 0.25, surge = 0.25, focus = 0.25, wave = 0.25}},
+  chaos_minutes = 30,
   -- Adaptation: the fill's multiple grows adapt_climb an hour the player goes unhurt, to adapt_max; hurt, back to 1.
   adapt_climb = 0.1, adapt_max = 2,
   -- Step 2 (decided overnight 2026-11-14, for review): a surge (every corporation at war: tempo surge_factor, the cap on
@@ -425,14 +430,20 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- focus_radius of one point focus_weight times as relevant to every camp); a beat drawn at each fill by these weights,
   -- a surge or a focus only with two camps at war or more.
   surge_cost = 2, surge_factor = 2, surge_add = 1, surge_minutes = 15, focus_cost = 3, focus_weight = 4, focus_radius = 64,
-  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2, wave = 0.15},
+  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2, wave = 0.15, supply = 0.15},
   -- Step 3 (decided overnight 2026-11-14, for review): a drop wave, wave_size landings of one corporation at once (the
   -- landing queue, each seeing the last), wave_cost; its camps an expedition (not counted against the camp cap, no
   -- reliefs, the landing clock untouched) until expedition_minutes, then the user's settle rule (2026-11-14): settles
   -- with room under the cap; else takes the place of its corporation's weakest camp if it has exported more and the
   -- player has not hurt that camp in fought_minutes; else withdraws. Departures quiet: no fall, no cores.
-  wave_cost = 3, wave_size = 3, expedition_minutes = 45, fought_minutes = 30}
-shared.DIRECTOR_PERSONALITIES = {"steady", "off"}  -- between a corporation's landings (faction.lua's cadence)
+  wave_cost = 3, wave_size = 3, expedition_minutes = 45, fought_minutes = 30,
+  -- Step 4 (overnight, for review): a spree tilts its corporation's choice of operation (ops' prefer) to its kind,
+  -- spree_mix, and Grubstake's waits for dusk (darkness dusk, as its skims'); a surge sends surge_reinforce units by pod
+  -- to each camp at war first; a supply drop (supply_cost, weighed in the draw) lands a crate of supply_parts
+  -- supply_out tiles from its camp toward the player, collected supply_wait minutes on if it still stands.
+  spree_mix = {grubstake = {strip = 2, raid = 1.5}, serenity = {siege = 2}}, dusk = 0.25, surge_reinforce = 4,
+  supply_cost = 1, supply_parts = 300, supply_out = 40, supply_wait = 3}
+shared.DIRECTOR_PERSONALITIES = {"steady", "gentle", "chaotic", "off"}  -- between a corporation's landings (faction.lua's cadence)
 shared.MAX_CAMPS = {default = 3, min = 1, max = 10}           -- a corporation's standing camps, its headquarters counted
 shared.ARRIVE_EVO = {default = 0.25, min = 0, max = 0.95}     -- the wild evolution Synthexis comes at (farm.lua)
 shared.MAX_CULTURES = {default = 5, min = 1, max = 10}        -- Synthexis's cultures at once, its seeding's (farm.lua)

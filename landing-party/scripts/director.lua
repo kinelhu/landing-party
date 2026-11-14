@@ -19,6 +19,8 @@ local stance = require("__landing-party__.scripts.stance")
 local faction = require("__landing-party__.scripts.faction")
 local farm = require("__landing-party__.scripts.farm")
 local rng = require("__landing-party__.scripts.rng")
+local pods = require("__landing-party__.scripts.pods")
+local war = require("__landing-party__.scripts.war")
 
 local director = {}
 
@@ -119,8 +121,8 @@ end
 local function draw(s, owner)
   if not s.rng then s.rng = {s = rng.new((game.surfaces[1] and game.surfaces[1].map_gen_settings.seed or 1) + 7919).s} end
   local _, camps = at_war(owner)
-  local w = tun("beat_weights")
-  local list = camps >= 2 and {"spree", "surge", "focus", "wave"} or {"spree", "wave"}
+  local w = (tun("weights_of") or {})[director.personality()] or tun("beat_weights")
+  local list = camps >= 2 and {"spree", "surge", "focus", "wave", "supply"} or {"spree", "wave", "supply"}
   local total = 0
   for _, k in ipairs(list) do total = total + (w[k] or 0) end
   local x = rng.next(s.rng) * total
@@ -133,7 +135,7 @@ end
 
 local function cost_of(beat)
   return tun((beat == "surge" and "surge_cost") or (beat == "focus" and "focus_cost") or (beat == "wave" and "wave_cost")
-    or "spree_cost")
+    or (beat == "supply" and "supply_cost") or "spree_cost")
 end
 
 -- The place on the player's ground its camps know best: their targets against the player, by cell of focus_radius,
@@ -221,6 +223,7 @@ function director.tick(tick)
   s.read.adapt = s.adapt
   s.budget = math.min(tun("cap"), s.budget + rate)
   director.expeditions(s, owner, tick)
+  director.supplies(s, tick)
   -- Its beats: a spree, a surge or a focus strike, then a lull, then filling again; or a drop wave.
   if (s.phase == "spree" or s.phase == "surge") and tick >= s.phase_till then
     director.start_lull(s, owner, tick)
@@ -232,8 +235,12 @@ function director.tick(tick)
   end
   if s.phase == "fill" and not s.next_beat then
     s.next_beat = draw(s, owner)
-    trace(string.format("next beat: %s (costs %d; budget %.2f)", s.next_beat, cost_of(s.next_beat), s.budget))
+    -- (Chaotic: each beat held a random while past its cost, up to chaos_minutes.)
+    s.hold_till = director.personality() == "chaotic" and tick + math.floor(rng.next(s.rng) * tun("chaos_minutes") * 3600) or nil
+    trace(string.format("next beat: %s (costs %d; budget %.2f)%s", s.next_beat, cost_of(s.next_beat), s.budget,
+      s.hold_till and string.format(", held till %d min", math.floor(s.hold_till / 3600)) or ""))
   end
+  if s.phase == "fill" and s.hold_till and tick < s.hold_till then return end
   if s.phase == "fill" and s.budget >= cost_of(s.next_beat) then
     if hurt then
       if s.held_for ~= "hurt" then
@@ -253,6 +260,13 @@ function director.tick(tick)
       local _, camps = at_war(owner)
       if camps < 2 then s.next_beat = "spree" end
     end
+    if s.next_beat == "supply" then
+      s.held_for = nil
+      s.budget = s.budget - tun("supply_cost")
+      director.start_supply(s, owner, tick, why)
+      s.phase, s.next_beat = "fill", nil
+      return
+    end
     if s.next_beat == "wave" then
       local corp = pick(s, owner, tick)
       if not corp then return end
@@ -271,9 +285,94 @@ function director.tick(tick)
     end
     local corp = pick(s, owner, tick)
     if not corp then return end
+    -- (Grubstake's thefts are night-bound: its spree waits for dusk, as its skims do.)
+    local surface = game.surfaces[1]
+    if corp == "grubstake" and surface and surface.darkness < tun("dusk") then
+      if s.held_for ~= "dusk" then s.held_for = "dusk"; trace("holds: Grubstake's spree waits for dusk") end
+      return
+    end
     s.held_for = nil
     s.budget = s.budget - tun("spree_cost")
     director.start_spree(s, owner, corp, tick, why)
+  end
+end
+
+-- A supply drop now (an off-map beat): a crate of supply_parts from its headquarters by pod to the camp at war with the
+-- fewest parts, landing supply_out tiles from it toward the player, marked on the map; supply_wait minutes on, if the
+-- crate still stands its parts reach the camp, else nothing does. The crate holds what the player can take: its parts
+-- as iron plates.
+local function crate_at(s, n, surface, pos)
+  local p = surface.find_non_colliding_position("iron-chest", pos, 12, 0.5)
+  local sp = s.supplies and s.supplies[n]
+  if not (p and sp) then return end
+  local b = storage.bases[sp.base]
+  local c = surface.create_entity{name = "iron-chest", position = p, force = b and b.force or "neutral"}
+  if not c then return end
+  c.insert{name = "iron-plate", count = math.max(1, math.floor(tun("supply_parts") / 2))}
+  sp.crate, sp.at, sp.pos = c, game.tick, {p.x, p.y}
+  local owner = sp.owner and game.forces[sp.owner]
+  if owner then
+    sp.tag = owner.add_chart_tag(surface, {position = p, text = "Supply drop", icon = {type = "item", name = "iron-chest"}})
+  end
+end
+pods.handlers.supply = function(p, surface, pos)
+  local s = storage.director
+  if s then crate_at(s, p.n, surface, {pos.x, pos.y}) end
+end
+
+function director.start_supply(s, owner, tick, why)
+  local corps = at_war(owner)
+  local best
+  for _, b in pairs(storage.bases or {}) do
+    for _, corp in ipairs(corps) do
+      if b.corp == corp and not b.fallen and not b.expedition and b.lander.valid and (not best or (b.parts or 0) < (best.parts or 0)) then
+        best = b
+      end
+    end
+  end
+  if not best then return false end
+  local surface = game.surfaces[best.surface]
+  local lp = best.lander.position
+  local sp = game.forces[owner].get_spawn_position(surface)
+  local dx, dy = sp.x - lp.x, sp.y - lp.y
+  local l = math.max(1, math.sqrt(dx * dx + dy * dy))
+  local at = {lp.x + dx / l * tun("supply_out"), lp.y + dy / l * tun("supply_out")}
+  s.supplies = s.supplies or {}
+  s.supply_n = (s.supply_n or 0) + 1
+  local n = s.supply_n
+  s.supplies[n] = {base = best.id, owner = owner, sent = tick}
+  s.beats = s.beats + 1
+  local sent = not storage.pods_off and pods.send(surface, at, best.force, {kind = "supply", n = n})
+  if not sent then crate_at(s, n, surface, at) end
+  trace(string.format("supply drop %d: %d parts to camp %d by %s, landing at %.0f,%.0f (budget %.2f left; %s)", n,
+    tun("supply_parts"), best.id, sent and "pod" or "crate", at[1], at[2], s.budget, why or "forced"))
+  tell(owner, "lp.director-supply", shared.CORPS[best.corp].name, string.format("[gps=%.0f,%.0f,%s]", at[1], at[2], surface.name))
+  return true
+end
+
+-- Its supply drops collected or lost (every minute).
+function director.supplies(s, tick)
+  for n, sp in pairs(s.supplies or {}) do
+    if sp.at and tick - sp.at >= tun("supply_wait") * 3600 then
+      local b = storage.bases[sp.base]
+      local where = sp.pos and string.format("[gps=%.0f,%.0f,%s]", sp.pos[1], sp.pos[2], b and game.surfaces[b.surface].name or "nauvis") or ""
+      if sp.crate and sp.crate.valid and b and not b.fallen then
+        sp.crate.destroy()
+        b.parts = (b.parts or 0) + tun("supply_parts")
+        s.supplied = (s.supplied or 0) + 1
+        trace(string.format("supply drop %d reached camp %d: %d parts", n, b.id, tun("supply_parts")))
+        tell(sp.owner, "lp.director-supply-in", shared.CORPS[b.corp].name, where)
+      else
+        if sp.crate and sp.crate.valid then sp.crate.destroy() end
+        s.supply_lost = (s.supply_lost or 0) + 1
+        trace(string.format("supply drop %d lost: its crate gone before the camp took it", n))
+        tell(sp.owner, "lp.director-supply-lost", b and shared.CORPS[b.corp].name or "-", where)
+      end
+      if sp.tag and sp.tag.valid then sp.tag.destroy() end
+      s.supplies[n] = nil
+    elseif not sp.at and tick - sp.sent > 5 * 3600 then
+      s.supplies[n] = nil
+    end
   end
 end
 
@@ -368,6 +467,14 @@ function director.start_surge(s, owner, tick, focused, why, at)
     end
   end
   s.intensity = {owner = owner, add = tun("surge_add"), till = till}
+  -- Reinforcements first, by pod from each camp's headquarters (an off-map beat: war.reinforce).
+  local sent = 0
+  for _, b in pairs(storage.bases or {}) do
+    for _, corp in ipairs(corps) do
+      if b.corp == corp and not b.fallen and not b.expedition and b.lander.valid then sent = sent + war.reinforce(b, owner, tun("surge_reinforce")) end
+    end
+  end
+  s.reinforced = (s.reinforced or 0) + sent
   at = focused and (at or focus_point(owner)) or nil
   if focused and not at then focused = false end
   s.focus = at and {owner = owner, pos = at, radius = tun("focus_radius"), weight = tun("focus_weight"), till = till} or nil
@@ -388,7 +495,7 @@ end
 
 -- A lull now: every corporation's operations against `owner` held lull_minutes (the truce standing).
 function director.start_lull(s, owner, tick)
-  local minutes = tun("lull_minutes")
+  local minutes = tun("lull_minutes") * ((tun("lull_scale") or {})[director.personality()] or 1)
   storage.truces = storage.truces or {}
   for corp in pairs(shared.CORPS) do storage.truces[corp .. "|" .. owner] = tick + minutes * 3600 end
   s.phase, s.phase_till = "lull", tick + minutes * 3600
@@ -416,6 +523,10 @@ function director.start_spree(s, owner, corp, tick, why)
   local minutes = tun("spree_minutes")
   s.tempo[corp] = {factor = tun("spree_factor"), till = tick + minutes * 3600}
   s.last_spree[corp] = tick
+  -- Its kind's operations preferred for the spree (ops' prefer: Grubstake's strips and raids, Kessler-Hayashi's sieges).
+  local mix = (tun("spree_mix") or {})[corp]
+  s.mix = s.mix or {}
+  if mix then s.mix[corp] = {till = tick + minutes * 3600, raid = mix.raid, siege = mix.siege, strip = mix.strip} end
   s.phase, s.phase_till = "spree", tick + minutes * 3600
   s.beats, s.sprees = s.beats + 1, (s.sprees or 0) + 1
   -- A spree pulls its camps' next operations in (a pace, never a hold: ops.finish's gaps, b.next_op_why).
@@ -447,6 +558,7 @@ function director.cmd(action, arg)
     for _, t in pairs(s.tempo) do t.till = tick end
     if s.intensity then s.intensity.till = tick end
     if s.focus then s.focus.till = tick end
+    for _, m in pairs(s.mix or {}) do m.till = tick end
     trace("off (forced)")
     return "off"
   elseif action == "auto" then
@@ -468,6 +580,13 @@ function director.cmd(action, arg)
     local corp = (type(arg) == "string" and shared.CORPS[arg] and arg) or pick(s, owner, tick)
     if not corp then return "no corporation at war with a camp standing" end
     return director.start_wave(s, owner, corp, tick, "forced") and ("drop wave: " .. corp) or "no landing ground known"
+  elseif action == "supply" then
+    return director.start_supply(s, owner, tick, "forced") and "supply drop" or "no camp at war"
+  elseif action == "collect" then
+    -- (Tests and the panel: every supply drop down now collected or lost.)
+    for _, sp in pairs(s.supplies or {}) do if sp.at then sp.at = tick - tun("supply_wait") * 3600 end end
+    director.supplies(s, tick)
+    return "supply drops resolved"
   elseif action == "resolve" then
     -- (Tests and the panel: every expedition due now.)
     for _, b in pairs(storage.bases or {}) do if b.expedition then b.expedition.since = tick - tun("expedition_minutes") * 3600 end end
@@ -490,6 +609,7 @@ function director.cmd(action, arg)
     for _, t in pairs(s.tempo) do t.till = tick end
     if s.intensity then s.intensity.till = tick end
     if s.focus then s.focus.till = tick end
+    for _, m in pairs(s.mix or {}) do m.till = tick end
     s.phase, s.phase_till = "fill", nil
     trace("beat ended (forced)")
     return "beat ended"
