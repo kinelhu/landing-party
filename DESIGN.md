@@ -7341,6 +7341,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Director calibration: steady does nothing in a contact game's first two hours** (measured overnight 2026-11-14,
+  not tuned). Scenario contact, two hours, five seeds, the walled and the passive player, LP_DIRECTOR steady against off:
+  on from minute 35 in every run, and not one beat in any; on and off came out identical (operations launched, the
+  player's buildings left). Two causes, each enough. The fill at era 0 is about 0.011 a minute ((1 + era / 2) times
+  difficulty over the landing interval), so the first beat's cost of 1 is due about 90 minutes after it comes on. And
+  "hurt" (the player's losses in half an hour past loss_share, 2%, of the factory's worth as it reads it) held it nearly
+  all the time: the scripted player loses buildings to routine raids (8 to 146 worth in a half hour against a worth read
+  as about 370), so the adaptation never climbed either. For the user: the fill's scale, the hurt line (a share of worth
+  that routine raids pass, or losses past what the player had been losing), and whether worth reads enough of a factory
+  (26 prototypes). The first calibration (before LP_DIRECTOR) was void, the director never on.
 - **Fliers' legs back to 48** (0.2.381). Clear worms, farm siegepoor and siegestall, failing since 0.2.377, bisected
   between that version's two candidates (two trees on 0.2.376, one with the prowl's gap alone, one with the legs alone):
   the legs of 100. Measured over open ground, every way to 100 tiles was found; by a camp, a drone's way round its walls

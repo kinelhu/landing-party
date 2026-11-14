@@ -248,6 +248,15 @@ Step 4 (0.2.379), part of it:
 - Open: a drop wave or a supply drop now come in any long game the director runs in (30 minutes after the opening's
   arrival); the regression is the first look at what they do to scenarios that never expected them.
 
+## 9c. Calibration (2026-11-14, overnight)
+
+Scenario contact, 2 hours, seeds 12345 777 4242 101 31337, the walled and passive players, `LP_DIRECTOR=steady` against
+off. The director came on at minute 35 in every run and fired no beat: the budget reached 0.84 at minute 115 (a fill of
+about 0.011 a minute at era 0), and "hurt" was read in nearly every reading (losses of 8 to 146 worth in half an hour
+against a factory read as about 370 worth; the line is 2%). On and off were identical. Questions for the user: the
+fill's scale; the hurt line (a share of worth that a routine raid passes; perhaps losses past the player's own recent
+rate instead); whether the worth reading (26 prototypes) sees enough of a factory. Nothing was tuned overnight.
+
 ## 10. Build order
 
 1. The director's state, budget and readings; personality steady and off; tempo and lull, the two dials that act from
