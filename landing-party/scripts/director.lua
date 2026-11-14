@@ -71,12 +71,23 @@ local function on(tick)
 end
 
 -- A loss of the player's, for the half hour's window (control.lua, beside storage.player_razed).
-function director.note_loss(owner, ent)
+-- Its worth split by who razed it: by corporation (lost_by), and what of it the director's strike teams razed
+-- (lost_strike: their killer one of a team's units). (Totals over whole visits did not tell steady from off in five
+-- seeds, each game branching from the first beat; the teams' own share is the director's pressure, 0.2.392.)
+function director.note_loss(owner, ent, cause, corp)
   -- (Every loss's worth, on or off: the calibration's measure, razed worth an hour; the consult part three.)
   local s = st()
   local v = valuemap.razed_of(ent)
   s.lost_total = s.lost_total or {}
   s.lost_total[owner] = (s.lost_total[owner] or 0) + v
+  if corp then
+    s.lost_by = s.lost_by or {}
+    s.lost_by[corp] = (s.lost_by[corp] or 0) + v
+  end
+  if cause and cause.valid and cause.unit_number and s.strike_unit and s.strike_unit[cause.unit_number] then
+    s.lost_strike = s.lost_strike or {}
+    s.lost_strike[owner] = (s.lost_strike[owner] or 0) + v
+  end
   if not s.active then return end
   table.insert(s.losses, {game.tick, owner, v})
 end
@@ -676,8 +687,10 @@ war.on_strike_landed = function(key, units)
   local k = s and s.strikes and s.strikes[key]
   if not k then for _, u in ipairs(units) do if u.valid then u.destroy() end end; return end
   s.strike_landed = (s.strike_landed or 0) + #units
+  s.strike_unit = s.strike_unit or {}
   for _, u in ipairs(units) do
     k.units[#k.units + 1] = u
+    s.strike_unit[u.unit_number] = key
     u.commandable.set_command{type = defines.command.attack_area, destination = k.target, radius = 32,
       distraction = defines.distraction.by_anything}
   end
@@ -704,6 +717,7 @@ function director.strikes(s, tick)
       trace(string.format("strike force %d over: %d of %d lifted out", key, #live, k.sent))
       shared.event("strike_over", {key = key, left = #live, sent = k.sent})
       s.strikes[key] = nil
+      for un, kk in pairs(s.strike_unit or {}) do if kk == key then s.strike_unit[un] = nil end end
     elseif #live > 0 then
       local c = {cx / #live, cy / #live}
       local surface = live[1].surface

@@ -426,7 +426,7 @@ script.on_event(defines.events.on_entity_died, function(e)
       storage.player_razed = storage.player_razed or {}
       local k = ent.force.name .. ":" .. ent.type
       storage.player_razed[k] = (storage.player_razed[k] or 0) + 1
-      director.note_loss(ent.force.name, ent)
+      director.note_loss(ent.force.name, ent, e.cause, e.force.name)
       local corp = standing.corp_of_force(e.force.name)
       if corp then standing.incident(corp, "razed", ent.position, ent.name) end
     end

@@ -7341,6 +7341,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The visits measured the wrong thing** (0.2.392). Every visit comparison of the director, off against steady, read
+  METRIC razed: the first camp's count of the player's buildings it razed, not the player's loss. It missed the other
+  camps, the drop waves and the strike teams, so it read against steady (railbase_end's 0.67 and the five seeds of
+  0.2.391 among them; the campaign's figures, from director.lost_total, stand). Visits now report razed_worth (the
+  player's whole loss in worth, director.note_loss, on or off), razed_strike (what of it the director's strike teams
+  razed: the killer one of a team's units), razed_by (by corporation's force) and razed_count (every building, rails
+  too: worth weighs rails and signals at nothing; on railbase_end a team broke 138 of them for 16 of worth). Read on a
+  probe before the batch: scenario director 24 worth, 12 of it the team's, 12 buildings.
 - **The strike force an operation of its own; lulls earned and held by the beat's corporations** (0.2.391; the user:
   "Ok", 2026-11-14). The ablation had read the strike force as what lowered the pressure on mature saves (railbase_end,
   steady razed 0.67 times off; without strike forces 1.23): sent as reinforcements to the lead camp, its units joined

@@ -3193,11 +3193,12 @@ scenarios.contact = function()
       local ms = {}
       for k, v in pairs(miss) do ms[#ms + 1] = k .. " " .. v end
       table.sort(ms)
-      info(string.format("director at %d min: %s %s, budget %.2f, adapt %.2f, era %s, worth %.0f, guns %s, lost %.0f (usual %.0f)%s, depth %s, sprees %d, surges %d, focus %d, waves %d, supplies %d, lulls %d, ops %d; under its tempo %d decisions, %d launched, missed: %s; gap paid %d units; strike forces %d units; razed worth %.0f",
+      info(string.format("director at %d min: %s %s, budget %.2f, adapt %.2f, era %s, worth %.0f, guns %s, lost %.0f (usual %.0f)%s, depth %s, sprees %d, surges %d, focus %d, waves %d, supplies %d, lulls %d, ops %d; under its tempo %d decisions, %d launched, missed: %s; gap paid %d units; strike forces %d units; razed worth %.0f, of it strike teams %.0f, by corporation %s",
         math.floor(t / 3600), d.active and "on" or "off", tostring(d.phase), d.budget or 0, d.adapt or 1, tostring(r.era),
         r.worth or 0, tostring(r.guns), r.lost or 0, r.usual or 0, r.hurt and " HURT" or "", tostring(r.depth), d.sprees or 0,
         d.surges or 0, d.focuses or 0, d.waves or 0, d.supply_n or 0, d.lulls or 0, launched, tries, went, table.concat(ms, ", "),
-        d.gap_paid or 0, d.points_sent or 0, (d.lost_total or {}).player or 0))
+        d.gap_paid or 0, d.points_sent or 0, (d.lost_total or {}).player or 0, (d.lost_strike or {}).player or 0,
+        serpent.line(d.lost_by or {})))
     end)
   end
   -- Era bases (docs/reviews/2026-10-13-campaign-review.md section 6): "spread" (era 2: three outposts, robots),
@@ -19479,6 +19480,21 @@ schedule(END, function()
   metric("lost", s.lost); metric("rebuilt", s.rebuilt)
   metric("units", s.units_built); metric("units_lost", s.units_lost); metric("raids", s.raids_sent)
   metric("razed", s.razed); metric("responses", s.responses)
+  -- The player's whole loss in worth, every corporation's and the director's strike teams' (director.note_loss, on or off),
+  -- and the teams' share. (`razed` above is the first camp's count of buildings alone: the visits' comparisons of the
+  -- director, off against steady, read it until 0.2.392 and missed the other camps, the drop waves and the teams.)
+  local dd = lp("director") or {}
+  metric("razed_worth", math.floor((dd.lost_total or {}).player or 0))
+  metric("razed_strike", math.floor((dd.lost_strike or {}).player or 0))
+  local by = {}
+  for k, v in pairs(dd.lost_by or {}) do by[#by + 1] = k .. "=" .. math.floor(v) end
+  table.sort(by)
+  metric("razed_by", table.concat(by, ","))
+  -- (And their count, every building, rails too: worth weighs rails and signals at nothing, and on railbase_end the
+  -- teams broke 138 of them for 16 of worth.)
+  local n = 0
+  for _, v in pairs((lp("pressure") or {}).razed or {}) do n = n + v end
+  metric("razed_count", n)
   table.insert(lines, "INFO " .. helpers.table_to_json(s))
   table.insert(lines, failed == 0 and "DONE ALL PASSED" or ("DONE " .. failed .. " FAILED"))
   helpers.write_file("landing-party/results.txt", table.concat(lines, "\n") .. "\n")
