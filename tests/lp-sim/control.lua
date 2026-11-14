@@ -3182,11 +3182,11 @@ scenarios.contact = function()
       local ms = {}
       for k, v in pairs(miss) do ms[#ms + 1] = k .. " " .. v end
       table.sort(ms)
-      info(string.format("director at %d min: %s %s, budget %.2f, adapt %.2f, era %s, worth %.0f, guns %s, lost %.0f (usual %.0f)%s, depth %s, sprees %d, surges %d, focus %d, waves %d, supplies %d, lulls %d, ops %d; under its tempo %d decisions, %d launched, missed: %s; gap paid %d units; razed worth %.0f",
+      info(string.format("director at %d min: %s %s, budget %.2f, adapt %.2f, era %s, worth %.0f, guns %s, lost %.0f (usual %.0f)%s, depth %s, sprees %d, surges %d, focus %d, waves %d, supplies %d, lulls %d, ops %d; under its tempo %d decisions, %d launched, missed: %s; gap paid %d units; strike forces %d units; razed worth %.0f",
         math.floor(t / 3600), d.active and "on" or "off", tostring(d.phase), d.budget or 0, d.adapt or 1, tostring(r.era),
         r.worth or 0, tostring(r.guns), r.lost or 0, r.usual or 0, r.hurt and " HURT" or "", tostring(r.depth), d.sprees or 0,
         d.surges or 0, d.focuses or 0, d.waves or 0, d.supply_n or 0, d.lulls or 0, launched, tries, went, table.concat(ms, ", "),
-        d.gap_paid or 0, (d.lost_total or {}).player or 0))
+        d.gap_paid or 0, d.points_sent or 0, (d.lost_total or {}).player or 0))
     end)
   end
   -- Era bases (docs/reviews/2026-10-13-campaign-review.md section 6): "spread" (era 2: three outposts, robots),

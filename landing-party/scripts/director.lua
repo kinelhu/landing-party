@@ -171,8 +171,14 @@ end
 
 -- Its next beat, drawn as it starts filling (its rng in storage, seeded by the map): spree, surge or focus strike by
 -- beat_weights; a surge or a focus only with two camps at war or more (one camp's surge is a spree).
-local function draw(s, owner)
+-- Its random source, in storage, seeded by the map (made at its first use: the first beat is no longer drawn).
+local function rng_of(s)
   if not s.rng then s.rng = {s = rng.new((game.surfaces[1] and game.surfaces[1].map_gen_settings.seed or 1) + 7919).s} end
+  return s.rng
+end
+
+local function draw(s, owner)
+  rng_of(s)
   local _, camps = at_war(owner)
   local w = (tun("weights_of") or {})[director.personality()] or tun("beat_weights")
   -- (A surge with one camp too: its intensity is the cap on that camp's siege tier, the consult; a focus wants two.)
@@ -326,9 +332,10 @@ function director.tick(tick)
     trace(string.format("fill: budget %.2f", s.budget))
   end
   if s.phase == "fill" and not s.next_beat then
-    s.next_beat = draw(s, owner)
+    -- (Its first a spree: drawn, a first surge at twice the cost came at minute 80.)
+    s.next_beat = (s.beats or 0) == 0 and "spree" or draw(s, owner)
     -- (Chaotic: each beat held a random while past its cost, up to chaos_minutes.)
-    s.hold_till = director.personality() == "chaotic" and tick + math.floor(rng.next(s.rng) * tun("chaos_minutes") * 3600) or nil
+    s.hold_till = director.personality() == "chaotic" and tick + math.floor(rng.next(rng_of(s)) * tun("chaos_minutes") * 3600) or nil
     trace(string.format("next beat: %s (costs %d; budget %.2f)%s", s.next_beat, cost_of(s.next_beat), s.budget,
       s.hold_till and string.format(", held till %d min", math.floor(s.hold_till / 3600)) or ""))
   end
@@ -369,14 +376,25 @@ function director.tick(tick)
       return
     end
     if s.next_beat == "surge" or s.next_beat == "focus" then
-      s.held_for = nil
       local beat = s.next_beat
-      s.budget = s.budget - cost_of(beat)
-      director.start_surge(s, owner, tick, beat == "focus", why)
+      -- (Its budget kept if no corporation is at war with a camp standing: it was spent on nothing, a camp stood down.)
+      if director.start_surge(s, owner, tick, beat == "focus", why) then
+        s.held_for = nil
+        s.budget = s.budget - cost_of(beat)
+      elseif s.held_for ~= "none at war" then
+        s.held_for = "none at war"
+        trace("holds: no corporation at war with a camp standing (stood down, or none landed)")
+      end
       return
     end
     local corp = pick(s, owner, tick)
-    if not corp then return end
+    if not corp then
+      if s.held_for ~= "none at war" then
+        s.held_for = "none at war"
+        trace("holds: no corporation at war with a camp standing (stood down, or none landed)")
+      end
+      return
+    end
     -- (Grubstake's thefts are night-bound: its spree waits for dusk, as its skims do.)
     local surface = game.surfaces[1]
     if corp == "grubstake" and surface and surface.darkness < tun("dusk") then
@@ -561,6 +579,44 @@ ops.pay_gap = function(b, owner, gap, cap)
   return true
 end
 
+-- Its threat points as units a camp (RimWorld's): the player's worth times points_per_worth, the difficulty, the
+-- personality and the adaptation, points_max at most.
+local function strike_units(s, owner)
+  local f = game.forces[owner]
+  local w = (s.read and s.read.worth) or (f and valuemap.force_worth(f)) or 0
+  local d = shared.DIFFICULTY[shared.setting("lp-difficulty", "normal")] or 1
+  local pers = tun("personality")[director.personality()] or 1
+  return math.min(tun("points_max"), math.floor(w * tun("points_per_worth") * d * pers * (s.adapt or 1)))
+end
+-- Its strike force, by pod from headquarters, all to one lead camp of `corps` (war.reinforce), before the beat: its
+-- points are the beat's, not a camp's (sent to each, three camps tripled it; the user, 2026-11-14: "Okay for now", joint
+-- operations of several camps a later step). The lead: a camp with no operation out, nearest the focus if there is one,
+-- else nearest the player's spawn; any camp if all are out.
+local function strike(s, owner, corps, tick)
+  local n = strike_units(s, owner)
+  if n <= 0 then return 0 end
+  local set = {}
+  for _, c in ipairs(corps) do set[c] = true end
+  local f = game.forces[owner]
+  local at = s.focus and tick < s.focus.till and s.focus.pos
+  local lead, ld, lbusy
+  for _, b in pairs(storage.bases or {}) do
+    if set[b.corp] and not b.fallen and not b.expedition and b.lander.valid then
+      local p = at or (f and f.get_spawn_position(b.lander.surface)) or {x = 0, y = 0}
+      local px, py = p.x or p[1], p.y or p[2]
+      local d = (b.lander.position.x - px) ^ 2 + (b.lander.position.y - py) ^ 2
+      local busy = b.op ~= nil
+      if not lead or (lbusy and not busy) or (busy == lbusy and d < ld) then lead, ld, lbusy = b, d, busy end
+    end
+  end
+  if not lead then return 0 end
+  local sent = war.reinforce(lead, owner, n)
+  s.reinforced = (s.reinforced or 0) + sent
+  s.points_sent = (s.points_sent or 0) + sent
+  s.strike_lead = lead.id
+  return sent
+end
+
 -- A surge now: every corporation at war with `owner` (its camps standing, Synthexis apart) spree_factor times as often
 -- and the cap on operations against it at once surge_add higher (ops' budget), surge_minutes; with `focused`, a focus
 -- strike: targets within focus_radius of the place their camps know best focus_weight times as relevant to every camp
@@ -585,14 +641,8 @@ function director.start_surge(s, owner, tick, focused, why, at)
   local set = {}
   for _, corp in ipairs(corps) do set[corp] = true end
   s.commit = {owner = owner, corps = set, till = till}
-  -- Reinforcements first, by pod from each camp's headquarters (an off-map beat: war.reinforce).
-  local sent = 0
-  for _, b in pairs(storage.bases or {}) do
-    for _, corp in ipairs(corps) do
-      if b.corp == corp and not b.fallen and not b.expedition and b.lander.valid then sent = sent + war.reinforce(b, owner, tun("surge_reinforce")) end
-    end
-  end
-  s.reinforced = (s.reinforced or 0) + sent
+  -- Its strike force first, by pod from each camp's headquarters (threat points: strike_units).
+  local sent = strike(s, owner, corps, tick)
   at = focused and (at or focus_point(owner)) or nil
   if focused and not at then focused = false end
   s.focus = at and {owner = owner, pos = at, radius = tun("focus_radius"), weight = tun("focus_weight"), till = till} or nil
@@ -651,14 +701,15 @@ function director.start_spree(s, owner, corp, tick, why)
   if mix then s.mix[corp] = {till = tick + minutes * 3600, raid = mix.raid, siege = mix.siege, strip = mix.strip} end
   s.phase, s.phase_till = "spree", tick + minutes * 3600
   s.beats, s.sprees = s.beats + 1, (s.sprees or 0) + 1
+  local sent = strike(s, owner, {corp}, tick)
   -- A spree pulls its camps' next operations in (a pace, never a hold: ops.finish's gaps, b.next_op_why).
   for _, b in pairs(storage.bases or {}) do
     if b.corp == corp and not b.fallen and b.next_op_why == "pace" and (b.next_op or 0) > tick then
       b.next_op = tick + math.floor((b.next_op - tick) / tun("spree_factor"))
     end
   end
-  trace(string.format("spree: %s's operations against %s %dx as often for %d minutes (budget %.2f left; %s)",
-    corp, owner, tun("spree_factor"), minutes, s.budget, why or "forced"))
+  trace(string.format("spree: %s's operations against %s %dx as often for %d minutes, a strike force of %d by pod (budget %.2f left; %s)",
+    corp, owner, tun("spree_factor"), minutes, sent, s.budget, why or "forced"))
   tell(owner, "lp.director-spree", shared.CORPS[corp].name, minutes)
 end
 

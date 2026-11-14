@@ -270,7 +270,25 @@ veterancy and loot for the player and teaches nothing; the measured limit was un
 - **Probe (optional, later):** a small announced raid sent to learn the player's defences, its tactics ledger the gain.
 Built once the calibration shows the shortfall across seeds.
 
+## 9e. Threat points, and joint operations later (the user, 2026-11-14)
+
+"It should add pressure depending on its settings. We've been getting inspo from rimworld." Each spree and surge now
+brings a strike force from headquarters (RimWorld's threat points): the player's worth times `points_per_worth` (0.02),
+the difficulty, the personality and the adaptation, `points_max` (40) at most, all to one lead camp (a camp with no
+operation out, nearest the focus or the player), so a beat's points are its own, not a camp's. Then "this more or less
+needs support for multi camp ops": not built. What exists: camps act alone (one operation each, its own units, staging
+and ledger) and converge through a surge (their launches within a minute or two) and a focus (one area preferred),
+unsynchronised. Joint operations, a later step: first a muster and a launch time across camps (the air raid's muster is
+the nearest piece, within one camp), then one operation drawing several camps' units, with its ownership (whose ledger,
+whose units home where, a camp fallen mid-way) and its sizing against the combined force.
+
 ## 10. Build order
+
+(The user, 2026-11-14: "once we're happy with the director on paper, a set of visits with various director settings on
+a visualization document with time slider and annotations would be helpful.") The milestone after its calibration:
+visits on copies of the user's saves (scripts/visit.sh) with the director off, gentle, steady and chaotic, a few hours
+each; one page with a time slider, the director's beats and notices annotated on its timeline, the razed-worth curve,
+the operations and their outcomes, and the map at each point; the settings side by side.
 
 1. The director's state, budget and readings; personality steady and off; tempo and lull, the two dials that act from
    the first camp on; the curve checked headless.

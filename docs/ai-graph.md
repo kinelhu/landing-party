@@ -26,7 +26,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `army` | 1055 | airraid, know, ops, pool, rd, rng, tune | base, control, dev, faction, war |  | 60, 300, 600 |  | engine_grouped, engine_ungrouped, rails_ungrouped |
 | `base` | 992 | army, blocks, chart, construction, landfx, layout, lights, modules, names, ops, planner, rng, site, tune | control, cordon, crew, dev, dome, faction, jumper, ledger, pact, prospect, prowl, road, skim, tap, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, ops.siege_goal, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
 | `command` | 968 | (leaf) | control, dev |  | 30, 60, 120 |  | cmd |
-| `director` | 749 | faction, farm, ops, pods, rng, stance, valuemap, war | control, director_gui |  | 3600 |  | director, director_force, truces |
+| `director` | 800 | faction, farm, ops, pods, rng, stance, valuemap, war | control, director_gui |  | 3600 |  | director, director_force, truces |
 | `war` | 648 | army, base, lights, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, director, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `creep` | 614 | costmap, tune | control, farm, studies |  |  |  | creep |
 | `dev` | 610 | army, base, burstfx, cannon, cards, command, director_gui, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap, veterancy | control |  |  |  | chartcheck, cordon_off, dev_cannon, dev_platform, era_override, hq_fast, merit, ram_trace, trace |

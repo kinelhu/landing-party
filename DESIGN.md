@@ -7341,6 +7341,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Threat points** (0.2.387; the user: "It should add pressure depending on its settings. We've been getting inspo
+  from rimworld"). Each spree and surge brings a strike force by pod from headquarters, all to one lead camp (a camp
+  with no operation out, nearest the focus or the player): the player's worth times points_per_worth (0.02), the
+  difficulty, the personality and the adaptation, points_max (40) at most (a camp each at first tripled it with three).
+  Its first beat a spree; supply drops out of steady's draw; a beat that cannot start keeps its budget (a surge drawn
+  against a stood-down camp spent it on nothing, 12345 passive's whole run); its random source made at first use (the
+  first beat undrawn, chaotic's hold read none and crashed, step4). Calibration by setting (contact, three seeds, both
+  players, two hours): razed worth off 609, gentle 470, steady 773 (+27%; four of six games up, 4242 walled 78 to 169,
+  12345 passive 11 to 91); gentle's longer lulls take more than its half strike forces add. Beats still one or two in
+  the 85 minutes on, strike forces 7 to 15 units (the scripted factory's worth about 370). Joint operations of several
+  camps: not built (docs/director.md 9e).
 - **What limits the pressure, and a wrong test** (0.2.386; Fable's consult part three,
   docs/reviews/2026-11-14-director-pressure-consult.md). A raid's proven size (tactics.best_size) was any attempt that
   got in and razed one building, however many it lost: a raid of 8 that lost 7 became the size asked for after, about

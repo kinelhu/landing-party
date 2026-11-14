@@ -431,7 +431,7 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- focus_radius of one point focus_weight times as relevant to every camp); a beat drawn at each fill by these weights,
   -- a surge or a focus only with two camps at war or more.
   surge_cost = 2, surge_factor = 2, surge_add = 1, surge_minutes = 15, focus_cost = 3, focus_weight = 4, focus_radius = 64,
-  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2, wave = 0.15, supply = 0.15},
+  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2, wave = 0.15, supply = 0},
   -- Step 3 (decided overnight 2026-11-14, for review): a drop wave, wave_size landings of one corporation at once (the
   -- landing queue, each seeing the last), wave_cost; its camps an expedition (not counted against the camp cap, no
   -- reliefs, the landing clock untouched) until expedition_minutes, then the user's settle rule (2026-11-14): settles
@@ -459,7 +459,12 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- Fable's consult part three (2026-11-14; reach, not pace): a spree raises the cap on operations against the player
   -- (ops' budget, which caps a siege's tier too) by spree_add, as a surge does; a lull follows a beat only if the player
   -- lost something in it (lull_if_razed); an armed camp's supply drop goes to its siege fund (siege_tier's purse).
-  spree_add = 1, lull_if_razed = true}
+  spree_add = 1, lull_if_razed = true,
+  -- Threat points (RimWorld's; the user, 2026-11-14: "It should add pressure depending on its settings"): a spree's or a
+  -- surge's strike force from headquarters, by pod to the camps at war before it, points_per_worth units a point of the
+  -- player's worth, times the difficulty, the personality and the adaptation, points_max a camp at most (on the user's
+  -- saves at steady: start about 11, nwa the cap). Its first beat a spree; supply drops out of steady's draw.
+  points_per_worth = 0.02, points_max = 40}
 -- A landing matched to what it lands against (the user, 2026-11-14: "Is it an artifact of landing our camps naked on a
 -- late base? Should we land with a bigger budget?"): on top of its fixed escort and START_PARTS, by the strongest player
 -- force's guns and worth (valuemap.force_worth): escort_per_gun more units (escort_max at most), parts_per_worth more parts
