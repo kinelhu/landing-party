@@ -43,6 +43,9 @@ local ECONOMY = {["lp-fabricator"] = true, ["lp-generator"] = true, ["lp-pylon"]
 -- 30 minutes (cordon broken). Only then: counted as economy in every batch, a mining module was never held for the
 -- reserve, and the camps spent to the bone on far mining (crew doomed, island and walled and tap natural failed).
 local MINE_HAUL = {["lp-bin"] = true, ["lp-belt"] = true}
+-- A truck stuck among CLEAR_TREES trees or more (within 12) cuts its lane once a trip: CLEAR_AHEAD tiles toward its site,
+-- CLEAR_R either side (named priors).
+local CLEAR_TREES, CLEAR_AHEAD, CLEAR_R = 20, 24, 4
 local function economic(m, name)
   local k = shared.kind_of(name or "")
   return ECONOMY[k] or (m and m.kind == "mining" and MINE_HAUL[k]) or false
@@ -294,6 +297,26 @@ local function step(b, i)
     if c.routed then
       local a = c.anchor
       if not a or (p.x - a[1]) ^ 2 + (p.y - a[2]) ^ 2 > 16 then c.anchor, c.best_at = {p.x, p.y}, game.tick end
+    end
+    -- Stuck among trees, a truck cuts its lane once a trip (CLEAR_AHEAD tiles toward its site, CLEAR_R either side) and
+    -- goes on: in a forest (97 trees within 12) its trucks went home every time and the next got stuck the same, the
+    -- queue waiting behind them (a mine at -394,180 on seed 12345; biters outpost's turret pair never came, 0.2.376).
+    if game.tick - c.best_at > STUCK and not c.cleared
+      and s.count_entities_filtered{position = p, radius = 12, type = "tree", limit = CLEAR_TREES} >= CLEAR_TREES then
+      local dx, dy = c.site[1] - p.x, c.site[2] - p.y
+      local l = math.max(1, math.sqrt(dx * dx + dy * dy))
+      local n = 0
+      for k = 0, CLEAR_AHEAD, CLEAR_R do
+        local q = {p.x + dx / l * math.min(k, l), p.y + dy / l * math.min(k, l)}
+        for _, t in pairs(s.find_entities_filtered{position = q, radius = CLEAR_R, type = "tree"}) do
+          if t.valid then t.destroy(); n = n + 1 end
+        end
+      end
+      c.cleared, c.best_at, c.anchor = n, game.tick, {p.x, p.y}
+      b.crews_cleared = (b.crews_cleared or 0) + 1
+      order(c.unit, way(b, {p.x, p.y}, c.site) or {}, c.site)
+      base.trace(b, string.format("crew: stuck among trees on the way to %.0f,%.0f, cuts its lane (%d trees)", c.site[1], c.site[2], n))
+      return
     end
     if game.tick - c.best_at > STUCK then
       b.parts = b.parts + (c.bill - c.spent)

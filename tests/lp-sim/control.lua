@@ -7759,8 +7759,11 @@ scenarios.dome = function()
       check("dome: broken by the guns alone, its lander stands, its hull held", st.lander and not st.fallen and (st.hull_down or 0) == 0,
         string.format("lander %s, hull down %s times", tostring(st.lander and not st.fallen), tostring(st.hull_down)))
     elseif mix == "dark" or mix == "off" then
-      check("dome: none, the camp is shelled", d.caught == 0 and (lost > 0 or hit_lander),
-        d.caught .. " caught, " .. lost .. " lost, lander hit " .. tostring(hit_lander))
+      -- (Its shells fired and none caught, as battery's: counted by what they destroyed, 15 shells broke 1 building at
+      -- 0.2.375 and none at 0.2.376, the camp laid out otherwise once its economy grew faster.)
+      local fired = S.loaded - left
+      check("dome: none, the camp is shelled", d.caught == 0 and fired >= 5,
+        string.format("%d fired, %d caught, %d lost, lander hit %s", fired, d.caught, lost, tostring(hit_lander)))
     else
       check("dome: one turret's shells all caught (not its own), the dome holds", S.loaded - left >= 5 and d.caught == S.loaded - left
         and d.breaks == 0 and lost == 0, string.format("%d fired, %d caught, %d lost", S.loaded - left, d.caught, lost))
@@ -9037,6 +9040,8 @@ scenarios.studies = function()
 end
 
 scenarios.quiet = function()
+  -- (streak runs 70 minutes since 0.2.379: its three failed raids in a row came at minute 54 once, and not at all in 55
+  -- once, the camp's economy faster and its raids later; the stand-down and what follows it are the subject.)
   local streak = params.mix == "streak"
   schedule(60, function()
     -- The gates open (not about the opening: its settlement is Serenity, whose gate would keep any landing away).

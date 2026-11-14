@@ -55,7 +55,7 @@ digraph ai {
     "site" [label="site\n171 lines", width=0.99, fillcolor="#eef2f7"];
     "blocks" [label="blocks\n76 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
-    "crew" [label="crew\n520 lines", width=1.38, fillcolor="#eef2f7"];
+    "crew" [label="crew\n543 lines", width=1.40, fillcolor="#eef2f7"];
     "cordon" [label="cordon\n388 lines", width=1.23, fillcolor="#eef2f7"];
     "perimeter" [label="perimeter\n331 lines", width=1.17, fillcolor="#eef2f7"];
     "road" [label="road\n143 lines", width=0.96, fillcolor="#eef2f7"];

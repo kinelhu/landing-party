@@ -7341,6 +7341,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The night's regression and what it found** (0.2.380). 341 runs on 0.2.379: 7 failing, none of them the director's
+  (no director line in any failing run), clear culture failing before as well. Bisected on five commit trees: biters
+  outpost, dome off and quiet streak from 0.2.376 (the economy fixes), clear worms and farm siegepoor and siegestall
+  from 0.2.377. Biters outpost was a real bug the economy change exposed: a mine sited in a forest (a 97-tree stand at
+  -394,180 on 12345) sent its trucks in, each stuck and sent home, the next stuck the same, the queue waiting behind them,
+  so the outpost's turret pair never came. Now a truck stuck among CLEAR_TREES (20) trees or more cuts its lane once a
+  trip (CLEAR_AHEAD 24 tiles toward its site, CLEAR_R 4 either side) and goes on; island's trucks, stuck there too, cut
+  theirs. Dome off counted the camp as shelled by what its 15 shells destroyed (1 building at 0.2.375, none at 0.2.376,
+  the camp laid out otherwise): now by shells fired and none caught, as battery already did. Quiet streak's three
+  failed raids came at minute 54 of 55 once and never once: it runs 70 minutes. The calibration's first run was void:
+  the director never came on (it waits for the opening's staged arrival, which the contact scenario never has; and the
+  hook that forced it, made in on_init, was lost between the process that makes the map and the one that runs it):
+  LP_DIRECTOR now forces it 30 minutes after the first camp, at load.
 - **The director, step 4, in part** (0.2.379; overnight; its calls in docs/director.md 9b). Personalities gentle and
   chaotic (the setting); a spree's mix (its corporation's prefer tilted to its kind: Grubstake's strips and raids,
   Kessler-Hayashi's sieges; Grubstake's waits for dusk); reinforcements by pod before a surge (war.reinforce, from
