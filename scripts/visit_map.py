@@ -119,6 +119,11 @@ def main(run_dir, out_path):
     data = {"box": box, "groups": list(GROUPS), "base": groups, "losses": losses, "causes": causes,
             "frames": frames, "waves": waves, "minutes": frames[-1]["m"] if frames else 0,
             "name": os.path.basename(run_dir.rstrip("/"))}
+    # Its ground (terrain.json, the visit's export at its start; the user, 2026-11-14: "Color floating in black void looks
+    # strange and you can't see the bodies of water").
+    tp = os.path.join(run_dir, "terrain.json")
+    if os.path.exists(tp):
+        data["terrain"] = json.load(open(tp))
     # The page opens 5 minutes before the first breach (nw: about 180; nwa: about 85).
     breaches = [w["breach_t"] for w in waves if w["breach_t"] is not None]
     data["start"] = max(0, round(min(breaches) - 5)) if breaches else 0

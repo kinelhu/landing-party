@@ -421,7 +421,9 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- Step 4's personalities (decided overnight 2026-11-14, for review): gentle, half the fill, its lulls twice as long,
   -- no focus strike and no drop wave; chaotic, the same fill, its beats weighed evenly and each held a random while
   -- up to chaos_minutes past its cost (RimWorld's Randy: longer gaps, bigger beats when they come).
-  grace = 30, personality = {steady = 1, gentle = 0.5, chaotic = 1}, lull_scale = {gentle = 2},
+  -- (Gentle's lulls the others' length since 0.2.388: doubled, it razed less than no director at all, 470 against 609;
+  -- the user: gentle between off and steady.)
+  grace = 30, personality = {steady = 1, gentle = 0.5, chaotic = 1}, lull_scale = {},
   weights_of = {gentle = {spree = 0.6, surge = 0.4}, chaotic = {spree = 0.25, surge = 0.25, focus = 0.25, wave = 0.25}},
   chaos_minutes = 30,
   -- Adaptation: the fill's multiple grows adapt_climb an hour the player goes unhurt, to adapt_max; hurt, back to 1.
@@ -455,7 +457,8 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- bar (ops' desperate); under any tempo a camp that chose a raid it could not field is sent the units it lacks by pod
   -- from headquarters, gap_share of its own garrison cap at most a beat (41 of 62 decisions under the tempo were short of
   -- units; a flat 12 left a raid on the walled player 13 short of its 25).
-  beat_minutes = 35, gap_share = 0.5,
+  -- (beat_minutes 20 since 0.2.388: at 35, one or two beats in a calibration's 85 minutes; the user agreed.)
+  beat_minutes = 20, gap_share = 0.5,
   -- Fable's consult part three (2026-11-14; reach, not pace): a spree raises the cap on operations against the player
   -- (ops' budget, which caps a siege's tier too) by spree_add, as a surge does; a lull follows a beat only if the player
   -- lost something in it (lull_if_razed); an armed camp's supply drop goes to its siege fund (siege_tier's purse).

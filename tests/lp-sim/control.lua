@@ -7518,7 +7518,8 @@ scenarios.director = function()
           and r.parts1 - r.parts0 < 300, serpent.line(r))
         return
       end
-      check("director: gentle's lull twice as long", r.gentle_lull == 30, tostring(r.gentle_lull))
+      -- (Its lull as long as the others' since 0.2.388: doubled, gentle razed less than no director at all.)
+      check("director: gentle's lull as long as steady's", r.gentle_lull == 15, tostring(r.gentle_lull))
       check("director: chaotic holds its next beat a while", r.chaotic_hold and r.chaotic_hold > 0, tostring(r.chaotic_hold))
       check("director: a spree tilts its corporation to its kind", r.mix == 2, tostring(r.mix))
       check("director: a surge sends reinforcements first", (r.reinforced or 0) >= 1, tostring(r.reinforced))
@@ -11820,6 +11821,41 @@ scenarios.lab = function()
   end)
 end
 
+-- The ground, for the pages (the user, 2026-11-14: "add a geography layer representing actual terrain to the viz.
+-- Color floating in black void looks strange and you can't see the bodies of water"): every `cell` tiles over the square
+-- of half-side `r` round `c`, its centre tile's map colour (the tile prototype's own), whether water covers most of it,
+-- and its trees, cliffs and ore (the resource most there). Written once to script-output/landing-party/terrain.json.
+local function export_terrain(c, r, cell)
+  local s = surface()
+  local cells, colours, idx = {}, {}, {}
+  local x0, y0 = math.floor(c.x - r), math.floor(c.y - r)
+  local n = math.floor(2 * r / cell)
+  for j = 0, n - 1 do
+    for i = 0, n - 1 do
+      local x, y = x0 + i * cell, y0 + j * cell
+      local area = {{x, y}, {x + cell, y + cell}}
+      local tile = s.get_tile(x + cell / 2, y + cell / 2)
+      local name = tile.valid and tile.name or "out-of-map"
+      if not idx[name] then
+        local p = prototypes.tile[name]
+        local mc = p and p.map_color or {r = 0, g = 0, b = 0}
+        local k = function(v) return math.floor((v > 1 and v or v * 255) + 0.5) end
+        colours[#colours + 1] = {name, k(mc.r), k(mc.g), k(mc.b)}
+        idx[name] = #colours - 1
+      end
+      local water = s.count_tiles_filtered{area = area, collision_mask = "water_tile"}
+      local trees = s.count_entities_filtered{area = area, type = "tree"}
+      local cliffs = s.count_entities_filtered{area = area, type = "cliff"}
+      local ore = s.find_entities_filtered{area = area, type = "resource", limit = 1}[1]
+      -- [tile colour index, water share 0-9, trees, cliffs, ore name or 0]
+      cells[#cells + 1] = {idx[name], math.floor(9 * water / (cell * cell) + 0.5), trees, cliffs, ore and ore.name or 0}
+    end
+  end
+  helpers.write_file("landing-party/terrain.json", helpers.table_to_json({x0 = x0, y0 = y0, cell = cell, n = n,
+    colours = colours, cells = cells}), false)
+  return n * n
+end
+
 scenarios.visit = function()
   local KEY = {"mining-drill", "assembling-machine", "furnace", "lab", "electric-pole", "ammo-turret", "electric-turret",
     "fluid-turret", "artillery-turret", "roboport", "container", "logistic-container", "wall"}
@@ -11846,6 +11882,8 @@ scenarios.visit = function()
     -- 113). LP_MIX=farland: the old distance, to compare with earlier visits.
     if not params.mix:find("farland", 1, true) then S.dist = nil end
     S.start = census()
+    -- (Its ground for the page, 1,400 tiles a side round spawn, a cell every 8.)
+    S.terrain_cells = export_terrain(sp, 700, 8)
     local researched = 0
     for _, t in pairs(f.technologies) do if t.researched then researched = researched + 1 end end
     info(string.format("visit: factory at %.0f,%.0f, %d buildings counted, 95%% within %.0f tiles; %d technologies; landing at %d",

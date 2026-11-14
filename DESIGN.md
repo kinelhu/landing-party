@@ -7341,6 +7341,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Gentle between off and steady; beats every 20 minutes; the ground on the pages** (0.2.388). Gentle's doubled lulls
+  razed less than no director at all (470 against 609); the user: gentle between them. Its lulls now as long as the
+  others' (it keeps half the fill and half the strike force), and the fill a spree's cost at least every 20 minutes
+  (beat_minutes, was 35). Calibration (three seeds, both players, two hours): razed worth off 609, gentle 644, steady
+  843 (+38%; five of six games up, 4242 walled 78 to 236); steady drew a drop wave in four. The pages' ground (the user:
+  "Color floating in black void looks strange and you can't see the bodies of water"): a visit exports its terrain at
+  its start (terrain.json: a cell every 8 tiles over 1,400 a side, the tile prototype's own map colour, water's share,
+  trees, cliffs, ore), drawn as the visit page's bottom layer (scripts/visit_map.html, a toggle), 2.4 s of a visit.
 - **Threat points** (0.2.387; the user: "It should add pressure depending on its settings. We've been getting inspo
   from rimworld"). Each spree and surge brings a strike force by pod from headquarters, all to one lead camp (a camp
   with no operation out, nearest the focus or the player): the player's worth times points_per_worth (0.02), the

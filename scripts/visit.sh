@@ -84,4 +84,5 @@ if [ -s "$out/ops.jsonl" ]; then cp "$out/ops.jsonl" "$dest/"; uv run --quiet --
 [ -s "$out/timeline.jsonl" ] && cp "$out/timeline.jsonl" "$dest/"
 # LP_MIX=record: the run written down for scripts/visit_map.py.
 [ -s "$out/rec.jsonl" ] && cp "$out/rec.jsonl" "$dest/"
+[ -s "$out/terrain.json" ] && cp "$out/terrain.json" "$dest/"
 grep -E "INFO visit|PASS|FAIL|METRIC|PROFILE" "$out/results.txt"

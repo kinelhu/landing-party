@@ -114,14 +114,35 @@ const baseCv = document.createElement('canvas'); baseCv.width = W; baseCv.height
     const xy = D.base[name] || []; g.fillStyle = BASE_COL[name];
     for (let i = 0; i < xy.length; i += 2) g.fillRect(xy[i] - x0, xy[i + 1] - y0, name === 'belt' ? 1 : 2, name === 'belt' ? 1 : 2);
   } }
+// The ground, drawn once at a cell a pixel (terrain.json): the tile's own map colour, water over it by its share, forest
+// darker, cliffs grey, ore tinted.
+let terrainCv = null;
+if (D.terrain) {
+  const T0 = D.terrain, n = T0.n;
+  terrainCv = document.createElement('canvas'); terrainCv.width = n; terrainCv.height = n;
+  const g = terrainCv.getContext('2d'), img = g.createImageData(n, n);
+  const ORE = {'iron-ore': [104, 132, 146], 'copper-ore': [203, 97, 53], 'coal': [20, 20, 20], 'stone': [176, 154, 108], 'uranium-ore': [0, 180, 0], 'crude-oil': [192, 0, 192]};
+  for (let k = 0; k < T0.cells.length; k++) {
+    const c = T0.cells[k], col = T0.colours[c[0]] || ['', 0, 0, 0];
+    let r = col[1], gg = col[2], b = col[3];
+    const water = c[1] / 9;
+    r = r * (1 - water) + 30 * water; gg = gg * (1 - water) + 70 * water; b = b * (1 - water) + 120 * water;
+    const forest = Math.min(1, c[2] / 12) * 0.45;
+    r *= 1 - forest; gg *= 1 - forest * 0.6; b *= 1 - forest;
+    if (c[3] > 0) { r = r * 0.5 + 60; gg = gg * 0.5 + 55; b = b * 0.5 + 50; }
+    if (c[4] && ORE[c[4]]) { const o = ORE[c[4]]; r = r * 0.55 + o[0] * 0.45; gg = gg * 0.55 + o[1] * 0.45; b = b * 0.55 + o[2] * 0.45; }
+    img.data.set([r, gg, b, 255], k * 4);
+  }
+  g.putImageData(img, 0, 0);
+}
 const ports = D.base.port || [];
 const PORT = D.groups.indexOf('port');
 
-const layers = {base: true, coverage: true, lost: true, mended: false, ghosts: true, down: true, units: true, waves: true, serenity: true, grubstake: true};
+const layers = {terrain: true, base: true, coverage: true, lost: true, mended: false, ghosts: true, down: true, units: true, waves: true, serenity: true, grubstake: true};
 const LAYER_UI = [
   ['lost', C.lost, 'Lost, not rebuilt (yet)'], ['mended', C.mended, 'Lost, rebuilt later'], ['ghosts', C.ghost, 'Ghosts waiting for robots'],
   ['down', C.down, 'Roboports without power'], ['coverage', C.robot, 'Robot reach of standing roboports'], ['units', C.syn, "Synthexis's units"], ['serenity', C.kh, "Kessler-Hayashi's camps and units"], ['grubstake', C.gs, "Grubstake's camps and units"],
-  ['waves', C.ink, 'Wave routes and breaches'], ['base', '#56616a', 'The base at the start']];
+  ['waves', C.ink, 'Wave routes and breaches'], ['base', '#56616a', 'The base at the start'], ['terrain', '#4a5a3a', 'The ground (water, forest, cliffs, ore)']];
 const legend = document.getElementById('legend');
 for (const [k, col, txt] of LAYER_UI) {
   const id = 'ly-' + k;
@@ -176,6 +197,10 @@ function draw() {
   ctx.clearRect(0, 0, r.width, r.height);
   ctx.imageSmoothingEnabled = false;
   const f = frameAt(T), s = view.s, dot = Math.max(1.5, s * 1.6);
+  if (layers.terrain && terrainCv) {
+    const T0 = D.terrain, span = T0.n * T0.cell * s;
+    ctx.drawImage(terrainCv, sx(T0.x0), sy(T0.y0), span, span);
+  }
   // Dead now: lost at or before T, not rebuilt by T.
   const deadPort = new Set();
   for (const l of D.losses) if (l[2] === PORT && l[0] <= T && (l[1] < 0 || l[1] > T)) deadPort.add(l[3] + ',' + l[4]);
