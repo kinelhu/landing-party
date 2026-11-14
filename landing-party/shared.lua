@@ -14,11 +14,12 @@ local shared_fliers = {"lp-harrier", "lp-scavenger", "lp-laser-drone", "destroye
 shared.FLIERS = shared_fliers
 -- A flier's long way in legs of AIR_LEG tiles at most: the engine's pathfinder found no path for the lp-air layer from a
 -- camp to a site 130 tiles off (cordon: a constructor 16 tiles from its lander, every order of it dropped to wander) while
--- it found both halves, 63 and 62 waypoints (probed with request_path, 0.2.373). Measured (scenario airpath, 0.2.377,
--- a scavenger over open ground, eight bearings): every way found to 100 tiles, 7 of 8 at 120, none from 140; so legs of
--- 100 at most, and a trip that short not cut at all (each leg's new path a wait: cut at 48, Grubstake's eight came in
--- 3 s apart for 1.5 s uncut, scenario airraid LP_MIX=grubstake). Its points along the straight line.
-shared.AIR_LEG = 100
+-- it found both halves, 63 and 62 waypoints (probed with request_path, 0.2.373). Over open ground (scenario airpath,
+-- 0.2.377, a scavenger, eight bearings) every way was found to 100 tiles, 7 of 8 at 120, none from 140; but legs of 100
+-- broke Kessler-Hayashi's drone crews by its camp (a way round walls and buildings runs past the straight line):
+-- clear worms, farm siegepoor and siegestall failed with them, bisected to this alone (0.2.381). 48 holds; the cost,
+-- a new path at each leg, Grubstake's air raid in 3 s where 1.5 uncut.
+shared.AIR_LEG = 48
 function shared.air_legs(from, to)
   local fx, fy = from.x or from[1], from.y or from[2]
   local tx, ty = to.x or to[1], to.y or to[2]

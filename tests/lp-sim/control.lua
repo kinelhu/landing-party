@@ -17346,10 +17346,9 @@ scenarios.airraid = function()
       for n, t in pairs(S.arrive or {}) do ts[#ts + 1] = string.format("%s %.1f", n, (t - (first or t)) / 60) end
       table.sort(ts)
       info("airraid: arrivals (unit, s after the first; the radar taken at " .. tostring(S.razed_at) .. ") " .. table.concat(ts, ", "))
-      -- (Since its way went in legs, 0.2.374, Grubstake's eight 6 s, all sent to the same points; in formation, 3 s; legs
-      -- cut only past what the pathfinder finds, 100 tiles, 0.2.377: 1.5 to 3 s from run to run with changes elsewhere,
-      -- 1.5 with no legs at all. The bound at 3.5: it tells a muster from none, 33 s, and the shared points, 6 s; it does
-      -- not tell 1.5 from 3.)
+      -- (Since its way went in legs, 0.2.374, Grubstake's eight 6 s, all sent to the same points; in formation, 3 s; 1.5
+      -- with no legs at all, but longer legs broke the drone crews, 0.2.381. The bound at 3.5: it tells a muster from
+      -- none, 33 s, and the shared points, 6 s; it does not tell 1.5 from 3.)
       check("airraid: its fliers came in together", k >= 2 and last - first <= 3.5 * 60,
         string.format("%d in, %.1f s from the first to the last", k, k > 0 and (last - first) / 60 or -1))
       -- Air theft (the user, 2026-11-10: "They could perhaps do some air theft too?"): a thief's fliers land and take,

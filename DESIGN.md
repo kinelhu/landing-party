@@ -7341,6 +7341,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Fliers' legs back to 48** (0.2.381). Clear worms, farm siegepoor and siegestall, failing since 0.2.377, bisected
+  between that version's two candidates (two trees on 0.2.376, one with the prowl's gap alone, one with the legs alone):
+  the legs of 100. Measured over open ground, every way to 100 tiles was found; by a camp, a drone's way round its walls
+  and buildings runs past the straight line, and Kessler-Hayashi's drone crews lost their orders. 48 held through
+  every regression before. Grubstake's air raid stays at about 3 s first to last (1.5 with no legs), its bound 3.5.
 - **The night's regression and what it found** (0.2.380). 341 runs on 0.2.379: 7 failing, none of them the director's
   (no director line in any failing run), clear culture failing before as well. Bisected on five commit trees: biters
   outpost, dome off and quiet streak from 0.2.376 (the economy fixes), clear worms and farm siegepoor and siegestall
