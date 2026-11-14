@@ -7348,7 +7348,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   843 (+38%; five of six games up, 4242 walled 78 to 236); steady drew a drop wave in four. The pages' ground (the user:
   "Color floating in black void looks strange and you can't see the bodies of water"): a visit exports its terrain at
   its start (terrain.json: a cell every 8 tiles over 1,400 a side, the tile prototype's own map colour, water's share,
-  trees, cliffs, ore), drawn as the visit page's bottom layer (scripts/visit_map.html, a toggle), 2.4 s of a visit.
+  trees, cliffs, ore), drawn as the visit page's bottom layer (scripts/visit_map.html, a toggle); a two-minute visit
+  with it took 11 s in all (the export alone not timed).
 - **Threat points** (0.2.387; the user: "It should add pressure depending on its settings. We've been getting inspo
   from rimworld"). Each spree and surge brings a strike force by pod from headquarters, all to one lead camp (a camp
   with no operation out, nearest the focus or the player): the player's worth times points_per_worth (0.02), the
