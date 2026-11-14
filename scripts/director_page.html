@@ -58,6 +58,7 @@ aside { display: grid; gap: 14px; min-width: 0; }
 <div class="wrap">
   <header>
     <h1>Director visits <small>/*SAVE*/</small></h1>
+    <div class="seg" id="sets" role="group" aria-label="Which set of visits"></div>
     <div class="seg" id="settings" role="group" aria-label="Director setting shown on the map"></div>
   </header>
   <div class="main">
@@ -73,7 +74,7 @@ aside { display: grid; gap: 14px; min-width: 0; }
         <span class="clock" id="clock">0:00</span>
       </div>
       <div class="lanes"><canvas id="lanes" aria-label="Timeline of the director's beats for each setting"></canvas></div>
-      <p class="note">Each lane is one visit of the same save at one director setting. Coloured blocks are the director's beats (spree, surge, focus strike, lull), ticks above them its notices, and the shaded band its budget. Click a lane to show that setting on the map; drag the slider or click the lanes to move in time. Scroll to zoom the map, drag to pan.</p>
+      <p class="note">"Synthexis in" is the save as it plays; in "Synthexis out" its farm was kept from landing, so the four settings differ only by what the director does. Each lane is one visit of the same save at one director setting. Coloured blocks are the director's beats (spree, surge, focus strike, lull), ticks above them its notices, and the shaded band its budget. Click a lane to show that setting on the map; drag the slider or click the lanes to move in time. Scroll to zoom the map, drag to pan.</p>
     </div>
     <aside>
       <div class="card"><h2>The director now</h2><dl class="state" id="state"></dl></div>
@@ -100,19 +101,32 @@ const NOTICE = {
   'lp.director-departed': a => `${a[0]}'s camp has departed.`,
   'lp.director-supply': a => `${a[0]} is dropping supplies.`,
 };
-const runs = D.runs;
-const END = Math.max(...runs.map(r => r.end), 1);
+const ALL = D.runs, SETS = (D.sets && D.sets.length) ? D.sets : [''];
+let set = 0;
+let runs = ALL.filter(r => (r.set || '') === SETS[set]);
+const END = Math.max(...ALL.map(r => r.end), 1);
 let cur = Math.max(0, runs.findIndex(r => r.setting === 'steady'));
+const setSeg = document.getElementById('sets');
+if (SETS.length > 1) SETS.forEach((name, i) => {
+  const b = document.createElement('button'); b.type = 'button'; b.textContent = name; b.id = 'set-group-' + i;
+  b.onclick = () => { set = i; const keep = runs[cur] && runs[cur].setting; runs = ALL.filter(r => (r.set || '') === SETS[set]);
+    cur = Math.max(0, runs.findIndex(r => r.setting === keep)); buildSettings(); refresh(); };
+  setSeg.appendChild(b);
+}); else setSeg.hidden = true;
 let T = 0;
 
-// Settings buttons.
+// Settings buttons (the set's runs).
 const seg = document.getElementById('settings');
-runs.forEach((r, i) => {
-  const b = document.createElement('button');
-  b.type = 'button'; b.textContent = r.setting; b.id = 'set-' + r.setting;
-  b.onclick = () => { cur = i; refresh(); };
-  seg.appendChild(b);
-});
+function buildSettings() {
+  seg.innerHTML = '';
+  runs.forEach((r, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = r.setting; b.id = 'set-' + r.setting;
+    b.onclick = () => { cur = i; refresh(); };
+    seg.appendChild(b);
+  });
+}
+buildSettings();
 
 // The map's extent: the terrain, else the base and the camps.
 let box;
@@ -303,10 +317,11 @@ function describe(run) {
   items.sort((a, b) => a.m - b.m);
   return items;
 }
-const desc = runs.map(describe);
+const descOf = new Map(ALL.map(r => [r, describe(r)]));
 
 function refresh() {
   [...seg.children].forEach((b, i) => { b.setAttribute('aria-pressed', i === cur); b.style.background = i === cur ? COL[runs[i].setting] : ''; });
+  [...setSeg.children].forEach((b, i) => { b.setAttribute('aria-pressed', i === set); b.style.background = i === set ? COL.ink : ''; });
   const run = runs[cur], m = minuteAt(run, T);
   const st = document.getElementById('state');
   st.innerHTML = m ? `<dt>Setting</dt><dd>${run.setting}</dd><dt>On</dt><dd>${m.active ? 'yes' : 'not yet'}</dd>
@@ -315,7 +330,7 @@ function refresh() {
     <dt>Lost, last 30 min</dt><dd>${m.lost} (usual ${m.usual})${m.hurt ? ' <span class="pill" style="background:var(--lost)">hurt</span>' : ''}</dd>
     <dt>Your buildings lost</dt><dd>${m.cum} so far</dd>` : '<dt>No reading yet</dt><dd></dd>';
   const ev = document.getElementById('events');
-  const items = desc[cur];
+  const items = descOf.get(run);
   ev.innerHTML = items.map(it => `<div class="${Math.abs(it.m - T) < 2 ? 'now' : ''}"><time>${clockOf(it.m)}</time><span>${it.html}</span></div>`).join('') || '<div><time></time><span>Nothing recorded.</span></div>';
   const near = [...ev.children].find(d => d.classList.contains('now'));
   if (near) near.scrollIntoView({block: 'nearest'});

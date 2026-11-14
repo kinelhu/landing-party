@@ -2,7 +2,8 @@
 document with time slider and annotations"): one save's visits at several director settings (scripts/visit.sh with
 LP_MIX=record and LP_DIRECTOR), the terrain under them, the director's beats and notices on a timeline, the player's
 losses and each setting's curve.
-    python3 scripts/director_page.py <save> <out.html> <visit dir>...   (each dir visit-<save>-record-dir-<setting>)
+    python3 scripts/director_page.py <save> <out.html> [--set <name>] <visit dir>... [--set <name> <visit dir>...]
+    (each dir visit-<save>-record[-no-<off>]-dir-<setting>; a --set groups the dirs after it, a selector on the page)
 Reads rec.jsonl, events.jsonl, ops.jsonl and terrain.json from each.
 """
 import json
@@ -101,22 +102,29 @@ def one(run_dir):
             "texts": texts, "minutes": minutes, "ops": opl, "deaths": dl}, base, run_dir
 
 
-def main(save, out, dirs):
+def main(save, out, args):
     runs, base0, terrain = [], None, None
     order = {"off": 0, "gentle": 1, "steady": 2, "chaotic": 3}
-    for d in dirs:
+    group, sets = "", []
+    it = iter(args)
+    for d in it:
+        if d == "--set":
+            group = next(it)
+            sets.append(group)
+            continue
         r, base, rd = one(d)
+        r["set"] = group
         runs.append(r)
         if base0 is None:
             base0 = base
             tp = os.path.join(rd, "terrain.json")
             terrain = json.load(open(tp)) if os.path.exists(tp) else None
-    runs.sort(key=lambda r: order.get(r["setting"], 9))
+    runs.sort(key=lambda r: ((sets.index(r["set"]) if r["set"] in sets else 0), order.get(r["setting"], 9)))
     groups = {g: [] for g in list(GROUPS) + ["other"]}
     for t, xy in base0["types"].items():
         groups[GROUP_OF.get(t, "other")].extend(xy)
     groups = {g: thin(xy, 20000 if g == "belt" else 8000) for g, xy in groups.items()}
-    data = {"save": save, "terrain": terrain, "base": groups, "runs": runs}
+    data = {"save": save, "terrain": terrain, "base": groups, "runs": runs, "sets": sets}
     page = open(os.path.join(os.path.dirname(__file__), "director_page.html")).read()
     page = page.replace("/*SAVE*/", save).replace("/*DATA*/null", json.dumps(data, separators=(",", ":")))
     open(out, "w").write(page)

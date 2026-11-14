@@ -7341,6 +7341,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The first director visits page** (scripts/director_page.py; published as an artifact, 2026-11-14). railbase_end
+  (a copy), three hours, recorded, at off, gentle, steady and chaotic, Synthexis in and out (LP_OFF=biotech through
+  visit.sh). With Synthexis in, the player's buildings lost were off 12,997, gentle 1,903, steady 2,861, chaotic
+  1,489: one adaptive enemy's two paths, not the director's doing. Identical to minute 46, the first spree's strike
+  force (to Grubstake: Kessler-Hayashi had stood down at 25) shifted the early waves' outcomes, Synthexis's prices
+  with them (off 93/87/118, steady a flat 66), and its third wave's plan: off a spread assault through a wall no gun
+  covered, which worked and snowballed (waves of 41, 24, 91 and 133, each staying its full 240 s inside, breaking
+  603, 846, 2,972 and 5,820); steady a single siege that did not, and saving after. Its biomass is pollution and
+  pens, not razing: the snowball is its learning, the gaps in a long flamethrower wall its opening. With Synthexis
+  out, lost off 1,787, gentle 1,948, chaotic 1,955, steady 2,126 (+19%), operations 39, 44, 59, 55: the director as
+  its settings say. One visit a setting measures the director only where no adaptive enemy branches. Open for the
+  user: whether a wave that stays 240 s inside unanswered and breaks 5,820 is Synthexis as wanted.
 - **Synthexis by its effect, and a crash** (0.2.390). The first visits of railbase_end (copies, the director off,
   gentle, steady, chaotic, three hours each, recorded) came out identical: the director held all three hours for
   "a Synthexis wave out or due within a spree", its waves there coming faster than a spree is long (13,000 of the
