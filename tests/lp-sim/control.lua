@@ -188,6 +188,16 @@ scenarios.probe = function()
   end)
 end
 
+-- Readings (the user, 2026-11-14: "Get me readings on my saves"): a real save loaded with the mod (scripts/readings.sh),
+-- what the director reads of its factory at tick 60, written to script-output/landing-party/readings.json.
+scenarios.readings = function()
+  schedule(60, function()
+    local r = lp("debug_readings", "player")
+    helpers.write_file("landing-party/readings.json", helpers.table_to_json(r or {}), false)
+    info("readings: " .. serpent.line(r))
+  end)
+end
+
 -- Engine probe (0.2.377): how far the engine's pathfinder finds a way for a flier (a scavenger's box and mask) over open
 -- ground, eight bearings from spawn at 60 to 220 tiles; its legs (shared.air_legs) are cut to that, the shortest that
 -- failed less a margin. (A crew drone's 130-tile order dropped to wander, cordon, 0.2.374: both halves were found.)

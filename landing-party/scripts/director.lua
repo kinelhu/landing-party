@@ -89,6 +89,44 @@ local function worth_of(force)
   return w, guns
 end
 
+-- Tests and visits (remote debug_readings): what it reads of a player force now, beside what a fuller reading would
+-- read (the user, 2026-11-14: "We are not monitoring building amounts?", "an idea of player advancement from tech
+-- tree"): its worth from the 26 names it counts against one from every prototype whose type valuemap weighs; the
+-- buildings by type; its era from the research count against tiers by science packs (a tech's tier, how many kinds of
+-- pack it takes); the fill a minute and the minutes to a spree's cost; the hurt line.
+function director.readings(owner)
+  local f = game.forces[owner or "player"]
+  if not f then return nil end
+  local w0, guns = worth_of(f)
+  local by_type, w1, n1 = {}, 0, 0
+  for name, p in pairs(prototypes.entity) do
+    local wt = valuemap.NAMES[name] or valuemap.WORTH[p.type]
+    if wt then
+      local c = f.get_entity_count(name)
+      if c > 0 then
+        by_type[p.type] = (by_type[p.type] or 0) + c
+        w1, n1 = w1 + c * wt, n1 + c
+      end
+    end
+  end
+  local researched, tiers = 0, {}
+  for _, t in pairs(f.technologies) do
+    local k = 0
+    local ing = t.research_unit_ingredients or {}
+    for _ in pairs(ing) do k = k + 1 end
+    tiers[k] = tiers[k] or {done = 0, all = 0}
+    tiers[k].all = tiers[k].all + 1
+    if t.researched then researched = researched + 1; tiers[k].done = tiers[k].done + 1 end
+  end
+  local era = storage.era_override or ops.era(f)
+  local interval = shared.setting("lp-landing-interval", shared.LANDING_MINUTES.default)
+  local d = shared.DIFFICULTY[shared.setting("lp-difficulty", "normal")] or 1
+  local fill = (1 + era / 2) * d / math.max(1, interval)
+  return {worth_now = w0, guns = guns, worth_all = w1, buildings = n1, by_type = by_type, researched = researched,
+    era = era, tiers = tiers, fill_per_min = fill, minutes_to_spree = tun("spree_cost") / fill,
+    hurt_line = tun("loss_share") * w0, hurt_line_all = tun("loss_share") * w1, interval = interval}
+end
+
 -- The corporations at war with this player with a camp standing, the one longest without a spree first.
 local function pick(s, owner, tick)
   local best, bt
