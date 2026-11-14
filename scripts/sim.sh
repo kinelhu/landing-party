@@ -19,8 +19,10 @@ ln -sfn "$REPO/landing-party" "$SIM/mods/landing-party"
 # The test mod is copied, not linked: each run writes its own params.lua into it.
 rm -rf "$SIM/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$SIM/mods/lp-sim"
 DOCTRINE="nil"; [ -n "${LP_DOCTRINE:-}" ] && DOCTRINE="\"$LP_DOCTRINE\""
-printf 'return {scenario = "%s", minutes = %s, every = %s, strike = %s, distance = %s, radius = %s, doctrine = %s, units = %s, move = %s, fast = %s, mix = "%s", off = "%s", air = "%s"}\n' \
-  "$SCENARIO" "$MINUTES" "$EVERY" "$STRIKE" "$DISTANCE" "$RADIUS" "$DOCTRINE" "${LP_UNITS:-0}" "${LP_MOVE:-false}" "${LP_FAST:-false}" "${LP_MIX:-}" "${LP_OFF:-}" "${LP_AIR:-}" \
+# (LP_DIRECTOR=steady|gentle|chaotic|off: the director's personality, on 30 minutes after the first landing as its grace
+# would have it; the scenarios land their camps directly, without the opening's staged arrival it waits for.)
+printf 'return {scenario = "%s", minutes = %s, every = %s, strike = %s, distance = %s, radius = %s, doctrine = %s, units = %s, move = %s, fast = %s, mix = "%s", off = "%s", air = "%s", director = "%s"}\n' \
+  "$SCENARIO" "$MINUTES" "$EVERY" "$STRIKE" "$DISTANCE" "$RADIUS" "$DOCTRINE" "${LP_UNITS:-0}" "${LP_MOVE:-false}" "${LP_FAST:-false}" "${LP_MIX:-}" "${LP_OFF:-}" "${LP_AIR:-}" "${LP_DIRECTOR:-}" \
   > "$SIM/mods/lp-sim/params.lua"
 cat > "$SIM/mods/mod-list.json" <<JSON
 {"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},

@@ -19120,6 +19120,27 @@ script.on_init(function()
 end)
 
 scenario()
+-- (At load, beside the scenario's own: a schedule made in on_init is lost, the map made in one process and run in
+-- another; the calibration's first "on" runs never forced it.)
+-- LP_DIRECTOR (sim.sh): the director's personality, forced 30 minutes after its first landing (its grace; a scenario's
+-- camps land without the staged arrival it waits for, and the calibration's "on" runs never turned it on, 0.2.379).
+if (params.director or "") ~= "" then
+  for t = 3600, (params.minutes or 60) * 3600, 600 do
+    schedule(t, function()
+      if S.dir_forced then return end
+      -- (The first camp as first seen, every 10 minutes: b.landed is Kessler-Hayashi's line's only.)
+      if not S.dir_first and #(lp("bases") or {}) > 0 then S.dir_first = game.tick end
+      local first = S.dir_first
+      if first and game.tick >= first + 30 * 3600 then
+        S.dir_forced = game.tick
+        lp("debug_tune", {director = params.director ~= "off" and params.director or false})
+        table.insert(lines, string.format("INFO director forced %s at %d min (first camp seen at %d min)", params.director,
+          math.floor(game.tick / 3600), math.floor(first / 3600)))
+        if params.director == "off" then lp("director_cmd", "off") end
+      end
+    end)
+  end
+end
 -- Forks (scripts/fork.sh): run fast on a headless server up to the strike and save there; scripts/sim.sh
 -- with LP_FORK=1 then runs only what follows the strike, from that save.
 if params.save_at then
