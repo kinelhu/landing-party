@@ -110,10 +110,17 @@ function director.readings(owner)
     end
   end
   local researched, tiers = 0, {}
+  -- Infinite research (max_level past any real count): never "researched"; its levels bought, each with its packs.
+  local infinite, depth, levels = {}, 0, 0
   for _, t in pairs(f.technologies) do
     local k = 0
     local ing = t.research_unit_ingredients or {}
     for _ in pairs(ing) do k = k + 1 end
+    if t.prototype.max_level >= 4294967295 then
+      local bought = math.max(0, t.level - t.prototype.level)
+      if bought > 0 then infinite[t.name] = {bought = bought, packs = k} end
+      levels, depth = levels + bought, depth + bought * k
+    end
     tiers[k] = tiers[k] or {done = 0, all = 0}
     tiers[k].all = tiers[k].all + 1
     if t.researched then researched = researched + 1; tiers[k].done = tiers[k].done + 1 end
@@ -124,7 +131,8 @@ function director.readings(owner)
   local fill = (1 + era / 2) * d / math.max(1, interval)
   return {worth_now = w0, guns = guns, worth_all = w1, buildings = n1, by_type = by_type, researched = researched,
     era = era, tiers = tiers, fill_per_min = fill, minutes_to_spree = tun("spree_cost") / fill,
-    hurt_line = tun("loss_share") * w0, hurt_line_all = tun("loss_share") * w1, interval = interval}
+    hurt_line = tun("loss_share") * w0, hurt_line_all = tun("loss_share") * w1, interval = interval,
+    infinite = infinite, infinite_levels = levels, depth = depth}
 end
 
 -- The corporations at war with this player with a camp standing, the one longest without a spree first.
