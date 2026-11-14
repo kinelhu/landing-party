@@ -192,6 +192,17 @@ end
 -- what the director reads of its factory at tick 60, written to script-output/landing-party/readings.json.
 scenarios.readings = function()
   schedule(60, function()
+    -- (And what its logistic networks hold of turrets, magazines and poles: the defender's stock.)
+    local stock = {}
+    for _, nets in pairs(game.forces.player.logistic_networks or {}) do
+      for _, net in ipairs(nets) do
+        for _, n in ipairs({"gun-turret", "laser-turret", "flamethrower-turret", "firearm-magazine", "piercing-rounds-magazine",
+          "uranium-rounds-magazine", "medium-electric-pole", "stone-wall", "iron-plate", "copper-plate", "iron-gear-wheel", "steel-plate"}) do
+          stock[n] = (stock[n] or 0) + net.get_item_count(n)
+        end
+      end
+    end
+    helpers.write_file("landing-party/stock.json", helpers.table_to_json(stock), false)
     local r = lp("debug_readings", "player")
     helpers.write_file("landing-party/readings.json", helpers.table_to_json(r or {}), false)
     info("readings: " .. serpent.line(r))
@@ -11858,7 +11869,113 @@ local function export_terrain(c, r, cell)
   return n * n
 end
 
+-- The defender (the user, 2026-11-14: "Perhaps this is a result of our harness. The save is too weak with an AFK
+-- player?"): a visit's player that answers a breach as a player would, at a player's pace, from what the base has.
+-- Every 10 s, the player's losses of the last DEF_WINDOW by cell of DEF_CELL tiles; a cell with DEF_MIN or more, its
+-- first DEF_REACT old, not answered in DEF_AGAIN, gets DEF_TURRETS turrets at its middle: gun turrets with magazines,
+-- else laser turrets (a pole beside each), taken from the base's logistic network, else gun turrets crafted from its
+-- materials there; none placed that it neither holds nor can make.
+-- Robots rebuild the walls from their ghosts as before. Logged as INFO lines and the record's "def" entries.
+local DEF_CELL, DEF_WINDOW, DEF_MIN, DEF_REACT, DEF_AGAIN, DEF_TURRETS = 32, 5 * 3600, 3, 5 * 3600, 15 * 3600, 2
+local function defender(END)
+  S.def = {losses = {}, answered = {}, placed = 0, short = 0, by = {}}
+  local function take(name, n)
+    local got = 0
+    for _, nets in pairs(game.forces.player.logistic_networks or {}) do
+      for _, net in ipairs(nets) do
+        local have = net.get_item_count(name)
+        if have > 0 then
+          local r = net.remove_item{name = name, count = math.min(have, n - got)}
+          got = got + r
+          if got >= n then return got end
+        end
+      end
+    end
+    return got
+  end
+  for t = 600, END - 120, 600 do
+    schedule(t, function()
+      local tick = game.tick
+      local keep, cells = {}, {}
+      for _, l in ipairs(S.def.losses) do
+        if tick - l[1] <= DEF_WINDOW then
+          keep[#keep + 1] = l
+          local k = math.floor(l[2] / DEF_CELL) .. "," .. math.floor(l[3] / DEF_CELL)
+          local c = cells[k] or {n = 0, first = l[1], x = 0, y = 0}
+          c.n, c.first, c.x, c.y = c.n + 1, math.min(c.first, l[1]), c.x + l[2], c.y + l[3]
+          cells[k] = c
+        end
+      end
+      S.def.losses = keep
+      for k, c in pairs(cells) do
+        if c.n >= DEF_MIN and tick - c.first >= DEF_REACT and tick - (S.def.answered[k] or -math.huge) >= DEF_AGAIN then
+          S.def.answered[k] = tick
+          local at = {c.x / c.n, c.y / c.n}
+          local placed, kinds = 0, {}
+          for _ = 1, DEF_TURRETS do
+            local kind
+            if take("gun-turret", 1) == 1 then
+              kind = "gun-turret"
+            elseif take("laser-turret", 1) == 1 then
+              kind = "laser-turret"
+            else
+              -- (Its own crafting when the stock is out, as a player's: a gun turret's recipe from the network, 10 iron
+              -- gears, 10 copper plates and 20 iron plates; out of all three, none. Stocked only, the defender ran dry by
+              -- minute 115 of railbase_end, its 15 turrets spent, and the largest waves came after, 0.2.391.)
+              local need = {["iron-gear-wheel"] = 10, ["copper-plate"] = 10, ["iron-plate"] = 20}
+              local ok = true
+              for n, k in pairs(need) do
+                local have = 0
+                for _, nets in pairs(game.forces.player.logistic_networks or {}) do
+                  for _, net in ipairs(nets) do have = have + net.get_item_count(n) end
+                end
+                if have < k then ok = false end
+              end
+              if ok then
+                for n, k in pairs(need) do take(n, k) end
+                kind = "gun-turret"
+                S.def.crafted = (S.def.crafted or 0) + 1
+              end
+            end
+            if not kind then S.def.short = S.def.short + 1; break end
+            local p = surface().find_non_colliding_position(kind, at, 12, 1)
+            local tur = p and surface().create_entity{name = kind, position = p, force = "player"}
+            if tur then
+              placed = placed + 1
+              kinds[#kinds + 1] = kind
+              if kind == "gun-turret" then
+                local loaded = false
+                for _, mag in ipairs({"uranium-rounds-magazine", "piercing-rounds-magazine", "firearm-magazine"}) do
+                  local n = take(mag, 20)
+                  if n > 0 then tur.insert{name = mag, count = n}; loaded = true; break end
+                end
+                -- (Out of magazines, crafted: 4 iron plates each.)
+                if not loaded then
+                  local n = math.floor(take("iron-plate", 80) / 4)
+                  if n > 0 then tur.insert{name = "firearm-magazine", count = n} end
+                end
+              else
+                local q = surface().find_non_colliding_position("medium-electric-pole", {p.x + 2, p.y}, 6, 1)
+                if q and take("medium-electric-pole", 1) == 1 then
+                  surface().create_entity{name = "medium-electric-pole", position = q, force = "player"}
+                end
+              end
+            end
+          end
+          S.def.placed = S.def.placed + placed
+          S.def.by[#S.def.by + 1] = {math.floor(tick / 3600), math.floor(at[1]), math.floor(at[2]), c.n, placed}
+          table.insert(lines, string.format("INFO defender at %d min: %d losses at %.0f,%.0f, %d placed (%s)%s",
+            math.floor(tick / 3600), c.n, at[1], at[2], placed, table.concat(kinds, ", "), placed < DEF_TURRETS and ", the network short" or ""))
+          if REC.on then rec({k = "def", t = tick, x = math.floor(at[1]), y = math.floor(at[2]), n = c.n, placed = placed}) end
+        end
+      end
+    end)
+  end
+end
+
 scenarios.visit = function()
+  -- LP_MIX containing "defend": the defender answers breaches (defender above).
+  if (params.mix or ""):find("defend", 1, true) then defender(END) end
   local KEY = {"mining-drill", "assembling-machine", "furnace", "lab", "electric-pole", "ammo-turret", "electric-turret",
     "fluid-turret", "artillery-turret", "roboport", "container", "logistic-container", "wall"}
   local function census()
@@ -19435,6 +19552,10 @@ script.on_event(defines.events.on_entity_died, function(e)
     S.khdeath_n = (S.khdeath_n or 0) + 1
   end
   if S.creep and e.entity == S.creep then S.creep_killer = e.force and e.force.name or "?" end
+  -- (The defender's: the player's losses, LP_MIX=defend.)
+  if S.def and e.entity.force.name == "player" and e.entity.type ~= "character" then
+    table.insert(S.def.losses, {game.tick, e.entity.position.x, e.entity.position.y})
+  end
   if REC.on and e.entity.force.name == "player" and e.entity.type ~= "character" then
     rec({k = "d", t = game.tick, n = e.entity.type, x = math.floor(e.entity.position.x), y = math.floor(e.entity.position.y),
       by = e.cause and e.cause.valid and e.cause.name or "", f = e.force and e.force.name or ""})

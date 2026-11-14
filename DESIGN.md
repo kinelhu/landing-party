@@ -7341,6 +7341,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **A defender for visits** (tests/lp-sim, LP_MIX=defend; the user: "Perhaps this is a result of our harness. The save
+  is too weak with an AFK player?", and Synthexis is not to be weakened). A visit's player answers a breach at a
+  player's pace from the base's own logistic network: a cell of 32 tiles with 3 losses in 5 minutes, its first 5
+  minutes old, not answered in 15, gets two turrets at its middle (gun turrets with magazines, else lasers with a pole,
+  else gun turrets crafted from the network's gears and plates; none it neither holds nor can make). railbase_end with
+  Synthexis in, the director off: 6,608 of the player's buildings lost against 12,997 undefended (Synthexis's waves 51
+  and 54 against 91 and 133, breaking 1,346 and 2,278 against 2,972 and 5,820); steady 5,136. The AFK harness about
+  doubled Synthexis's damage. Its answers come after each wave has gone (5 minutes against a wave's 4 inside): open,
+  whether to answer faster, or fight the wave itself, as a player at the keyboard would. Its network held 15 turrets
+  it could place (147 flamethrowers want oil it cannot lay).
 - **The first director visits page** (scripts/director_page.py; published as an artifact, 2026-11-14). railbase_end
   (a copy), three hours, recorded, at off, gentle, steady and chaotic, Synthexis in and out (LP_OFF=biotech through
   visit.sh). With Synthexis in, the player's buildings lost were off 12,997, gentle 1,903, steady 2,861, chaotic
