@@ -310,7 +310,10 @@ function drawChart() {
 function describe(run) {
   const items = [];
   for (const b of run.beats) items.push({m: b.m, html: `<span class="pill" style="background:${BEAT_COL[b.kind] || '#999'}">${b.kind}</span> ${b.corp ? (CORP_NAME[b.corp] || b.corp) : ''}${b.strike ? `, a strike force of ${b.strike}` : ''}${b.minutes ? `, ${b.minutes} min` : ''}`});
-  for (const n of run.notices) items.push({m: n.m, html: `<em>Notice:</em> ${(NOTICE[n.key] || (a => n.key + ' ' + (a || []).join(' ')))(n.args || [])}`});
+  for (const n of run.notices) {
+    const a = Array.isArray(n.args) ? n.args : Object.values(n.args || {});
+    items.push({m: n.m, html: `<em>Notice:</em> ${(NOTICE[n.key] || (x => n.key + ' ' + x.join(' ')))(a)}`});
+  }
   for (const c of run.camps) items.push({m: c.m, html: `${CORP_NAME[c.corp] || c.corp} camp ${c.k === 'landed' ? 'landed' + (c.matched && c.matched.guns ? ` (matched to ${c.matched.guns} guns: +${c.matched.escort} escort, +${c.matched.parts} parts)` : '') : c.k === 'stood_down' ? 'stood down' : c.k}`});
   for (const o of run.ops) items.push({m: o.m0, html: `${CORP_NAME[o.corp] || o.corp} ${o.kind} on ${o.what || '?'}: ${o.outcome || 'under way'}${o.razed ? `, razed ${o.razed}` : ''}`});
   for (const t of run.texts) if (/holds|gap paid|no lull/.test(t.text)) items.push({m: t.m, html: `<span style="color:var(--dim)">${t.text}</span>`});

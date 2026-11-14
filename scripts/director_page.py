@@ -66,10 +66,11 @@ def one(run_dir):
             f["b"] = {corp: thin(flat(c.get("b")), 1500) for corp, c in (s.get("corps") or {}).items()}
             f["l"] = {corp: thin(flat(c.get("l")), 20) for corp, c in (s.get("corps") or {}).items()}
         frames.append(f)
-    beats = [{"m": m(e["t"]), "kind": e.get("kind"), "corp": e.get("corp") or ",".join(e.get("corps") or []),
+    beats = [{"m": m(e["t"]), "kind": e.get("kind"), "corp": e.get("corp") or ",".join(flat(e.get("corps"))),
               "minutes": e.get("minutes"), "strike": e.get("strike"), "focus": e.get("focus")}
              for e in ev if e["k"] == "beat"]
-    notices = [{"m": m(e["t"]), "key": e.get("key"), "args": e.get("args")} for e in ev if e["k"] == "notice"]
+    # (An empty Lua table comes out of the game's JSON as {}: a list always, or the page's join threw and drew nothing.)
+    notices = [{"m": m(e["t"]), "key": e.get("key"), "args": flat(e.get("args"))} for e in ev if e["k"] == "notice"]
     camps = [{"m": m(e["t"]), "k": e["k"], "corp": e.get("corp"), "at": e.get("at"), "why": e.get("why"),
               "matched": e.get("matched")} for e in ev if e["k"] in ("landed", "fell", "departed", "stood_down")]
     texts = [{"m": m(e["t"]), "text": e.get("text")} for e in ev if e["k"] == "director"]
