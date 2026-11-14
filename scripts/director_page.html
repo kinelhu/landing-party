@@ -1,0 +1,341 @@
+<title>Director Visits</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a map table (the game's own map, dark by choice) with the clock under it and the record beside it; the four
+   settings as lanes of one timeline. A single dark look, every colour set here. */
+:root {
+  color-scheme: dark;
+  --void: #0d1013; --panel: #151a1f; --raise: #1c232a; --rule: #2a323a;
+  --ink: #e4e0d4; --dim: #8b929a;
+  --off: #999999; --gentle: #56b4e9; --steady: #e69f00; --chaotic: #cc79a7;
+  --lost: #d55e00; --kh: #4fa3ff; --gs: #e0a040; --syn: #7ccf6b; --base: #5b6670;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --body: "Source Sans 3", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+body { background: var(--void); color: var(--ink); font: 15px/1.45 var(--body); margin: 0; }
+.wrap { padding-block: 16px 32px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 1500px; margin: 0 auto; display: grid; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 22px; }
+h1 { font: 600 30px/1 var(--display); letter-spacing: .02em; margin: 0; text-wrap: balance; }
+h1 small { font: 500 18px var(--display); color: var(--dim); letter-spacing: .04em; margin-left: 8px; text-transform: uppercase; }
+h2 { font: 600 15px var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); margin: 0 0 6px; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+.seg button { background: var(--panel); color: var(--dim); border: 0; border-right: 1px solid var(--rule); padding: 6px 14px; font: 600 15px var(--display); letter-spacing: .05em; cursor: pointer; text-transform: uppercase; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { color: var(--void); }
+.seg button:focus-visible, .ctl button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 14px; align-items: start; }
+@media (max-width: 980px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.mapbox { position: relative; background: #000; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; aspect-ratio: 1 / 1; max-width: 100%; }
+canvas#map { width: 100%; height: 100%; display: block; cursor: grab; }
+.hud { position: absolute; left: 10px; top: 10px; background: color-mix(in srgb, var(--void) 82%, transparent); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 10px; font: 500 13px var(--mono); }
+.legend { position: absolute; right: 10px; bottom: 10px; background: color-mix(in srgb, var(--void) 82%, transparent); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 10px; display: grid; gap: 2px; font-size: 13px; }
+.legend label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.sw { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+.ctl { display: flex; align-items: center; gap: 12px; }
+.ctl button { background: var(--raise); color: var(--ink); border: 1px solid var(--rule); border-radius: 4px; padding: 5px 12px; font: 600 14px var(--display); letter-spacing: .05em; cursor: pointer; min-width: 64px; }
+.ctl input[type=range] { flex: 1; min-width: 0; accent-color: var(--ink); }
+.clock { font: 500 15px var(--mono); font-variant-numeric: tabular-nums; min-width: 92px; text-align: right; }
+.lanes { position: relative; border: 1px solid var(--rule); border-radius: 4px; background: var(--panel); }
+.lanes canvas { width: 100%; height: 150px; display: block; cursor: pointer; }
+aside { display: grid; gap: 14px; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; padding: 10px 12px; min-width: 0; }
+.state { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 14px; }
+.state dt { color: var(--dim); }
+.state dd { margin: 0; font: 500 13px var(--mono); font-variant-numeric: tabular-nums; }
+.pill { display: inline-block; padding: 0 7px; border-radius: 10px; font: 600 12px var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--void); }
+.events { max-height: 330px; overflow-y: auto; display: grid; gap: 4px; font-size: 14px; }
+.events div { display: grid; grid-template-columns: 52px 1fr; gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--rule); }
+.events time { font: 500 12px var(--mono); color: var(--dim); padding-top: 2px; }
+.events .now { background: var(--raise); }
+.chart canvas { width: 100%; height: 170px; display: block; }
+.note { color: var(--dim); font-size: 13px; max-width: 70ch; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Director visits <small>/*SAVE*/</small></h1>
+    <div class="seg" id="settings" role="group" aria-label="Director setting shown on the map"></div>
+  </header>
+  <div class="main">
+    <div style="display:grid; gap:10px; min-width:0">
+      <div class="mapbox">
+        <canvas id="map" aria-label="Map of the save at the time chosen"></canvas>
+        <div class="hud" id="hud"></div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="ctl">
+        <button id="play" type="button">Play</button>
+        <input id="time" type="range" min="0" max="100" step="0.5" value="0" aria-label="Game time">
+        <span class="clock" id="clock">0:00</span>
+      </div>
+      <div class="lanes"><canvas id="lanes" aria-label="Timeline of the director's beats for each setting"></canvas></div>
+      <p class="note">Each lane is one visit of the same save at one director setting. Coloured blocks are the director's beats (spree, surge, focus strike, lull), ticks above them its notices, and the shaded band its budget. Click a lane to show that setting on the map; drag the slider or click the lanes to move in time. Scroll to zoom the map, drag to pan.</p>
+    </div>
+    <aside>
+      <div class="card"><h2>The director now</h2><dl class="state" id="state"></dl></div>
+      <div class="card chart"><h2>Player buildings lost</h2><canvas id="chart" aria-label="Player buildings lost over time, each setting"></canvas></div>
+      <div class="card"><h2>What happened</h2><div class="events" id="events"></div></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const D = /*DATA*/null;
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const COL = {off: css('--off'), gentle: css('--gentle'), steady: css('--steady'), chaotic: css('--chaotic'), lost: css('--lost'),
+  serenity: css('--kh'), grubstake: css('--gs'), biotech: css('--syn'), base: css('--base'), ink: css('--ink'), dim: css('--dim'), rule: css('--rule'), panel: css('--panel')};
+const CORP_NAME = {serenity: 'Kessler-Hayashi', grubstake: 'Grubstake', biotech: 'Synthexis'};
+const BEAT_COL = {spree: '#e69f00', surge: '#d55e00', focus: '#cc79a7', lull: '#56b4e9', wave: '#f0e442', supply: '#009e73'};
+const NOTICE = {
+  'lp.director-spree': a => `${a[0]} is stepping up its attacks for ${a[1]} minutes.`,
+  'lp.director-lull': a => `The factions are holding their attacks for ${a[0]} minutes.`,
+  'lp.director-surge': a => `${a[0]} are stepping up their attacks for ${a[1]} minutes.`,
+  'lp.director-focus': a => `${a[0]} are stepping up their attacks on ${a[1]} for ${a[2]} minutes.`,
+  'lp.director-wave': a => `${a[0]} is landing ${a[1]} camps.`,
+  'lp.director-settled': a => `${a[0]}'s camp is staying.`,
+  'lp.director-departed': a => `${a[0]}'s camp has departed.`,
+  'lp.director-supply': a => `${a[0]} is dropping supplies.`,
+};
+const runs = D.runs;
+const END = Math.max(...runs.map(r => r.end), 1);
+let cur = Math.max(0, runs.findIndex(r => r.setting === 'steady'));
+let T = 0;
+
+// Settings buttons.
+const seg = document.getElementById('settings');
+runs.forEach((r, i) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = r.setting; b.id = 'set-' + r.setting;
+  b.onclick = () => { cur = i; refresh(); };
+  seg.appendChild(b);
+});
+
+// The map's extent: the terrain, else the base and the camps.
+let box;
+if (D.terrain) { const t = D.terrain; box = [t.x0, t.y0, t.x0 + t.n * t.cell, t.y0 + t.n * t.cell]; }
+else { box = [-500, -500, 500, 500]; }
+const W = box[2] - box[0], H = box[3] - box[1];
+
+// The ground, drawn once (a cell a pixel).
+let terrainCv = null;
+if (D.terrain) {
+  const T0 = D.terrain, n = T0.n;
+  terrainCv = document.createElement('canvas'); terrainCv.width = n; terrainCv.height = n;
+  const g = terrainCv.getContext('2d'), img = g.createImageData(n, n);
+  const ORE = {'iron-ore': [104, 132, 146], 'copper-ore': [203, 97, 53], 'coal': [20, 20, 20], 'stone': [176, 154, 108], 'uranium-ore': [0, 180, 0], 'crude-oil': [192, 0, 192]};
+  for (let k = 0; k < T0.cells.length; k++) {
+    const c = T0.cells[k], col = T0.colours[c[0]] || ['', 0, 0, 0];
+    let r = col[1], gg = col[2], b = col[3];
+    const w = c[1] / 9; r = r * (1 - w) + 30 * w; gg = gg * (1 - w) + 70 * w; b = b * (1 - w) + 120 * w;
+    const f = Math.min(1, c[2] / 12) * 0.45; r *= 1 - f; gg *= 1 - f * 0.6; b *= 1 - f;
+    if (c[3] > 0) { r = r * 0.5 + 60; gg = gg * 0.5 + 55; b = b * 0.5 + 50; }
+    if (c[4] && ORE[c[4]]) { const o = ORE[c[4]]; r = r * 0.55 + o[0] * 0.45; gg = gg * 0.55 + o[1] * 0.45; b = b * 0.55 + o[2] * 0.45; }
+    // Dimmed a little, so what stands on it reads first.
+    img.data.set([r * 0.8, gg * 0.8, b * 0.8, 255], k * 4);
+  }
+  g.putImageData(img, 0, 0);
+}
+
+// The base at the start, drawn once at a tile a pixel.
+const baseCv = document.createElement('canvas'); baseCv.width = W; baseCv.height = H;
+{ const g = baseCv.getContext('2d');
+  const BASE = {belt: '#33404a', power: '#7a6a36', other: '#4a5058', mine: '#6f7c4a', make: '#5b77c8', port: '#2f9e6a', wall: '#8a949c', gun: '#9fd0ff'};
+  for (const k of ['belt', 'power', 'other', 'mine', 'make', 'port', 'wall', 'gun']) {
+    const xy = D.base[k] || []; g.fillStyle = BASE[k];
+    const s = k === 'belt' ? 1 : 2;
+    for (let i = 0; i < xy.length; i += 2) g.fillRect(xy[i] - box[0], xy[i + 1] - box[1], s, s);
+  } }
+
+const layers = {terrain: true, base: true, lost: true, camps: true, units: true, ops: true};
+const LAYER_UI = [['terrain', '#3d4a32', 'Ground'], ['base', COL.base, 'Your base at the start'], ['lost', COL.lost, 'Your buildings lost'],
+  ['camps', COL.serenity, 'Camps'], ['units', COL.grubstake, "Corporations' units"], ['ops', COL.ink, 'Operations under way']];
+const legend = document.getElementById('legend');
+for (const [k, c, t] of LAYER_UI) {
+  legend.insertAdjacentHTML('beforeend', `<label for="ly-${k}"><input type="checkbox" id="ly-${k}" ${layers[k] ? 'checked' : ''}><span class="sw" style="background:${c}"></span>${t}</label>`);
+  document.getElementById('ly-' + k).onchange = e => { layers[k] = e.target.checked; draw(); };
+}
+
+// View: fit, zoom, pan.
+const cv = document.getElementById('map'), ctx = cv.getContext('2d');
+let view = null;
+function fit() { const r = cv.getBoundingClientRect(); const s = Math.min(r.width / W, r.height / H); view = {s, ox: (r.width - W * s) / 2, oy: (r.height - H * s) / 2}; }
+const sx = x => view.ox + (x - box[0]) * view.s, sy = y => view.oy + (y - box[1]) * view.s;
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  const k = e.deltaY < 0 ? 1.2 : 1 / 1.2;
+  view.ox = mx - (mx - view.ox) * k; view.oy = my - (my - view.oy) * k; view.s *= k; draw();
+}, {passive: false});
+let drag = null;
+cv.addEventListener('pointerdown', e => { drag = {x: e.clientX, y: e.clientY, ox: view.ox, oy: view.oy}; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e => { if (!drag) return; view.ox = drag.ox + e.clientX - drag.x; view.oy = drag.oy + e.clientY - drag.y; draw(); });
+cv.addEventListener('pointerup', () => { drag = null; });
+
+function frameAt(r, t, needB) {
+  let f = null;
+  for (const x of r.frames) { if (x.m <= t && (!needB || x.b)) f = x; else if (x.m > t) break; }
+  return f;
+}
+const clockOf = m => `${Math.floor(m / 60)}:${String(Math.floor(m % 60)).padStart(2, '0')}`;
+
+function draw() {
+  if (!view) return;
+  const r = cv.getBoundingClientRect();
+  ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, r.width, r.height);
+  ctx.imageSmoothingEnabled = false;
+  const run = runs[cur], s = view.s, dot = Math.max(1.5, s * 2);
+  if (layers.terrain && terrainCv) ctx.drawImage(terrainCv, sx(box[0]), sy(box[1]), W * s, H * s);
+  if (layers.base) ctx.drawImage(baseCv, sx(box[0]), sy(box[1]), W * s, H * s);
+  if (layers.lost) {
+    ctx.fillStyle = COL.lost;
+    for (const d of run.deaths) if (d[0] <= T) ctx.fillRect(sx(d[1]) - dot / 2, sy(d[2]) - dot / 2, dot, dot);
+  }
+  if (layers.camps) {
+    const f = frameAt(run, T, true);
+    if (f && f.b) for (const [corp, xy] of Object.entries(f.b)) {
+      ctx.fillStyle = COL[corp] || COL.ink; ctx.globalAlpha = 0.75;
+      for (let i = 0; i < xy.length; i += 2) ctx.fillRect(sx(xy[i]) - dot / 2, sy(xy[i + 1]) - dot / 2, dot, dot);
+      ctx.globalAlpha = 1;
+      for (let i = 0; i < (f.l[corp] || []).length; i += 2) {
+        const X = sx(f.l[corp][i]), Y = sy(f.l[corp][i + 1]);
+        ctx.strokeStyle = COL[corp]; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X, Y, Math.max(6, s * 8), 0, 7); ctx.stroke();
+      }
+    }
+  }
+  if (layers.units) {
+    const f = frameAt(run, T, false);
+    if (f) for (const [corp, xy] of Object.entries(f.u)) {
+      ctx.fillStyle = COL[corp] || COL.ink;
+      const u = Math.max(2, s * 1.6);
+      for (let i = 0; i < xy.length; i += 2) { ctx.beginPath(); ctx.arc(sx(xy[i]), sy(xy[i + 1]), u, 0, 7); ctx.fill(); }
+    }
+  }
+  if (layers.ops) {
+    for (const o of run.ops) {
+      if (!(o.m0 <= T && T <= o.m1 + 0.5) || !o.target) continue;
+      const X = sx(o.target[0]), Y = sy(o.target[1]);
+      ctx.strokeStyle = COL[o.corp] || COL.ink; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.arc(X, Y, Math.max(10, s * 18), 0, 7); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = COL.ink; ctx.font = '600 12px ' + css('--display');
+      ctx.fillText(`${o.kind} on ${o.what || '?'}`, X + 12, Y - 10);
+    }
+    // A focus strike's point while it lasts.
+    for (const b of run.beats) if (b.kind === 'focus' && b.focus && b.m <= T && T <= b.m + (b.minutes || 15)) {
+      ctx.strokeStyle = BEAT_COL.focus; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(sx(b.focus[0]), sy(b.focus[1]), Math.max(16, s * 64), 0, 7); ctx.stroke();
+    }
+  }
+  const m = minuteAt(run, T);
+  document.getElementById('hud').innerHTML = `${run.setting} &middot; ${clockOf(T)} &middot; ${m ? m.cum : 0} lost`;
+}
+
+function minuteAt(run, t) { let x = null; for (const m of run.minutes) { if (m.m <= t) x = m; else break; } return x; }
+
+// The lanes: each setting a row, its beats as blocks, its budget shaded, its notices as ticks.
+const lanes = document.getElementById('lanes'), lx = lanes.getContext('2d');
+function drawLanes() {
+  const r = lanes.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  lanes.width = r.width * dpr; lanes.height = r.height * dpr; lx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const L = 74, Wd = r.width - L - 8, rowH = (r.height - 18) / runs.length;
+  const X = m => L + m / END * Wd;
+  lx.fillStyle = COL.panel; lx.fillRect(0, 0, r.width, r.height);
+  lx.font = '600 13px ' + css('--display');
+  runs.forEach((run, i) => {
+    const y = i * rowH + 2;
+    lx.fillStyle = i === cur ? COL[run.setting] : COL.dim; lx.fillText(run.setting.toUpperCase(), 8, y + rowH / 2 + 4);
+    // Budget (0 to 4) as a faint band.
+    lx.fillStyle = COL[run.setting]; lx.globalAlpha = 0.18; lx.beginPath(); lx.moveTo(X(0), y + rowH - 2);
+    for (const m of run.minutes) lx.lineTo(X(m.m), y + rowH - 2 - Math.min(1, m.budget / 4) * (rowH - 8));
+    lx.lineTo(X(END), y + rowH - 2); lx.closePath(); lx.fill(); lx.globalAlpha = 1;
+    for (const b of run.beats) {
+      lx.fillStyle = BEAT_COL[b.kind] || COL.ink;
+      const w = Math.max(3, X(b.m + (b.minutes || 1)) - X(b.m));
+      lx.fillRect(X(b.m), y + rowH * 0.3, w, rowH * 0.4);
+    }
+    lx.fillStyle = COL.ink;
+    for (const n of run.notices) lx.fillRect(X(n.m), y + 2, 1.5, rowH * 0.22);
+    lx.strokeStyle = COL.rule; lx.beginPath(); lx.moveTo(L, y + rowH); lx.lineTo(r.width - 8, y + rowH); lx.stroke();
+  });
+  lx.fillStyle = COL.dim; lx.font = '500 11px ' + css('--mono');
+  for (let m = 0; m <= END; m += 30) lx.fillText(clockOf(m), X(m) - 12, r.height - 4);
+  lx.strokeStyle = COL.ink; lx.lineWidth = 1.5; lx.beginPath(); lx.moveTo(X(T), 0); lx.lineTo(X(T), r.height - 14); lx.stroke();
+  lanes.onclick = e => {
+    const rr = lanes.getBoundingClientRect(), mx = e.clientX - rr.left, my = e.clientY - rr.top;
+    const i = Math.floor((my - 2) / rowH);
+    if (i >= 0 && i < runs.length) cur = i;
+    if (mx > L) setT((mx - L) / Wd * END);
+    refresh();
+  };
+}
+
+// The curve of buildings lost, each setting.
+const chart = document.getElementById('chart'), cx = chart.getContext('2d');
+function drawChart() {
+  const r = chart.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  chart.width = r.width * dpr; chart.height = r.height * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const L = 36, B = 18, Wd = r.width - L - 8, Hd = r.height - B - 8;
+  const top = Math.max(10, ...runs.map(run => run.minutes.length ? run.minutes[run.minutes.length - 1].cum : 0));
+  const X = m => L + m / END * Wd, Y = v => 8 + Hd - v / top * Hd;
+  cx.fillStyle = COL.panel; cx.fillRect(0, 0, r.width, r.height);
+  cx.strokeStyle = COL.rule; cx.fillStyle = COL.dim; cx.font = '500 11px ' + css('--mono');
+  for (let k = 0; k <= 4; k++) { const v = Math.round(top * k / 4); cx.beginPath(); cx.moveTo(L, Y(v)); cx.lineTo(r.width - 8, Y(v)); cx.stroke(); cx.fillText(v, 4, Y(v) + 4); }
+  for (let m = 0; m <= END; m += 60) cx.fillText(clockOf(m), X(m) - 12, r.height - 4);
+  runs.forEach((run, i) => {
+    cx.strokeStyle = COL[run.setting]; cx.lineWidth = i === cur ? 2.5 : 1.5; cx.beginPath();
+    run.minutes.forEach((m, k) => { k ? cx.lineTo(X(m.m), Y(m.cum)) : cx.moveTo(X(m.m), Y(m.cum)); }); cx.stroke();
+    const last = run.minutes[run.minutes.length - 1];
+    if (last) { cx.fillStyle = COL[run.setting]; cx.fillText(`${run.setting} ${last.cum}`, X(last.m) - 70, Y(last.cum) - 4 - i * 0); }
+  });
+  cx.strokeStyle = COL.ink; cx.beginPath(); cx.moveTo(X(T), 8); cx.lineTo(X(T), 8 + Hd); cx.stroke();
+}
+
+function describe(run) {
+  const items = [];
+  for (const b of run.beats) items.push({m: b.m, html: `<span class="pill" style="background:${BEAT_COL[b.kind] || '#999'}">${b.kind}</span> ${b.corp ? (CORP_NAME[b.corp] || b.corp) : ''}${b.strike ? `, a strike force of ${b.strike}` : ''}${b.minutes ? `, ${b.minutes} min` : ''}`});
+  for (const n of run.notices) items.push({m: n.m, html: `<em>Notice:</em> ${(NOTICE[n.key] || (a => n.key + ' ' + (a || []).join(' ')))(n.args || [])}`});
+  for (const c of run.camps) items.push({m: c.m, html: `${CORP_NAME[c.corp] || c.corp} camp ${c.k === 'landed' ? 'landed' + (c.matched && c.matched.guns ? ` (matched to ${c.matched.guns} guns: +${c.matched.escort} escort, +${c.matched.parts} parts)` : '') : c.k === 'stood_down' ? 'stood down' : c.k}`});
+  for (const o of run.ops) items.push({m: o.m0, html: `${CORP_NAME[o.corp] || o.corp} ${o.kind} on ${o.what || '?'}: ${o.outcome || 'under way'}${o.razed ? `, razed ${o.razed}` : ''}`});
+  for (const t of run.texts) if (/holds|gap paid|no lull/.test(t.text)) items.push({m: t.m, html: `<span style="color:var(--dim)">${t.text}</span>`});
+  items.sort((a, b) => a.m - b.m);
+  return items;
+}
+const desc = runs.map(describe);
+
+function refresh() {
+  [...seg.children].forEach((b, i) => { b.setAttribute('aria-pressed', i === cur); b.style.background = i === cur ? COL[runs[i].setting] : ''; });
+  const run = runs[cur], m = minuteAt(run, T);
+  const st = document.getElementById('state');
+  st.innerHTML = m ? `<dt>Setting</dt><dd>${run.setting}</dd><dt>On</dt><dd>${m.active ? 'yes' : 'not yet'}</dd>
+    <dt>Phase</dt><dd>${m.phase || '-'}${m.held ? ` (holding: ${m.held})` : ''}</dd><dt>Budget</dt><dd>${m.budget} of 4${m.next ? `, next ${m.next}` : ''}</dd>
+    <dt>Era</dt><dd>${m.era ?? '-'}</dd><dt>Your worth</dt><dd>${m.worth} (${m.guns ?? 0} guns)</dd>
+    <dt>Lost, last 30 min</dt><dd>${m.lost} (usual ${m.usual})${m.hurt ? ' <span class="pill" style="background:var(--lost)">hurt</span>' : ''}</dd>
+    <dt>Your buildings lost</dt><dd>${m.cum} so far</dd>` : '<dt>No reading yet</dt><dd></dd>';
+  const ev = document.getElementById('events');
+  const items = desc[cur];
+  ev.innerHTML = items.map(it => `<div class="${Math.abs(it.m - T) < 2 ? 'now' : ''}"><time>${clockOf(it.m)}</time><span>${it.html}</span></div>`).join('') || '<div><time></time><span>Nothing recorded.</span></div>';
+  const near = [...ev.children].find(d => d.classList.contains('now'));
+  if (near) near.scrollIntoView({block: 'nearest'});
+  draw(); drawLanes(); drawChart();
+}
+
+const slider = document.getElementById('time');
+slider.max = END;
+function setT(v) { T = Math.max(0, Math.min(END, +v)); slider.value = T; document.getElementById('clock').textContent = clockOf(T); }
+slider.oninput = () => { setT(slider.value); refresh(); };
+let timer = null;
+document.getElementById('play').onclick = e => {
+  if (timer) { clearInterval(timer); timer = null; e.target.textContent = 'Play'; return; }
+  e.target.textContent = 'Pause';
+  timer = setInterval(() => { if (T >= END) { clearInterval(timer); timer = null; e.target.textContent = 'Play'; return; } setT(T + 1); refresh(); }, 120);
+};
+function resize() { const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1; cv.width = r.width * dpr; cv.height = r.height * dpr; fit(); refresh(); }
+window.addEventListener('resize', resize);
+// Opens on the first beat of the setting shown, else at the half.
+const firstBeat = runs[cur].beats.find(b => b.kind !== 'lull');
+setT(firstBeat ? firstBeat.m : END / 2);
+resize();
+</script>

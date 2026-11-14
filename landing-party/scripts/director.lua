@@ -360,11 +360,10 @@ function director.tick(tick)
       end
       return
     end
-    -- Never on Synthexis's waves (decision 2): none out, none due within the spree.
-    if farm.wave_soon(tun("spree_minutes") * 3600) then
-      if s.held_for ~= "wave" then s.held_for = "wave"; trace("holds: a Synthexis wave out or due within a spree") end
-      return
-    end
+    -- (Synthexis's waves by their effect only, the hurt reading above, which counts what they raze against the player's
+    -- usual: no hold on their timing. Held for any wave out or due within a spree, against railbase_end's waves it never
+    -- acted in three hours; the user, 2026-11-14: "Should a director care what synthexis does?", agreed: by its effect.
+    -- Synthexis keeps its own cadence, never driven by the director, decision 2.)
     local why = string.format("era %d, worth %.0f, guns %d", era, w, guns)
     if s.next_beat == "focus" then
       -- (Two camps or more at war still: else the focus drawn is a surge after all.)

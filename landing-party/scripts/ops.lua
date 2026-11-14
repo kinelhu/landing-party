@@ -1762,10 +1762,13 @@ local function step(b, trace, army)
       op.phase, op.phase_at, op.last_kill, op.kills_at = "attack", game.tick, game.tick, b.razed
       alert(b, t, "lp.alert-raid")
       trace(b, string.format("air raid: %d of %d mustered at %.0f,%.0f; in together", near, n, op.muster[1], op.muster[2]))
-      do
+      -- (Its target as the operation keeps it: the intel's may be forgotten by now, and read through it this crashed a
+      -- visit of railbase_end at minute 61, 0.2.389.)
+      local tp = (t and t.pos) or op.pos
+      if tp then
         local d = {}
         for _, u in ipairs(op.members) do
-          if u.valid then d[#d + 1] = string.format("%d %.0f", u.unit_number, math.sqrt((u.position.x - t.pos[1]) ^ 2 + (u.position.y - t.pos[2]) ^ 2)) end
+          if u.valid then d[#d + 1] = string.format("%d %.0f", u.unit_number, math.sqrt((u.position.x - tp[1]) ^ 2 + (u.position.y - tp[2]) ^ 2)) end
         end
         trace(b, "air raid: each flier's distance to its target " .. table.concat(d, ", "))
       end

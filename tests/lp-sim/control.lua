@@ -7361,7 +7361,8 @@ end
 -- holds its threats (no spree).
 scenarios.director = function()
   local off, hurt = params.mix == "off", params.mix == "hurt"
-  -- LP_MIX=wave: a Synthexis farm landed too: no spree while one of its waves is out or due within it (decision 2).
+  -- LP_MIX=wave: a Synthexis farm landed too: its waves alone hold no beat (by their effect only, the hurt reading;
+  -- held on their timing, the director never acted against railbase_end's in three hours, 0.2.390).
   local wave = params.mix == "wave"
   -- (Its nests first: a farm lands on nests, and the test's map has none.)
   if wave then
@@ -7705,7 +7706,8 @@ scenarios.director = function()
     elseif wave then
       local held = false
       for _, l in ipairs(d.log or {}) do if l.text:find("Synthexis wave") then held = true end end
-      check("director: wave, it held a spree off Synthexis's wave", S.farm ~= nil and held, tostring(S.farm))
+      check("director: wave, Synthexis's waves alone hold no spree", S.farm ~= nil and not held and (d.sprees or 0) >= 1,
+        string.format("farm %s, held %s, %s sprees", tostring(S.farm), tostring(held), tostring(d.sprees)))
     else
       check("director: a spree, then a lull", (d.sprees or 0) >= 1 and (d.lulls or 0) >= 1,
         string.format("%s sprees, %s lulls", tostring(d.sprees), tostring(d.lulls)))

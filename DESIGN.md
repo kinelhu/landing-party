@@ -7341,6 +7341,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Synthexis by its effect, and a crash** (0.2.390). The first visits of railbase_end (copies, the director off,
+  gentle, steady, chaotic, three hours each, recorded) came out identical: the director held all three hours for
+  "a Synthexis wave out or due within a spree", its waves there coming faster than a spree is long (13,000 of the
+  player's buildings died to them, mostly belts and inserters rebuilt and lost again). The user: "Should a director
+  care what synthexis does?"; agreed, by its effect only: the hold on its waves' timing is gone, the hurt reading
+  (losses against the player's usual) the one guard. Scenario director LP_MIX=wave now checks the opposite: its waves
+  alone hold no spree. The rerun crashed three of the four visits at minute 61: the air raid's muster traced each
+  flier's distance through its target's intel record, forgotten by then (a debug line of 0.2.375; a real game would
+  have crashed the same); now through the operation's own target.
 - **The event stream** (0.2.389; the user: "Ensure you have a rich enough logging? We need to monitor everything that
   happens meaningfully"). shared.event writes one line of JSON an event to events.jsonl while tracing (sims and
   visits): the director's beats with their parameters (kind, corporations, minutes, strike force and its lead camp,
