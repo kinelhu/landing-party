@@ -443,7 +443,12 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- to each camp at war first; a supply drop (supply_cost, weighed in the draw) lands a crate of supply_parts
   -- supply_out tiles from its camp toward the player, collected supply_wait minutes on if it still stands.
   spree_mix = {grubstake = {strip = 2, raid = 1.5}, serenity = {siege = 2}}, dusk = 0.25, surge_reinforce = 4,
-  supply_cost = 1, supply_parts = 300, supply_out = 40, supply_wait = 3}
+  supply_cost = 1, supply_parts = 300, supply_out = 40, supply_wait = 3,
+  -- Its readings (the user, 2026-11-14, after the calibration and readings of the user's saves): hurt is the last half
+  -- hour's losses past hurt_factor times the player's usual half hour (over hurt_hours) and past hurt_floor of the
+  -- factory's worth; depth (infinite levels by packs) raises its pace by min(depth_max, 1 + log10(1 + depth /
+  -- depth_scale)): on the user's saves b 1.06, nw 1.33, nwaoo 1.77, nwa 2; its first beat first_minutes after it comes on.
+  hurt_factor = 2, hurt_hours = 2, hurt_floor = 0.05, depth_scale = 30, depth_max = 2, first_minutes = 15}
 shared.DIRECTOR_PERSONALITIES = {"steady", "gentle", "chaotic", "off"}  -- between a corporation's landings (faction.lua's cadence)
 shared.MAX_CAMPS = {default = 3, min = 1, max = 10}           -- a corporation's standing camps, its headquarters counted
 shared.ARRIVE_EVO = {default = 0.25, min = 0, max = 0.95}     -- the wild evolution Synthexis comes at (farm.lua)

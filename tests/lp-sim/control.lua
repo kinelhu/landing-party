@@ -3170,14 +3170,22 @@ scenarios.contact = function()
     schedule(t, function()
       local d = lp("director") or {}
       local r = d.read or {}
-      local launched = 0
-      for _, id in ipairs({1, 2, 3, 4, 5, 6}) do
+      local launched, tries, went, miss = 0, 0, 0, {}
+      for _, id in ipairs(lp("bases") or {}) do
         local st = lp("stats", id)
         if st and st.ops then launched = launched + (st.ops.launched or 0) end
+        if st then
+          tries, went = tries + (st.dir_tries or 0), went + (st.dir_launched or 0)
+          for k, v in pairs(st.dir_miss or {}) do miss[k] = (miss[k] or 0) + v end
+        end
       end
-      info(string.format("director at %d min: %s %s, budget %.2f, adapt %.2f, era %s, worth %.0f, guns %s, lost %.0f%s, sprees %d, lulls %d, ops %d",
+      local ms = {}
+      for k, v in pairs(miss) do ms[#ms + 1] = k .. " " .. v end
+      table.sort(ms)
+      info(string.format("director at %d min: %s %s, budget %.2f, adapt %.2f, era %s, worth %.0f, guns %s, lost %.0f (usual %.0f)%s, depth %s, sprees %d, surges %d, focus %d, waves %d, supplies %d, lulls %d, ops %d; under its tempo %d decisions, %d launched, missed: %s",
         math.floor(t / 3600), d.active and "on" or "off", tostring(d.phase), d.budget or 0, d.adapt or 1, tostring(r.era),
-        r.worth or 0, tostring(r.guns), r.lost or 0, r.hurt and " HURT" or "", d.sprees or 0, d.lulls or 0, launched))
+        r.worth or 0, tostring(r.guns), r.lost or 0, r.usual or 0, r.hurt and " HURT" or "", tostring(r.depth), d.sprees or 0,
+        d.surges or 0, d.focuses or 0, d.waves or 0, d.supply_n or 0, d.lulls or 0, launched, tries, went, table.concat(ms, ", ")))
     end)
   end
   -- Era bases (docs/reviews/2026-10-13-campaign-review.md section 6): "spread" (era 2: three outposts, robots),
@@ -7375,7 +7383,7 @@ scenarios.director = function()
     -- (Lulls of 12, longer than a raid's gap after it is done, 5: with lulls of 6 and no truce at all, none of four
     -- raids fell in one by chance and the check passed; seen failing at 12.)
     lp("debug_tune", {director = not off and "steady" or false, director_tune = {grace = 0, spree_minutes = 6,
-      lull_minutes = 12, fill = 0.2, loss_share = hurt and 0.02 or 100}})
+      lull_minutes = 12, fill = 0.2, hurt_floor = hurt and 0.02 or 100}})
     for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end
     local o = lp("stats", storage.id).origin
     -- The player's factory core across spawn from the camp, past its sensors: its worth for the loss share.
@@ -7435,7 +7443,7 @@ scenarios.director = function()
     local kill = params.mix == "supplykill"
     S.r = {}
     schedule(120, function()
-      lp("debug_tune", {director = "gentle", director_tune = {grace = 0, fill = 0, loss_share = 100}})
+      lp("debug_tune", {director = "gentle", director_tune = {grace = 0, fill = 0, hurt_floor = 100}})
       lp("director_cmd", "lull")
       local d = lp("director")
       S.r.gentle_lull = (d.phase_till - game.tick) / 3600
@@ -7487,7 +7495,7 @@ scenarios.director = function()
   -- at three, two settle and the third withdraws, quietly (nothing of it left standing, nothing dropped, no fall).
   if params.mix == "drop" then
     schedule(61, function()
-      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, loss_share = 100}})
+      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100}})
     end)
     schedule(2 * 3600, function()
       S.next0 = (lp("faction") or {}).next
@@ -7544,7 +7552,7 @@ scenarios.director = function()
     schedule(61, function()
       -- (Its radius 24 here: the test's outposts stand within 65 of each other, and at the default 64 a focus on one
       -- weighed its neighbour, 40 off, as much; both camps went there.)
-      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, loss_share = 100, surge_minutes = 14,
+      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100, surge_minutes = 14,
         focus_radius = 24, focus_weight = focusoff and 1 or nil}})
     end)
     schedule(90, function() S.g2 = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"}) end)

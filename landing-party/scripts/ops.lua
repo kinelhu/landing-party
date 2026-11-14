@@ -279,13 +279,44 @@ local function floor_of(b, army, committed) return pool.floor(cap(b, army), comm
 -- corporation, are capped by that player's era (1 + era; era 0-4 from research done), so corporations do not
 -- stack into a flood; corporations' operations against each other are not counted. The floor: when no
 -- operation has gone against a player for FLOOR_TICKS, player targets weigh triple in every choice.
-local ERA_TECHS = {25, 60, 100, 150}
+-- A player force's era: how many tiers of science it has passed in a row, a tier the techs that take that many kinds of
+-- science pack (read from each tech, so a mod's packs count), passed when ERA_SHARE of its finite techs are researched.
+-- (Until 0.2.384 its count of techs researched against 25, 60, 100 and 150: every tech alike, and past 150 all read 4,
+-- nwa as b at five times its worth; the user, 2026-11-14. On the user's saves the two agree to one era, start 1, b 4,
+-- nw 4; nwa and nwaoo 5 where 4.) Infinite research is not in it (its levels are the director's depth); nor techs that
+-- take no packs (a trigger's).
+local ERA_SHARE = 0.6
 function ops.era(force)
-  local n = 0
-  for _, t in pairs(force.technologies) do if t.researched then n = n + 1 end end
+  local done, all = {}, {}
+  for _, t in pairs(force.technologies) do
+    if t.prototype.max_level < 4294967295 then
+      local k = 0
+      for _ in pairs(t.research_unit_ingredients or {}) do k = k + 1 end
+      if k > 0 then
+        all[k] = (all[k] or 0) + 1
+        if t.researched then done[k] = (done[k] or 0) + 1 end
+      end
+    end
+  end
   local era = 0
-  for i, k in ipairs(ERA_TECHS) do if n >= k then era = i end end
+  for k = 1, 64 do
+    if not all[k] or (done[k] or 0) < ERA_SHARE * all[k] then break end
+    era = k
+  end
   return era
+end
+
+-- The director's depth: infinite research's levels bought, each by its kinds of pack (director.lua reads it).
+function ops.depth(force)
+  local depth = 0
+  for _, t in pairs(force.technologies) do
+    if t.prototype.max_level >= 4294967295 then
+      local k = 0
+      for _ in pairs(t.research_unit_ingredients or {}) do k = k + 1 end
+      depth = depth + math.max(0, t.level - t.prototype.level) * k
+    end
+  end
+  return depth
 end
 local against_player = stance.against_player
 function ops.player_ops()
@@ -581,6 +612,7 @@ local function choose(b, army)
   -- At least what stands at home beyond the reserve: a camp with no depot has a cap of nought, and its escort of sixteen
   -- could afford nothing (visit, under the guns).
   local max_field = math.max(0, cap(b, army) - math.ceil(RESERVE * cap(b, army)), (field(b, army)))
+  local why = {held = 0, cool = 0, seen = 0, odds = 0}
   local best, bs
   local zones = {}
   for i = #(b.intel.cool or {}), 1, -1 do
@@ -624,6 +656,11 @@ local function choose(b, army)
     if pressed and not player and not battery(t) and threat_bonus(b, t) == 0 and not reprisal(b, t) then held = true end
     -- Stood down (war.lua): nothing against a player but self-defence.
     if b.quiescent and player and not battery(t) and threat_bonus(b, t) == 0 then held = true end
+    -- (Why the player's targets were not taken, for the director's measure: ops.tick, b.dir_miss.)
+    local cooled = game.tick < (t.cool or 0) or cooling(t)
+    if player then
+      if held then why.held = why.held + 1 elseif cooled then why.cool = why.cool + 1 else why.seen = why.seen + 1 end
+    end
     if game.tick >= (t.cool or 0) and not cooling(t) and not held then
       local d = defence(b, t)
       -- Self-defence (a battery, or a static threat on its ground: turret creep) takes the reserve too: weighted,
@@ -633,6 +670,7 @@ local function choose(b, army)
       local p = odds((battery(t) or threat_bonus(b, t) > 0) and cap(b, army) or max_field, d)
       -- (On foot below its odds, it may still go by air: weighed both ways, s 0 for a way it cannot take.)
       local on_foot = ground_ok and p >= mind.min_odds * (desperate and DESPERATE_ODDS or 1) - 1e-9
+      if player and not on_foot and not by_air then why.odds = why.odds + 1 end
       if on_foot or by_air then
         local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
         local ground = player and b.claim_radius and not storage.strangle_off and stance.standing(b.corp, t.owner) == "enemy"
@@ -671,6 +709,7 @@ local function choose(b, army)
       end
     end
   end
+  b.choose_why = why
   return best, bs, mode
 end
 
@@ -2077,9 +2116,38 @@ local answers_ = require("__landing-party__.scripts.answers").install(ops, {
   stance = stance, tune = tune})
 local answer = answers_.answer
 
+-- The director's measure (the user, 2026-11-14: "we might need the director to boost income for the factions"): while
+-- its corporation's tempo is up, each decision this camp makes, whether it launched, and if not why: busy (an operation
+-- out), no target of the player's known, all held (a truce, stood down), cooling, beyond its force (odds), or other.
+local function dir_measure(b, tick)
+  local d = storage.director
+  local t = d and d.active and d.tempo and d.tempo[b.corp]
+  if not (t and tick < t.till) then return false end
+  if b.dir_try then
+    local tr = b.dir_try
+    b.dir_try = nil
+    if (b.ops_launched or 0) > tr.launched then
+      b.dir_launched = (b.dir_launched or 0) + 1
+    else
+      local w = b.choose_why or {}
+      local why = b.dir_short and "units short" or (w.seen or 0) + (w.held or 0) + (w.cool or 0) == 0 and "no target"
+        or (w.seen or 0) > 0 and (w.odds or 0) >= (w.seen or 0) and "odds"
+        or (w.seen or 0) == 0 and (w.held or 0) > 0 and "held"
+        or (w.seen or 0) == 0 and "cooling" or "other"
+      b.dir_miss = b.dir_miss or {}
+      b.dir_miss[why] = (b.dir_miss[why] or 0) + 1
+    end
+  end
+  return true
+end
+
 function ops.tick(b, tick, trace, army)
   if storage.ops_off then return end
   ops.init(b)
+  if tick % DECIDE_TICKS == 1 and dir_measure(b, tick) and b.op then
+    b.dir_miss = b.dir_miss or {}
+    b.dir_miss.busy = (b.dir_miss.busy or 0) + 1
+  end
   if tick % 60 == 30 then siege_leash(b) end
   if tick % 600 == 300 then stand_down(b) end
   if tick % SENSE_TICKS == (b.id * 97) % SENSE_TICKS then scan(b) end
@@ -2103,6 +2171,14 @@ function ops.tick(b, tick, trace, army)
     and not storage.choice_off
     and not army.withdrawing(b) then
     if not home(b) then return end
+    if storage.director and storage.director.active then
+      local dt = storage.director.tempo and storage.director.tempo[b.corp]
+      if dt and tick < dt.till then
+        b.dir_tries = (b.dir_tries or 0) + 1
+        b.dir_try = {launched = b.ops_launched or 0}
+        b.dir_short = nil
+      end
+    end
     -- Counter-battery first: a battery it knows is besieged before anything else (a raid on a substation was
     -- always available, so the siege was never considered); one that never besieges raids it (choose weighs
     -- it by its value and threat).
@@ -2170,7 +2246,8 @@ function ops.tick(b, tick, trace, army)
       trace(b, "weighs " .. table.concat(parts, ", "))
     end
     local pick = options[1] and options[1][1]
-    if pick == "raid" then launch(b, key, trace, army, ropts)
+    -- (A raid it chose and could not field, its units fewer than it wants: the director's measure reads it, b.dir_short.)
+    if pick == "raid" then if not launch(b, key, trace, army, ropts) then b.dir_short = true end
     elseif pick == "siege" then launch_siege(b, skey, ssite, trace, army, nil, nil, spiece)
     elseif pick == "strip" then launch_strip(b, tkey, tsite, trace, army) end
   end

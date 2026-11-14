@@ -257,6 +257,19 @@ against a factory read as about 370 worth; the line is 2%). On and off were iden
 fill's scale; the hurt line (a share of worth that a routine raid passes; perhaps losses past the player's own recent
 rate instead); whether the worth reading (26 prototypes) sees enough of a factory. Nothing was tuned overnight.
 
+## 9d. Over the camps' judgement (the user, 2026-11-14)
+
+The user: "The director should probably be able to start doomed ops btw (going over the faction's decision making) no?
+(If we give bonus income of course)". Agreed: past their judgement, not into hopeless fights. A doomed raid is kills,
+veterancy and loot for the player and teaches nothing; the measured limit was units short of a raid the camp had chosen
+(the smoke test's first spree: 8 of 11 decisions), not a want of nerve. Next step, together:
+- **Commitment:** during a surge or a focus strike, the camps at war take the ladder's desperate odds bar (a lower
+  min_odds, above a floor), named priors, announced with the beat.
+- **Headquarters pays the gap:** a beat's camp short of units for a raid it chose gets them by pod from a subsidy (the
+  income boost, aimed at the measured shortfall).
+- **Probe (optional, later):** a small announced raid sent to learn the player's defences, its tactics ledger the gain.
+Built once the calibration shows the shortfall across seeds.
+
 ## 10. Build order
 
 1. The director's state, budget and readings; personality steady and off; tempo and lull, the two dials that act from

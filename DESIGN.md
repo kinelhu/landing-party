@@ -7341,6 +7341,20 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The director's readings remade** (0.2.384; the user: "We are not monitoring building amounts?", "an idea of player
+  advancement from tech tree", "How would era interact with infinite tech?"). Readings of the user's saves first
+  (scripts/readings.sh, a copy of each in its own profile): the worth from 26 names read 1.2 to 2.4 times less than
+  one from every type valuemap weighs; era stopped at 4 past 150 techs (b, nw, nwaoo, nwa alike, nwa five times b);
+  the hurt line was two assemblers on the start save. Now: worth from every prototype valuemap weighs, guns every
+  turret; era (ops.era, the camps' too) the tiers of science passed in a row, a tier the techs taking that many kinds
+  of pack, passed at ERA_SHARE (0.6) of its finite techs (on the saves: start 1, c 2, railbase 4, b 4, nw 4, nwaoo and
+  nwa 5); depth (ops.depth), infinite levels by packs, the director's pace only, min(2, 1 + log10(1 + depth/30)); hurt
+  the half hour's losses past twice the player's usual half hour (over two hours) and past 5% of worth; the first beat
+  15 minutes after it comes on. Its measure: while a corporation's tempo is up, each decision of its camps and why it
+  launched nothing (busy, units short, held, cooling, odds, no target). Calibration (five seeds, both players, two
+  hours): one beat in the 85 minutes it is on (a spree and its lull, or a supply drop), operations within one of off;
+  under the tempo 62 decisions, 21 launched, 41 short of units (28 of 30 against seed 12345's walled player). The
+  quick regression's three failures (strip, levers, country) fail the same at 0.2.383, before these: open.
 - **Director calibration: steady does nothing in a contact game's first two hours** (measured overnight 2026-11-14,
   not tuned). Scenario contact, two hours, five seeds, the walled and the passive player, LP_DIRECTOR steady against off:
   on from minute 35 in every run, and not one beat in any; on and off came out identical (operations launched, the

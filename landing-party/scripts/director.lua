@@ -7,7 +7,7 @@
 -- taken over while it is on. Synthexis keeps its own waves (decision 2): its tempo is never touched.
 -- Its budget is counted in landings: it fills by (1 + era / 2) times the difficulty and the personality each landing
 -- interval, up to DIRECTOR.cap; a spree costs DIRECTOR.spree_cost. A spree, then a lull, then filling again: a rise, a
--- peak, a valley. No threat while the player's losses of the last half hour pass DIRECTOR.loss_share of their factory's
+-- peak, a valley. No threat while the player's losses of the last half hour pass twice their usual and 5% of their factory's
 -- worth, and the fill halves while their guns are fewer than an hour ago (the slow spiral a window misses).
 -- On after the opening's arrival (phases.lua) and DIRECTOR.grace more (decision 5), or by debug_tune director. Off
 -- (setting lp-director), none of this runs and tune.sooner, the floor and the truces are as they were.
@@ -74,8 +74,37 @@ function director.note_loss(owner, ent)
   table.insert(s.losses, {game.tick, owner, valuemap.razed_of(ent)})
 end
 
+-- Every prototype valuemap weighs (by name or by type: a mod's buildings too) and every turret, built once from the
+-- prototypes (the same on every peer; only time is saved by keeping it). (Until 0.2.384 the 26 names above: on the
+-- user's saves 1.2 to 2.4 times less than this, the belts, inserters, poles and accumulators unseen; the user,
+-- 2026-11-14: "We are not monitoring building amounts?")
+local VALUED, TURRETS
+local TURRET_TYPES = {["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true, ["artillery-turret"] = true}
+local function valued()
+  if VALUED then return VALUED, TURRETS end
+  VALUED, TURRETS = {}, {}
+  for name, p in pairs(prototypes.entity) do
+    local wt = valuemap.NAMES[name] or valuemap.WORTH[p.type]
+    if wt then VALUED[#VALUED + 1] = {name, wt} end
+    if TURRET_TYPES[p.type] then TURRETS[#TURRETS + 1] = name end
+  end
+  table.sort(VALUED, function(a, b) return a[1] < b[1] end)
+  table.sort(TURRETS)
+  return VALUED, TURRETS
+end
 local function worth_of(force)
   local w, guns = 0, 0
+  local v, t = valued()
+  for _, e in ipairs(v) do
+    local c = force.get_entity_count(e[1])
+    if c > 0 then w = w + c * e[2] end
+  end
+  for _, n in ipairs(t) do guns = guns + force.get_entity_count(n) end
+  return w, guns
+end
+-- The 26 names' worth, for the readings beside it.
+local function worth_26(force)
+  local w = 0
   for _, n in ipairs(WORTH_NAMES) do
     local p = prototypes.entity[n]
     if p then
@@ -83,10 +112,7 @@ local function worth_of(force)
       if c > 0 then w = w + c * (valuemap.NAMES[n] or valuemap.WORTH[p.type] or 0) end
     end
   end
-  for _, n in ipairs(GUN_NAMES) do
-    if prototypes.entity[n] then guns = guns + force.get_entity_count(n) end
-  end
-  return w, guns
+  return w
 end
 
 -- Tests and visits (remote debug_readings): what it reads of a player force now, beside what a fuller reading would
@@ -97,7 +123,8 @@ end
 function director.readings(owner)
   local f = game.forces[owner or "player"]
   if not f then return nil end
-  local w0, guns = worth_of(f)
+  local w1x, guns = worth_of(f)
+  local w0 = worth_26(f)
   local by_type, w1, n1 = {}, 0, 0
   for name, p in pairs(prototypes.entity) do
     local wt = valuemap.NAMES[name] or valuemap.WORTH[p.type]
@@ -131,7 +158,7 @@ function director.readings(owner)
   local fill = (1 + era / 2) * d / math.max(1, interval)
   return {worth_now = w0, guns = guns, worth_all = w1, buildings = n1, by_type = by_type, researched = researched,
     era = era, tiers = tiers, fill_per_min = fill, minutes_to_spree = tun("spree_cost") / fill,
-    hurt_line = tun("loss_share") * w0, hurt_line_all = tun("loss_share") * w1, interval = interval,
+    hurt_line = tun("loss_share") * w0, hurt_floor_now = tun("hurt_floor") * w1, interval = interval, era_tiers = ops.era(f),
     infinite = infinite, infinite_levels = levels, depth = depth}
 end
 
@@ -227,7 +254,10 @@ function director.tick(tick)
   local active = on(tick)
   if active ~= s.active then
     s.active = active
-    if active then trace(string.format("on (%s)", director.personality())) end
+    if active then
+      s.on_at = s.on_at or tick
+      trace(string.format("on (%s)", director.personality()))
+    end
   end
   if not active then return end
   local forces = shared.player_forces()
@@ -237,7 +267,9 @@ function director.tick(tick)
   -- Its readings.
   local era = storage.era_override or ops.era(f)
   local w, guns = worth_of(f)
-  local cut = tick - 30 * 3600
+  -- Its losses: the last half hour against its own rate over hurt_hours (a half hour's share of it), kept that long.
+  local span = tun("hurt_hours") * 60 * 3600
+  local cut = tick - span
   local k = 1
   while s.losses[k] and s.losses[k][1] < cut do k = k + 1 end
   if k > 1 then
@@ -245,22 +277,41 @@ function director.tick(tick)
     for i = k, #s.losses do keep[#keep + 1] = s.losses[i] end
     s.losses = keep
   end
-  local lost = 0
-  for _, l in ipairs(s.losses) do if l[2] == owner then lost = lost + l[3] end end
+  local lost, long = 0, 0
+  for _, l in ipairs(s.losses) do
+    if l[2] == owner then
+      long = long + l[3]
+      if l[1] >= tick - 30 * 3600 then lost = lost + l[3] end
+    end
+  end
+  -- (Its rate over as much of the span as it has been on: a director on for 40 minutes reads 40.)
+  local had = math.min(span, tick - (s.on_at or tick))
+  local usual = had > 30 * 3600 and long * (30 * 3600) / had or 0
   if tick % (10 * 3600) == 0 then
     table.insert(s.guns, guns)
     if #s.guns > 7 then table.remove(s.guns, 1) end
   end
   local falling = #s.guns >= 7 and guns < s.guns[1]
-  -- (A player with nothing left standing who is still losing is hurt too.)
-  local hurt = lost > 0 and lost > tun("loss_share") * w
-  s.read = {era = era, worth = w, guns = guns, lost = lost, falling = falling, hurt = hurt}
+  -- Hurt: the last half hour's losses past hurt_factor times its usual half hour, and past hurt_floor of the factory's
+  -- worth (a pylon is not a beating). (Until 0.2.384 past 2% of its worth alone: routine raids passed it, and in the
+  -- calibration it held the director nearly always; on the user's start save that line was two assemblers.) A player
+  -- with nothing left standing who is still losing is hurt too.
+  local hurt = lost > 0 and lost > tun("hurt_factor") * usual and lost > tun("hurt_floor") * w
+  local depth = ops.depth(f)
+  s.read = {era = era, worth = w, guns = guns, lost = lost, usual = usual, falling = falling, hurt = hurt, depth = depth}
   -- Its budget, in landings a landing interval.
   local interval = shared.setting("lp-landing-interval", shared.LANDING_MINUTES.default)
   local d = shared.DIFFICULTY[shared.setting("lp-difficulty", "normal")] or 1
   local rate = (storage.director_tune and storage.director_tune.fill)
     or (1 + era / 2) * d * (tun("personality")[director.personality()] or 1) / math.max(1, interval)
+  -- Depth (infinite research): its pace up, by a capped logarithm, depth_max at most (the bounded era stays the camps').
+  rate = rate * math.min(tun("depth_max"), 1 + math.log(1 + depth / tun("depth_scale"), 10))
   if falling then rate = rate / 2 end
+  -- Its first beat first_minutes after it comes on, whatever the era (it waited 90 minutes at era 0 to afford one).
+  if not s.seeded and rate > 0 then
+    s.seeded = true
+    s.budget = math.max(s.budget, tun("spree_cost") - rate * tun("first_minutes"))
+  end
   -- Adaptation (RimWorld's; the user, 2026-11-13: "Yes to the climb"): a player who goes unhurt is pressed harder as the
   -- hours pass, adapt_climb more an hour up to adapt_max; hurt (the loss window), back to 1.
   if hurt then s.adapt = 1
