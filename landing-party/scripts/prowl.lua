@@ -147,7 +147,12 @@ end
 -- covers, and back the way it came; at the least PLAN_MIN legs, else none this time.
 local PLAN_MIN = 3
 local PLAN_WAIT = 10 * 60      -- ticks the engine's answers are waited for
-local PATH_GAP = 16            -- tiles between the points of the engine's way it follows
+-- The points of the engine's way it follows: as far apart as its buggy goes between two looks (its prototype's speed,
+-- STEP ticks), and ARRIVE at least: closer, it reached a point and idled at it till the next look (prowl.on_path).
+local function path_gap(name)
+  local p = name and prototypes.entity[name]
+  return math.max(ARRIVE, ((p and p.speed) or 0) * STEP)
+end
 local PATH_SPARE = 2           -- tiles past a gun's reach a path's waypoint keeps
 
 -- One direction's route: its legs from leg 0 while each has a way and no gun covers it; its count of good legs, and why
@@ -229,14 +234,14 @@ local function start(b, tick)
     for i = 1, #st - 1 do
       local id = s.request_path{bounding_box = proto.collision_box, collision_mask = proto.collision_mask,
         start = {st[i][1], st[i][2]}, goal = {st[i + 1][1], st[i + 1][2]}, force = b.force, radius = 4}
-      storage.prowl_paths[id] = {base = b.id, leg = i - 1, set = dir[2]}
+      storage.prowl_paths[id] = {base = b.id, leg = i - 1, set = dir[2], name = proto.name}
     end
   end
   b.prowl_next = tick + AGAIN
 end
 
 -- The engine's answer to one of its legs (on_script_path_request_finished, control.lua): its waypoints kept, every
--- PATH_GAP apart and the last; none, the leg false. All in, it goes.
+-- path_gap apart and the last; none, the leg false. All in, it goes.
 function prowl.on_path(e)
   local r = storage.prowl_paths and storage.prowl_paths[e.id]
   if not r then return end
@@ -244,11 +249,13 @@ function prowl.on_path(e)
   local b = storage.bases and storage.bases[r.base]
   local plan = b and b.prowl_plan
   if not plan then return end
-  -- (One a PATH_GAP of tiles and the last, not every few waypoints: at every fourth a ring was 785 points, one a step,
-  -- and a prowl took 26 minutes, its buggy out of the garrison all that time; strip claim, plate grubstake.)
+  -- (One a path_gap of tiles and the last, not every few waypoints: at every fourth a ring was 785 points, one a step,
+  -- and a prowl took 26 minutes, its buggy out of the garrison all that time; strip claim, plate grubstake. 16 tiles by
+  -- hand at 0.2.375.)
   local pts = false
   if e.path and #e.path > 0 then
     pts = {}
+    local PATH_GAP = path_gap(r.name)
     local lx, ly
     for i, w in ipairs(e.path) do
       local x, y = w.position.x, w.position.y

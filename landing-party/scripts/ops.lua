@@ -298,7 +298,11 @@ function ops.player_ops()
 end
 local function budget(owner)
   local f = game.forces[owner]
-  return 1 + (f and (storage.era_override or ops.era(f)) or 0)
+  -- (A director's surge raises it a while, director.start_surge: its intensity, for that player only.)
+  local d = storage.director
+  local i = d and d.active and d.intensity
+  local add = (i and i.owner == owner and game.tick < i.till) and i.add or 0
+  return 1 + (f and (storage.era_override or ops.era(f)) or 0) + add
 end
 
 -- Provocation (tempers): a player force that hurts a corporation's buildings or units is remembered for good. The one
@@ -556,10 +560,18 @@ local function relevance(b, t, c)
   if t.owner then r = r * math.min(w.grudge_max, 1 + know.grievance(b.corp, t.owner) / w.grudge) end
   -- An overdue bill's collection (ledger.lua): the polluter's ground.
   if ops.collect_weight then r = r * ops.collect_weight(b, t) end
+  -- A director's focus strike (director.start_surge): its targets near the focus weigh more for a while, to every camp.
+  local d = storage.director
+  local fo = d and d.active and d.focus
+  if fo and t.owner == fo.owner and t.pos and game.tick < fo.till
+    and (t.pos[1] - fo.pos[1]) ^ 2 + (t.pos[2] - fo.pos[2]) ^ 2 <= fo.radius * fo.radius then
+    r = r * fo.weight
+  end
   return r
 end
 
 ops.relevance = relevance
+ops.budget = budget
 ops.FLOOR_TICKS = FLOOR_TICKS
 -- The best target worth the force the settlement can field: value over defence, nearer preferred, tried
 -- targets less, cooling targets not at all.
@@ -982,7 +994,7 @@ local function finish(b, outcome, trace, army)
   b.ops_log = b.ops_log or {}
   -- The owner as at launch (a target destroyed is forgotten, and its raid read as at nobody: nests).
   table.insert(b.ops_log, {op = op.kind, kind = t and t.kind or "gone", owner = t and t.owner or op.owner, outcome = outcome,
-    launched = op.launched, started = op.started,
+    launched = op.launched, started = op.started, pos = (t and t.pos) or op.pos or op.site,
     back = alive(op), shells = op.shells_fired, site = op.site, cut = op.cut})
   if #b.ops_log > 10 then table.remove(b.ops_log, 1) end
   trace(b, string.format("%s %s: %d of %d came back (target %s; razed %d, %d to %d)", op.kind, outcome, alive(op), op.launched,
@@ -2271,7 +2283,8 @@ function ops.summary(b)
         u.commandable.moving_state, u.commandable.distraction_command and 1 or 0,
         (function() local d = u.commandable.distraction_command local tg = d and d.target
           return tg and tg.valid and (tg.name .. "@" .. math.floor(tg.position.x) .. "," .. math.floor(tg.position.y)) or (d and tostring(d.type)) or "" end)()} end end return o end)(),
-    op_phase = b.op and b.op.phase, op_site = b.op and b.op.site, op_hold = b.op and b.op.hold, op_jump = b.op and b.op.jump,
+    op_phase = b.op and b.op.phase, op_site = b.op and b.op.site, op_pos = t and t.pos, op_started = b.op and b.op.started,
+    op_owner = t and t.owner, op_hold = b.op and b.op.hold, op_jump = b.op and b.op.jump,
     strike_center = b.op and b.op.strike_center or b.dev_strike and b.dev_strike.center,
     strike_paint = b.op and b.op.strike_paint or b.dev_strike and b.dev_strike.paint,
     strike_falling = b.op and b.op.strike_falling or b.dev_strike and b.dev_strike.falling,

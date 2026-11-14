@@ -190,6 +190,26 @@ default settings a corporation usually stands at 2 or 3 of its 3 camps, so "sett
 rarely fire; the guard keeps a camp the player has been grinding down from leaving under them and taking their work
 with it.
 
+## 9b. Decided overnight, for review (2026-11-14)
+
+The user agreed to steps 2 to 4 overnight, each call a named prior in `shared.DIRECTOR`, listed here to be overturned.
+
+Step 2 (0.2.377):
+- **Which beat:** drawn as the director starts filling, from its rng in storage (seeded by the map): spree 0.5, surge
+  0.3, focus strike 0.2 (`beat_weights`). A surge or a focus only with two camps at war or more (one camp's surge is a
+  spree); it waits for the beat's cost. After any of them, a lull, as after a spree.
+- **Surge:** every corporation at war with the player, Synthexis apart: tempo `surge_factor` 2, the cap on operations
+  against the player at once `surge_add` 1 higher (ops' budget, which also caps a siege's tier), `surge_minutes` 15,
+  `surge_cost` 2 (a spree is 1). Its camps' paced next operations pulled in, as a spree's.
+- **Focus strike:** a surge with a focus, `focus_cost` 3: targets within `focus_radius` 64 of one point weigh
+  `focus_weight` 4 times in every camp's choice (ops' relevance), so their next operations go there; the camps still
+  size their own force and abort as ever. The point: the place the camps know best, their targets against the player
+  by cell of `focus_radius`, each target's value summed over the camps that know it.
+- **Notices:** at the beat's start, factual: "__1__ are stepping up their attacks for the next __2__ minutes." and "...
+  on [gps] for the next __3__ minutes." Not before it starts: a surge's first operation is minutes off (its march),
+  so the notice comes first in effect; a warning phase is an open question.
+- **At war:** stance "enemy" only, as the spree's pick: Grubstake while only a rival is not in a surge.
+
 ## 10. Build order
 
 1. The director's state, budget and readings; personality steady and off; tempo and lull, the two dials that act from

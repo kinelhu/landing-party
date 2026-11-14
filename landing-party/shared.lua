@@ -14,13 +14,16 @@ local shared_fliers = {"lp-harrier", "lp-scavenger", "lp-laser-drone", "destroye
 shared.FLIERS = shared_fliers
 -- A flier's long way in legs of AIR_LEG tiles at most: the engine's pathfinder found no path for the lp-air layer from a
 -- camp to a site 130 tiles off (cordon: a constructor 16 tiles from its lander, every order of it dropped to wander) while
--- it found both halves, 63 and 62 waypoints (probed with request_path, 0.2.373). Its points along the straight line.
-shared.AIR_LEG = 48
+-- it found both halves, 63 and 62 waypoints (probed with request_path, 0.2.373). Measured (scenario airpath, 0.2.377,
+-- a scavenger over open ground, eight bearings): every way found to 100 tiles, 7 of 8 at 120, none from 140; so legs of
+-- 100 at most, and a trip that short not cut at all (each leg's new path a wait: cut at 48, Grubstake's eight came in
+-- 3 s apart for 1.5 s uncut, scenario airraid LP_MIX=grubstake). Its points along the straight line.
+shared.AIR_LEG = 100
 function shared.air_legs(from, to)
   local fx, fy = from.x or from[1], from.y or from[2]
   local tx, ty = to.x or to[1], to.y or to[2]
   local d = math.sqrt((tx - fx) ^ 2 + (ty - fy) ^ 2)
-  local n = math.floor(d / shared.AIR_LEG)
+  local n = math.max(0, math.ceil(d / shared.AIR_LEG) - 1)
   local out = {}
   for k = 1, n do
     local t = k / (n + 1)
@@ -416,7 +419,13 @@ shared.LANDING_MINUTES = {default = 90, min = 15, max = 600}
 shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20, lull_minutes = 15, loss_share = 0.02,
   grace = 30, personality = {steady = 1},
   -- Adaptation: the fill's multiple grows adapt_climb an hour the player goes unhurt, to adapt_max; hurt, back to 1.
-  adapt_climb = 0.1, adapt_max = 2}
+  adapt_climb = 0.1, adapt_max = 2,
+  -- Step 2 (decided overnight 2026-11-14, for review): a surge (every corporation at war: tempo surge_factor, the cap on
+  -- operations at once surge_add more, surge_minutes) and a focus strike (a surge with a focus: targets within
+  -- focus_radius of one point focus_weight times as relevant to every camp); a beat drawn at each fill by these weights,
+  -- a surge or a focus only with two camps at war or more.
+  surge_cost = 2, surge_factor = 2, surge_add = 1, surge_minutes = 15, focus_cost = 3, focus_weight = 4, focus_radius = 64,
+  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2}}
 shared.DIRECTOR_PERSONALITIES = {"steady", "off"}  -- between a corporation's landings (faction.lua's cadence)
 shared.MAX_CAMPS = {default = 3, min = 1, max = 10}           -- a corporation's standing camps, its headquarters counted
 shared.ARRIVE_EVO = {default = 0.25, min = 0, max = 0.95}     -- the wild evolution Synthexis comes at (farm.lua)

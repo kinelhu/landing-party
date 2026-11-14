@@ -21,8 +21,14 @@ local function lines(p)
   local out = {}
   out[#out + 1] = string.format("%s, %s; phase %s%s", s.active and "ON" or "off", director.personality(), s.phase or "-",
     s.phase_till and (" (" .. mmss(s.phase_till - tick) .. " left)") or "")
-  out[#out + 1] = string.format("budget %.2f of %d (a spree costs %d); sprees %d, lulls %d%s", s.budget or 0,
-    director.tune("cap"), director.tune("spree_cost"), s.sprees or 0, s.lulls or 0, s.held_for and (", held: " .. s.held_for) or "")
+  out[#out + 1] = string.format("budget %.2f of %d; next beat %s; sprees %d, surges %d, focus strikes %d, lulls %d%s", s.budget or 0,
+    director.tune("cap"), tostring(s.next_beat or "-"), s.sprees or 0, s.surges or 0, s.focuses or 0, s.lulls or 0,
+    s.held_for and (", held: " .. s.held_for) or "")
+  local i, fo = s.intensity, s.focus
+  out[#out + 1] = string.format("intensity %s; focus %s",
+    (i and tick < i.till) and string.format("+%d, %s left", i.add, mmss(i.till - tick)) or "-",
+    (fo and tick < fo.till) and string.format("%.0f,%.0f (x%g within %d), %s left", fo.pos[1], fo.pos[2], fo.weight, fo.radius,
+      mmss(fo.till - tick)) or "-")
   local r = s.read
   out[#out + 1] = r and string.format("era %d, factory worth %.0f, guns %d, lost %.0f in 30 min%s%s", r.era or 0, r.worth or 0,
     r.guns or 0, r.lost or 0, r.hurt and ", HURT (threats held)" or "", r.falling and ", guns falling (fill halved)" or "")
@@ -48,7 +54,7 @@ local function build(p)
   body.style.vertical_spacing = 2
   local row = f.add{type = "flow", name = "lp_dir_row1", direction = "horizontal"}
   for _, b in ipairs({{"on", "Force on"}, {"off", "Force off"}, {"auto", "As setting"}, {"lull", "Lull now"},
-    {"fill", "Fill budget"}, {"empty", "Empty budget"}, {"end", "End beat"}}) do
+    {"surge", "Surge now"}, {"focus", "Focus strike"}, {"fill", "Fill budget"}, {"empty", "Empty budget"}, {"end", "End beat"}}) do
     row.add{type = "button", name = "lp_dir_" .. b[1], caption = b[2], tags = {lp_dir = b[1]}}
   end
   local row2 = f.add{type = "flow", name = "lp_dir_row2", direction = "horizontal"}

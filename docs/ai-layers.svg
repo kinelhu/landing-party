@@ -64,8 +64,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M771.88,-235.5C771.88,-235.5 620.12,-235.5 620.12,-235.5 614.12,-235.5 608.12,-229.5 608.12,-223.5 608.12,-223.5 608.12,-203.5 608.12,-203.5 608.12,-197.5 614.12,-191.5 620.12,-191.5 620.12,-191.5 771.88,-191.5 771.88,-191.5 777.88,-191.5 783.88,-197.5 783.88,-203.5 783.88,-203.5 783.88,-223.5 783.88,-223.5 783.88,-229.5 777.88,-235.5 771.88,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="696" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="696" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">22 modules, 9575 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="696" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">army 1055, ops 2298, siege 2135</text>
+<text xml:space="preserve" text-anchor="middle" x="696" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">22 modules, 9588 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="696" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">army 1055, ops 2311, siege 2135</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
 <g id="edge16" class="edge">
@@ -79,14 +79,14 @@
 <title>The director (above every faction)</title>
 <path fill="#eef2f7" stroke="black" d="M315.62,-834C315.62,-834 162.38,-834 162.38,-834 156.38,-834 150.38,-828 150.38,-822 150.38,-822 150.38,-810 150.38,-810 150.38,-804 156.38,-798 162.38,-798 162.38,-798 315.62,-798 315.62,-798 321.62,-798 327.62,-804 327.62,-810 327.62,-810 327.62,-822 327.62,-822 327.62,-828 321.62,-834 315.62,-834"/>
 <text xml:space="preserve" text-anchor="middle" x="239" y="-817.55" font-family="Helvetica,sans-Serif" font-size="11.00">The director (above every faction)</text>
-<text xml:space="preserve" text-anchor="middle" x="239" y="-805.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 378 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="239" y="-805.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 518 lines</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Seams (leaves) -->
 <g id="edge31" class="edge">
 <title>The director (above every faction)&#45;&gt;Seams (leaves)</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.2" d="M328.12,-804.03C393.25,-795.87 483.68,-784.25 563,-773 652.9,-760.25 756.1,-744.14 824.14,-733.3"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.2" points="824.47,-736.8 833.8,-731.76 823.37,-729.88 824.47,-736.8"/>
-<text xml:space="preserve" text-anchor="middle" x="630.01" y="-764.45" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
+<path fill="none" stroke="#8899aa" stroke-width="1.5" d="M328.12,-804.03C393.25,-795.87 483.68,-784.25 563,-773 652.72,-760.28 755.68,-744.2 823.72,-733.37"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.5" points="824.02,-736.87 833.35,-731.84 822.92,-729.95 824.02,-736.87"/>
+<text xml:space="preserve" text-anchor="middle" x="630.01" y="-764.45" font-family="Helvetica,sans-Serif" font-size="9.00">2</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Perception and attempts (any attacker) -->
 <g id="edge30" class="edge">
@@ -277,7 +277,7 @@
 <title>Heists (Grubstake)</title>
 <path fill="#eef2f7" stroke="black" d="M1442.12,-834C1442.12,-834 1345.88,-834 1345.88,-834 1339.88,-834 1333.88,-828 1333.88,-822 1333.88,-822 1333.88,-810 1333.88,-810 1333.88,-804 1339.88,-798 1345.88,-798 1345.88,-798 1442.12,-798 1442.12,-798 1448.12,-798 1454.12,-804 1454.12,-810 1454.12,-810 1454.12,-822 1454.12,-822 1454.12,-828 1448.12,-834 1442.12,-834"/>
 <text xml:space="preserve" text-anchor="middle" x="1394" y="-817.55" font-family="Helvetica,sans-Serif" font-size="11.00">Heists (Grubstake)</text>
-<text xml:space="preserve" text-anchor="middle" x="1394" y="-805.55" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1600 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="1394" y="-805.55" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1607 lines</text>
 </g>
 <!-- Heists (Grubstake)&#45;&gt;Seams (leaves) -->
 <g id="edge14" class="edge">

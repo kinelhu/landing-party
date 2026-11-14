@@ -17,7 +17,7 @@ document still says Serenity where it records history.
 | Area | State | Tested by (headless scenario) |
 |---|---|---|
 | Arrival on first launch, repeated landings, sites apart | built | `faction` |
-| Director (a storyteller above the corporations: it paces every camp's operations on the player, sprees and lulls, then waves; budget and pacing; the user, 2026-11-13: "think rimworld storyteller") | step 1 built 0.2.372 (state, budget, readings, tempo and lull, the floor; steady and off), uncalibrated; steps 2 to 5 proposed (`docs/director.md`) | `director` (and off, hurt) |
+| Director (a storyteller above the corporations: it paces every camp's operations on the player, sprees and lulls, then waves; budget and pacing; the user, 2026-11-13: "think rimworld storyteller") | step 1 built 0.2.372 (state, budget, readings, tempo and lull, the floor; steady and off); step 2 0.2.377 (intensity, focus, surge, focus strike, drawn beats; its calls listed for review, `docs/director.md` 9b); calibration running; steps 3 and 4 overnight, 5 the user's | `director` (and off, hurt, cmd, wave, focus) |
 | Opening: signs (radar), survey party (oil), arrival (launch or blue science) | built | `phases` (two) |
 | Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
 | Levers (settings; the user, 2026-11-08: "expose some levers... That's how vanilla does it with biters"): a difficulty preset times every faction's strength, aggression and income; each faction's own on top; when each arrives; its most camps; the time between landings; revenge landings; Kessler-Hayashi's orbital strikes, Grubstake's theft, Synthexis's most cultures, largest wave and learning | built 0.2.223, uncalibrated (after the playtest) | `levers`, `phases` (grubprod, interval, camps), `farm` (late, smallwaves, unlearned, seedcap), `grudge` norevenge, `orbital` nostrike, `skim`/`strip` notheft |
@@ -7341,6 +7341,28 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The director, step 2** (0.2.377; overnight, the user agreed; its calls listed in docs/director.md 9b for review).
+  Intensity (the cap on operations against a player at once, ops' budget, a surge's surge_add higher) and focus (a
+  target near a focus point focus_weight times as relevant to every camp, ops' relevance), both read from the
+  director's storage and lapsing at their till as tempo does. Two beats: a surge (every corporation at war, Synthexis
+  apart: tempo, intensity, 15 minutes) and a focus strike (a surge with a focus on the place the camps know best). A
+  beat drawn as it fills (rng in storage: spree 0.5, surge 0.3, focus 0.2; a surge or a focus only with two camps at
+  war), then a lull. Notices factual (director-surge, director-focus). Panel: next beat, intensity, focus; Surge and
+  Focus strike buttons. Scenario director LP_MIX=focus (two Kessler-Hayashi camps, a focus strike forced on the known
+  target farthest from their homes): the cap 1 then 2, the pace halved, both camps' first operations at the focus;
+  LP_MIX=focusoff (its weight 1), one of two (seen failing). Two traps on the way: a focus weighs only what a camp knows
+  (forced on an outpost neither had seen, it drew nobody), and its radius covers a sector (at 64, a focus on one of the
+  test's outposts weighed a neighbour 40 off as much; the test's radius 24). The ops log now keeps each operation's
+  target position, ops stats its in-flight target.
+- **Fliers' legs measured, the prowl's gap read** (0.2.377). Scenario airpath (a probe: request_path with a scavenger's
+  box and mask over open ground, eight bearings): every way found to 100 tiles, 7 of 8 at 120, none from 140. So
+  shared.AIR_LEG 100 (was 48 by hand) and a trip that short not cut at all; with no legs Grubstake's eight came in 1.5
+  s apart, with legs of 48 3 s. Its arrivals measured 1.5 to 3 s from run to run since, with changes elsewhere: the
+  check's bound 3.5 s, which tells a muster (33 s without) and the formation (6 s without) apart and does not tell 1.5
+  from 3. The prowl's points path_gap apart: its buggy's speed (the prototype's) over STEP, the distance between two
+  looks (24 tiles; 16 by hand at 0.2.375). Strip claim's camp given its eight guards as its parts are: its field stood
+  at 2 or 3 of the strip's 4 for half an hour once, its game moved by the prowl's gap; the claim is the subject.
+  Calibration hooks: LP_OFF=director (its own off) and the contact scenario's director line every five minutes.
 - **A theft that took something succeeded** (0.2.376). A strip mining razes nothing, and its ledger entry (tactics.record)
   counted an attempt as in only if it razed: the strip that brought 267 ore home went down as a failure at that patch,
   and the ladder set the next strip there aside without a word (a raid's hold is traced; a strip's was not). So no camp

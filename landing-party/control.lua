@@ -1218,6 +1218,8 @@ remote.add_interface("landing-party", {
   director = function() return director.state() end,
   -- Tests and the debug panel: director.cmd (on, off, auto, spree [corp], lull, fill, empty, end).
   director_cmd = function(action, arg) return director.cmd(action, arg) end,
+  -- Tests: the cap on operations against a player at once, as ops reads it (the director's surge raises it).
+  ops_budget = function(owner) return ops.budget(owner or "player") end,
   -- Tests: a span as a corporation's pace gives it now (tune.sooner, the director's tempo in it).
   sooner = function(corp, ticks) return tune.sooner(corp, ticks) end,
   notice_counts = function() return storage.notice_counts or {told = 0, held = 0} end,

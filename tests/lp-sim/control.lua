@@ -188,6 +188,44 @@ scenarios.probe = function()
   end)
 end
 
+-- Engine probe (0.2.377): how far the engine's pathfinder finds a way for a flier (a scavenger's box and mask) over open
+-- ground, eight bearings from spawn at 60 to 220 tiles; its legs (shared.air_legs) are cut to that, the shortest that
+-- failed less a margin. (A crew drone's 130-tile order dropped to wander, cordon, 0.2.374: both halves were found.)
+scenarios.airpath = function()
+  S.paths, S.asked = {}, {}
+  schedule(300, function()
+    local proto = prototypes.entity["lp-scavenger"]
+    for d = 60, 220, 20 do
+      for i = 0, 7 do
+        local a = 2 * math.pi * i / 8
+        local id = surface().request_path{bounding_box = proto.collision_box, collision_mask = proto.collision_mask,
+          start = {0, 0}, goal = {d * math.cos(a), d * math.sin(a)}, force = "player", radius = 4,
+          pathfind_flags = {cache = false}}
+        S.asked[id] = {d = d, i = i}
+      end
+    end
+  end)
+  schedule(30 * 60, function()
+    local by = {}
+    for id, q in pairs(S.asked) do
+      local r = S.paths[id]
+      by[q.d] = by[q.d] or {found = 0, none = 0, waiting = 0, n = 0}
+      local t = by[q.d]
+      if r == nil then t.waiting = t.waiting + 1 elseif r.found then t.found = t.found + 1; t.n = math.max(t.n, r.n) else t.none = t.none + 1 end
+    end
+    for d = 60, 220, 20 do
+      local t = by[d] or {}
+      info(string.format("airpath %d tiles: %s found (up to %s waypoints), %s none, %s unanswered", d, tostring(t.found), tostring(t.n),
+        tostring(t.none), tostring(t.waiting)))
+    end
+  end)
+end
+script.on_event(defines.events.on_script_path_request_finished, function(e)
+  if S.asked and S.asked[e.id] then
+    S.paths[e.id] = {found = e.path ~= nil, n = e.path and #e.path or 0, retry = e.try_again_later}
+  end
+end)
+
 -- Veterancy spike (the user, 2026-11-10: "Veterancy system for individual units à la C&C"): does a unit's quality raise
 -- its health, its damage, and can a live unit be raised a quality in place (order_upgrade, apply_upgrade) keeping its
 -- entity, its unit number and its command? A trooper at each quality, its max health; two troopers, normal and
@@ -3116,6 +3154,22 @@ end
 -- rebuild from a storage of spares (nine roboports cover the base, not the outpost); "walled" the same with a
 -- wall and laser perimeter round the base.
 scenarios.contact = function()
+  -- The director's state every five minutes (its calibration, 0.2.377: steady against LP_OFF=director, five seeds): its
+  -- phase, budget, adaptation, readings and beats, and the operations launched against the player so far.
+  for t = 5 * 3600, params.minutes * 3600 - 120, 5 * 3600 do
+    schedule(t, function()
+      local d = lp("director") or {}
+      local r = d.read or {}
+      local launched = 0
+      for _, id in ipairs({1, 2, 3, 4, 5, 6}) do
+        local st = lp("stats", id)
+        if st and st.ops then launched = launched + (st.ops.launched or 0) end
+      end
+      info(string.format("director at %d min: %s %s, budget %.2f, adapt %.2f, era %s, worth %.0f, guns %s, lost %.0f%s, sprees %d, lulls %d, ops %d",
+        math.floor(t / 3600), d.active and "on" or "off", tostring(d.phase), d.budget or 0, d.adapt or 1, tostring(r.era),
+        r.worth or 0, tostring(r.guns), r.lost or 0, r.hurt and " HURT" or "", d.sprees or 0, d.lulls or 0, launched))
+    end)
+  end
   -- Era bases (docs/reviews/2026-10-13-campaign-review.md section 6): "spread" (era 2: three outposts, robots),
   -- "late" (era 4: walled, robots, lasers, an artillery turret with shells at the centre).
   -- "campaign" (docs/reviews/2026-10-14-next-slice-consult.md): the spread base and a reactive player that answers,
@@ -4908,6 +4962,10 @@ scenarios.strip = function()
   schedule(120, function()
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     if S.g then lp("debug_depot", S.g, 3000) end
+    -- (The claim run: its guards given as its parts are, eight infantry. Its field stood at 2 or 3 of the strip's 4 for
+    -- the first half hour once, its first strip at minute 30 and the second too late, when the prowl's gap changed its
+    -- game, 0.2.377: the claim's outcome is the subject, not how soon a camp has four spare.)
+    if S.g and params.mix == "claim" then lp("debug_units", S.g, "lp-infantry", 8) end
     -- The claim run isolates the camp: Serenity and the biters at peace with Grubstake (a second camp's guards
     -- were all killed by them, so nothing was left unanswered).
     if params.mix == "claim" then
@@ -7354,6 +7412,76 @@ scenarios.director = function()
         S.lulls[#S.lulls + 1] = game.tick
       end
     end)
+  end
+  -- LP_MIX=focus (step 2, 0.2.377): two of Kessler-Hayashi's camps, its fill nought (no beat of its own); at minute 8 a
+  -- focus strike forced on the farthest outpost (one the camps would not go for first). The surge raises the cap on
+  -- operations against the player by one and halves the pace; each camp's first operation against the player after it
+  -- goes at the focus. LP_MIX=focusoff: the same, the focus weighing 1 (the check seen failing).
+  local focus, focusoff = params.mix == "focus", params.mix == "focusoff"
+  if focus or focusoff then
+    schedule(61, function()
+      -- (Its radius 24 here: the test's outposts stand within 65 of each other, and at the default 64 a focus on one
+      -- weighed its neighbour, 40 off, as much; both camps went there.)
+      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, loss_share = 100, surge_minutes = 14,
+        focus_radius = 24, focus_weight = focusoff and 1 or nil}})
+    end)
+    schedule(90, function() S.g2 = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"}) end)
+    schedule(8 * 3600, function()
+      S.focus_at = game.tick
+      S.cap_before = lp("ops_budget", "player")
+      -- (A target the camps know, the one farthest from their homes: a focus weighs only what a camp knows, and one on
+      -- an outpost neither had seen drew nobody; nearer ones are what they go for unfocused.)
+      local best, bd
+      for _, id in ipairs(lp("bases") or {}) do
+        local st = lp("stats", id)
+        local o = st and st.origin
+        for _, pt in ipairs(st and st.ops and st.ops.player_targets or {}) do
+          local x, y = pt:match("@(%-?[%d%.]+),(%-?[%d%.]+)")
+          x, y = tonumber(x), tonumber(y)
+          if x and o then
+            local d = 0
+            for _, id2 in ipairs(lp("bases") or {}) do
+              local o2 = lp("stats", id2).origin
+              d = d + math.sqrt((x - o2.x) ^ 2 + (y - o2.y) ^ 2)
+            end
+            if not bd or d > bd then best, bd = {x, y}, d end
+          end
+        end
+      end
+      S.focus_pos = best or S.outposts[2]
+      S.said = lp("director_cmd", "focus", S.focus_pos)
+      S.cap_during = lp("ops_budget", "player")
+      S.pace = lp("sooner", "serenity", 3600)
+      S.first = {}
+    end)
+    for t = 8 * 3600 + 30, END - 120, 30 do
+      schedule(t, function()
+        for _, id in ipairs(lp("bases") or {}) do
+          local st = lp("stats", id)
+          local o = st and st.ops
+          if o and not S.first[id] and o.op_started and o.op_started >= S.focus_at and o.op_owner == "player" and o.op_pos then
+            local dx, dy = o.op_pos[1] - S.focus_pos[1], o.op_pos[2] - S.focus_pos[2]
+            S.first[id] = {pos = o.op_pos, d = math.sqrt(dx * dx + dy * dy), at = (o.op_started - S.focus_at) / 60}
+          end
+        end
+      end)
+    end
+    schedule(END - 60, function()
+      local n, near = 0, 0
+      for _, f in pairs(S.first or {}) do
+        n = n + 1
+        if f.d <= 24 then near = near + 1 end
+      end
+      info(string.format("director %s: %s at %s; cap %s then %s, pace %s; firsts %s; outposts %s", params.mix, tostring(S.said),
+        serpent.line(S.focus_pos), tostring(S.cap_before), tostring(S.cap_during), tostring(S.pace), serpent.line(S.first),
+        serpent.line(S.outposts)))
+      check("director: a surge raises the cap on operations at once and halves the pace",
+        S.cap_before and S.cap_during == S.cap_before + 1 and S.pace == 1800,
+        string.format("cap %s then %s, pace %s", tostring(S.cap_before), tostring(S.cap_during), tostring(S.pace)))
+      check("director: a focus strike draws the camps' next operations to its point", n >= 2 and near == n,
+        string.format("%d of %d camps' first operations at it (within 24)", near, n))
+    end)
+    return
   end
   schedule(END - 60, function()
     local d = lp("director") or {}
@@ -17101,8 +17229,10 @@ scenarios.airraid = function()
       for n, t in pairs(S.arrive or {}) do ts[#ts + 1] = string.format("%s %.1f", n, (t - (first or t)) / 60) end
       table.sort(ts)
       info("airraid: arrivals (unit, s after the first; the radar taken at " .. tostring(S.razed_at) .. ") " .. table.concat(ts, ", "))
-      -- (Since its way went in legs, 0.2.374, Grubstake's eight 6 s, all sent to the same points; in formation, 3 s, the
-      -- bound raised to 3.5: the rest is each flier's wait on a path at each leg, open.)
+      -- (Since its way went in legs, 0.2.374, Grubstake's eight 6 s, all sent to the same points; in formation, 3 s; legs
+      -- cut only past what the pathfinder finds, 100 tiles, 0.2.377: 1.5 to 3 s from run to run with changes elsewhere,
+      -- 1.5 with no legs at all. The bound at 3.5: it tells a muster from none, 33 s, and the shared points, 6 s; it does
+      -- not tell 1.5 from 3.)
       check("airraid: its fliers came in together", k >= 2 and last - first <= 3.5 * 60,
         string.format("%d in, %.1f s from the first to the last", k, k > 0 and (last - first) / 60 or -1))
       -- Air theft (the user, 2026-11-10: "They could perhaps do some air theft too?"): a thief's fliers land and take,
@@ -18833,6 +18963,8 @@ script.on_init(function()
     local t = {}
     for k in params.off:gmatch("[%a_]+") do t[k .. "_off"] = true end
     lp("debug_tune", t)
+    -- (LP_OFF=director: the director off by its own hand, as the setting's off would; the calibration's other half.)
+    if t.director_off then lp("director_cmd", "off") end
   end
   -- Levers from the mix, before any early return (a visit's levers were never set; sweeps: LP_MIX=provoked-S2-A0.5): S<x> every corporation's strength, A<x> its aggression.
   local mix = params.mix or ""
