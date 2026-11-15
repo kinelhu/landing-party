@@ -84,7 +84,9 @@ events+=("wave|0|0" "land serenity 400|0|0" "raid|0|0" "director strike|0|0" "di
 if [ -z "${LP_NOCLIENT:-}" ]; then
   "$FACTORIO" --config "$C/config/config.ini" --mp-connect "127.0.0.1:$PORT" --disable-audio > "$OUT/client.log" 2>&1 &
   cpid=$!
-  for _ in $(seq 1 240); do grep -qE "joined the game|Player .* joined" "$OUT/server.log" && break; kill -0 $cpid 2>/dev/null || break; sleep 1; done
+  # (LP_JOIN seconds to join, default 600: on nw at minute 45 with the director's beats out, the client caught up 82,000
+  # ticks in 135 s and the old 240 s ran out as it was about to start, 2026-11-15.)
+  for _ in $(seq 1 "${LP_JOIN:-600}"); do grep -qE "joined the game|Player .* joined" "$OUT/server.log" && break; kill -0 $cpid 2>/dev/null || break; sleep 1; done
   grep -qE "joined the game|Player .* joined" "$OUT/server.log" || { echo "MP FAILED: the client never joined"; tail -20 "$OUT/client.log"; exit 1; }
   echo "client joined at tick $(tick)"
   end=$(( $(date +%s) + MINUTES * 60 )); i=0

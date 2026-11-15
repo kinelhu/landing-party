@@ -256,7 +256,8 @@ function ledger.collect(b, L)
   end
   b.collect = {owner = L.owner, at = at, since = game.tick, till = game.tick + COLLECT_TICKS}
   b.next_op = math.min(b.next_op or 0, game.tick + COLLECT_SOON)
-  L.collections = L.collections + 1
+  -- (Or nought: a ledger opened before 0.2.325 has none; the multiplayer check's save of 2026-11-06 stopped here.)
+  L.collections = (L.collections or 0) + 1
   b.collections = (b.collections or 0) + 1
   local f = game.forces[L.owner]
   if f then shared.notice(f, {"lp.invoice-overdue", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", at[1], at[2],
