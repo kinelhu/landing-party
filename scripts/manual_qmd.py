@@ -210,6 +210,28 @@ def write(rp):
     if len(hq_levels) != 1:
         missed.append(f"the corporations' headquarters levels differ ({hq_levels}): the prose says one")
     tune = dict(re.findall(r'\[?"?([a-z-]+)"?\]? = ([\d.]+)', grab(shared_src, r"^shared\.TUNE = \{([^}]*)\}", "TUNE") or ""))
+    def director_vars():
+        D = rp.data.get("director") or {}
+        def need(k):
+            if k not in D:
+                missed.append(f"shared.DIRECTOR: no {k}")
+                return 0
+            return D[k]
+        pct = lambda k: fmt(round(need(k) * 100))
+        out = {k: fmt(need(k)) for k in ("grace", "warn_minutes", "climax_warn", "strike_minutes", "home_minutes",
+               "strike_land", "strike_guard", "power_hold", "grudge_kills", "grudge_minutes", "grudge_cluster",
+               "points_max", "jam_radius", "jam_on", "jam_off", "jam_minutes", "blackout_radius", "blackout_minutes",
+               "bounty_minutes", "salvage_claim", "salvage_expire", "salvage_distance", "contract_minutes",
+               "rotation_minutes", "rotation_max", "lull_minutes", "spree_minutes", "surge_minutes", "supply_wait",
+               "expedition_minutes", "fought_minutes")}
+        out["wave_word"] = worded("count", need("wave_size"), "DIRECTOR.wave_size")
+        out["strike_break_pct"] = pct("strike_break")
+        out["joint_share_pct"] = pct("joint_share")
+        out["datacore_word"] = worded("share", need("datacore_chance"), "DIRECTOR.datacore_chance")
+        out["climax_times"] = worded("times", need("climax_points"), "DIRECTOR.climax_points")
+        out["gentle_share"] = worded("share", (need("personality") or {}).get("gentle", 0), "DIRECTOR.personality.gentle")
+        return out
+
     V = {
         "arrival": {
             "signs_tiles": fmt(num(phases_src, r"^local SIGNS_DISTANCE = (\d+)", "SIGNS_DISTANCE")),
@@ -236,6 +258,7 @@ def write(rp):
             "withdraw_min": fmt(minutes(faction_src, "WITHDRAW", "WITHDRAW")),
             "vacancy_min": fmt(minutes(faction_src, "VACANCY_HASTE", "VACANCY_HASTE")),
             "armed_era": fmt(num(shared_src, r"armed_era = (\d+)", "armed_era")),
+            "era_share_pct": fmt(round(rp.ERA_SHARE * 100)),
             "armed_level": fmt(num(shared_src, r"armed_level = (\d+)", "armed_level")),
             "floor_min": fmt(minutes(perim_src, "FLOOR_TICKS", "FLOOR_TICKS")),
             "research_every_min": fmt(minutes(rd_src, "CHOICE_TICKS", "CHOICE_TICKS")),
@@ -372,6 +395,8 @@ def write(rp):
                  if sec in ("entity-description", "item-description", "technology-description") and k.startswith("lp-")
                  and "__" not in v},
         "settings": {k.replace("-", "_"): fmt(float(x)) for k, x in tune.items()},
+        # The director's priors (shared.DIRECTOR), for the Headquarters chapter.
+        "director": director_vars(),
         "mod": {"version": info.get("version", "?"), "factorio": info.get("factorio_version", "?"),
                 "needs": ", ".join(re.split(r"\s", x.strip())[0] for x in info.get("dependencies", []) if not x.startswith(("?", "!", "(?)")))},
     }
@@ -516,10 +541,12 @@ def write(rp):
 
     # ---- eras ----
     max_lv = int(float(V["arrival"]["weapon_levels"]))
-    E = ["| Your era | Technologies you have researched | Corporation operations against you at once | Corporation weapon damage levels |",
-         "|:--|--:|--:|--:|", f"| 0 | under {rp.ERA_TECHS[0]} | 1 | up to {min(max_lv, 1)} |"]
-    for i, k in enumerate(rp.ERA_TECHS, 1):
-        E.append(f"| {i} | {k} | {1 + i} | up to {min(max_lv, i + 1)} |")
+    # (Science-pack tiers since 0.2.384, ops.era: unbounded, so the rows stop at six with "and so on" in the prose.)
+    E = ["| Your era | Tiers passed | Corporation operations against you at once | Corporation weapon damage levels |",
+         "|:--|:--|--:|--:|", f"| 0 | none | 1 | up to {min(max_lv, 1)} |"]
+    for i in range(1, 7):
+        tiers = "1" if i == 1 else "1 and 2" if i == 2 else f"1 to {i}"
+        E.append(f"| {i} | {tiers} | {1 + i} | up to {min(max_lv, i + 1)} |")
     out("eras.qmd", E)
 
     # ---- corporation levels ----

@@ -6,6 +6,7 @@
 | Difficulty | Normal | Easy (×0.5), Normal, Hard (×1.5), Very hard (×2) | Scales every faction's strength, aggression and income. Each faction's own settings apply on top. |
 | Time between landings (minutes) | 90 | 15 to 600 | Time between a faction's landings once the first has come. |
 | Revenge landings | On | On, Off | A faction whose base you destroy sends its next landing with a larger escort. |
+| Director | Steady | Steady, Gentle, Chaotic, Off | Paces all the factions' attacks: one at a time steps up, then all go quiet. From 30 minutes after the first landing. |
 | Grubstake | On | On, Off | Grubstake lands in this game. Turned off, it never lands again; its bases already standing stay. |
 | Grubstake: arrives | On the first chemical science pack | On researching oil processing, On the first chemical science pack, On the first production science pack, On the first utility science pack | What brings Grubstake's first landing. |
 | Grubstake: most bases | 3 | 1 to 10 | Most Grubstake bases standing at once, its headquarters counted. |

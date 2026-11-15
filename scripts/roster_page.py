@@ -40,7 +40,7 @@ local function dump(v)
   return "null"
 end
 local out = {corps = {}, unlock = s.UNLOCK, units = s.units, lab_icon = s.LAB_ICON, breeds = s.BREEDS,
-  biotech = {name = s.BIOTECH.name, color = s.BIOTECH.color, mind = s.BIOTECH.mind}}
+  biotech = {name = s.BIOTECH.name, color = s.BIOTECH.color, mind = s.BIOTECH.mind}, director = s.DIRECTOR}
 for corp, c in pairs(s.CORPS) do
   out.corps[corp] = {name = c.name, tree = c.tree, mix = c.mix, labs = c.labs, tint = c.tint, bases = c.bases, names = c.names,
     orbital_drop = c.orbital_drop}
@@ -49,7 +49,9 @@ print(dump(out))
 '''
 data = json.loads(subprocess.run(["luajit", "-e", DUMP_LUA], cwd=MOD, capture_output=True, text=True, check=True).stdout)
 ops_src = open(os.path.join(MOD, "scripts", "ops.lua")).read()
-ERA_TECHS = [int(x) for x in re.search(r"ERA_TECHS = \{([^}]*)\}", ops_src).group(1).split(",")]
+# A player's era (ops.era, since 0.2.384): the tiers of science passed in a row, a tier the techs taking that many kinds
+# of pack, passed at ERA_SHARE of its finite techs researched (a count of techs against 25, 60, 100 and 150 before).
+ERA_SHARE = float(re.search(r"local ERA_SHARE = ([0-9.]+)", ops_src).group(1))
 rd_src = open(os.path.join(MOD, "scripts", "rd.lua")).read()
 WINDOW_MIN = int(re.search(r"WINDOW_TICKS = (\d+) \* 3600", rd_src).group(1))
 
@@ -248,7 +250,7 @@ def tree_svg(corp):
         y = HEAD + e * (NH + GY)
         out.append(f'<rect x="0" y="{y - GY / 2}" width="{W}" height="{NH + GY}" class="band{e % 2}"/>')
         label = "From landing" if e == 0 else f"Era {e}"
-        sub = "" if e == 0 else f"you: {ERA_TECHS[e - 1]} techs"
+        sub = "" if e == 0 else f"you: {e}-pack techs"
         out.append(f'<text x="12" y="{y + 22}" class="era">{label}</text>')
         if sub:
             out.append(f'<text x="12" y="{y + 40}" class="erasub">{sub}</text>')
@@ -654,7 +656,7 @@ footer {{ margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family:
   branch.</p>
   <nav><a href="#serenity">Kessler-Hayashi</a><a href="#grubstake">Grubstake Inc.</a><a href="#biotech">Synthexis</a><a href="#yours">Your army</a><a href="#tech">Your technologies</a><a href="#both">Shared</a></nav>
   <div class="rules">
-    <div><b>Their research follows yours</b>A corporation researches nothing above your era: era 1 at {ERA_TECHS[0]} technologies researched, 2 at {ERA_TECHS[1]}, 3 at {ERA_TECHS[2]}, 4 at {ERA_TECHS[3]}.</div>
+    <div><b>Their research follows yours</b>A corporation researches nothing above your era: era 1 once {round(ERA_SHARE * 100)}% of the technologies taking one kind of science pack are researched, era 2 once as many of those taking two kinds are too, and so on.</div>
     <div><b>It answers your attacks</b>It researches the item whose condition your attacks met most in the last {WINDOW_MIN} minutes. When none was met, it upgrades its weapon damage.</div>
     <div><b>Kessler-Hayashi's labs</b>Each Kessler-Hayashi branch advances, and its units are built, only while that branch's lab stands in its camp.</div>
   </div>

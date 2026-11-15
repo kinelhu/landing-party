@@ -23,6 +23,9 @@ See [Synthexis](synthexis.qmd).
 
 The corporations also fight each other. See [Rivals](rivals.qmd).
 
+Above the camps, each corporation's headquarters sets the pace of its war on you and sends down strike forces of its
+own. See [Headquarters](headquarters.qmd).
+
 ## What you get
 
 Faction bases can be destroyed. Their wreckage holds parts you cannot make yourself. Crafting those parts unlocks
@@ -34,8 +37,8 @@ orbital cannons on a platform over Nauvis. [Spoils](spoils.qmd) lists what drops
 
 - Landing Party needs Factorio {{< var mod.factorio >}} with Space Age. This manual describes version
   {{< var mod.version >}}.
-- Chat notices are off by default. A faction's first landing and a destroyed faction base are always announced. Turn
-  on **Chat notices** in the map settings to hear about everything else. See [Mod settings](reference.qmd#sec-settings).
+- Chat notices are off by default. A faction's first landing, a destroyed faction base and a strike force landing on
+  you are always announced. Turn on **Chat notices** in the map settings to hear about everything else. See [Mod settings](reference.qmd#sec-settings).
 - The map settings have a difficulty for all three factions, and settings for each faction under it. A faction can be
   turned off or made to arrive at another point. Its aggression and income range from ×{{< var settings.very_low >}}
   to ×{{< var settings.very_high >}}, as does each corporation's strength. See

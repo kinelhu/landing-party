@@ -20,8 +20,8 @@
   hurt squad back before it is lost; its card in the selection panel shows how much health it has left.
 - **Put a threat scanner at each outpost.** Wired to a programmable speaker or a lamp, it tells you a raid has come
   before the turrets start firing.
-- **Turn on Chat notices** in the map settings if you want to hear about raids and sieges as they start. Only first
-  landings and destroyed bases are announced without it.
+- **Turn on Chat notices** in the map settings if you want to hear about raids and sieges as they start. Without it,
+  only first landings, destroyed bases and strike forces are announced.
 
 ## Against Grubstake
 
@@ -71,6 +71,22 @@
 - **Lead with tanks against lightning.** Each hit from a lightning tank or a shock trooper adds to a unit's charge, and
   a charged unit can be stunned. Tanks take little of the charge, and the lightning jumps less between units kept
   apart.
+
+## Against headquarters
+
+- **Cover your base with radar.** A strike force seen coming is told {{< var director.warn_minutes >}} minutes ahead,
+  with the place its pods will land. Without radar over that spot you hear of it only when it is already down.
+- **Keep a squad ready to move.** Turrets rarely cover where the pods land. An army sent to the landing spot as soon as
+  the warning comes is waiting when the pods open, and that is what saves the target.
+- **Hunt the survivors.** A broken strike force walks home without fighting, and the ones who reach their camp join its
+  garrison. Catch them on the road.
+- **Give your power a second source.** A strike at your power is told ahead and holds every other attack while it is
+  out. A few accumulators or a second plant keep your turrets firing if it gets through.
+- **Destroy masts early.** A launch jammer or a blackout mast works only while it stands.
+- **Hit a camp during its contract or rotation.** A camp on an export contract is not paid if you attack it, and a
+  camp rotating its garrison has only a few guards left until the pods come back.
+- **Empty crashed shuttles.** Take the wreck before its guards' corporation claims it: the equipment inside may be of
+  high quality, and a data core shows you where the next strike force is headed.
 
 ## Against Synthexis
 

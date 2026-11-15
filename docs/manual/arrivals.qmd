@@ -82,8 +82,9 @@ base falls every {{< var arrival.withdraw_min >}} minutes until none is left. Th
 
 ## The threat curve
 
-The corporations measure your progress by how many technologies you have researched. This manual calls the steps
-*eras*:
+The corporations measure your progress by the science you have mastered. A technology's tier is how many kinds of
+science pack it takes, and you pass a tier once you have researched {{< var arrival.era_share_pct >}}% of the
+technologies in it. Your *era* is the number of tiers you have passed in a row, from the first:
 
 {{< include _generated/eras.qmd >}}
 
