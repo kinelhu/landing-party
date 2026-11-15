@@ -8,7 +8,7 @@ digraph layers {
   "The director (above every faction)" [label="The director (above every faction)\n2 modules, 1340 lines\ndirector 1211", fillcolor="#f7dede"];
   "Corporation" [label="Corporation\n9 modules, 3194 lines\nfaction 1207", fillcolor="#f7dede"];
   "Settlement" [label="Settlement\n16 modules, 6498 lines\nlayout 1747", fillcolor="#f7dede"];
-  "Army and operations" [label="Army and operations\n22 modules, 9748 lines\narmy 1055, ops 2462, siege 2144", fillcolor="#f7dede"];
+  "Army and operations" [label="Army and operations\n22 modules, 9759 lines\narmy 1059, ops 2469, siege 2144", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1607 lines", fillcolor="#eef2f7"];
   "The biotech" [label="The biotech\n5 modules, 8369 lines\nherd 4543, farm 2521", fillcolor="#f7dede"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];

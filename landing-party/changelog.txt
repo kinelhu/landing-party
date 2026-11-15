@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.402
+Date: 2026-11-15
+  Bugfixes:
+    - During a lull, a corporation's units stranded far from home walk back without fighting through your base.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.401
 Date: 2026-11-15
   Bugfixes:

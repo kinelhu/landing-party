@@ -7341,6 +7341,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **A truce kept by the stranded** (0.2.402). 0.2.401 cut the held corporations' truce losses on railbase_end (224 to
+  148, 123 to 106, 252 to 194, 77 to 38 on seeds 1, 3, 4, 5) but left them, 400 to 500 tiles from any Grubstake camp:
+  units of its garrison there (role "other"). A returning unit not home in five minutes joins the garrison where it
+  stands (pool.tick), and the leash's walk home was by_damage, so in the player's base it fought its way out. Now the
+  recall walks a held camp's units beyond the leash home quietly too, and the leash itself uses distraction none while
+  the camp's corporation holds a truce. Scenario director recallfar: eight of the garrison 150 tiles out, the player's
+  guns on their way home: 8 razed without, none with (three, with the guns beside them, died before they fired and
+  showed nothing either way).
 - **A truce kept by those already going home** (0.2.401). 0.2.400 changed nothing on railbase_end (the same numbers to
   the building): the killers were units of operations over before the lull (role "returning" since), on their way
   home with by_damage. A lull's recall now reaches a held camp with units returning (b.recall set without an

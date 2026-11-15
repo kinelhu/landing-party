@@ -7654,6 +7654,50 @@ scenarios.director = function()
   -- held launches only; after railbase_end's climax the player was told of a hold and lost 398 buildings in it).
   -- LP_MIX=recallback: the same, a squad already on its way home from an operation over (b.returning) when the lull
   -- comes, guns on its way (0.2.400: by_damage, Grubstake's returning harriers razed 77 to 252 in railbase_end's truces).
+  -- LP_MIX=recallfar: eight of its garrison (the strongest) 150 tiles out toward the player, by the player's guns, when the lull comes
+  -- (0.2.402: a returning unit not home in five minutes joins the garrison where it stands, and the leash's by_damage
+  -- walk home fought the player's base; railbase_end's truces).
+  if params.mix == "recallfar" then
+    schedule(121, function() lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100}}) end)
+    schedule(10 * 3600, function()
+      local st = lp("stats", storage.id)
+      local o = st.origin
+      local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
+      local at = {o.x - o.x / len * 150, o.y - o.y / len * 150}
+      S.far = 0
+      info(string.format("recallfar: %d in the garrison, out at %.0f,%.0f", #(st.garrison_ids or {}), at[1], at[2]))
+      local ids = {}
+      for _, id in ipairs(st.garrison_ids or {}) do ids[id] = true end
+      local us = surface().find_entities_filtered{force = "lp-serenity", position = o, radius = 200, type = {"unit", "spider-unit"}}
+      table.sort(us, function(a, b) return a.max_health > b.max_health or a.max_health == b.max_health and a.unit_number < b.unit_number end)
+      for _, u in ipairs(us) do
+        if ids[u.unit_number] and u.commandable and S.far < 8 then
+          local q = surface().find_non_colliding_position(u.name, at, 20, 1)
+          local ok = q and u.teleport(q)
+          if not ok and S.far == 0 then info(string.format("recallfar: %s %s, at %s, teleport %s", u.name, u.type, serpent.line(q), tostring(ok))) end
+          if ok then S.far = S.far + 1; u.commandable.set_command{type = defines.command.stop, ticks_to_wait = 60} end
+        end
+      end
+      S.guns = 0
+      -- (On their way home, 30 toward their camp and 8 aside: beside them at first, the guns killed three before they
+      -- fired, and nothing was seen either way.)
+      local hx, hy = o.x / len, o.y / len
+      for k = -1, 1, 2 do
+        local p = surface().find_non_colliding_position("gun-turret", {at[1] + hx * 30 - hy * 8 * k, at[2] + hy * 30 + hx * 8 * k}, 10, 1)
+        local g = p and surface().create_entity{name = "gun-turret", position = p, force = "player"}
+        if g then g.insert{name = "firearm-magazine", count = 50}; S.guns = S.guns + 1 end
+      end
+      S.called = game.tick
+      lp("director_cmd", "lull")
+    end)
+    schedule(END - 60, function()
+      local d = lp("director") or {}
+      check("director: recallfar, its units out walk home through the truce razing nothing", S.far == 8 and S.guns == 2
+        and (d.truce_lost or 0) == 0, string.format("%s out, %s guns, %s lost to the held corporation in the truce",
+        tostring(S.far), tostring(S.guns), tostring(d.truce_lost)))
+    end)
+    return
+  end
   if params.mix == "recall" or params.mix == "recallback" then
     local back = params.mix == "recallback"
     schedule(121, function() lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100}}) end)

@@ -1045,7 +1045,7 @@ function director.start_lull(s, owner, tick, corps, base_minutes)
   for _, corp in ipairs(held) do set[corp] = true end
   local recalled = 0
   for _, b in pairs(storage.bases or {}) do
-    if set[b.corp] and not b.fallen and (b.op or (b.returning and #b.returning > 0)) then
+    if set[b.corp] and not b.fallen then
       b.recall = {owner = owner, at = tick}
       if b.op then recalled = recalled + 1 end
     end

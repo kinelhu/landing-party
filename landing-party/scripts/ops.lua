@@ -2212,9 +2212,16 @@ function ops.tick(b, tick, trace, army)
   -- Those already on their way home from an operation over before the lull walk on without answering fire (they had
   -- by_damage: Grubstake's harriers and scorchers coming back through the player's base razed 77 to 252 in
   -- railbase_end's truces, 0.2.400).
-  if b.recall and b.returning and #b.returning > 0 then
-    local n = ops.walk_home(b, b.returning, true)
-    if n > 0 then trace(b, string.format("%d on their way home walk on quietly: a truce on %s", n, b.recall.owner)) end
+  -- And its garrison's units beyond the leash: a returning unit not home in RETURN_MAX joins the garrison where it
+  -- stands (pool.tick), 400 tiles out in the player's base, where it fought (railbase_end, 0.2.401).
+  if b.recall then
+    local far, r = {}, (b.claim_radius or 60) + shared.LEASH
+    for _, u in ipairs(b.garrison or {}) do
+      if u.valid and (u.position.x - b.origin.x) ^ 2 + (u.position.y - b.origin.y) ^ 2 > r * r then far[#far + 1] = u end
+    end
+    for _, u in ipairs(b.returning or {}) do far[#far + 1] = u end
+    local n = #far > 0 and ops.walk_home(b, far, true) or 0
+    if n > 0 then trace(b, string.format("%d on their way home or out walk home quietly: a truce on %s", n, b.recall.owner)) end
   end
   if b.recall and not b.op then b.recall = nil end
   if b.op and b.recall then

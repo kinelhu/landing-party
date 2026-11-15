@@ -697,6 +697,12 @@ local RAIL_LEASH = 48
 local function leash(b, trace)
   local h = b.depots[1] and b.depots[1].valid and b.depots[1] or (b.lander.valid and b.lander)
   if not h then return end
+  -- In a truce of its corporation's (a director's lull) home without answering fire: called back by_damage from the
+  -- player's base, they fought their way out (railbase_end, 0.2.401).
+  local d = defines.distraction.by_damage
+  for key, till in pairs(storage.truces or {}) do
+    if game.tick < till and key:sub(1, #b.corp + 1) == b.corp .. "|" then d = defines.distraction.none end
+  end
   local hp = h.position
   local r = (b.claim_radius or 60) + LEASH
   local lp = b.lander.valid and b.lander.position
@@ -707,14 +713,12 @@ local function leash(b, trace)
       and (not c.has_command or c.command and c.command.type == defines.command.wander)
     -- Idle ones only: re-ordered straight home, raiders coming back round a nest field walked through it (country).
     if far then
-      u.commandable.set_command{type = defines.command.go_to_location, destination = lp, radius = 16,
-        distraction = defines.distraction.by_damage}
+      u.commandable.set_command{type = defines.command.go_to_location, destination = lp, radius = 16, distraction = d}
       trace(b, string.format("leash: railgunner %d at %.0f,%.0f called back to its lander (%s)", u.unit_number, u.position.x,
         u.position.y, c.has_command and "wandering" or "idle"))
     elseif u.valid and not u.commandable.has_command
       and (u.position.x - b.origin.x) ^ 2 + (u.position.y - b.origin.y) ^ 2 > r * r then
-      u.commandable.set_command{type = defines.command.go_to_location, destination = hp, radius = 10,
-        distraction = defines.distraction.by_damage}
+      u.commandable.set_command{type = defines.command.go_to_location, destination = hp, radius = 10, distraction = d}
     end
   end
 end
