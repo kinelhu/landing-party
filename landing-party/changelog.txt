@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.398
+Date: 2026-11-15
+  Changes:
+    - The director's debug panel (/lp director) has a "Climax now" button, and it lists the climaxes and the strike forces out.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.397
 Date: 2026-11-15
   Changes:

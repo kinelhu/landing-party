@@ -962,7 +962,7 @@ function director.start_surge(s, owner, tick, focused, why, at, climax)
   end
   if focused then s.focuses = (s.focuses or 0) + 1 else s.surges = (s.surges or 0) + 1 end
   trace(string.format("%s: %s against %s %dx as often, %d more at once, for %d minutes%s (budget %.2f left; %s)",
-    focused and "focus strike" or "surge", table.concat(corps, ", "), owner, factor, tun("surge_add"), minutes,
+    climax and "climax" or focused and "focus strike" or "surge", table.concat(corps, ", "), owner, factor, tun("surge_add"), minutes,
     at and string.format(", on %.0f,%.0f", at[1], at[2]) or "", s.budget, why or "forced"))
   if at then
     local surface = game.surfaces[1]
@@ -1096,6 +1096,12 @@ function director.cmd(action, arg)
     local at = type(arg) == "table" and {arg[1] or arg.x, arg[2] or arg.y} or nil
     if not director.start_surge(s, owner, tick, action == "focus", "forced", at) then return "no corporation at war with a camp standing" end
     return action == "focus" and (s.focus and "focus strike" or "surge (no focus known)") or "surge"
+  elseif action == "climax" then
+    -- Steady's climax now (the panel's "Climax now"): a focus surge whose strike force is climax_points strong, told
+    -- climax_warn ahead, lull_max after it.
+    local at = type(arg) == "table" and {arg[1] or arg.x, arg[2] or arg.y} or nil
+    if not director.start_surge(s, owner, tick, true, "forced", at, true) then return "no corporation at war with a camp standing" end
+    return s.focus and "climax" or "climax (no focus known)"
   elseif action == "wave" then
     local corp = (type(arg) == "string" and shared.CORPS[arg] and arg) or pick(s, owner, tick)
     if not corp then return "no corporation at war with a camp standing" end

@@ -1242,6 +1242,7 @@ remote.add_interface("landing-party", {
   -- Tests and the debug panel: director.cmd (on, off, auto, spree [corp], lull, fill, empty, end).
   director_cmd = function(action, arg) return director.cmd(action, arg) end,
   director_prior = function(k) return director.tune(k) end,
+  director_lines = function() return director_gui.lines() end,
   -- Tests and visits: what the director reads of a player force, beside a fuller reading (director.readings).
   debug_readings = function(owner) return director.readings(owner) end,
   -- Tests: the cap on operations against a player at once, as ops reads it (the director's surge raises it).

@@ -4,7 +4,8 @@
 --   list                     every settlement: id, corporation, where, garrison, parts, operation, perimeter, hull
 --   raid|siege|strip [id]    that operation now, at your structure nearest you (ops.force: temper, budget,
 --                            cadence and stock waived; the infantry it lacks are given)
---   director                 the director's debug panel: its state, readings and beats; buttons to force them
+--   director                 the director's debug panel: its state, readings, beats, climaxes and strike forces out;
+--                            buttons to force them (a spree, a surge, a focus strike, a climax, a lull, a drop wave)
 --   airraid [id]             an air raid now, at your structure nearest you: laser drones enough given, mustered
 --                            and in together (the user, 2026-11-13, to see one on their own save)
 --   perimeter [id]           Serenity's line steps out now (notice every third step, warning one step ahead)

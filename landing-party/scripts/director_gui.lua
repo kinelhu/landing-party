@@ -1,7 +1,8 @@
 -- The director's debug panel (the user, 2026-11-13: "For the director i would appreciate a debug UI for testing"): /lp
 -- director opens it. What it reads (on or off, its personality, its phase and how long left, its budget, its readings,
 -- each corporation's tempo, its last beats) refreshed every second; buttons on its hand (director.cmd): on (no grace),
--- off, as the setting says, a spree now for a corporation, a lull now, the budget full or empty, the beat ended.
+-- off, as the setting says, a spree now for a corporation, a surge, focus strike or climax now, a lull now, the budget
+-- full or empty, the beat ended.
 -- A debugging tool: its words are plain text, not localised.
 local shared = require("__landing-party__.shared")
 local director = require("__landing-party__.scripts.director")
@@ -30,6 +31,16 @@ local function lines(p)
     s.waves or 0, exp, s.settled or 0, s.replaced or 0, s.withdrawn or 0)
   out[#out + 1] = string.format("supply drops %d in, %d lost; reinforcements %d units", s.supplied or 0, s.supply_lost or 0,
     s.reinforced or 0)
+  -- Its strike forces out: warned (the pods due), or landed (units standing), and its climaxes.
+  local live = {}
+  for key, k in pairs(s.strikes or {}) do
+    local up = 0
+    for _, u in ipairs(k.units or {}) do if u.valid then up = up + 1 end end
+    live[#live + 1] = tick < (k.pods_at or 0) and string.format("#%d %d due in %s", key, k.sent or 0, mmss(k.pods_at - tick))
+      or string.format("#%d %d of %d up", key, up, k.sent or 0)
+  end
+  out[#out + 1] = string.format("climaxes %d; strike forces over %d (finished %d)%s", s.climaxes or 0, s.strikes_over or 0,
+    s.strikes_finished or 0, #live > 0 and ("; out: " .. table.concat(live, ", ")) or "")
   local i, fo = s.intensity, s.focus
   out[#out + 1] = string.format("intensity %s; focus %s",
     (i and tick < i.till) and string.format("+%d, %s left", i.add, mmss(i.till - tick)) or "-",
@@ -53,6 +64,9 @@ local function lines(p)
   return out
 end
 
+-- (Tests: its text without a player, remote director_lines.)
+gui.lines = lines
+
 local function build(p)
   local f = p.gui.screen.add{type = "frame", name = NAME, direction = "vertical", caption = "Director (debug)"}
   f.auto_center = true
@@ -60,7 +74,7 @@ local function build(p)
   body.style.vertical_spacing = 2
   local row = f.add{type = "flow", name = "lp_dir_row1", direction = "horizontal"}
   for _, b in ipairs({{"on", "Force on"}, {"off", "Force off"}, {"auto", "As setting"}, {"lull", "Lull now"},
-    {"surge", "Surge now"}, {"focus", "Focus strike"}, {"fill", "Fill budget"}, {"empty", "Empty budget"}, {"end", "End beat"}}) do
+    {"surge", "Surge now"}, {"focus", "Focus strike"}, {"climax", "Climax now"}, {"fill", "Fill budget"}, {"empty", "Empty budget"}, {"end", "End beat"}}) do
     row.add{type = "button", name = "lp_dir_" .. b[1], caption = b[2], tags = {lp_dir = b[1]}}
   end
   local row2 = f.add{type = "flow", name = "lp_dir_row2", direction = "horizontal"}

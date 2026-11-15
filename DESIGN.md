@@ -7341,6 +7341,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The climax on demand** (0.2.398). The director's debug panel (/lp director) gains "Climax now" (director.cmd
+  climax: a focus surge whose strike force is climax_points strong, told climax_warn ahead, lull_max after it) and a
+  line of its climaxes and the strike forces out, each warned (its pods due in m:ss) or landed (its units standing).
+  Scenario director cmd checks both (remote director_lines reads the panel's text without a player); seen failing with
+  no factory to strike at (its worth 0, a strike force of 0) and no focus.
 - **A lull recalls what is out** (0.2.397). scripts/fun_report.py on railbase_end's steady visit (0.2.394, seed 1):
   548 of the player's buildings lost inside truces, 398 of them in the 15 minutes after the climax, while the player
   read that Grubstake and Kessler-Hayashi "are holding their attacks": a truce stopped launches only, and the sieges

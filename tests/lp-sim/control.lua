@@ -7415,7 +7415,7 @@ scenarios.director = function()
   end
   -- LP_MIX=cmd: its debug panel's hand (director.cmd, remote director_cmd), each action and what it did: on, a spree for
   -- Serenity (its pace halved), the beat ended (its pace back), a lull (every truce on), ended (the truces off), the
-  -- budget filled and emptied, off (not active).
+  -- budget filled and emptied, a climax (its strike force told climax_warn ahead), off (not active).
   if params.mix == "cmd" then
     local function pace() return lp("sooner", "serenity", 3600) end
     schedule(120, function()
@@ -7433,6 +7433,17 @@ scenarios.director = function()
       S.r.budget_full = (lp("director") or {}).budget
       S.r.empty = lp("director_cmd", "empty")
       S.r.budget_empty = (lp("director") or {}).budget
+      -- (A factory to strike at: with none, its worth 0 made a strike force of 0, and the check failed.)
+      flatten(-24, -24, 24, 24)
+      for x = -16, 16, 4 do for y = -16, 16, 8 do
+        surface().create_entity{name = "assembling-machine-2", position = {x + 0.5, y + 0.5}, force = "player"}
+      end end
+      S.r.climax = lp("director_cmd", "climax", {0, 0})
+      local d = lp("director") or {}
+      S.r.climaxes, S.r.phase_climax = d.climaxes, d.phase
+      for _, k in pairs(d.strikes or {}) do S.r.climax_warn = math.floor((k.pods_at - k.warned) / 3600 + 0.5) end
+      S.r.panel = table.concat(lp("director_lines") or {}, " | ")
+      lp("director_cmd", "end")
       S.r.off = lp("director_cmd", "off")
       S.r.active_off = (lp("director") or {}).active
     end)
@@ -7445,6 +7456,12 @@ scenarios.director = function()
         string.format("%s then %s", tostring(r.phase_lull), tostring(r.phase_end)))
       check("director: cmd, the budget filled and emptied", r.budget_full == 4 and r.budget_empty == 0,
         string.format("%s then %s", tostring(r.budget_full), tostring(r.budget_empty)))
+      -- (The panel's "Climax now", 0.2.398: steady's climax on demand, for looks in game.)
+      check("director: cmd, a climax, its strike force told climax_warn ahead", r.climaxes == 1 and r.phase_climax == "surge"
+        and r.climax_warn == lp("director_prior", "climax_warn"), string.format("%s, %s climaxes, %s, told %s min ahead",
+        tostring(r.climax), tostring(r.climaxes), tostring(r.phase_climax), tostring(r.climax_warn)))
+      check("director: cmd, the panel tells the climax and its strike force due", (r.panel or ""):find("climaxes 1;", 1, true)
+        and (r.panel or ""):find("#1 2 due in 5:00", 1, true), r.panel or "nil")
       check("director: cmd, off", r.active_off == false, tostring(r.active_off))
     end)
     return
