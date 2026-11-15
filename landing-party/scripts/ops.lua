@@ -870,17 +870,18 @@ local function finish(b, outcome, trace, army)
     for _, e in ipairs(op.camp or {}) do if e.valid then e.destroy() end end
   end
   -- Home round biter country too (four raiders came back from the target and died on the straight way home, country).
+  -- Recalled by a lull, they walk home without answering fire: by_damage, a squad recalled through the player's base
+  -- shot back at its turrets and razed 115 to 141 of the player's buildings in railbase_end's truces (0.2.399).
+  local quiet = outcome == "recalled" and defines.distraction.none or defines.distraction.by_damage
   local back
   for _, u in ipairs(op.members) do
     if u.valid and h and not back then
       back = {}
       for _, w in ipairs(ops.route(b, {u.position.x, u.position.y}, {h.position.x, h.position.y},
         op.overflight and {turrets = false, worms = true} or {turrets = false, nests = true}) or {}) do
-        table.insert(back, {type = defines.command.go_to_location, destination = w, radius = 4,
-          distraction = defines.distraction.by_damage})
+        table.insert(back, {type = defines.command.go_to_location, destination = w, radius = 4, distraction = quiet})
       end
-      table.insert(back, {type = defines.command.go_to_location, destination = h.position, radius = 10,
-        distraction = defines.distraction.by_damage})
+      table.insert(back, {type = defines.command.go_to_location, destination = h.position, radius = 10, distraction = quiet})
     end
   end
   for _, u in ipairs(op.members) do

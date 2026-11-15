@@ -7658,8 +7658,23 @@ scenarios.director = function()
       schedule(t, function()
         if S.called then return end
         local st = lp("stats", storage.id)
-        if st and st.ops and st.ops.op_started and st.ops.op_phase then
+        local m, o = st and st.ops and st.ops.op_members or {}, st and st.origin
+        local cx, cy = 0, 0
+        for _, u in ipairs(m) do cx, cy = cx + u[1] / #m, cy + u[2] / #m end
+        local dx, dy = o and o.x - cx or 0, o and o.y - cy or 0
+        local len = math.max(1, math.sqrt(dx * dx + dy * dy))
+        -- (Out, 100 tiles from its camp at least: guns by a squad still mustering stood in the camp's own reach, and its
+        -- flamer and tank shot them in self-defence.)
+        if st and st.ops and st.ops.op_started and st.ops.op_phase and #m > 0 and len > 100 then
           S.called, S.op_was = game.tick, st.ops.op_phase
+          -- The player's guns on its way home, 20 tiles toward its camp and 6 aside: shot at as it walks back.
+          S.guns = 0
+          for k = -1, 1, 2 do
+            local p = surface().find_non_colliding_position("gun-turret", {cx + dx / len * 20 - dy / len * 6 * k,
+              cy + dy / len * 20 + dx / len * 6 * k}, 10, 1)
+            local g = p and surface().create_entity{name = "gun-turret", position = p, force = "player"}
+            if g then g.insert{name = "firearm-magazine", count = 50}; S.guns = S.guns + 1 end
+          end
           lp("director_cmd", "lull")
         end
       end)
@@ -7673,6 +7688,10 @@ scenarios.director = function()
         tostring(S.called), tostring(S.op_was), recalled, tostring(st.ops.op_phase), tostring(st.ops.op_started)))
       check("director: recall, a lull calls home the operation out against the player", S.called and recalled == 1,
         string.format("called %s, %d recalled", tostring(S.called), recalled))
+      -- (Its squad walked home by_damage and shot back at the player's guns on the way: railbase_end's truces, 115 to
+      -- 141 of the player's buildings, 0.2.399. Distraction none since.)
+      check("director: recall, the squad walks home through the truce razing nothing", (d.truce_lost or 0) == 0,
+        string.format("%s lost to the held corporation in the truce, %s guns on its way", tostring(d.truce_lost), tostring(S.guns)))
     end)
     return
   end

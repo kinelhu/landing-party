@@ -7341,6 +7341,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **A truce kept on the way home** (0.2.400). railbase_end's steady visits on 0.2.399 still lost 77 to 252 of the
+  player's buildings to the held corporations inside truces (4 of 5 seeds; every lull's first minutes had losses).
+  Counted by killer entity (minute events "player:cause:<name>") and per loss in a truce (event truce_loss: the
+  corporation, the killer's role, its command): Grubstake's harriers and scorchers in no operation and no strike team,
+  in the player's base, seconds after the lull. The squads of recalled operations: ops' finish sends a squad home with
+  distraction by_damage, so recalled through the player's base they answered its turrets' fire. A recalled squad now
+  walks home with distraction none. Scenario director recall puts two of the player's guns on the squad's way home,
+  once it is 100 tiles out (by the camp, its flamer and tank shot them in self-defence, rightly): 2 razed with by_damage,
+  none since. Also: a strike force's pods landing after the recall walk home with it (they went for their target).
 - **A truce kept by the strike force too** (0.2.399). A lull's recall set a strike team's end to now, but the team was
   only sent back at the director's next minute pass, and walked back with distraction by_enemy: in scenario director's
   climax variant it razed 3 of the player's buildings in the truce. Recalled teams are now sent back at once with

@@ -102,8 +102,24 @@ function director.note_loss(owner, ent, cause, corp)
     for c, cd in pairs(shared.CORPS) do
       if cd.force == corp and (storage.truces or {})[c .. "|" .. owner] and game.tick < storage.truces[c .. "|" .. owner] then
         s.truce_lost = (s.truce_lost or 0) + 1
+        local role = "other"
         if cause and cause.valid and cause.unit_number and s.strike_unit and s.strike_unit[cause.unit_number] then
           s.truce_lost_strike = (s.truce_lost_strike or 0) + 1
+          role = "strike"
+        elseif cause and cause.valid and cause.unit_number then
+          for _, b in pairs(storage.bases or {}) do
+            for _, u in ipairs(b.op and b.op.members or {}) do
+              if u.valid and u.unit_number == cause.unit_number then role = "op " .. tostring(b.op.kind) end
+            end
+          end
+        end
+        -- (Who broke it, for the event stream: a strike team, an operation's squad, or another of its units.)
+        if storage.trace then
+          shared.event("truce_loss", {corp = c, role = role, cause = cause and cause.valid and cause.name or nil,
+            pos = {math.floor(ent.position.x), math.floor(ent.position.y)},
+            from = cause and cause.valid and {math.floor(cause.position.x), math.floor(cause.position.y)} or nil,
+            cmd = cause and cause.valid and cause.commandable and cause.commandable.command
+              and cause.commandable.command.type or nil})
         end
       end
     end
@@ -826,8 +842,16 @@ war.on_strike_landed = function(key, units)
   for _, u in ipairs(units) do
     k.units[#k.units + 1] = u
     s.strike_unit[u.unit_number] = key
-    u.commandable.set_command{type = defines.command.attack_area, destination = k.target, radius = 32,
-      distraction = defines.distraction.by_enemy}
+    -- (A team already sent back: its late pods walk home with it. Pods in flight at a lull's recall landed and went
+    -- for their target in the truce: railbase_end's climax, 3 of 80 down when recalled, Grubstake razed 224 in it.)
+    if k.truce and not k.lift_at then k.lift_at = game.tick + tun("lift_minutes") * 3600 end
+    if k.lift_at then
+      u.commandable.set_command{type = defines.command.go_to_location, destination = k.landed_at, radius = 8,
+        distraction = k.truce and defines.distraction.none or defines.distraction.by_enemy}
+    else
+      u.commandable.set_command{type = defines.command.attack_area, destination = k.target, radius = 32,
+        distraction = defines.distraction.by_enemy}
+    end
   end
 end
 
@@ -1026,7 +1050,7 @@ function director.start_lull(s, owner, tick, corps, base_minutes)
   -- Those in the field sent back now, not at the next minute's pass, and without fighting on the way.
   for key, k in pairs(s.strikes or {}) do
     if k.owner == owner and set[k.corp] and k.at then
-      k.till = math.min(k.till or tick, tick)
+      k.till, k.truce = math.min(k.till or tick, tick), true
       if k.landed_at then
         trace(string.format("strike force %d: %d recalled, walking back to %.0f,%.0f to be lifted", key,
           walk_back(k, tick, true), k.landed_at[1], k.landed_at[2]))

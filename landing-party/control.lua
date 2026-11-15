@@ -289,6 +289,9 @@ script.on_event(defines.events.on_entity_died, function(e)
     if ent.type ~= "unit" then
       local by = f .. ":by:" .. (e.force and e.force.name or "none")
       storage.ev_minute[by] = (storage.ev_minute[by] or 0) + 1
+      -- (And by what: the killer's entity, "player:cause:fire-flame".)
+      local cause = f .. ":cause:" .. (e.cause and e.cause.valid and e.cause.name or "none")
+      storage.ev_minute[cause] = (storage.ev_minute[cause] or 0) + 1
     end
   end
   fall.skip(e)

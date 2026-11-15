@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.400
+Date: 2026-11-15
+  Bugfixes:
+    - Attackers called home by a lull walk back without shooting at your defences on the way.
+    - Strike force pods that land after a lull has begun walk home instead of attacking.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.399
 Date: 2026-11-15
   Bugfixes:
