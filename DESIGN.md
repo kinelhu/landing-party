@@ -7341,6 +7341,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Fun, measured** (0.2.395). scripts/fun_report.py reads a run's events for the consult's measures: beats by kind,
+  forecasts, the warning's lead to a strike force's first hit, strike forces the player finished, the share of the
+  player's buildings lost inside a told window (a beat, or a strike force from its warning to its lift), losses in a
+  truce, and the worst five-minute windows told or not. On six campaign games of 0.2.394 (seeds 4242, 101, 31337,
+  steady and gentle) and four of 0.2.393: leads 150 to 296 s, never under warn_minutes; 36 to 98% of the losses told;
+  two of the three worst five minutes inside a told window in most games; the player finished 0 to 3 strike forces a
+  game. Losses in a truce (0 to 33 buildings) are operations already under way when it began: a truce stops launches,
+  not those out. The visits page draws forecasts (triangles), strike forces from warning to lift, and a lull's truce
+  apart from its quiet. A strike force's lift-out counted only the stragglers lifted at its end (40 of a probe's 7
+  lifted read 0 of 40): those lifted at its landing point counted too now. The campaign's raw totals stay noisy: on the
+  three new seeds off 209, 354, 26; gentle 120, 305, 479; steady 965, 221, 145 (in sum 589, 904, 1,331); what the
+  strike teams razed orders steady over gentle in two of three.
 - **The fun director's cost, measured and paid back** (0.2.394). The campaign (contact LP_MIX=campaign, four hours;
   off razed 160 and 159 worth on seeds 12345 and 777) with 0.2.393: steady 218 and 169, gentle 250 and 141, against
   0.2.392's steady 321 and 300. Three causes, each fixed: a lull's truce of up to 30 minutes held the camps' own

@@ -837,8 +837,10 @@ local function strike_over(s, key, k, why)
   if why == "finished" then s.strikes_finished = (s.strikes_finished or 0) + 1 end
   for _, u in ipairs(live) do u.destroy() end
   if k.tag and k.tag.valid then k.tag.destroy() end
-  trace(string.format("strike force %d over (%s): %d of %d lifted out", key, why, #live, k.sent))
-  shared.event("strike_over", {key = key, left = #live, sent = k.sent, why = why})
+  -- (Its lifted: those lifted at its landing point as they came back, and the rest now.)
+  local left = (k.lifted or 0) + #live
+  trace(string.format("strike force %d over (%s): %d of %d lifted out", key, why, left, k.sent))
+  shared.event("strike_over", {key = key, left = left, sent = k.sent, why = why})
   s.strikes[key] = nil
   for un, kk in pairs(s.strike_unit or {}) do if kk == key then s.strike_unit[un] = nil end end
 end
@@ -869,6 +871,7 @@ function director.strikes(s, tick)
           for _, u in ipairs(live) do
             if (u.position.x - k.landed_at[1]) ^ 2 + (u.position.y - k.landed_at[2]) ^ 2 <= 16 * 16 then
               s.strike_lifted = (s.strike_lifted or 0) + 1
+              k.lifted = (k.lifted or 0) + 1
               u.destroy()
             else back[#back + 1] = u end
           end

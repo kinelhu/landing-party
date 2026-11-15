@@ -67,13 +67,28 @@ def one(run_dir):
             f["l"] = {corp: thin(flat(c.get("l")), 20) for corp, c in (s.get("corps") or {}).items()}
         frames.append(f)
     beats = [{"m": m(e["t"]), "kind": e.get("kind"), "corp": e.get("corp") or ",".join(flat(e.get("corps"))),
-              "minutes": e.get("minutes"), "strike": e.get("strike"), "focus": e.get("focus")}
+              "minutes": e.get("minutes"), "truce": e.get("truce"), "strike": e.get("strike"), "focus": e.get("focus")}
              for e in ev if e["k"] == "beat"]
     # (An empty Lua table comes out of the game's JSON as {}: a list always, or the page's join threw and drew nothing.)
     notices = [{"m": m(e["t"]), "key": e.get("key"), "args": flat(e.get("args"))} for e in ev if e["k"] == "notice"]
     camps = [{"m": m(e["t"]), "k": e["k"], "corp": e.get("corp"), "at": e.get("at"), "why": e.get("why"),
               "matched": e.get("matched")} for e in ev if e["k"] in ("landed", "fell", "departed", "stood_down")]
     texts = [{"m": m(e["t"]), "text": e.get("text")} for e in ev if e["k"] == "director"]
+    # The fun director's telegraphing (0.2.393): forecasts, and each strike force from its warning to its lift.
+    forecasts = [{"m": m(e["t"]), "kind": e.get("kind"), "corp": e.get("corp")} for e in ev if e["k"] == "forecast"]
+    strikes = {}
+    for e in ev:
+        k = e.get("key")
+        if e["k"] == "strike_warn":
+            strikes[k] = {"warn": m(e["t"]), "corp": e.get("corp"), "n": e.get("n"), "pos": e.get("pos"),
+                          "minutes": e.get("minutes")}
+        elif k in strikes and e["k"] == "strike_landed":
+            strikes[k]["land"] = m(e["t"])
+        elif k in strikes and e["k"] == "strike_hit":
+            strikes[k]["hit"] = m(e["t"])
+        elif k in strikes and e["k"] == "strike_over":
+            strikes[k].update({"over": m(e["t"]), "why": e.get("why"), "left": e.get("left")})
+    strikes = list(strikes.values())
     minutes = []
     lost_b = 0
     for e in ev:
@@ -100,7 +115,7 @@ def one(run_dir):
     dl = [[m(d["t"]), d["x"], d["y"], GROUP_OF.get(d["n"], "other"), d.get("f", "")] for d in deaths]
     end = max([f["m"] for f in frames] + [x["m"] for x in minutes] + [0])
     return {"setting": setting, "end": end, "frames": frames, "beats": beats, "notices": notices, "camps": camps,
-            "texts": texts, "minutes": minutes, "ops": opl, "deaths": dl}, base, run_dir
+            "texts": texts, "minutes": minutes, "ops": opl, "deaths": dl, "forecasts": forecasts, "strikes": strikes}, base, run_dir
 
 
 def main(save, out, args):

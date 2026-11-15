@@ -74,7 +74,7 @@ aside { display: grid; gap: 14px; min-width: 0; }
         <span class="clock" id="clock">0:00</span>
       </div>
       <div class="lanes"><canvas id="lanes" aria-label="Timeline of the director's beats for each setting"></canvas></div>
-      <p class="note">"Synthexis in" is the save as it plays; in "Synthexis out" its farm was kept from landing, so the four settings differ only by what the director does. Each lane is one visit of the same save at one director setting. Coloured blocks are the director's beats (spree, surge, focus strike, lull), ticks above them its notices, and the shaded band its budget. Click a lane to show that setting on the map; drag the slider or click the lanes to move in time. Scroll to zoom the map, drag to pan.</p>
+      <p class="note">"Synthexis in" is the save as it plays; in "Synthexis out" its farm was kept from landing, so the four settings differ only by what the director does. Each lane is one visit of the same save at one director setting. Coloured blocks are the director's beats (spree, surge, focus strike, climax, lull; a lull's faint end is the director's own quiet after the truce), triangles its forecasts, the line below a strike force from its warning to its lift (a tick where it landed), ticks above them its notices, and the shaded band its budget. Click a lane to show that setting on the map; drag the slider or click the lanes to move in time. Scroll to zoom the map, drag to pan.</p>
     </div>
     <aside>
       <div class="card"><h2>The director now</h2><dl class="state" id="state"></dl></div>
@@ -90,7 +90,7 @@ const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).
 const COL = {off: css('--off'), gentle: css('--gentle'), steady: css('--steady'), chaotic: css('--chaotic'), lost: css('--lost'),
   serenity: css('--kh'), grubstake: css('--gs'), biotech: css('--syn'), base: css('--base'), ink: css('--ink'), dim: css('--dim'), rule: css('--rule'), panel: css('--panel')};
 const CORP_NAME = {serenity: 'Kessler-Hayashi', grubstake: 'Grubstake', biotech: 'Synthexis'};
-const BEAT_COL = {spree: '#e69f00', surge: '#d55e00', focus: '#cc79a7', lull: '#56b4e9', wave: '#f0e442', supply: '#009e73'};
+const BEAT_COL = {spree: '#e69f00', surge: '#d55e00', focus: '#cc79a7', climax: '#882255', lull: '#56b4e9', wave: '#f0e442', supply: '#009e73'};
 const NOTICE = {
   'lp.director-spree': a => `${a[0]} is stepping up its attacks for ${a[1]} minutes.`,
   'lp.director-lull': a => a.length > 1 ? `${a[0]} is holding its attacks for ${a[1]} minutes.` : `The factions are holding their attacks for ${a[0]} minutes.`,
@@ -98,6 +98,12 @@ const NOTICE = {
   'lp.director-surge': a => `${a[0]} are stepping up their attacks for ${a[1]} minutes.`,
   'lp.director-focus': a => `${a[0]} are stepping up their attacks on ${a[1]} for ${a[2]} minutes.`,
   'lp.director-wave': a => `${a[0]} is landing ${a[1]} camps.`,
+  'lp.director-strike-warn': a => `A ${a[0]} strike force of ${a[1]} units lands in ${a[2]} minutes.`,
+  'lp.director-next-spree': a => `${a[0]} is preparing a larger operation.`,
+  'lp.director-next-surge': a => `${a[0]} are preparing a joint offensive.`,
+  'lp.director-next-wave': a => `${a[0]} is preparing to land more camps.`,
+  'lp.director-next-climax': a => `${a[0]} are preparing a major offensive.`,
+  'lp.director-climax': a => `${a[0]} are attacking in force for ${a[2]} minutes.`,
   'lp.director-settled': a => `${a[0]}'s camp is staying.`,
   'lp.director-departed': a => `${a[0]}'s camp has departed.`,
   'lp.director-supply': a => `${a[0]} is dropping supplies.`,
@@ -240,7 +246,17 @@ function draw() {
       ctx.fillText(`${o.kind} on ${o.what || '?'}`, X + 12, Y - 10);
     }
     // A focus strike's point while it lasts.
-    for (const b of run.beats) if (b.kind === 'focus' && b.focus && b.m <= T && T <= b.m + (b.minutes || 15)) {
+    // Strike forces: a dashed ring at their target from the warning, solid once landed, gone when lifted.
+    for (const k of (run.strikes || [])) {
+      if (!k.pos || T < k.warn || T > (k.over ?? END)) continue;
+      const X = sx(k.pos[0]), Y = sy(k.pos[1]);
+      ctx.strokeStyle = COL[k.corp] || COL.ink; ctx.lineWidth = 3;
+      if (k.land == null || T < k.land) ctx.setLineDash([6, 4]);
+      ctx.beginPath(); ctx.arc(X, Y, Math.max(12, s * 32), 0, 7); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = COL.ink; ctx.font = '600 12px ' + css('--display');
+      ctx.fillText(k.land == null || T < k.land ? `strike force of ${k.n}, told` : `strike force of ${k.n}`, X + 14, Y + 16);
+    }
+    for (const b of run.beats) if ((b.kind === 'focus' || b.kind === 'climax') && b.focus && b.m <= T && T <= b.m + (b.minutes || 15)) {
       ctx.strokeStyle = BEAT_COL.focus; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(sx(b.focus[0]), sy(b.focus[1]), Math.max(16, s * 64), 0, 7); ctx.stroke();
     }
   }
@@ -269,7 +285,23 @@ function drawLanes() {
     for (const b of run.beats) {
       lx.fillStyle = BEAT_COL[b.kind] || COL.ink;
       const w = Math.max(3, X(b.m + (b.minutes || 1)) - X(b.m));
-      lx.fillRect(X(b.m), y + rowH * 0.3, w, rowH * 0.4);
+      // (A lull: its truce solid, the rest of it, the director's quiet alone, faint.)
+      if (b.kind === 'lull' && b.truce != null && b.truce < b.minutes) {
+        lx.fillRect(X(b.m), y + rowH * 0.3, Math.max(3, X(b.m + b.truce) - X(b.m)), rowH * 0.4);
+        lx.globalAlpha = 0.35; lx.fillRect(X(b.m + b.truce), y + rowH * 0.3, X(b.m + b.minutes) - X(b.m + b.truce), rowH * 0.4); lx.globalAlpha = 1;
+      } else lx.fillRect(X(b.m), y + rowH * 0.3, w, rowH * 0.4);
+    }
+    // Forecasts as small triangles above the beats; strike forces as a line from warning to lift, a tick at landing.
+    for (const f of (run.forecasts || [])) {
+      lx.fillStyle = BEAT_COL[f.kind] || COL.ink;
+      lx.beginPath(); lx.moveTo(X(f.m), y + rowH * 0.27); lx.lineTo(X(f.m) - 4, y + rowH * 0.12); lx.lineTo(X(f.m) + 4, y + rowH * 0.12); lx.closePath(); lx.fill();
+    }
+    for (const k of (run.strikes || [])) {
+      lx.strokeStyle = COL[k.corp] || COL.ink; lx.lineWidth = 2;
+      const yy = y + rowH * 0.8;
+      lx.beginPath(); lx.moveTo(X(k.warn), yy); lx.lineTo(X(k.over ?? END), yy); lx.stroke();
+      if (k.land != null) { lx.beginPath(); lx.moveTo(X(k.land), yy - 4); lx.lineTo(X(k.land), yy + 4); lx.stroke(); }
+      lx.lineWidth = 1;
     }
     lx.fillStyle = COL.ink;
     for (const n of run.notices) lx.fillRect(X(n.m), y + 2, 1.5, rowH * 0.22);
@@ -317,7 +349,13 @@ function describe(run) {
   }
   for (const c of run.camps) items.push({m: c.m, html: `${CORP_NAME[c.corp] || c.corp} camp ${c.k === 'landed' ? 'landed' + (c.matched && c.matched.guns ? ` (matched to ${c.matched.guns} guns: +${c.matched.escort} escort, +${c.matched.parts} parts)` : '') : c.k === 'stood_down' ? 'stood down' : c.k}`});
   for (const o of run.ops) items.push({m: o.m0, html: `${CORP_NAME[o.corp] || o.corp} ${o.kind} on ${o.what || '?'}: ${o.outcome || 'under way'}${o.razed ? `, razed ${o.razed}` : ''}`});
-  for (const t of run.texts) if (/holds|gap paid|no lull/.test(t.text)) items.push({m: t.m, html: `<span style="color:var(--dim)">${t.text}</span>`});
+  for (const f of (run.forecasts || [])) items.push({m: f.m, html: `<span class="pill" style="background:${BEAT_COL[f.kind] || '#999'}">forecast</span> ${f.kind}${f.corp ? ' by ' + (CORP_NAME[f.corp] || f.corp) : ''}`});
+  for (const k of (run.strikes || [])) {
+    const lead = k.hit != null ? `, first hit ${Math.round((k.hit - k.warn) * 60)} s after its warning` : '';
+    items.push({m: k.warn, html: `${CORP_NAME[k.corp] || k.corp} strike force of ${k.n} told, landing in ${k.minutes} min${lead}`});
+    if (k.over != null) items.push({m: k.over, html: `${CORP_NAME[k.corp] || k.corp} strike force ${k.why === 'finished' ? 'destroyed by the player' : `lifted out, ${k.left} of ${k.n} left`}`});
+  }
+  for (const t of run.texts) if (/holds|gap paid|no lull|corrected/.test(t.text)) items.push({m: t.m, html: `<span style="color:var(--dim)">${t.text}</span>`});
   items.sort((a, b) => a.m - b.m);
   return items;
 }

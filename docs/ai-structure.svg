@@ -338,7 +338,7 @@
 <title>director</title>
 <path fill="#f7dede" stroke="black" d="M5646.8,-1431C5646.8,-1431 5523.2,-1431 5523.2,-1431 5517.2,-1431 5511.2,-1425 5511.2,-1419 5511.2,-1419 5511.2,-1407 5511.2,-1407 5511.2,-1401 5517.2,-1395 5523.2,-1395 5523.2,-1395 5646.8,-1395 5646.8,-1395 5652.8,-1395 5658.8,-1401 5658.8,-1407 5658.8,-1407 5658.8,-1419 5658.8,-1419 5658.8,-1425 5652.8,-1431 5646.8,-1431"/>
 <text xml:space="preserve" text-anchor="middle" x="5585" y="-1414.75" font-family="Helvetica,sans-Serif" font-size="10.00">director</text>
-<text xml:space="preserve" text-anchor="middle" x="5585" y="-1403.5" font-family="Helvetica,sans-Serif" font-size="10.00">1126 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="5585" y="-1403.5" font-family="Helvetica,sans-Serif" font-size="10.00">1129 lines</text>
 </g>
 <!-- director&#45;&gt;stance -->
 <g id="edge53" class="edge">
