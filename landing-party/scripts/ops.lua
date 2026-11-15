@@ -956,9 +956,12 @@ local function finish(b, outcome, trace, army)
   if outcome == "done" or outcome == "spent" or outcome == "claimed" then b.ops_done = b.ops_done + 1 else b.ops_aborted = b.ops_aborted + 1 end
   -- Its losing streak (the user, 2026-11-04: stop after failures in a row): operations against a player that failed one
   -- after another, whatever their target; one done, or anything razed (control.lua), ends it. war.lua stands down on it.
+  -- (A siege spent that razed nothing a failure: counted done, a siege of 41 that all came back with nothing razed ended
+  -- quiet streak's run of failures, and the camp never stood down, 0.2.396.)
   local tt_ = b.intel.targets[op.target]
   if tt_ and against_player(tt_.owner) and not op.clearance then
-    if outcome == "done" or outcome == "spent" or outcome == "claimed" then b.fail_streak = 0
+    local razed_by = (b.razed or 0) - (op.razed0 or b.razed or 0)
+    if outcome == "done" or outcome == "claimed" or (outcome == "spent" and razed_by > 0) then b.fail_streak = 0
     else b.fail_streak = (b.fail_streak or 0) + 1 end
   end
   local lost = op.launched - alive(op)
@@ -1384,6 +1387,13 @@ local function launch_air(b, key, trace, army)
   b.raids_sent = b.raids_sent + 1
   storage.threat_last = game.tick
   b.op.way = t.air_way
+  -- (A collection and a reprisal spent by an air raid too, as by one on foot: an overdue bill's collection went by air
+  -- and was never counted, its bills left open, scenario hazard unpaid, 0.2.396.)
+  if reprisal(b, t) then
+    b.reprisal.till = game.tick
+    if ops.trace then ops.trace(b, "reprisal: the punitive raid goes by air; paid") end
+  end
+  if b.collect and t.owner == b.collect.owner and game.tick < b.collect.till and ops.on_collect then ops.on_collect(b) end
   trace(b, string.format("air raid on %s at %.0f,%.0f: %d fliers (worth %.1f) against air defence %.1f (on foot %.1f), %d turns%s",
     t.kind, t.pos[1], t.pos[2], #members, worth, da, defence(b, t), #(t.air_way or {}), thief and ", to take what it can carry" or ""))
   return true
@@ -1456,6 +1466,8 @@ local function launch(b, key, trace, army, opts)
   end
   b.op = {kind = "raid", answer = is_answer or nil, cut = t.cut, target = key, phase = "stage", members = members, launched = #members, staging = stage, owner = t.owner,
     started = game.tick, phase_at = game.tick, kills_at = b.razed, last_kill = game.tick, razed0 = b.razed}
+  -- (Self-defence counted: a static threat on its ground, as a stood-down camp may still answer; scenario quiet's check.)
+  if threat_bonus(b, t) > 0 then b.ops_self = (b.ops_self or 0) + 1 end
   ops.appoint(b, b.op)
   -- A sneaking raid (Grubstake) marches to its staging point round the turrets it knows of and fights only what hits
   -- it: engaging on sight, it walked into five lasers on its way and lost 25 of 31 before the attack (sneak).
@@ -2382,6 +2394,7 @@ function ops.summary(b)
   return {known = n, known_player = np, player_targets = pt, ladder = (function()
     for _, f in ipairs(shared.player_forces()) do return ladder(f.name, b.force) end end)(), op = b.op and (b.op.kind .. ":" .. b.op.phase) or nil, target = t and t.kind or nil,
     launched = b.ops_launched or 0, done = b.ops_done or 0, aborted = b.ops_aborted or 0, log = b.ops_log or {},
+    self_defence = b.ops_self or 0,
     op_owner = t and t.owner or nil, reprisal = b.reprisal and game.tick < b.reprisal.till and b.reprisal.owner or nil,
     reprisal_at = b.reprisal and (b.reprisal.since or b.reprisal.till - REPRISAL_TICKS), op_started = b.op and b.op.started, op_launched = b.op and b.op.launched,
     op_members = b.op and (function() local o = {} for _, u in ipairs(b.op.members or {}) do if u.valid then local c = u.commandable.command

@@ -7341,6 +7341,25 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Nine scenarios broken since 0.2.380, found and fixed** (0.2.396). The night's changed regression (341 runs on
+  0.2.395): 331 passed; one failure was the night's (step4 read gentle's lull as steady's: now 1.5 times, its truce 15),
+  nine were not and failed the same on 0.2.390. Bisected on a worktree: all nine pass on 6b8645a and fail from cc3ea32
+  (0.2.380, a truck stuck among trees cuts its lane), whose reruns that night had not covered them (and clear, taken
+  for an old failure, was one of them). The lane cut stays (it built the forest mine biters outpost waited for); on
+  seed 12345 both camps' far mines in the forest got built, and every timing downstream moved. Each failure read and
+  fixed at its cause: (1) a siege "spent" that razed nothing ended a losing streak as if done (quiet streak's camp,
+  three failures then a siege of 41 all home with nothing razed, never stood down): a failure now. (2) An air raid never
+  counted as an overdue bill's collection nor spent a reprisal, as a raid on foot did (hazard unpaid: Kessler-Hayashi's
+  collection went by air, its bills left open): both now. (3) Self-defence counted (stats ops.self_defence): quiet
+  streak's stood-down camp raided the guarded site its own curtain wall had grown into, an answer to a threat on its
+  ground, allowed; the check leaves it out. (4) plate grubstake: three of the five units kept died fighting
+  Kessler-Hayashi, read as replaced; combat deaths told apart. (5) mended dozers: one turret's shot at the raid's
+  foreman broke it before the wall (the player's counterplay, not the subject): the foreman off for that variant.
+  (6) skim and its raid and night variants: the town matures at minute 29 (24 before) and the first skim came in the
+  run's last minute: 45 minutes. (7) clear: the clearance that opens the way came at minute 43: 60 minutes. Open:
+  domehub's "its projector killed, their shells land": the guns fire on the camp's mining outpost 213 tiles off rather
+  than the cluster at 150, so nothing falls there before or after (artillery flares made by script did not steer them;
+  the projector's hub also stood under the lander's dome); its setup wants a site the camp's spread cannot reach.
 - **Fun, measured** (0.2.395). scripts/fun_report.py reads a run's events for the consult's measures: beats by kind,
   forecasts, the warning's lead to a strike force's first hit, strike forces the player finished, the share of the
   player's buildings lost inside a told window (a beat, or a strike force from its warning to its lift), losses in a

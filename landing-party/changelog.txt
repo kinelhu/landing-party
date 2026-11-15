@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.396
+Date: 2026-11-15
+  Bugfixes:
+    - A siege that razed nothing counts as a failure toward a camp standing down.
+    - An overdue bill is collected by an air raid too, and an air raid spends a reprisal.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.395
 Date: 2026-11-15
   Bugfixes:

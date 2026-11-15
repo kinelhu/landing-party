@@ -6002,6 +6002,8 @@ scenarios.plate = function()
     end
     S.killed = n
     S.kept = surface().find_entities_filtered{force = force, name = names}
+    S.kept_set, S.kept_died = {}, 0
+    for _, u in ipairs(S.kept) do S.kept_set[u.unit_number] = true end
     lp("debug_tune", {rd_fast = true})
   end)
   schedule(END - 60, function()
@@ -6014,8 +6016,10 @@ scenarios.plate = function()
     check("plate: it bought its own answer", (r.plate or {})["lp-infantry"] == plate and (r.nodes or {})[g and "asbestos" or "warden"] ~= nil,
       serpent.line({plate = r.plate, nodes = r.nodes}))
     check("plate: the depots build the plated infantry", plated > 0, plated .. " plated")
-    check("plate: the units standing were kept, not replaced", #S.kept > 0 and kept == #S.kept,
-      string.format("%d of %d", kept, #S.kept))
+    -- (Those that died in a fight apart: replaced would be taken off without dying. Since 0.2.380's lanes the camps'
+    -- war reached Grubstake's and three of five died to Kessler-Hayashi's tanks and flamers.)
+    check("plate: the units standing were kept, not replaced", #S.kept > 0 and kept + (S.kept_died or 0) == #S.kept,
+      string.format("%d of %d standing, %d died in a fight", kept, #S.kept, S.kept_died or 0))
   end)
 end
 
@@ -7502,6 +7506,10 @@ scenarios.director = function()
       lp("director_cmd", "lull")
       local d = lp("director")
       S.r.gentle_lull = (d.phase_till - game.tick) / 3600
+      for _, l in ipairs(d.log or {}) do
+        local m = l.text:match("^lull.- held (%d+) minutes")
+        if m then S.r.gentle_truce = tonumber(m) end
+      end
       lp("director_cmd", "end")
       lp("debug_tune", {director = "chaotic"})
     end)
@@ -7536,8 +7544,11 @@ scenarios.director = function()
           and r.parts1 - r.parts0 < 300, serpent.line(r))
         return
       end
-      -- (Its lull as long as the others' since 0.2.388: doubled, gentle razed less than no director at all.)
-      check("director: gentle's lull as long as steady's", r.gentle_lull == 15, tostring(r.gentle_lull))
+      -- (Its lull as long as the others' since 0.2.388: doubled, gentle razed less than no director at all. Since 0.2.394
+      -- 1.5 times, its truce on the camps truce_max at most: the rest is the director's quiet, and holds no camp.)
+      check("director: gentle's lull 1.5 times steady's, its truce no longer than steady's",
+        r.gentle_lull == 22 and r.gentle_truce == 15, string.format("lull %s, truce %s", tostring(r.gentle_lull),
+          tostring(r.gentle_truce)))
       check("director: chaotic holds its next beat a while", r.chaotic_hold and r.chaotic_hold > 0, tostring(r.chaotic_hold))
       check("director: a spree tilts its corporation to its kind", r.mix == 2, tostring(r.mix))
       check("director: a surge sends reinforcements first", (r.reinforced or 0) >= 1, tostring(r.reinforced))
@@ -9203,11 +9214,12 @@ scenarios.quiet = function()
       if not st.quiescent and not S.down then S.cap_up = st.cap end
       if st.quiescent and not S.down then
         S.down, S.launched_down, S.cap_down, S.streak_down = game.tick, st.ops.launched, st.cap, st.stood_down_streak
+        S.self_down = st.ops.self_defence or 0
       end
       -- What it launched while stood down (until it woke, or till its ground was hit).
       if S.down and not S.woke then
         if st.quiescent then
-          if not S.creep then S.launched_quiet = st.ops.launched end
+          if not S.creep then S.launched_quiet, S.self_quiet = st.ops.launched, st.ops.self_defence or 0 end
         else S.woke = game.tick end
       end
       if S.down and not S.landed and #lp("bases") > (S.bases0 or 0) then S.landed = game.tick end
@@ -9241,8 +9253,12 @@ scenarios.quiet = function()
       tostring(S.landed), tostring(S.cap_up), tostring(S.cap_down), tostring(S.creep_at),
       S.creep and (S.creep.valid and "standing" or "razed") or "none"))
     check("quiet: it stood down", S.down ~= nil, tostring(S.down))
-    check("quiet: and launched nothing against the player while stood down", S.down and S.launched_quiet == S.launched_down,
-      string.format("%s -> %s", tostring(S.launched_down), tostring(S.launched_quiet)))
+    -- (Self-defence apart, a stood-down camp's right: since 0.2.380 the camp's curtain wall grew into reach of streak's
+    -- guarded site, its guns fired on it, and the raid there was the answer to a threat on its ground.)
+    local self_in = (S.self_quiet or 0) - (S.self_down or 0)
+    check("quiet: and launched nothing against the player while stood down, but self-defence",
+      S.down and S.launched_quiet and S.launched_quiet - S.launched_down == self_in,
+      string.format("%s -> %s, %d in self-defence", tostring(S.launched_down), tostring(S.launched_quiet), self_in))
     check("quiet: a new landing within 6 minutes", S.landed and S.landed - S.down <= 6 * 3600 + 600, tostring(S.landed))
     -- (Its reserve: an army cap no more than half what it was at war, army.RESERVE.)
     check("quiet: stood down, its army cap is its reserve", S.cap_up and S.cap_down and S.cap_down <= math.ceil(S.cap_up / 2),
@@ -9317,6 +9333,8 @@ local function truck_checks()
 end
 
 scenarios.clear = function()
+  -- (60 minutes in the regression since 0.2.396: since 0.2.380's lanes the camp's first losses to the nests came
+  -- elsewhere, its first clearance took another nest, and the second, which opens the way, came at minute 43, past 40.)
   -- (The howitzer truck, as a corporation without orbital drops sends it: Kessler-Hayashi's drop since 0.2.165.)
   if params.mix == "worms" then truck_watch(); schedule(20, function() lp("debug_tune", {drop_off = true}) end) end
   -- Settled: the target razed.
@@ -10981,6 +10999,9 @@ end
 -- hovering part of the items, filling its own trunk, then leaving"). LP_MIX=guarded: an armed gun turret by the belt, no
 -- truck; LP_MIX=raid: the yard destroyed at minute 24, what it held spills.
 scenarios.skim = function()
+  -- (45 minutes since 0.2.396, guarded and notheft 30: a skim waits for its camp to mature, and since 0.2.380's trucks
+  -- cut their lanes through forest the Grubstake town of seed 12345 builds its far mine and matures at minute 29, not
+  -- 24; its first skim came in the run's last minute.)
   local guarded, raid, night = params.mix == "guarded", params.mix == "raid", params.mix == "night"
   -- LP_MIX=notheft: Grubstake's theft off (lp-grubstake-theft): no truck sets out.
   local notheft = params.mix == "notheft"
@@ -17706,6 +17727,10 @@ scenarios.mended = function()
     local store = surface().create_entity{name = "storage-chest", position = {c[1] - 3.5, c[2] + 3.5}, force = "player"}
     store.insert{name = "stone-wall", count = 200}
     if dozers then
+      -- (No foreman: the raid's breaking on its foreman's death, the player's counterplay, is not the subject; since
+      -- 0.2.380's lanes the camp's timings moved and one turret's shot at the foreman broke the raid before the wall,
+      -- where before it breached; a dozer charging through the wall is.)
+      lp("debug_tune", {leader_off = true})
       lp("debug_units", S.id, "lp-dozer", 2)
       lp("debug_units", S.id, "lp-buggy", 4)
       for _, k in ipairs({-4, 4}) do
@@ -19566,6 +19591,8 @@ script.on_event(defines.events.on_entity_died, function(e)
     S.dozer_kills = S.dozer_kills or {}
     S.dozer_kills[e.entity.name] = (S.dozer_kills[e.entity.name] or 0) + 1
   end
+  -- (Plate: a unit kept that died in a fight, told apart from one replaced.)
+  if S.kept_set and e.entity.unit_number and S.kept_set[e.entity.unit_number] then S.kept_died = (S.kept_died or 0) + 1 end
   -- (Veteran: the player's troopers that died in the fight, told apart from one lost to a swap.)
   if params.scenario == "veteran" and e.entity.name == "lp-trooper" and e.entity.force.name == "player" then
     S.trooper_deaths = (S.trooper_deaths or 0) + 1
