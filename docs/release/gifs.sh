@@ -30,7 +30,7 @@ loop() {
 CROP="crop=860:540:80:40"
 loop pods 30 "$CROP" "A Kessler-Hayashi strike force's pods coming down beside a factory's labs." -framerate 30 -i "$FR/pods-%05d.png"
 loop strike-fight 30 "$CROP" "The strike force among the labs." -framerate 30 -i "$FR/fight-%05d.png"
-loop walk-home 30 "" "A strike force broken by a ring of guns, walking home through the cluster it hit." -framerate 30 -i "$FR/home-%05d.png"
+loop walk-home 30 "" "A strike force broken by a ring of guns, walking home between them." -framerate 30 -i "$FR/home-%05d.png"
 L=media/release/loops
 loop tesla 30 "" "Kessler-Hayashi's Tesla units' lightning on your troops." -i "$L/tesla.mp4"
 loop bombers 30 "" "Grubstake's bomb drones diving on your troopers on the march." -i "$L/bombers.mp4"

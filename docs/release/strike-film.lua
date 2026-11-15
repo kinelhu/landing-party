@@ -17,7 +17,7 @@ local function each()
   end
   storage.labels_hidden = true
 end
-return {name = "strike-loops", resolution = {1440, 810}, anti_alias = true, speed = 1, stop_after = 10200, each = each,
+return {name = "strike-loops", resolution = {1440, 810}, anti_alias = true, speed = 1, stop_after = 10400, each = each,
   director = {
     {at = 60, cmd = "jammer"}, {at = 70, cmd = "blackout"},
     {at = 90, cmd = "strike", arg = "research"},
@@ -29,6 +29,7 @@ return {name = "strike-loops", resolution = {1440, 810}, anti_alias = true, spee
     move("pods", "strike1:sent", 300, 120, "dstrike1", 0.85, 0.8),
     -- Its fight among the labs, following the force.
     move("fight", "strike1:landed", 60, 150, "dforce1", 0.75, 0.75, true),
-    -- The broken force walking home through the cluster it hit, followed.
-    move("home", "strike2:broken", 30, 150, "dforce2", 0.7, 0.65, true),
+    -- The broken force walking home, followed: round the guns where it can, turning on those that hit it (0.2.428);
+    -- longer, to see a burst and the walk on.
+    move("home", "strike2:broken", 30, 240, "dforce2", 0.7, 0.6, true),
   }}
