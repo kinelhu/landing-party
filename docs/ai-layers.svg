@@ -79,8 +79,8 @@
 <title>The director (above every faction)</title>
 <path fill="#f7dede" stroke="black" d="M315.62,-842C315.62,-842 162.38,-842 162.38,-842 156.38,-842 150.38,-836 150.38,-830 150.38,-830 150.38,-810 150.38,-810 150.38,-804 156.38,-798 162.38,-798 162.38,-798 315.62,-798 315.62,-798 321.62,-798 327.62,-804 327.62,-810 327.62,-810 327.62,-830 327.62,-830 327.62,-836 321.62,-842 315.62,-842"/>
 <text xml:space="preserve" text-anchor="middle" x="239" y="-827.55" font-family="Helvetica,sans-Serif" font-size="11.00">The director (above every faction)</text>
-<text xml:space="preserve" text-anchor="middle" x="239" y="-815.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 1629 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="239" y="-803.55" font-family="Helvetica,sans-Serif" font-size="11.00">director 1500</text>
+<text xml:space="preserve" text-anchor="middle" x="239" y="-815.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 1657 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="239" y="-803.55" font-family="Helvetica,sans-Serif" font-size="11.00">director 1528</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Seams (leaves) -->
 <g id="edge31" class="edge">
@@ -107,9 +107,9 @@
 <!-- The director (above every faction)&#45;&gt;Corporation -->
 <g id="edge29" class="edge">
 <title>The director (above every faction)&#45;&gt;Corporation</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.8" d="M275.47,-797.76C328.91,-766.12 430.95,-703.74 512,-642.5 554.34,-610.51 557.3,-592.75 601.75,-563.75 708.21,-494.3 750.59,-505.98 861,-443 912.79,-413.46 968.87,-373.73 1004.89,-347.12"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.8" points="1006.82,-350.04 1012.76,-341.27 1002.65,-344.42 1006.82,-350.04"/>
-<text xml:space="preserve" text-anchor="middle" x="604.38" y="-564.95" font-family="Helvetica,sans-Serif" font-size="9.00">3</text>
+<path fill="none" stroke="#8899aa" stroke-width="2" d="M275.47,-797.76C328.91,-766.12 430.95,-703.74 512,-642.5 554.34,-610.51 557.3,-592.75 601.75,-563.75 708.21,-494.3 750.59,-505.98 861,-443 912.79,-413.46 968.87,-373.73 1004.89,-347.12"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2" points="1006.58,-350.22 1012.52,-341.45 1002.41,-344.6 1006.58,-350.22"/>
+<text xml:space="preserve" text-anchor="middle" x="604.38" y="-564.95" font-family="Helvetica,sans-Serif" font-size="9.00">4</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Army and operations -->
 <g id="edge28" class="edge">

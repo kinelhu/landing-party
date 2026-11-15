@@ -82,7 +82,7 @@ local function build(p)
     row2.add{type = "button", name = "lp_dir_spree_" .. corp, caption = "Spree: " .. c.name, tags = {lp_dir = "spree", corp = corp}}
   end
   local row3 = f.add{type = "flow", name = "lp_dir_row3", direction = "horizontal"}
-  for _, b in ipairs({{"wave", "Drop wave"}, {"resolve", "Resolve expeditions"}, {"supply", "Supply drop"}, {"jammer", "Launch jammer"}, {"blackout", "Blackout mast"}, {"bounty", "Bounty"}, {"salvage", "Salvage"},
+  for _, b in ipairs({{"wave", "Drop wave"}, {"resolve", "Resolve expeditions"}, {"supply", "Supply drop"}, {"jammer", "Launch jammer"}, {"blackout", "Blackout mast"}, {"bounty", "Bounty"}, {"salvage", "Salvage"}, {"research", "Research"},
     {"collect", "Collect supplies"}}) do
     row3.add{type = "button", name = "lp_dir_" .. b[1], caption = b[2], tags = {lp_dir = b[1]}}
   end

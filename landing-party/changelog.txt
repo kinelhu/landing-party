@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.412
+Date: 2026-11-15
+  Features:
+    - Research breakthrough: a corporation at war may jump straight to its next research, fielding its new units sooner.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.411
 Date: 2026-11-15
   Features:

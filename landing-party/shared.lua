@@ -437,7 +437,7 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- a surge or a focus only with two camps at war or more.
   surge_cost = 2, surge_factor = 2, surge_add = 1, surge_minutes = 15, focus_cost = 3, focus_weight = 4, focus_radius = 64,
   -- (supply back in steady's draw at 0.1, 0.2.393: the one beat the player can win outright, its pod tagged.)
-  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2, wave = 0.15, supply = 0.1, jammer = 0.15, blackout = 0.15, bounty = 0.15},
+  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2, wave = 0.15, supply = 0.1, jammer = 0.15, blackout = 0.15, bounty = 0.15, research = 0.1},
   -- The launch jammer (the user, 2026-11-15: "a camp building a massive jammer blocking rocket exports intermittently"):
   -- a Kessler-Hayashi camp at war within jam_radius of the player's rocket silo raises a mast; while it stands the
   -- silos within jam_radius of it are held jam_on seconds in every jam_on + jam_off, for jam_minutes; jam_cost. Drawn
@@ -452,6 +452,9 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- Lull salvage (docs/director.md, a lull's reward): salvage_chance of the lulls, a rival shuttle crashed
   -- salvage_distance from the player's spawn, its cargo by the player's era; tagged, an alert on it. Named priors.
   salvage_chance = 0.5, salvage_distance = 150,
+  -- The research breakthrough (docs/director.md, off-map beats): a corporation at war buys its next node of research at
+  -- once, its fund untouched; research_cost of the budget. Its new units are the tell.
+  research_cost = 1,
   -- Step 3 (decided overnight 2026-11-14, for review): a drop wave, wave_size landings of one corporation at once (the
   -- landing queue, each seeing the last), wave_cost; its camps an expedition (not counted against the camp cap, no
   -- reliefs, the landing clock untouched) until expedition_minutes, then the user's settle rule (2026-11-14): settles

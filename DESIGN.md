@@ -7341,6 +7341,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The research breakthrough** (0.2.412; docs/director.md, off-map beats). A director beat (beat_weights.research
+  0.1, research_cost 1, always in the draw): the corporation at war picked as for a spree buys its next node at once
+  (rd.choose, lent the fund and the fund then as it was). Nothing told; its new units are the tell. Panel "Research".
+  Scenario director research: Kessler-Hayashi bought optics, its fund 0 before and after; with the fund left lent,
+  999,600 after (the check seen failing). Its weight in every draw shifts every director run's beat sequence: the 21
+  director variants pass.
 - **Lull salvage** (0.2.411; docs/director.md, a lull's reward). salvage_chance (0.5) of the lulls, by a stream of its
   own (from the beats' it would shift every beat after the first lull), a rival shuttle crashes salvage_distance (150)
   from the player's spawn: the vanilla crash site's wrecks, cargo by the player's era (circuits and gears; advanced

@@ -22,6 +22,7 @@ local rng = require("__landing-party__.scripts.rng")
 local pods = require("__landing-party__.scripts.pods")
 local war = require("__landing-party__.scripts.war")
 local jammer = require("__landing-party__.scripts.jammer")
+local rd = require("__landing-party__.scripts.rd")
 
 local director = {}
 
@@ -302,6 +303,7 @@ local function draw(s, owner)
     if not (s.masts and s.masts[kind]) and mast_site(kind, owner) then list[#list + 1] = kind end
   end
   if not s.bounty and director.bounty_target(owner) then list[#list + 1] = "bounty" end
+  list[#list + 1] = "research"
   local total = 0
   for _, k in ipairs(list) do total = total + (w[k] or 0) end
   local x = rng.next(s.rng) * total
@@ -321,7 +323,7 @@ end
 local function cost_of(beat)
   if beat == "climax" then return tun("cap") end
   return tun((beat == "surge" and "surge_cost") or (beat == "focus" and "focus_cost") or (beat == "wave" and "wave_cost")
-    or (beat == "supply" and "supply_cost") or (MASTS[beat] and MASTS[beat].cost) or (beat == "bounty" and "bounty_cost") or "spree_cost")
+    or (beat == "supply" and "supply_cost") or (MASTS[beat] and MASTS[beat].cost) or (beat == "bounty" and "bounty_cost") or (beat == "research" and "research_cost") or "spree_cost")
 end
 
 -- The place on the player's ground its camps know best: their targets against the player, by cell of focus_radius,
@@ -564,6 +566,11 @@ function director.tick(tick)
       local _, camps = at_war(owner)
       if camps < 2 then s.next_beat = "surge" end
     end
+    if s.next_beat == "research" then
+      s.phase, s.next_beat = "fill", nil
+      if director.start_research(s, owner, tick, why) then s.budget = s.budget - tun("research_cost") end
+      return
+    end
     if s.next_beat == "bounty" then
       s.phase, s.next_beat = "fill", nil
       if director.start_bounty(s, owner, tick, why) then s.budget = s.budget - tun("bounty_cost") end
@@ -731,6 +738,24 @@ masts_tick = function(s, tick)
       end
     end
   end
+end
+
+-- A research breakthrough now: a corporation at war (the one picked, as a spree's) buys its next node, lent the fund for it
+-- and the fund then as it was. Nothing told: its new units are the tell.
+function director.start_research(s, owner, tick, why)
+  local corp = pick(s, owner, tick)
+  if not corp or corp == "biotech" then return false end
+  local t = rd.state(corp)
+  local before = t.fund
+  t.fund = before + 1e6
+  local id = rd.choose(corp)
+  t.fund = before
+  if not id then return false end
+  s.researched = (s.researched or 0) + 1
+  s.beats = s.beats + 1
+  shared.event("beat", {kind = "research", corp = corp, node = id})
+  trace(string.format("research breakthrough: %s bought %s at once (%s)", corp, id, why or "forced"))
+  return id
 end
 
 -- The bounty's target: the player's building of most value its camps at war know, standing.
@@ -1435,6 +1460,9 @@ function director.cmd(action, arg)
     local at = type(arg) == "table" and {arg[1] or arg.x, arg[2] or arg.y} or nil
     if not director.start_surge(s, owner, tick, action == "focus", "forced", at) then return "no corporation at war with a camp standing" end
     return action == "focus" and (s.focus and "focus strike" or "surge (no focus known)") or "surge"
+  elseif action == "research" then
+    local id = director.start_research(s, owner, tick, "forced")
+    return id and ("research: " .. id) or "no node to buy"
   elseif action == "salvage" then
     return director.salvage(s, owner, tick, true) and "salvage" or "no place for a wreck"
   elseif action == "bounty" then

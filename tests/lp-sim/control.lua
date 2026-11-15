@@ -7469,6 +7469,27 @@ scenarios.director = function()
     end)
     return
   end
+  -- LP_MIX=research: a research breakthrough (0.2.412): forced, the corporation buys one node at once and its fund is
+  -- as it was.
+  if params.mix == "research" then
+    schedule(120, function() lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100}}) end)
+    schedule(2 * 3600 + 600, function()
+      local t0 = lp("rd_state", "serenity") or {}
+      S.bought0, S.fund0 = t0.bought, t0.fund
+      S.said = lp("director_cmd", "research")
+      local t1 = lp("rd_state", "serenity") or {}
+      S.bought1, S.fund1 = t1.bought, t1.fund
+    end)
+    schedule(END - 60, function()
+      info(string.format("director research: %s; bought %s then %s, fund %s then %s", tostring(S.said), tostring(S.bought0),
+        tostring(S.bought1), tostring(S.fund0), tostring(S.fund1)))
+      check("director: research, one node bought at once, the fund as it was", type(S.said) == "string"
+        and S.said:find("research: ", 1, true) and S.bought1 == (S.bought0 or 0) + 1 and S.fund1 == S.fund0,
+        string.format("%s, bought %s to %s, fund %s to %s", tostring(S.said), tostring(S.bought0), tostring(S.bought1),
+        tostring(S.fund0), tostring(S.fund1)))
+    end)
+    return
+  end
   -- LP_MIX=salvage: a lull's salvage (0.2.411): forced, a shuttle wrecked salvage_distance from the player's spawn with
   -- its cargo, tagged; emptied, its tag gone and counted taken.
   if params.mix == "salvage" then
