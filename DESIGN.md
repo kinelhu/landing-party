@@ -7348,7 +7348,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   convoy's end sent their units home with by_enemy, past ops.walk_home. Both now go quiet while the corporation holds
   a truce, train intercepts are not sent against a force under truce, and the recall disbands those out. Scenario
   train LP_MIX=truce: a lull before the train comes; 2 intercepts and the train hit without, none with. (0.2.403's
-  claim that it would clear the rest was wrong: I had not looked at who else sends units home.)
+  claim that it would clear the rest was wrong: I had not looked at who else sends units home.) Measured on
+  railbase_end, steady, seeds 1 to 5: the player's buildings the held corporations killed inside a truce (truce_loss
+  events) 0, 0, 10, 3 and 30, from 115, 0, 92, 141 and 50 on 0.2.400; what is left, garrison units by their own ground
+  and orders given in the truce's first seconds. Steady razed 363, 201, 687, 546, 459 against off's 257, 101, 340,
+  317, 468: above off on four seeds, seed 5 even. The losses still in lulls are mostly the save's own biters.
 - **A truce kept whenever it holds** (0.2.403). On 0.2.402 the held corporations razed 8, 0, 55, 14 and 41 of the
   player's buildings in railbase_end's truces (seeds 1 to 5; 224, 0, 123, 252 and 77 on 0.2.400). What was left: units
   set walking home after the recall (operations ending in the truce, against another corporation or out of it) and
