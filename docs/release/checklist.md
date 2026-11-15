@@ -12,6 +12,15 @@ manual revisited after calibration; an art direction pass before the playtest.
 - Mod page text: docs/release/modpage.md (draft). Gallery: docs/release/gallery/ (ten frames, captions in modpage.md).
 - Trailer: media/trailer/cut-25 (thumbnail: media/trailer/thumbnail-split.png; title and description drafted).
 
+## Decided (the user, 2026-11-15)
+- **Version 0.3.0** for the first upload, a public beta.
+- **No PNG recompression**: about 18 MB saved of 163 was not worth it ("Do we need to bother for 10 MB?").
+- **The page links the manual PDF and the source repository.**
+- **The trailer's music:** variants proposed first, to try to improve it, before the credit is written.
+- Before the upload: the playtest and calibration set up; the sound pass ("would increase the value of the mod
+  greatly"); the mod page with GIFs; a multiplayer run with the director; the manual's pictures. Then the trailer,
+  the release regression and the upload.
+
 ## For the user to decide
 - **Version number** for the first upload (1.0.0, or 0.3.0 as a public beta).
 - **The zip's size**: PNGs are 154 of its 163 MB. Lossless recompression (oxipng -o 3, no pixel changed) saved 12% on the
