@@ -36,7 +36,9 @@ manual revisited after calibration; an art direction pass before the playtest.
 
 ## Still to do before upload
 - The playtest and lever calibration (waiting on the user).
-- The art direction pass (graphics-pass memory).
+- The art direction pass (graphics-pass memory). Redo list from the ratings (barracks, rally beacon, bait, KH drill,
+  Grubstake turret and flamer, pact breaker) plus Kessler-Hayashi's hauler, which has no model of its own: the user's
+  idea, its tank chassis with no turret, an APC (2026-11-16). The walker is cut for 0.3.0.
 - The manual revisited (in progress, 2026-11-10) and its PDF hosted somewhere linkable.
 - A last full regression on the release commit (`scripts/regress.sh 12345`, all of it).
 - Upload: mods.factorio.com, "Upload new mod", the zip from media/release/; then the page text, gallery and tags.
