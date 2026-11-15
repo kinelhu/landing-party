@@ -81,6 +81,9 @@ for l in $landers; do
 done
 events+=("wave|0|0" "land serenity 400|0|0" "raid|0|0" "director strike|0|0" "director joint|0|0")
 
+# (The game at LP_SPEED, default 0.5, while the client plays: on nw at minute 45 with the director's strikes out, the
+# client was dropped for not keeping up at full speed, 2026-11-15. A desync is the same at any speed.)
+rcon "/sc game.speed = ${LP_SPEED:-0.5}" > /dev/null
 if [ -z "${LP_NOCLIENT:-}" ]; then
   "$FACTORIO" --config "$C/config/config.ini" --mp-connect "127.0.0.1:$PORT" --disable-audio > "$OUT/client.log" 2>&1 &
   cpid=$!
