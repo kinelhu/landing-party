@@ -105,7 +105,10 @@ def clips(d):
                                                               e["volume"])
         for tag, files, speed, vol in (("now", now, 1.0, 1.0), ("proposed", e["files"], e["speed"], e["volume"])):
             wav = os.path.join(tmp, e["id"] + "-" + tag + ".wav")
-            if tag == "now":
+            if tag == "now" and e.get("now_layers"):
+                # (A sequence now, round six's strike: its voices at their offsets, nothing at 0.)
+                burst(wav, [], 1.0, 1.0, e["every"], 1, e["now_layers"], dur=e.get("dur"))
+            elif tag == "now":
                 burst(wav, files, speed, vol, e.get("was_every", e["every"]), e["shots"], dur=e.get("dur"))
             else:
                 global AF
@@ -151,7 +154,10 @@ def main():
             else:
                 sub = "proposed: %s at speed %.2f, volume %.2f" % (os.path.basename(e["files"][0]).rsplit("-", 1)[0], speed, vol)
             card(img, "%d. %s" % (n + 1, e["label"]), sub[:75])
-            if tag == "now":
+            if tag == "now" and e.get("now_layers"):
+                # (A sequence now, round six's strike: its voices at their offsets, nothing at 0.)
+                burst(wav, [], 1.0, 1.0, e["every"], 1, e["now_layers"], dur=e.get("dur"))
+            elif tag == "now":
                 burst(wav, files, speed, vol, e.get("was_every", e["every"]), e["shots"], dur=e.get("dur"))
             else:
                 global AF

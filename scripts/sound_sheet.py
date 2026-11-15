@@ -52,10 +52,12 @@ TEXT = {
         "redos: the foot soldiers' deaths split into Kessler-Hayashi's machines and Grubstake's people, a harrier on an "
         "engine and a propeller, a sapper's charge you can hear, a dome catch with electricity, and three orbital calls. "
         "Where cards share a letter series (A, B, C), keep the one you prefer and drop the others."),
-    6: ("Sounds, round six", "Round five's keeps are in the mod, the harrier lower and quieter and the machine's death "
-        "quieter as you asked. One sound left: the orbital strike's call. Round five's whine was too simple, so these three "
-        "lay detuned voices over each other, climb unevenly, and sit on a recording of the game's. Keep one, or say what "
-        "is still wrong."),
+    6: ("Sounds, round six", "The orbital strike as a whole: Kessler-Hayashi's spotter paints for 12 seconds, silent "
+        "today, then its first shell lands and pairs follow every third of a second. Each card plays the full sequence: the "
+        "call, the uplink's hum and its own voices rising over the paint, a rush in the last half second, then the first "
+        "six impacts at their real times, the explosions' own sounds unchanged. Now plays what you hear today. D, E and F "
+        "keep round six's characters; keep one. The last card is your cannon's 5-second version of the same idea, and it "
+        "will follow whichever of D, E and F you keep."),
 }
 
 page = open(os.path.join(os.path.dirname(__file__), "sound_sheet.tmpl.html")).read()
