@@ -7341,6 +7341,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The bounty** (0.2.409; docs/director.md, off-map beats). A director beat (beat_weights.bounty 0.15, bounty_cost 1):
+  the player's building of most value known to the camps at war is priced; tagged "Bounty" on the player's map, it is
+  bounty_weight (8) times as relevant to every camp (ops' relevance, within 8 tiles of it) for bounty_minutes (15) or
+  till it falls (taken). No strike force, no lull, no message. Panel "Bounty". Scenario director bounty: a lab and an
+  assembler known, the lab priced and tagged, weighed 8 against 1 after; a second, its target destroyed, over and its
+  tag gone. (Forced before the director's first minute it weighed 1 against 1: ops reads it only while the director is
+  on.)
 - **The blackout mast** (0.2.408). The launch jammer generalised to masts (director.lua MASTS: corporation, target type,
   radius, cycle, minutes, cost). Grubstake's: a camp at war within blackout_radius (300) of one of the player's radars
   raises one; the radars within its reach are dark (disabled_by_script, "Blacked out by Grubstake") for blackout_minutes

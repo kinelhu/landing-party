@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.409
+Date: 2026-11-15
+  Features:
+    - Bounty: a corporation's headquarters may price one of your most valuable buildings, marked on your map; every camp at war goes for it until it falls or the bounty runs out.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.408
 Date: 2026-11-15
   Features:

@@ -7469,6 +7469,61 @@ scenarios.director = function()
     end)
     return
   end
+  -- LP_MIX=bounty: the bounty (0.2.409): two of the player's buildings the camp knows; forced, the dearer is priced and
+  -- tagged, and the camp weighs it bounty_weight times as much as once the bounty is over; a second, its target
+  -- destroyed, is over, taken, its tag gone.
+  if params.mix == "bounty" then
+    schedule(120, function()
+      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100, bounty_minutes = 2}})
+      local id = (lp("bases") or {})[1]
+      local o = lp("stats", id).origin
+      local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
+      for k, name in ipairs({"lab", "assembling-machine-1"}) do
+        local at = {math.floor(o.x - o.x / len * 150 + 30 * k), math.floor(o.y - o.y / len * 150)}
+        flatten(at[1] - 3, at[2] - 3, at[1] + 3, at[2] + 3)
+        surface().create_entity{name = name, position = {at[1] + 0.5, at[2] + 0.5}, force = "player"}
+        lp("debug_needed", id, at)
+      end
+    end)
+    schedule(2 * 3600 + 600, function()  -- (once the director is on: its minute)
+      local id = (lp("bases") or {})[1]
+      S.said = lp("director_cmd", "bounty")
+      local d = lp("director") or {}
+      S.b = d.bounty and d.bounty.pos
+      S.name = d.bounty and d.bounty.entity.valid and d.bounty.entity.name
+      S.tag = d.bounty and d.bounty.tag and d.bounty.tag.valid
+      S.rel_in = id and S.b and lp("debug_relevance", id, S.b)
+    end)
+    schedule(2 * 3600 + 600 + 3 * 3600, function()
+      local id = (lp("bases") or {})[1]
+      local d = lp("director") or {}
+      S.over = d.bounty == nil
+      S.rel_out = id and S.b and lp("debug_relevance", id, S.b)
+      S.said2 = lp("director_cmd", "bounty")
+      d = lp("director") or {}
+      S.tag2 = d.bounty and d.bounty.tag
+      if d.bounty and d.bounty.entity.valid then d.bounty.entity.die("lp-serenity") end
+    end)
+    schedule(2 * 3600 + 600 + 3 * 3600 + 180, function()
+      local d = lp("director") or {}
+      S.taken, S.over2 = d.bounties_taken, d.bounty == nil
+      S.tag2_gone = not (S.tag2 and S.tag2.valid)
+    end)
+    schedule(END - 60, function()
+      info(string.format("director bounty: %s on %s, tagged %s; relevance %s during, %s after; second %s, taken %s, over %s, tag gone %s",
+        tostring(S.said), tostring(S.name), tostring(S.tag), tostring(S.rel_in), tostring(S.rel_out), tostring(S.said2),
+        tostring(S.taken), tostring(S.over2), tostring(S.tag2_gone)))
+      local w = lp("director_prior", "bounty_weight")
+      check("director: bounty, the dearer building priced and tagged, weighed bounty_weight times while it holds",
+        S.said == "bounty" and S.name == "lab" and S.tag and S.over and S.rel_in and S.rel_out and S.rel_out > 0
+        and math.abs(S.rel_in / S.rel_out - w) < 0.5, string.format("%s on %s, tagged %s, %s against %s", tostring(S.said),
+        tostring(S.name), tostring(S.tag), tostring(S.rel_in), tostring(S.rel_out)))
+      check("director: bounty, its target destroyed, it is over, taken, its tag gone", S.said2 == "bounty" and S.taken == 1
+        and S.over2 and S.tag2_gone, string.format("%s, taken %s, over %s, tag gone %s", tostring(S.said2), tostring(S.taken),
+        tostring(S.over2), tostring(S.tag2_gone)))
+    end)
+    return
+  end
   -- LP_MIX=blackout: Grubstake's blackout mast (0.2.408): a Grubstake camp, the player's powered radar 120 tiles from
   -- it; forced, its mast dark the radar all along; the mast destroyed, the radar back and the mast's time over.
   if params.mix == "blackout" then

@@ -606,6 +606,12 @@ local function relevance(b, t, c)
     and (t.pos[1] - fo.pos[1]) ^ 2 + (t.pos[2] - fo.pos[2]) ^ 2 <= fo.radius * fo.radius then
     r = r * fo.weight
   end
+  -- A director's bounty (director.start_bounty): one building of the player's priced, to every camp, while it holds.
+  local bo = d and d.active and d.bounty
+  if bo and t.owner == bo.owner and t.pos and game.tick < bo.till
+    and (t.pos[1] - bo.pos[1]) ^ 2 + (t.pos[2] - bo.pos[2]) ^ 2 <= 8 * 8 then
+    r = r * bo.weight
+  end
   return r
 end
 

@@ -301,6 +301,7 @@ local function draw(s, owner)
   for _, kind in ipairs({"jammer", "blackout"}) do
     if not (s.masts and s.masts[kind]) and mast_site(kind, owner) then list[#list + 1] = kind end
   end
+  if not s.bounty and director.bounty_target(owner) then list[#list + 1] = "bounty" end
   local total = 0
   for _, k in ipairs(list) do total = total + (w[k] or 0) end
   local x = rng.next(s.rng) * total
@@ -320,7 +321,7 @@ end
 local function cost_of(beat)
   if beat == "climax" then return tun("cap") end
   return tun((beat == "surge" and "surge_cost") or (beat == "focus" and "focus_cost") or (beat == "wave" and "wave_cost")
-    or (beat == "supply" and "supply_cost") or (MASTS[beat] and MASTS[beat].cost) or "spree_cost")
+    or (beat == "supply" and "supply_cost") or (MASTS[beat] and MASTS[beat].cost) or (beat == "bounty" and "bounty_cost") or "spree_cost")
 end
 
 -- The place on the player's ground its camps know best: their targets against the player, by cell of focus_radius,
@@ -369,11 +370,12 @@ local function tell(owner, key, ...)
   end
 end
 
-local morale, masts_tick -- (below: after walk_back, and after start_mast)
+local morale, masts_tick, bounty_tick -- (below: after walk_back, start_mast and start_bounty)
 
 function director.tick(tick)
   if tick % 300 == 150 and storage.director then morale(storage.director, tick) end
   if tick % 60 == 30 and storage.director and storage.director.masts then masts_tick(storage.director, tick) end
+  if tick % 60 == 30 and storage.director and storage.director.bounty then bounty_tick(storage.director, tick) end
   if tick % 3600 ~= 0 then return end
   local s = st()
   -- (Its state a minute, on or off, and the minute's losses on each side: the event stream.)
@@ -561,6 +563,11 @@ function director.tick(tick)
       local _, camps = at_war(owner)
       if camps < 2 then s.next_beat = "surge" end
     end
+    if s.next_beat == "bounty" then
+      s.phase, s.next_beat = "fill", nil
+      if director.start_bounty(s, owner, tick, why) then s.budget = s.budget - tun("bounty_cost") end
+      return
+    end
     if MASTS[s.next_beat] then
       local kind = s.next_beat
       s.phase, s.next_beat = "fill", nil
@@ -723,6 +730,50 @@ masts_tick = function(s, tick)
       end
     end
   end
+end
+
+-- The bounty's target: the player's building of most value its camps at war know, standing.
+function director.bounty_target(owner)
+  local set = {}
+  for _, c in ipairs(at_war(owner)) do set[c] = true end
+  local best, bv
+  for _, b in pairs(storage.bases or {}) do
+    if set[b.corp] and not b.fallen then
+      for _, t in pairs(b.intel and b.intel.targets or {}) do
+        if t.owner == owner and t.pos and (not bv or (t.value or 0) > bv) then best, bv = t, t.value or 0 end
+      end
+    end
+  end
+  if not best then return nil end
+  local e = game.surfaces[1].find_entities_filtered{position = best.pos, radius = 2, force = owner, limit = 1}[1]
+  return e
+end
+
+-- A bounty now: its target tagged on the player's map (a price on it, not a message), every camp's preferred target.
+function director.start_bounty(s, owner, tick, why)
+  local e = director.bounty_target(owner)
+  if not e then return false end
+  local f = game.forces[owner]
+  s.bounty = {owner = owner, pos = {e.position.x, e.position.y}, entity = e, weight = tun("bounty_weight"),
+    till = tick + tun("bounty_minutes") * 3600, tag = f and f.add_chart_tag(e.surface, {position = e.position,
+      text = "Bounty", icon = {type = "virtual", name = "signal-alert"}})}
+  s.bounties = (s.bounties or 0) + 1
+  s.beats = s.beats + 1
+  shared.event("beat", {kind = "bounty", minutes = tun("bounty_minutes"), pos = s.bounty.pos, target = e.name})
+  trace(string.format("bounty: %s at %.0f,%.0f, %dx as relevant to every camp for %d minutes (%s)", e.name, e.position.x,
+    e.position.y, tun("bounty_weight"), tun("bounty_minutes"), why or "forced"))
+  return true
+end
+
+bounty_tick = function(s, tick)
+  local bo = s.bounty
+  if bo.entity.valid and tick < bo.till then return end
+  local taken = not bo.entity.valid
+  if taken then s.bounties_taken = (s.bounties_taken or 0) + 1 end
+  if bo.tag and bo.tag.valid then bo.tag.destroy() end
+  shared.event("bounty_over", {why = taken and "taken" or "held"})
+  trace(string.format("bounty over: %s", taken and "its target destroyed" or "held to its time"))
+  s.bounty = nil
 end
 
 function director.start_supply(s, owner, tick, why)
@@ -1327,6 +1378,9 @@ function director.cmd(action, arg)
     local at = type(arg) == "table" and {arg[1] or arg.x, arg[2] or arg.y} or nil
     if not director.start_surge(s, owner, tick, action == "focus", "forced", at) then return "no corporation at war with a camp standing" end
     return action == "focus" and (s.focus and "focus strike" or "surge (no focus known)") or "surge"
+  elseif action == "bounty" then
+    if s.bounty then return "a bounty is up" end
+    return director.start_bounty(s, owner, tick, "forced") and "bounty" or "no target of the player's known"
   elseif MASTS[action] then
     if s.masts and s.masts[action] then return action .. " is up" end
     return director.start_mast(s, action, owner, tick, "forced") and action or ("no " .. MASTS[action].corp
