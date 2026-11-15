@@ -7341,6 +7341,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The launch jammer** (0.2.407; the user, 2026-11-15: "a camp building a massive jammer blocking rocket exports
+  intermittently"). A director beat (beat_weights.jammer 0.15, jam_cost 2), drawn only when a Kessler-Hayashi camp at war
+  stands within jam_radius (500) of one of the player's rocket silos and no jammer is up: the camp raises a mast (the
+  fortress jammer's lp-jammer for now; a bigger one in the graphics pass) 20 tiles toward the silo, tagged on the map.
+  While it stands, the silos within jam_radius of it are held (disabled_by_script, "Jammed by Kessler-Hayashi" in their
+  GUI) jam_on (30) seconds of every 90, for jam_minutes (20); destroyed, they are free at once. No message. A beat
+  without a lull (as the supply drop). Panel: "Launch jammer". Scenario director jammer: a silo 150 tiles off held 61 of
+  181 s, free once the mast died; out of its reach (jam_radius 1) held 0 (the check seen failing).
 - **Strike forces break** (0.2.406; the user, 2026-11-15: strike forces the player can beat). RimWorld's morale: a
   strike force that has lost strike_break (0.5, a named prior) of those landed breaks, walks back with distraction none
   and is lifted out where it landed: repelled, untold (the user: "No messages!!!!!"). Checked every 5 s. Before, 4 of

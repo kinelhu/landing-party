@@ -7423,6 +7423,51 @@ scenarios.director = function()
       S.farm = lp("farm_arrive", 1)
     end)
   end
+  -- LP_MIX=jammer: the launch jammer (0.2.407; the user, 2026-11-15): the player's rocket silo 150 tiles from the camp;
+  -- forced, its mast raised; the silo held about jam_on of every jam_on + jam_off seconds, a status in its GUI; the
+  -- mast destroyed, the silo free and the jammer over.
+  if params.mix == "jammer" then
+    schedule(120, function()
+      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100}})
+      local o = lp("stats", storage.id).origin
+      local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
+      local at = {math.floor(o.x - o.x / len * 150), math.floor(o.y - o.y / len * 150)}
+      flatten(at[1] - 8, at[2] - 8, at[1] + 8, at[2] + 8)
+      S.silo = surface().create_entity{name = "rocket-silo", position = {at[1] + 0.5, at[2] + 0.5}, force = "player"}
+    end)
+    schedule(600, function() S.said = lp("director_cmd", "jammer") end)
+    S.held, S.free = 0, 0
+    for t = 660, 660 + 180 * 60, 60 do
+      schedule(t, function()
+        if S.silo and S.silo.valid then
+          if S.silo.disabled_by_script then S.held = S.held + 1 else S.free = S.free + 1 end
+        end
+      end)
+    end
+    schedule(660 + 181 * 60, function()
+      local d = lp("director") or {}
+      S.up = d.jam and d.jam.mast and d.jam.mast.valid
+      if S.up then d.jam.mast.die("player") end
+    end)
+    schedule(660 + 185 * 60, function()
+      local d = lp("director") or {}
+      S.after = S.silo and S.silo.valid and S.silo.disabled_by_script
+      S.over, S.killed = d.jam == nil, d.jams_killed
+    end)
+    schedule(END - 60, function()
+      info(string.format("director jammer: %s; silo %s, held %d s, free %d s; mast up %s, after its death held %s, over %s, killed %s",
+        tostring(S.said), tostring(S.silo ~= nil), S.held, S.free, tostring(S.up), tostring(S.after), tostring(S.over),
+        tostring(S.killed)))
+      local share = S.held / math.max(1, S.held + S.free)
+      local want = lp("director_prior", "jam_on") / (lp("director_prior", "jam_on") + lp("director_prior", "jam_off"))
+      check("director: jammer, its mast holds the silo a third of the time", S.said == "launch jammer"
+        and math.abs(share - want) < 0.1, string.format("%s, held %d of %d s", tostring(S.said), S.held, S.held + S.free))
+      check("director: jammer, its mast destroyed the silo is free and it is over", S.up and S.after == false and S.over
+        and S.killed == 1, string.format("up %s, held after %s, over %s, killed %s", tostring(S.up), tostring(S.after),
+        tostring(S.over), tostring(S.killed)))
+    end)
+    return
+  end
   -- LP_MIX=repel: a focus strike at the player's factory ringed by gun turrets: the force loses half of those landed,
   -- breaks, walks back untold razing nothing and is lifted, repelled (0.2.406, RimWorld's morale; the user,
   -- 2026-11-15: strike forces the player can beat).

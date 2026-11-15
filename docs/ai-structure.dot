@@ -30,7 +30,7 @@ digraph ai {
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="The director (above every faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "director" [label="director\n1278 lines", width=2.22, fillcolor="#f7dede"];
+    "director" [label="director\n1369 lines", width=2.32, fillcolor="#f7dede"];
     "director_gui" [label="director_gui\n129 lines", width=0.94, fillcolor="#eef2f7"];
   }
   subgraph cluster_4 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -167,6 +167,7 @@ digraph ai {
   "cuts" -> "pool";
   "director" -> "faction";
   "director" -> "farm";
+  "director" -> "jammer";
   "director" -> "ops";
   "director" -> "pods";
   "director" -> "rng";

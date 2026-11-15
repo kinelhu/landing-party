@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.407
+Date: 2026-11-15
+  Features:
+    - Launch jammer: a Kessler-Hayashi camp near your rocket silo may raise a jammer mast that keeps pausing the silos in its range until you destroy it.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.406
 Date: 2026-11-15
   Changes:
