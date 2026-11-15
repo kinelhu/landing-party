@@ -1,0 +1,427 @@
+{
+ "_about": "The trailer's score config for factorio-film's scripts/score.py (its README, 'The score'), named by cut.json. Acts: the arrival sparse and cold; the army on war drums; Synthexis breathing, wet and low; Kessler-Hayashi ticking like a machine; the finale's drop where its burster attack begins; the bar before the nuke cut to silence; the end card's ring-out. The game's sounds kept on the picture: the nuke alone (the user on cut 15, 2026-11-05: 'Not a fan of the game sounds except the nuke maybe, as a send off'); the other hits are found and left out, ready to come back.",
+ "seed": 20261105,
+ "clips": [
+  [
+   "drop-",
+   "finale"
+  ],
+  [
+   "pre-",
+   "army"
+  ],
+  [
+   "shot-01",
+   "arrival"
+  ],
+  [
+   "landing-fx",
+   "arrival"
+  ],
+  [
+   "reel-base",
+   "arrival"
+  ],
+  [
+   "stage-m",
+   "army"
+  ],
+  [
+   "stage-c",
+   "army"
+  ],
+  [
+   "shot-06",
+   "synth"
+  ],
+  [
+   "reel-creep",
+   "synth"
+  ],
+  [
+   "reel-growth",
+   "synth"
+  ],
+  [
+   "stage-herd",
+   "synth"
+  ],
+  [
+   "reel-nwwall",
+   "synth"
+  ],
+  [
+   "reel-khwall",
+   "kh"
+  ],
+  [
+   "reel-teslawall",
+   "kh"
+  ],
+  [
+   "reel-dome",
+   "kh"
+  ],
+  [
+   "reel-culture",
+   "kh"
+  ],
+  [
+   "act-megaburst",
+   "finale"
+  ],
+  [
+   "stage-k2-strike",
+   "finale"
+  ],
+  [
+   "reel-warfinale",
+   "finale"
+  ],
+  [
+   "reel-nuke",
+   "nuke"
+  ],
+  [
+   "black",
+   "end"
+  ]
+ ],
+ "default_act": "kh",
+ "acts": {
+  "arrival": {
+   "style": "cold",
+   "chords": [
+    [
+     0,
+     3,
+     7
+    ],
+    [
+     -4,
+     0,
+     3
+    ],
+    [
+     0,
+     3,
+     7
+    ],
+    [
+     -2,
+     2,
+     5
+    ]
+   ],
+   "_chords": "Am F Am G"
+  },
+  "army": {
+   "style": "drums",
+   "chords": [
+    [
+     0,
+     3,
+     7
+    ],
+    [
+     -4,
+     0,
+     3
+    ],
+    [
+     3,
+     7,
+     10
+    ],
+    [
+     -2,
+     2,
+     5
+    ]
+   ],
+   "_chords": "Am F C G",
+   "gain": {
+    "toms": 1.25
+   }
+  },
+  "synth": {
+   "style": "breath",
+   "chords": [
+    [
+     0,
+     3,
+     7
+    ],
+    [
+     1,
+     5,
+     8
+    ],
+    [
+     0,
+     3,
+     7
+    ],
+    [
+     -1,
+     3,
+     6
+    ]
+   ],
+   "_chords": "Am Bb Am G#dim: Phrygian, uneasy",
+   "without": [
+    "arp"
+   ],
+   "gain": {
+    "breath": 1.3,
+    "gurgle": 1.3
+   }
+  },
+  "kh": {
+   "style": "machine",
+   "chords": [
+    [
+     0,
+     3,
+     7
+    ],
+    [
+     -4,
+     0,
+     3
+    ],
+    [
+     -7,
+     -3,
+     0
+    ],
+    [
+     -5,
+     -1,
+     2
+    ]
+   ],
+   "_chords": "Am F D E: harder, a dominant pull",
+   "gain": {
+    "tick": 1.6,
+    "engine": 1.1
+   }
+  },
+  "finale": {
+   "style": "drop",
+   "chords": [
+    [
+     0,
+     3,
+     7
+    ],
+    [
+     -4,
+     0,
+     3
+    ],
+    [
+     3,
+     7,
+     10
+    ],
+    [
+     -2,
+     2,
+     5
+    ]
+   ]
+  },
+  "nuke": {
+   "style": "silence",
+   "chords": [
+    [
+     0,
+     3,
+     7
+    ]
+   ]
+  },
+  "end": {
+   "style": "end",
+   "chords": [
+    [
+     0,
+     3,
+     7
+    ]
+   ]
+  }
+ },
+ "motif": [
+  [
+   0,
+   1.0
+  ],
+  [
+   3,
+   0.5
+  ],
+  [
+   7,
+   0.5
+  ],
+  [
+   5,
+   2.0
+  ]
+ ],
+ "_motif": "A C E D: the title's four notes (semitone, beats)",
+ "phrases": [
+  {
+   "bar": 3,
+   "kind": "bell",
+   "level": 0.05,
+   "_why": "under the title, kept at cut 15's level"
+  },
+  {
+   "bar": 8,
+   "kind": "horn",
+   "octave": -2,
+   "gain": 0.3,
+   "notes": [
+    [
+     0,
+     1.0
+    ],
+    [
+     -2,
+     0.5
+    ],
+    [
+     -4,
+     0.5
+    ],
+    [
+     -5,
+     2.0
+    ]
+   ],
+   "_what": "Synthexis: A G F E, a descent"
+  },
+  {
+   "bar": 12,
+   "kind": "horn",
+   "octave": -2,
+   "gain": 0.35,
+   "notes": [
+    [
+     0,
+     1.0
+    ],
+    [
+     -2,
+     0.5
+    ],
+    [
+     -4,
+     0.5
+    ],
+    [
+     -5,
+     2.0
+    ]
+   ]
+  },
+  {
+   "bar": 13,
+   "kind": "horn",
+   "octave": -2,
+   "gain": 0.5,
+   "_what": "Grubstake's brass on its drop"
+  },
+  {
+   "bar": 15,
+   "kind": "bell",
+   "level": 0.07,
+   "_what": "Kessler-Hayashi: the motif as a bell"
+  },
+  {
+   "bar": 16,
+   "kind": "bell",
+   "level": 0.07,
+   "notes": [
+    [
+     0,
+     0.5
+    ],
+    [
+     3,
+     0.25
+    ],
+    [
+     7,
+     0.25
+    ],
+    [
+     5,
+     1.0
+    ]
+   ],
+   "_what": "and again at double speed"
+  },
+  {
+   "bar": 17,
+   "kind": "horn",
+   "octave": -2,
+   "gain": 0.5,
+   "_what": "Grubstake mustering"
+  },
+  {
+   "bar": 19,
+   "kind": "horn",
+   "octave": -2,
+   "gain": 0.5,
+   "_what": "Grubstake moving out"
+  },
+  {
+   "bar": "drop",
+   "kind": "lead"
+  },
+  {
+   "bar": "drop+4",
+   "kind": "horn",
+   "octave": -2,
+   "gain": 0.7,
+   "_what": "the finale: the army's horn"
+  },
+  {
+   "bar": "drop+8",
+   "kind": "bell",
+   "level": 0.08,
+   "_what": "Kessler-Hayashi's bell"
+  },
+  {
+   "bar": "drop+12",
+   "kind": "lead"
+  },
+  {
+   "bar": "end-3",
+   "offset": 0.5,
+   "kind": "bell",
+   "level": 0.09
+  }
+ ],
+ "hits": {
+  "reel-nuke": "nuke",
+  "reel-culture": "lance",
+  "reel-khwall": "lance",
+  "stage-k2-strike": "lance",
+  "reel-dome": "shield",
+  "act-megaburst": "burst",
+  "reel-nwwall": "burst",
+  "reel-teslawall": "zap",
+  "landing-fx": "crash"
+ },
+ "game_sounds": [
+  "nuke"
+ ],
+ "_variant": "factions",
+ "_idea": "Each faction in its own instrument: Synthexis breathes with a low horn on a falling line and no arpeggio, Kessler-Hayashi ticks louder with the motif as bells, Grubstake marches on heavier drums with brass; the finale passes the theme between them.",
+ "_changed": "synth: without arp, breath and gurgle 1.3, a horn on A G F E at bars 8 and 12; kh: tick 1.6, engine 1.1, bells at bars 15 and 16; army: toms 1.25, horns at bars 13, 17, 19; finale: lead, horn, bell, lead"
+}
