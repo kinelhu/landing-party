@@ -7615,7 +7615,8 @@ scenarios.director = function()
   -- destroyed, is over, taken, its tag gone.
   if params.mix == "bounty" then
     schedule(120, function()
-      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100, bounty_minutes = 2}})
+      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100, bounty_minutes = 2,
+        points_per_worth = 1}})
       local id = (lp("bases") or {})[1]
       local o = lp("stats", id).origin
       local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
@@ -7634,6 +7635,8 @@ scenarios.director = function()
       S.b = d.bounty and d.bounty.pos
       S.name = d.bounty and d.bounty.entity.valid and d.bounty.entity.name
       S.tag = d.bounty and d.bounty.tag and d.bounty.tag.valid
+      S.text = S.tag and d.bounty.tag.text
+      S.strike = d.bounty and d.bounty.strike
       S.rel_in = id and S.b and lp("debug_relevance", id, S.b)
     end)
     schedule(2 * 3600 + 600 + 3 * 3600, function()
@@ -7648,7 +7651,7 @@ scenarios.director = function()
     end)
     schedule(2 * 3600 + 600 + 3 * 3600 + 180, function()
       local d = lp("director") or {}
-      S.taken, S.over2 = d.bounties_taken, d.bounty == nil
+      S.taken, S.over2, S.paid = d.bounties_taken, d.bounty == nil, d.bounty_paid
       S.tag2_gone = not (S.tag2 and S.tag2.valid)
     end)
     schedule(END - 60, function()
@@ -7663,6 +7666,11 @@ scenarios.director = function()
       check("director: bounty, its target destroyed, it is over, taken, its tag gone", S.said2 == "bounty" and S.taken == 1
         and S.over2 and S.tag2_gone, string.format("%s, taken %s, over %s, tag gone %s", tostring(S.said2), tostring(S.taken),
         tostring(S.over2), tostring(S.tag2_gone)))
+      -- (0.2.416: priced on its tag, paid to the camp that destroyed it, a strike force sent at it.)
+      check("director: bounty, its price on the tag, paid to the destroyer's camp, a strike force sent at it",
+        S.text and S.text:find("bounty: %d+ parts") and (S.paid or 0) >= lp("director_prior", "bounty_parts")
+        and (S.strike or 0) > 0, string.format("tag %s, paid %s, strike %s", tostring(S.text), tostring(S.paid),
+        tostring(S.strike)))
     end)
     return
   end

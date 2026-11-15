@@ -447,8 +447,10 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- for blackout_minutes (its strike forces then land unseen); drawn only with a radar of the player's in its reach.
   blackout_radius = 300, blackout_minutes = 15, blackout_cost = 2,
   -- The bounty (docs/director.md, off-map beats): the player's building of most value the camps at war know, priced by
-  -- headquarters, bounty_weight times as relevant to every camp for bounty_minutes or till it falls; tagged on the map.
-  bounty_weight = 8, bounty_minutes = 15, bounty_cost = 1,
+  -- headquarters, bounty_weight times as relevant to every camp for bounty_minutes or till it falls; tagged on the map
+  -- with its price, bounty_parts an era, paid to the camp that destroys it; a strike force sent at it; a focus strike's
+  -- cost (1 until 0.2.416, when it sent nothing).
+  bounty_weight = 8, bounty_minutes = 15, bounty_cost = 3, bounty_parts = 150,
   -- Lull salvage (docs/director.md, a lull's reward): salvage_chance over the player's era of the lulls, a rival shuttle
   -- crashed salvage_distance from the player's spawn, its cargo by the era; tagged, an alert on it. None while one lies
   -- uncollected, none unless a player is on the surface in person (the user, 2026-11-15: "rare, especially later game

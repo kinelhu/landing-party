@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.416
+Date: 2026-11-15
+  Changes:
+    - A bounty's map tag names who pays and how many parts; the camp whose units destroy the target collects them, and a strike force is sent at it.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.415
 Date: 2026-11-15
   Bugfixes:

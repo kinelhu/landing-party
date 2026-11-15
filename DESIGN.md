@@ -7341,6 +7341,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **A bounty with teeth** (0.2.416). In the visits each bounty drew the nearest camp's raid (4 of 5 taken) and no
+  convergence, its tag reading "Bounty" alone. Now its tag names who pays and how much ("Kessler-Hayashi bounty: 150
+  parts", bounty_parts an era), the camp of the corporation whose units destroy it nearest it is paid (note_loss
+  records the killer), and a strike force is sent at it (strike's aim); its cost a focus strike's, 3 (1 before).
+  Scenario director bounty: tagged with its price, 150 paid on its destruction by Kessler-Hayashi, a strike force of 5;
+  the killer unrecorded, nothing paid (seen failing).
 - **The new beats on railbase_end** (0.2.411 visits, 5 seeds, steady) and a fix (0.2.415). Every run had its bounty,
   two salvage drops, sweeps and broken strike forces (the jammer and blackout never: no silo or radar within the camps'
   reach). The bounty priced a big electric pole in all five (the camps' target values rank a big pole first): it now

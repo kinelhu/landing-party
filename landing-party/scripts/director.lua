@@ -81,6 +81,8 @@ function director.note_loss(owner, ent, cause, corp)
   -- (Every loss's worth, on or off: the calibration's measure, razed worth an hour; the consult part three.)
   local s = st()
   local v = valuemap.razed_of(ent)
+  -- (A bounty's target: who destroyed it, for its payout.)
+  if s.bounty and s.bounty.entity == ent and corp then s.bounty.killer = corp end
   s.lost_total = s.lost_total or {}
   s.lost_total[owner] = (s.lost_total[owner] or 0) + v
   if corp then
@@ -789,9 +791,16 @@ function director.start_bounty(s, owner, tick, why)
   local e = director.bounty_target(owner)
   if not e then return false end
   local f = game.forces[owner]
+  local corps = at_war(owner)
+  local era = math.max(1, (s.read and s.read.era) or 1)
+  local parts = tun("bounty_parts") * era
+  -- Priced in the world (the tag names who pays and what), paid to the camp whose units destroy it, a strike force sent
+  -- at it (0.2.416; a tag reading "Bounty" alone said nothing of who or why, and one camp's raid was no convergence).
   s.bounty = {owner = owner, pos = {e.position.x, e.position.y}, entity = e, weight = tun("bounty_weight"),
-    till = tick + tun("bounty_minutes") * 3600, tag = f and f.add_chart_tag(e.surface, {position = e.position,
-      text = "Bounty", icon = {type = "virtual", name = "signal-alert"}})}
+    till = tick + tun("bounty_minutes") * 3600, parts = parts, corps = corps, tag = f and f.add_chart_tag(e.surface,
+      {position = e.position, text = string.format("%s bounty: %d parts", names(corps), parts),
+      icon = {type = "virtual", name = "signal-alert"}})}
+  s.bounty.strike = director.strike_force(s, owner, corps, tick, 1, nil, s.bounty.pos)
   s.bounties = (s.bounties or 0) + 1
   s.beats = s.beats + 1
   shared.event("beat", {kind = "bounty", minutes = tun("bounty_minutes"), pos = s.bounty.pos, target = e.name})
@@ -805,6 +814,21 @@ bounty_tick = function(s, tick)
   if bo.entity.valid and tick < bo.till then return end
   local taken = not bo.entity.valid
   if taken then s.bounties_taken = (s.bounties_taken or 0) + 1 end
+  -- Paid: to the camp of the corporation whose units destroyed it nearest it (director.note_loss records the killer).
+  if taken and bo.killer then
+    local best, bd
+    for _, b in pairs(storage.bases or {}) do
+      if shared.CORPS[b.corp] and shared.CORPS[b.corp].force == bo.killer and not b.fallen and b.lander and b.lander.valid then
+        local d = (b.lander.position.x - bo.pos[1]) ^ 2 + (b.lander.position.y - bo.pos[2]) ^ 2
+        if not bd or d < bd then best, bd = b, d end
+      end
+    end
+    if best then
+      best.parts = best.parts + bo.parts
+      s.bounty_paid = (s.bounty_paid or 0) + bo.parts
+      trace(string.format("bounty paid: %d parts to camp %d (%s)", bo.parts, best.id, best.corp))
+    end
+  end
   if bo.tag and bo.tag.valid then bo.tag.destroy() end
   shared.event("bounty_over", {why = taken and "taken" or "held"})
   trace(string.format("bounty over: %s", taken and "its target destroyed" or "held to its time"))
@@ -982,13 +1006,14 @@ local STRIKE_REACH = 600
 -- strike_minutes; never the camp's garrison. Its points the beat's, not a camp's. The lead: a camp with no operation out,
 -- nearest the focus if there is one, else nearest the player's spawn. Its target: the focus, else the lead camp's known
 -- target of the player's of most value.
-local function strike(s, owner, corps, tick, mult, warn)
+local function strike(s, owner, corps, tick, mult, warn, aim)
   local n = math.floor(strike_units(s, owner) * (mult or 1))
   if n <= 0 then return 0 end
   local set = {}
   for _, c in ipairs(corps) do set[c] = true end
   local f = game.forces[owner]
-  local at = s.focus and tick < s.focus.till and s.focus.pos
+  -- (`aim`: a bounty's target, 0.2.416; else the focus, else the lead camp's own.)
+  local at = aim or (s.focus and tick < s.focus.till and s.focus.pos)
   local lead, ld, lbusy
   for _, b in pairs(storage.bases or {}) do
     if set[b.corp] and not b.fallen and not b.expedition and b.lander.valid then
@@ -1069,6 +1094,8 @@ local function strike(s, owner, corps, tick, mult, warn)
     lead.id, tx, ty, minutes, seen and "seen by radar, told" or "unseen"))
   return n
 end
+
+director.strike_force = strike
 
 -- Its strike teams' units as they land (war's pods.handlers.strike), sent at their target.
 war.on_strike_landed = function(key, units)
