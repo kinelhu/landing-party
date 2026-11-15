@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.403
+Date: 2026-11-15
+  Bugfixes:
+    - Units heading home from an attack that ends during a lull walk back without fighting through your base too.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.402
 Date: 2026-11-15
   Bugfixes:

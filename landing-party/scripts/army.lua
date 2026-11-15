@@ -699,10 +699,7 @@ local function leash(b, trace)
   if not h then return end
   -- In a truce of its corporation's (a director's lull) home without answering fire: called back by_damage from the
   -- player's base, they fought their way out (railbase_end, 0.2.401).
-  local d = defines.distraction.by_damage
-  for key, till in pairs(storage.truces or {}) do
-    if game.tick < till and key:sub(1, #b.corp + 1) == b.corp .. "|" then d = defines.distraction.none end
-  end
+  local d = shared.truce_held(b.corp) and defines.distraction.none or defines.distraction.by_damage
   local hp = h.position
   local r = (b.claim_radius or 60) + LEASH
   local lp = b.lander.valid and b.lander.position

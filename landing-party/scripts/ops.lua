@@ -824,7 +824,9 @@ end
 function ops.walk_home(b, units, quiet, overflight)
   local h = home(b)
   if not h then return 0 end
-  local d = quiet and defines.distraction.none or defines.distraction.by_damage
+  -- (Quiet too whenever its corporation's truce holds: an operation over during a lull, its squad came home through the
+  -- player's base by_damage; railbase_end, 0.2.402.)
+  local d = (quiet or shared.truce_held(b.corp)) and defines.distraction.none or defines.distraction.by_damage
   local back, n
   for _, u in ipairs(units) do
     if u.valid and not back then

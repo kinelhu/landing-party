@@ -833,6 +833,15 @@ function shared.event(kind, fields)
   helpers.write_file("landing-party/events.jsonl", helpers.table_to_json(e) .. "\n", true)
 end
 
+-- A director's lull holding `corp` against some force now (storage.truces, "corp|owner" to the tick it ends): its units
+-- then walk home without answering fire (ops.walk_home, the leash).
+function shared.truce_held(corp)
+  for key, till in pairs(storage.truces or {}) do
+    if type(till) == "number" and game.tick < till and key:sub(1, #corp + 1) == corp .. "|" then return true end
+  end
+  return false
+end
+
 function shared.notice(target, msg)
   storage.notice_counts = storage.notice_counts or {told = 0, held = 0}
   local told = (type(msg) == "table" and KEEP[msg[1]]) or shared.notices_on()
