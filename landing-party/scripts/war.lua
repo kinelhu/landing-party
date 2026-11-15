@@ -258,15 +258,17 @@ end
 -- filled the cap with its mix's cheaper units and the camp built fewer harriers and scorchers: on railbase_end, five
 -- seeds, steady razed 0.67 times off, 1.23 without them, 0.2.391.) Its units come out where the pods touch down
 -- (pods.handlers.strike) and are the director's to order. Returns the pods sent.
-function war.strike_team(b, owner, n, key)
+-- (`land`: where the director chose, by its target, director.lua's landing_spot; else behind the camp.)
+function war.strike_team(b, owner, n, key, land)
   if storage.pods_off or b.fallen or not (b.lander and b.lander.valid) or n <= 0 then return 0 end
   local names = detachment(b, n)
-  local at = behind(b, owner)
+  local at = land or behind(b, owner)
   local sent = 0
   for k = 1, #names, POD_LOAD do
     local load = {}
     for i = k, math.min(#names, k + POD_LOAD - 1) do load[#load + 1] = names[i] end
-    if pods.send(game.surfaces[b.surface], {at[1] + 3 * sent, at[2] + (sent % 2) * 3}, b.force,
+    -- (Five abreast, rows 3 apart: a line of ten 30 long reached past a gap's edge.)
+    if pods.send(game.surfaces[b.surface], {at[1] + 3 * (sent % 5) - 6, at[2] + 3 * math.floor(sent / 5)}, b.force,
       {kind = "strike", base = b.id, names = load, key = key}) then sent = sent + 1 end
   end
   return sent

@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.418
+Date: 2026-11-15
+  Changes:
+    - A strike force lands by its target, where the fewest of your turrets reach, instead of behind its camp.
+    - Its target has a motive: the gun that has killed most of its units, else what its corporation wants (Grubstake your power and the pumps feeding your boilers, Kessler-Hayashi your rocket silos, landing pads and labs), or a train station.
+    - A strike at your power is announced ahead with its target marked on the map, and no other attack on you starts while it is out.
+    - A strike force walking back no longer fights on among your buildings.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.417
 Date: 2026-11-15
   Changes:

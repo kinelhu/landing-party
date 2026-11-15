@@ -668,6 +668,13 @@ local function choose(b, army)
     -- excepted (weighted 0.2, a rival's lander still won every choice on the user's save: 48 raids on landers, none on
     -- the player, visit).
     if pressed and not player and not battery(t) and threat_bonus(b, t) == 0 and not reprisal(b, t) then held = true end
+    -- A director's power strike out (director.lua, power_hold): nothing against that player but self-defence, the
+    -- blackout the strike's alone.
+    local dh = player and storage.director and storage.director.power_hold and storage.director.power_hold[t.owner]
+    if dh and game.tick < dh and not battery(t) then
+      held = true
+      storage.director.power_held = (storage.director.power_held or 0) + 1
+    end
     -- Stood down (war.lua): nothing against a player but self-defence.
     if b.quiescent and player and not battery(t) and threat_bonus(b, t) == 0 then held = true end
     -- (Why the player's targets were not taken, for the director's measure: ops.tick, b.dir_miss.)

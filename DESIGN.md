@@ -7341,6 +7341,23 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Strike forces land by their target, chosen by motive** (0.2.418). The 0.2.417 visit with units' killers counted
+  (railbase_end, seed 1): all three forces landed behind their camp at about 191,630, marched to targets near y 375 and
+  broke before or at their first hit, 23 to 31 of each killed by flamethrower turrets. Now its pods land within
+  strike_land (40) of its target where the fewest of the player's turrets reach (each its prototype's range), the
+  radar's lead time read there. Its target by motive (docs/director.md 9i): retaliation at the gun that killed
+  grudge_kills (20) of its units in 30 minutes; else a kind drawn, its corporation's own 3 times another's (Grubstake
+  power and water, Kessler-Hayashi export and labs, stations anyone's), the densest cluster near its camp. Power and
+  water told ahead with the target named and tagged, and every operation against that player held while the force is
+  out and power_hold (10) minutes after; only with a player there in person. Scenario director targets, its three
+  checks each seen failing: the landing's pick reversed (3 turrets reached), retaliation's threshold raised (labs
+  chosen), the hold's effect removed (the camp, given parts, launched a raid in the window). Found on the way: landed
+  among the player's guns, a broken force's tank went on razing (4 in scenario director repel): the engine set it to
+  flee, distraction by_enemy, 3.5 s into its walk back, and those that reached the landing point stood idle till the
+  minute's lift and fought. A force walking back is now seen to every second: its units at the landing point lifted, any
+  off its walk sent on again (repel: 0 razed after). Scenario director cmd's radar moved by the climax's target (its own
+  factory's flatten had razed the first place tried). Assumed, not tested on a real save yet: that the player's army
+  is a fair answer to a drop at a gap.
 - **Strike forces move as one** (0.2.417). On railbase_end (0.2.416, seed 1) every strike force broke within 40 s of
   its pods: landed behind its camp 250 tiles from its target, each unit sent on its own, its harriers were at the
   player's guns in 25 s and the force had lost half before its tanks came. Now its units join one unit group as they

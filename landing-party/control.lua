@@ -278,6 +278,10 @@ script.on_event({defines.events.on_player_display_resolution_changed, defines.ev
 -- destroy is counted razed (attributed through the unit that did it).
 script.on_event(defines.events.on_entity_died, function(e)
   local ent = e.entity
+  -- (A unit of a corporation's killed by a gun of the player's: the director's grudge, a strike force's retaliation.)
+  if ent.valid and ent.type == "unit" and e.cause and e.cause.valid and ent.force.name:sub(1, 3) == "lp-" then
+    director.note_unit_loss(ent.force.name, e.cause)
+  end
   -- (The minute's losses by force and kind, for the event stream: shared.event, director.tick.)
   if storage.trace and ent.valid and ent.force.name ~= "neutral" then
     storage.ev_minute = storage.ev_minute or {}
@@ -286,6 +290,11 @@ script.on_event(defines.events.on_entity_died, function(e)
     storage.ev_minute[k] = (storage.ev_minute[k] or 0) + 1
     -- (Buildings by the force that killed them, "player:by:enemy": who razed in a lull, the corporations held or the
     -- map's biters; fun_report's truce losses.)
+    -- (Units too, by what killed them: a strike force breaking before its first hit, railbase_end 0.2.417.)
+    if ent.type == "unit" and f:sub(1, 3) == "lp-" then
+      local c = f .. ":unit-cause:" .. (e.cause and e.cause.valid and e.cause.name or (e.force and e.force.name) or "none")
+      storage.ev_minute[c] = (storage.ev_minute[c] or 0) + 1
+    end
     if ent.type ~= "unit" then
       local by = f .. ":by:" .. (e.force and e.force.name or "none")
       storage.ev_minute[by] = (storage.ev_minute[by] or 0) + 1

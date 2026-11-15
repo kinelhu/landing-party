@@ -375,10 +375,11 @@ local function tell(owner, key, ...)
   end
 end
 
-local morale, masts_tick, bounty_tick -- (below: after walk_back, start_mast and start_bounty)
+local morale, walking, masts_tick, bounty_tick -- (below: after walk_back, start_mast and start_bounty)
 
 function director.tick(tick)
   if tick % 300 == 150 and storage.director then morale(storage.director, tick) end
+  if tick % 60 == 45 and storage.director then walking(storage.director) end
   if tick % 60 == 30 and storage.director and storage.director.masts then masts_tick(storage.director, tick) end
   if tick % 60 == 30 and storage.director and storage.director.bounty then bounty_tick(storage.director, tick) end
   if tick % 300 == 200 and storage.director and storage.director.salvage then director.salvage_tick(storage.director) end
@@ -1002,12 +1003,123 @@ end
 local STRIKE_TYPES = {"assembling-machine", "furnace", "mining-drill", "ammo-turret", "electric-turret", "fluid-turret",
   "radar", "lab", "roboport", "solar-panel", "accumulator", "generator", "boiler", "reactor", "beacon", "rocket-silo"}
 local STRIKE_REACH = 600
+
+-- Its target by motive (shared.DIRECTOR's strike_kinds): the types of each kind this game has (fusion's with Space Age).
+local KIND_TYPES
+local function kind_types(kind)
+  if not KIND_TYPES then
+    local have = {}
+    for _, p in pairs(prototypes.entity) do have[p.type] = true end
+    KIND_TYPES = {}
+    for k, list in pairs(shared.DIRECTOR.strike_kinds) do
+      KIND_TYPES[k] = {}
+      for _, t in ipairs(list) do if have[t] then table.insert(KIND_TYPES[k], t) end end
+    end
+  end
+  return KIND_TYPES[kind] or {}
+end
+-- The densest cluster of `kind` among the strike_candidates of the player's nearest `from`: its entity, or nil. Water: a
+-- pump with a boiler within strike_cluster (one whose water boils).
+local function kind_target(surface, owner, kind, from)
+  local types = kind_types(kind)
+  if #types == 0 then return nil end
+  local near = {}
+  local cap = tun("strike_candidates")
+  for _, e in ipairs(surface.find_entities_filtered{force = owner, type = types}) do
+    local d = (e.position.x - from.x) ^ 2 + (e.position.y - from.y) ^ 2
+    if #near < cap or d < near[#near].d then
+      local i = #near + 1
+      while i > 1 and near[i - 1].d > d do i = i - 1 end
+      table.insert(near, i, {e = e, d = d})
+      if #near > cap then near[#near] = nil end
+    end
+  end
+  local r = tun("strike_cluster")
+  local best, bn
+  for _, c in ipairs(near) do
+    local n = surface.count_entities_filtered{position = c.e.position, radius = r, force = owner, type = types}
+    if kind == "water" and surface.count_entities_filtered{position = c.e.position, radius = r, force = owner,
+      type = "boiler", limit = 1} == 0 then n = 0 end
+    if n > 0 and (not bn or n > bn) then best, bn = c.e, n end
+  end
+  return best
+end
+-- Its grudges (retaliation): the player's guns that killed its corporation's units, by unit_number, each its count
+-- within grudge_minutes of the last (control.lua, on_entity_died).
+local GRUDGE_TYPES = {["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true,
+  ["artillery-turret"] = true, ["artillery-wagon"] = true}
+function director.note_unit_loss(force_name, cause)
+  if not (cause and cause.valid and cause.unit_number and GRUDGE_TYPES[cause.type]) then return end
+  if not shared.is_player_force(cause.force) then return end
+  local corp
+  for c, cd in pairs(shared.CORPS) do if cd.force == force_name then corp = c end end
+  if not corp then return end
+  local s = st()
+  s.grudge = s.grudge or {}
+  s.grudge[corp] = s.grudge[corp] or {}
+  local g = s.grudge[corp][cause.unit_number]
+  if not g or game.tick - g.last > tun("grudge_minutes") * 3600 then
+    g = {n = 0, entity = cause, owner = cause.force.name}
+    s.grudge[corp][cause.unit_number] = g
+  end
+  g.n, g.last = g.n + 1, game.tick
+end
+-- The gun with most kills of `corp`'s units against `owner`, grudge_kills at least, still standing (stale ones dropped).
+local function grudge_target(s, corp, owner)
+  local best
+  for un, g in pairs(s.grudge and s.grudge[corp] or {}) do
+    if not g.entity.valid or game.tick - g.last > tun("grudge_minutes") * 3600 then s.grudge[corp][un] = nil
+    elseif g.owner == owner and g.n >= tun("grudge_kills") and (not best or g.n > best.n) then best = g end
+  end
+  return best and best.entity
+end
+-- A player there in person: a character on `surface`, not in the remote view.
+local function in_person(f, surface)
+  for _, p in pairs(f.connected_players) do
+    if p.character and p.physical_surface == surface and p.controller_type == defines.controllers.character then return true end
+  end
+  return false
+end
+-- Its pods' spot: within strike_land of the target, on three rings of 16, where the fewest of the player's turrets reach
+-- (each its prototype's range, +4), the nearest such; land, not water.
+local TURRET_TYPES = {"ammo-turret", "electric-turret", "fluid-turret"}
+local REACH = {}
+local function landing_spot(surface, owner, tx, ty)
+  local land = tun("strike_land")
+  local guns = {}
+  for _, t in ipairs(surface.find_entities_filtered{position = {tx, ty}, radius = land + 60, force = owner,
+    type = TURRET_TYPES}) do
+    local r = REACH[t.name]
+    if not r then
+      r = t.prototype.turret_range or (t.prototype.attack_parameters and t.prototype.attack_parameters.range) or 0
+      REACH[t.name] = r
+    end
+    guns[#guns + 1] = {t.position.x, t.position.y, (r + 4) ^ 2}
+  end
+  local best, bc
+  for ring = 1, 3 do
+    local d = land * ring / 3
+    for a = 0, 15 do
+      local ang = (a + ring / 3) * math.pi / 8
+      local x, y = tx + math.cos(ang) * d, ty + math.sin(ang) * d
+      local tile = surface.get_tile(x, y)
+      if tile.valid and not tile.collides_with("water_tile") then
+        local c = 0
+        for _, g in ipairs(guns) do if (g[1] - x) ^ 2 + (g[2] - y) ^ 2 <= g[3] then c = c + 1 end end
+        if not bc or c < bc then best, bc = {x, y}, c end
+      end
+    end
+  end
+  return best, bc
+end
 -- Its strike force (threat points, RimWorld's raid): a team of its own by pod behind one lead camp of `corps`
 -- (war.strike_team), sent at a target, fighting on to the nearest of the player's buildings each minute, lifted out after
 -- strike_minutes; never the camp's garrison. Its points the beat's, not a camp's. The lead: a camp with no operation out,
 -- nearest the focus if there is one, else nearest the player's spawn. Its target: the focus, else the lead camp's known
 -- target of the player's of most value.
-local function strike(s, owner, corps, tick, mult, warn, aim)
+local function strike(s, owner, corps, tick, mult, warn, aim, want)
+  -- (None while a power strike's hold stands: the blackout is one strike's.)
+  if not want and s.power_hold and s.power_hold[owner] and tick < s.power_hold[owner] then return 0 end
   local n = math.floor(strike_units(s, owner) * (mult or 1))
   if n <= 0 then return 0 end
   local set = {}
@@ -1027,6 +1139,44 @@ local function strike(s, owner, corps, tick, mult, warn, aim)
   end
   if not lead then return 0 end
   local target = at
+  local surface = lead.lander.surface
+  local kind, tent = aim and "bounty" or at and "focus" or nil, nil
+  -- By motive (0.2.418): retaliation first, else a kind drawn, its corporation's own strike_motive_weight times another's;
+  -- power and water only with a player there in person (or tracing). `want`: a kind forced (tests, the panel).
+  if not target and f then
+    if not want or want == "retaliation" then
+      tent = grudge_target(s, lead.corp, owner)
+      if tent then kind = "retaliation" end
+    end
+    if not tent then
+      if not s.strike_rng then
+        s.strike_rng = {s = rng.new((game.surfaces[1] and game.surfaces[1].map_gen_settings.seed or 1) + 130363).s}
+      end
+      local mine = {}
+      for _, k in ipairs(tun("strike_motive")[lead.corp] or {}) do mine[k] = true end
+      local here = in_person(f, surface) or storage.trace
+      local opts, sum = {}, 0
+      for _, k in ipairs(tun("strike_kind_order")) do
+        if (not want or want == k) and (here or (k ~= "power" and k ~= "water")) then
+          local e = kind_target(surface, owner, k, lead.lander.position)
+          if e then
+            local w = mine[k] and tun("strike_motive_weight") or 1
+            opts[#opts + 1] = {k = k, e = e, w = w}
+            sum = sum + w
+          end
+        end
+      end
+      if sum > 0 then
+        local x = rng.next(s.strike_rng) * sum
+        for _, o in ipairs(opts) do
+          x = x - o.w
+          if x < 0 or o == opts[#opts] then kind, tent = o.k, o.e; break end
+        end
+      end
+    end
+    if tent then target = {tent.position.x, tent.position.y} end
+  end
+  if not target and want then return 0 end
   if not target then
     local best
     for _, t in pairs(lead.intel and lead.intel.targets or {}) do
@@ -1054,19 +1204,20 @@ local function strike(s, owner, corps, tick, mult, warn, aim)
   s.strikes = s.strikes or {}
   local tx, ty = target[1] or target.x, target[2] or target.y
   local minutes = warn or tun("warn_minutes")
+  local land, cover = landing_spot(surface, owner, tx, ty)
   local k = {base = lead.id, owner = owner, corp = lead.corp, target = {tx, ty}, units = {}, sent = n, warned = tick,
-    pods_at = tick + minutes * 3600}
+    pods_at = tick + minutes * 3600, kind = kind or "known", tent = tent, land = land, cover = cover}
   s.strikes[key] = k
   s.reinforced = (s.reinforced or 0) + n
   s.points_sent = (s.points_sent or 0) + n
   s.strike_lead = lead.id
   -- Told as RimWorld tells a raid (the user, 2026-11-15): when it lands, by director.on_strike_landed. Ahead only if the
-  -- player's radar sees where its pods come down (behind the lead camp): who, how many, where, when. A player who built
-  -- radar cover over the camps earns the lead time. (0.2.393 to 0.2.404 warned every strike at its target, the
-  -- director's intent read out; Fable's fun consult had asked for it.)
-  local surface = lead.lander.surface
+  -- player's radar sees where its pods come down (by its target since 0.2.418, behind the lead camp before): who, how
+  -- many, where, when. A player who built radar cover earns the lead time. (0.2.393 to 0.2.404 warned every strike at
+  -- its target, the director's intent read out; Fable's fun consult had asked for it.) Power and water apart: told
+  -- ahead, target named and tagged, and the operations against the player held (shared.DIRECTOR's power_hold).
   local c = shared.CORPS[lead.corp]
-  local lp = lead.lander.position
+  local lp = land and {x = land[1], y = land[2]} or lead.lander.position
   -- (Seen: within a working radar's constant reveal, its prototype's nearby reach in chunks, quality's included. Not
   -- LuaForce.is_chunk_visible: headless, with no player connected, a powered radar's own chunk read unseen.)
   local seen = false
@@ -1081,6 +1232,16 @@ local function strike(s, owner, corps, tick, mult, warn, aim)
       end
     end
   end
+  if f and (kind == "power" or kind == "water") then
+    k.advertised = true
+    s.power_hold = s.power_hold or {}
+    s.power_hold[owner] = k.pods_at + (tun("strike_minutes") + tun("power_hold")) * 3600
+    s.strikes_advertised = (s.strikes_advertised or 0) + 1
+    k.ttag = f.add_chart_tag(surface, {position = {tx, ty}, text = c.name .. " strike target",
+      icon = {type = "virtual", name = c.icon}})
+    tell(owner, "lp.director-strike-target", c.name, n, string.format("[entity=%s]", tent.name),
+      string.format("[gps=%.0f,%.0f,%s]", tx, ty, surface.name), minutes)
+  end
   if seen then
     k.seen = true
     s.strike_seen = (s.strike_seen or 0) + 1
@@ -1090,9 +1251,10 @@ local function strike(s, owner, corps, tick, mult, warn, aim)
     tell(owner, "lp.director-strike-seen", c.name, n, gps, minutes)
   end
   shared.event("strike_warn", {key = key, corp = lead.corp, n = n, pos = {tx, ty}, minutes = minutes, base = lead.id,
-    seen = seen or false})
-  trace(string.format("strike force %d: %d units behind camp %d, at %.0f,%.0f, its pods in %d minutes (%s)", key, n,
-    lead.id, tx, ty, minutes, seen and "seen by radar, told" or "unseen"))
+    seen = seen or false, kind = k.kind, land = land, cover = cover, target = tent and tent.name or nil})
+  trace(string.format("strike force %d: %d units of camp %d's, at %s %.0f,%.0f, landing %s (%s turrets reach), its pods in %d minutes (%s)",
+    key, n, lead.id, k.kind, tx, ty, land and string.format("%.0f,%.0f", land[1], land[2]) or "behind its camp",
+    tostring(cover), minutes, k.advertised and "told, its target named" or seen and "seen by radar, told" or "unseen"))
   return n
 end
 
@@ -1175,6 +1337,36 @@ end
 -- Its strike forces' morale, every 5 s: one that has lost strike_break of those landed breaks, walks back without
 -- fighting (walk_back's truce: distraction none) and is lifted out where it landed; repelled, the player's win short of
 -- killing them all (4 of 38 were, against a base nobody defended: railbase_end, 0.2.394).
+-- Its forces walking back (a truce or broken), every second: lifted as they reach its landing point; a unit the engine
+-- set to flee, by_enemy, sent on again (0.2.418, below).
+walking = function(s)
+  for _, k in pairs(s.strikes or {}) do
+    -- (Walking back in a truce or broken: a unit the engine set to flee, by_enemy, sent on again. Landed by its target
+    -- since 0.2.418, a broken force's tank fled among the player's guns and razed 4 of them: scenario director repel.)
+    -- (And lifted as they reach its landing point, every second: left idle there till the minute's pass, they fought.)
+    if k.lift_at and k.truce and k.landed_at then
+      local back = {}
+      for _, u in ipairs(k.units) do
+        if u.valid then
+          if (u.position.x - k.landed_at[1]) ^ 2 + (u.position.y - k.landed_at[2]) ^ 2 <= 16 * 16 then
+            s.strike_lifted = (s.strike_lifted or 0) + 1
+            k.lifted = (k.lifted or 0) + 1
+            u.destroy()
+          else
+            back[#back + 1] = u
+            local c = u.commandable and u.commandable.command
+            if u.commandable and not (c and c.type == defines.command.go_to_location) then
+              u.commandable.set_command{type = defines.command.go_to_location, destination = k.landed_at, radius = 8,
+                distraction = defines.distraction.none}
+            end
+          end
+        end
+      end
+      k.units = back
+    end
+  end
+end
+
 morale = function(s, tick)
   for key, k in pairs(s.strikes or {}) do
     if k.at and k.landed_at and not k.lift_at and not k.broken and (k.landed_n or 0) > 0 then
@@ -1205,6 +1397,7 @@ local function strike_over(s, key, k, why)
   if why == "finished" then s.strikes_finished = (s.strikes_finished or 0) + 1 end
   for _, u in ipairs(live) do u.destroy() end
   if k.tag and k.tag.valid then k.tag.destroy() end
+  if k.ttag and k.ttag.valid then k.ttag.destroy() end
   if k.group and k.group.valid then k.group.destroy() end
   local f = game.forces[k.owner]
   if f and k.alert and k.alert.valid then f.remove_alert{entity = k.alert} end
@@ -1220,7 +1413,7 @@ function director.strikes(s, tick)
     if not k.at then
       if tick >= k.pods_at then
         local b = storage.bases[k.base]
-        local pods_sent = b and war.strike_team(b, k.owner, k.sent, key) or 0
+        local pods_sent = b and war.strike_team(b, k.owner, k.sent, key, k.land) or 0
         if pods_sent == 0 then strike_over(s, key, k, "no camp")
         else
           k.at, k.till = tick, tick + tun("strike_minutes") * 3600
@@ -1603,6 +1796,10 @@ function director.cmd(action, arg)
     local at = type(arg) == "table" and {arg[1] or arg.x, arg[2] or arg.y} or nil
     if not director.start_surge(s, owner, tick, action == "focus", "forced", at) then return "no corporation at war with a camp standing" end
     return action == "focus" and (s.focus and "focus strike" or "surge (no focus known)") or "surge"
+  elseif action == "strike" then
+    -- (A strike force alone, `arg` its kind of target or any: tests, the panel.)
+    local sent = strike(s, owner, at_war(owner), tick, nil, nil, nil, arg)
+    return sent > 0 and ("strike: " .. tostring(s.strikes[s.strike_n].kind)) or "no target of that kind"
   elseif action == "research" then
     local id = director.start_research(s, owner, tick, "forced")
     return id and ("research: " .. id) or "no node to buy"

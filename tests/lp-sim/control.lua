@@ -7610,6 +7610,91 @@ scenarios.director = function()
     end)
     return
   end
+  -- LP_MIX=targets: strike targets by motive (0.2.418): labs 150 from the camp, three gun turrets on its camp side; a
+  -- steam engine 60 aside; a gun turret 60 the other side that has killed 25 of each corporation's units. In turn: at the
+  -- labs, landing within strike_land where no turret reaches; unforced, retaliation at that gun; at power, told ahead,
+  -- its target tagged, and the camp's operations held while it is out (given parts, it raids in that window unheld:
+  -- seen failing); another strike none in the hold.
+  if params.mix == "targets" then
+    schedule(120, function()
+      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100, points_per_worth = 1,
+        warn_minutes = 100, strike_minutes = 3, power_hold = 1}})
+      local id = (lp("bases") or {})[1]
+      local o = lp("stats", id).origin
+      local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
+      local ux, uy = -o.x / len, -o.y / len
+      local function at(along, aside) return {math.floor(o.x + ux * along - uy * aside), math.floor(o.y + uy * along + ux * aside)} end
+      S.labs, S.power, S.gun = at(150, 0), at(150, 60), at(150, -60)
+      for _, p in ipairs({S.labs, S.power, S.gun}) do flatten(p[1] - 12, p[2] - 12, p[1] + 12, p[2] + 12) end
+      for j = 0, 2 do surface().create_entity{name = "lab", position = {S.labs[1] + 4 * j - 4 + 0.5, S.labs[2] + 0.5}, force = "player"} end
+      for j = -1, 1 do
+        local q = at(150 - 20, 6 * j)
+        flatten(q[1] - 2, q[2] - 2, q[1] + 2, q[2] + 2)
+        surface().create_entity{name = "gun-turret", position = q, force = "player"}
+      end
+      surface().create_entity{name = "steam-engine", position = {S.power[1] + 0.5, S.power[2] + 0.5}, direction = defines.direction.east, force = "player"}
+      local g = surface().create_entity{name = "gun-turret", position = S.gun, force = "player"}
+      for _, f in ipairs({"lp-grubstake", "lp-serenity"}) do
+        for _ = 1, 25 do
+          local u = surface().create_entity{name = "lp-infantry", position = {S.gun[1] + 30, S.gun[2]}, force = f}
+          if u then u.die("player", g) end
+        end
+      end
+      lp("debug_needed", id, S.labs)
+      for _ = 1, 2 do lp("debug_depot", id, 3000) end
+    end)
+    local function last()
+      local d = lp("director") or {}
+      return d.strikes and d.strikes[d.strike_n] or {}
+    end
+    local function dist(a, b) return a and b and math.sqrt((a[1] - b[1]) ^ 2 + (a[2] - b[2]) ^ 2) or 1e9 end
+    -- (All before the camp's first raid, a camp out on one not deciding and the hold unseen; their pods 100 minutes off,
+    -- none landing to raze the next's target.)
+    schedule(600, function()
+      S.r1 = lp("director_cmd", "strike", "research")
+      local k = last()
+      S.k1 = {kind = k.kind, land = k.land, cover = k.cover, target = k.target}
+      S.r2 = lp("director_cmd", "strike")
+      k = last()
+      S.k2 = {kind = k.kind, target = k.target}
+      local id = (lp("bases") or {})[1]
+      S.held0 = (lp("director") or {}).power_held or 0
+      S.l0 = ((lp("stats", id) or {}).ops or {}).launched or 0
+      S.told0 = ((lp("director") or {}).tell_keys or {})["lp.director-strike-target"] or 0
+      S.r3 = lp("director_cmd", "strike", "power")
+      k = last()
+      S.k3 = {kind = k.kind, adv = k.advertised, ttag = k.ttag and k.ttag.valid, target = k.target}
+      S.told1 = ((lp("director") or {}).tell_keys or {})["lp.director-strike-target"] or 0
+      S.r4 = lp("director_cmd", "strike")
+    end)
+    schedule(600 + 4 * 3600, function()
+      local id = (lp("bases") or {})[1]
+      S.held1 = (lp("director") or {}).power_held or 0
+      S.l1 = ((lp("stats", id) or {}).ops or {}).launched or 0
+    end)
+    schedule(END - 60, function()
+      local land = lp("director_prior", "strike_land")
+      info(string.format("director targets: %s %s (land %s off, %s turrets), %s %s, %s %s (advertised %s, tag %s, told %s to %s), %s; held %s to %s",
+        tostring(S.r1), tostring(S.k1 and S.k1.kind), tostring(S.k1 and math.floor(dist(S.k1.land, S.k1.target))),
+        tostring(S.k1 and S.k1.cover), tostring(S.r2), serpent.line(S.k2 and S.k2.target), tostring(S.r3),
+        serpent.line(S.k3 and S.k3.target), tostring(S.k3 and S.k3.adv), tostring(S.k3 and S.k3.ttag), tostring(S.told0),
+        tostring(S.told1), tostring(S.r4), tostring(S.held0), tostring(S.held1)))
+      check("director: targets, at the labs, its pods within strike_land of them where no turret reaches",
+        S.r1 == "strike: research" and dist(S.k1.target, S.labs) < 8 and dist(S.k1.land, S.k1.target) <= land + 1
+        and S.k1.cover == 0, string.format("%s, %s off the labs, landing %s off, %s turrets", tostring(S.r1),
+        tostring(S.k1 and dist(S.k1.target, S.labs)), tostring(S.k1 and dist(S.k1.land, S.k1.target)), tostring(S.k1 and S.k1.cover)))
+      check("director: targets, unforced, retaliation at the gun that killed its units", S.r2 == "strike: retaliation"
+        and dist(S.k2.target, S.gun) < 2, string.format("%s at %s", tostring(S.r2), serpent.line(S.k2 and S.k2.target)))
+      check("director: targets, at power, told ahead with its target tagged; the camp's operations held; none more in the hold",
+        S.r3 == "strike: power" and dist(S.k3.target, S.power) < 4 and S.k3.adv and S.k3.ttag and S.told1 == S.told0 + 1
+        and S.r4 == "no target of that kind" and S.held1 > S.held0 and S.l1 == S.l0,
+        string.format("%s, %s off, advertised %s, tag %s, told %s to %s, then %s, held %s to %s", tostring(S.r3),
+        tostring(S.k3 and dist(S.k3.target, S.power)), tostring(S.k3 and S.k3.adv), tostring(S.k3 and S.k3.ttag),
+        tostring(S.told0), tostring(S.told1), tostring(S.r4), tostring(S.held0), tostring(S.held1))
+        .. string.format("; launched %s to %s", tostring(S.l0), tostring(S.l1)))
+    end)
+    return
+  end
   -- LP_MIX=bounty: the bounty (0.2.409): two of the player's buildings the camp knows; forced, the dearer is priced and
   -- tagged, and the camp weighs it bounty_weight times as much as once the bounty is over; a second, its target
   -- destroyed, is over, taken, its tag gone.
@@ -7760,11 +7845,12 @@ scenarios.director = function()
   -- budget filled and emptied, a climax (its strike force told climax_warn ahead), off (not active).
   if params.mix == "cmd" then
     local function pace() return lp("sooner", "serenity", 3600) end
-    -- The player's radar 40 tiles from the camp, powered: its climax's pods seen coming and told ahead (0.2.405).
+    -- The player's radar by the climax's target (0, 0), powered: its pods seen coming and told ahead (0.2.405). (40 tiles
+    -- from the camp until 0.2.418, when its pods landed behind it; now they land by their target.)
     schedule(120, function()
-      local o = lp("stats", storage.id).origin
-      local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
-      local at = {o.x - o.x / len * 40, o.y - o.y / len * 40}
+      -- (Outside the factory's flatten at 600, -24 to 24, which razed it at 12,-12.)
+      local q = surface().find_non_colliding_position("radar", {30, 4}, 10, 1) or {x = 30, y = 4}
+      local at = {q.x, q.y}
       flatten(at[1] - 4, at[2] - 4, at[1] + 4, at[2] + 4)
       S.radar = surface().create_entity{name = "radar", position = at, force = "player"}
       local e = surface().create_entity{name = "electric-energy-interface", position = {at[1] + 3, at[2]}, force = "player"}

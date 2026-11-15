@@ -473,6 +473,30 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- The research breakthrough (docs/director.md, off-map beats): a corporation at war buys its next node of research at
   -- once, its fund untouched; research_cost of the budget. Its new units are the tell.
   research_cost = 1,
+  -- Strike targets by motive (the user, 2026-11-15, the targets re-inventoried; by worth until 0.2.418, a big pole and
+  -- poles' neighbours chosen): retaliation first, the player's gun that killed grudge_kills of the corporation's units
+  -- within grudge_minutes; else a kind drawn, the corporation's own (strike_motive) strike_motive_weight times another's,
+  -- its densest cluster among the strike_candidates nearest the lead camp. Belts, poles, pipes and walls never.
+  -- Power and water (the boilers' pumps) told ahead, target named, and every operation against that player held while
+  -- the force is out and power_hold minutes after (the blackout is the strike's, not the next raid's); only with a
+  -- player there in person (a custom alert's reach from another surface not probed). Named priors.
+  strike_kinds = {
+    research = {"lab"},
+    power = {"generator", "burner-generator", "reactor", "fusion-reactor", "fusion-generator", "solar-panel", "accumulator"},
+    water = {"offshore-pump"},
+    export = {"rocket-silo", "cargo-landing-pad"},
+    station = {"train-stop"},
+  },
+  strike_kind_order = {"research", "power", "water", "export", "station"},
+  -- (Synthexis sends no strike force, not one of shared.CORPS: labs Kessler-Hayashi's, beside its silos.)
+  strike_motive = {grubstake = {"power", "water"}, serenity = {"export", "research"}},
+  strike_motive_weight = 3, strike_candidates = 12, strike_cluster = 24,
+  grudge_kills = 20, grudge_minutes = 30,
+  -- Its pods within strike_land of its target, where the fewest of the player's turrets reach (RimWorld's drop pods:
+  -- the user agreed, 2026-11-15; behind its camp until 0.2.418, the force marched 250 tiles into railbase_end's 135
+  -- flamers and broke before its first hit, every time). The player's army, not more turrets, its answer.
+  strike_land = 40,
+  power_hold = 10,
   -- Step 3 (decided overnight 2026-11-14, for review): a drop wave, wave_size landings of one corporation at once (the
   -- landing queue, each seeing the last), wave_cost; its camps an expedition (not counted against the camp cap, no
   -- reliefs, the landing clock untouched) until expedition_minutes, then the user's settle rule (2026-11-14): settles
@@ -839,7 +863,8 @@ local KEEP = {["lp.fallen"] = true, ["lp.hint-no-beacon"] = true, ["lp.hint-no-r
   -- lands, or seen coming by radar; its drop wave and supply drop. Its own pacing, sprees, surges, lulls and forecasts,
   -- is never told since 0.2.405; 0.2.393 to 0.2.404 read them all out.)
   ["lp.director-wave"] = true, ["lp.director-supply"] = true, ["lp.director-supply-in"] = true,
-  ["lp.director-supply-lost"] = true, ["lp.director-strike-seen"] = true, ["lp.director-strike-landed"] = true}
+  ["lp.director-supply-lost"] = true, ["lp.director-strike-seen"] = true, ["lp.director-strike-landed"] = true,
+  ["lp.director-strike-target"] = true}
 -- Whether a faction may land (its setting lp-<id>-enabled, runtime-global, on by default): off, it never lands again
 -- (phases, faction.next_corp, farm's arrival); camps already standing stay. (The user, 2026-11-08: "We do need an on/off
 -- switch".)

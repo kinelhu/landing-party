@@ -325,6 +325,22 @@ when it is in the world (a strike force as it lands, a drop wave's landings, a s
 tag on the spot; told ahead only when the world shows it, a strike force when the player's radar covers its lead camp.
 The climax gets nothing of its own: its size tells it. The rhythm (lulls, their truces, the beats' lead time) stays.
 
+## 9i. Where a strike force lands, and what it goes for (the user, 2026-11-15, built 0.2.418)
+
+On railbase_end every strike force landed behind its camp, marched 250 tiles into 135 flamethrower turrets and broke
+before its first hit. The user's choice, RimWorld's drop pods: it lands within 40 tiles of its target, where the fewest
+turrets reach, inside the perimeter. The user's worry, that players would have to carpet their bases in turrets, and
+the answer agreed: walls answer raids, the player's army answers drops; outposts are ringed against biters already.
+
+Its target by motive, never by worth (worth priced a big pole in every visit): retaliation first, the gun of the
+player's (artillery, a turret) that has killed 20 of its units in 30 minutes; else a kind drawn, its corporation's own
+three times another's: Grubstake power and the boilers' pumps, Kessler-Hayashi silos, landing pads and labs; stations
+for anyone. Never belts, poles, pipes or walls. Power was to be left out (a blackout takes the defence with it); the
+user: "As long as we advertise its a target?" So a strike at power or water is told ahead with its target named and
+tagged, and every operation against that player is held while it is out and 10 minutes after: the blackout is the
+strike's, not the next raid's. Only with a player there in person, until a custom alert's reach from another surface is
+probed. Later: roboports, oil, the army's depot, a strike hunting the engineer.
+
 ## 10. Build order
 
 (The user, 2026-11-14: "once we're happy with the director on paper, a set of visits with various director settings on
