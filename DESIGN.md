@@ -7341,6 +7341,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The new beats on railbase_end** (0.2.411 visits, 5 seeds, steady) and a fix (0.2.415). Every run had its bounty,
+  two salvage drops, sweeps and broken strike forces (the jammer and blackout never: no silo or radar within the camps'
+  reach). The bounty priced a big electric pole in all five (the camps' target values rank a big pole first): it now
+  prices only buildings that matter (BOUNTY_TYPES: production, power, labs, silos, roboports, radars), by valuemap
+  worth; the scenario's known pole was priced without it (seen failing). Steady razed 259, 205, 511, 415 and 359
+  against off's 257, 101, 340, 317 and 468: strike forces that break cost pressure, as meant. The held corporations'
+  kills in truces rose again on two seeds (50 and 98 truce_loss events, 0 to 30 on 0.2.404): Grubstake's harriers in
+  unit groups (responses) and compounds (reliefs) outside the lists the recall reaches. Left: the user, 2026-11-15, on
+  chasing them to the building.
 - **Salvage claimed** (0.2.414; the user, 2026-11-15: "Perhaps corporations could also target salvage drops? And get a
   part infusion if they destroy them? Could allow for a 'self cleaning' loop"). A wreck uncollected salvage_claim (10)
   minutes with a guard standing is its corporation's: gone, salvage_parts (300) an era to its nearest camp, its guards

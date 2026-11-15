@@ -759,21 +759,29 @@ function director.start_research(s, owner, tick, why)
   return id
 end
 
--- The bounty's target: the player's building of most value its camps at war know, standing.
+-- The bounty's target: of the player's buildings its camps at war know, the one of most worth (valuemap) among those
+-- that matter: production and its infrastructure, not poles, belts or walls (a pole was priced in all five railbase_end
+-- visits: the camps' target values ranked a big pole first, 0.2.411).
+local BOUNTY_TYPES = {"assembling-machine", "furnace", "lab", "rocket-silo", "roboport", "radar", "beacon", "reactor",
+  "generator", "mining-drill", "boiler", "accumulator", "solar-panel"}
 function director.bounty_target(owner)
   local set = {}
   for _, c in ipairs(at_war(owner)) do set[c] = true end
+  local surface = game.surfaces[1]
   local best, bv
   for _, b in pairs(storage.bases or {}) do
     if set[b.corp] and not b.fallen then
       for _, t in pairs(b.intel and b.intel.targets or {}) do
-        if t.owner == owner and t.pos and (not bv or (t.value or 0) > bv) then best, bv = t, t.value or 0 end
+        if t.owner == owner and t.pos then
+          for _, e in ipairs(surface.find_entities_filtered{position = t.pos, radius = 3, force = owner, type = BOUNTY_TYPES}) do
+            local v = valuemap.worth_of(e)
+            if not bv or v > bv then best, bv = e, v end
+          end
+        end
       end
     end
   end
-  if not best then return nil end
-  local e = game.surfaces[1].find_entities_filtered{position = best.pos, radius = 2, force = owner, limit = 1}[1]
-  return e
+  return best
 end
 
 -- A bounty now: its target tagged on the player's map (a price on it, not a message), every camp's preferred target.

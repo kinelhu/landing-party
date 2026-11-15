@@ -7619,7 +7619,8 @@ scenarios.director = function()
       local id = (lp("bases") or {})[1]
       local o = lp("stats", id).origin
       local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
-      for k, name in ipairs({"lab", "assembling-machine-1"}) do
+      -- (A big pole known too: priced in all five railbase_end visits, 0.2.411; a bounty only on what matters since.)
+      for k, name in ipairs({"lab", "assembling-machine-1", "big-electric-pole"}) do
         local at = {math.floor(o.x - o.x / len * 150 + 30 * k), math.floor(o.y - o.y / len * 150)}
         flatten(at[1] - 3, at[2] - 3, at[1] + 3, at[2] + 3)
         surface().create_entity{name = name, position = {at[1] + 0.5, at[2] + 0.5}, force = "player"}
