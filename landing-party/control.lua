@@ -1261,6 +1261,13 @@ remote.add_interface("landing-party", {
   director_cmd = function(action, arg) return director.cmd(action, arg) end,
   -- Tests: the faction cues played, by name (shared.cue).
   sound_cues = function() return storage.sound_cues or {} end,
+  -- Tests: the orbital strikes' builds made, how each ended (impact, spotter, called off), and those standing.
+  orbital_builds = function()
+    local left = 0
+    for _, s in pairs(game.surfaces) do left = left + s.count_entities_filtered{name = {"lp-orbital-build", "lp-cannon-build"}} end
+    return {n = storage.orbital_builds or 0, stopped = storage.orbital_builds_stopped or {}, left = left,
+      off = storage.orbital_build_off or {}}
+  end,
   -- Films only: the director's panel toggled for a player (/lp director without a console; the manual's still).
   debug_director_panel = function(index)
     local p = game.get_player(index) or game.connected_players[1]

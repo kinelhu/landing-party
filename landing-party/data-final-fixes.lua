@@ -147,6 +147,20 @@ do
   end
 end
 
+-- The orbital strikes' builds (round six, the user's keeps, F and the cannon's, the rush before the boom removed):
+-- invisible emitters at a strike's point, made with its paint and removed at its first impact or when it is called off
+-- (orbital.lua), their working sound the build (tools/sound/round6.py: it ends on the first impact). A sound played by
+-- script cannot be stopped; an entity's working sound stops with it.
+for _, k in ipairs({{"lp-orbital-build", 1.0}, {"lp-cannon-build", 1.0}}) do
+  data:extend({{type = "simple-entity-with-owner", name = k[1], hidden = true, selectable_in_game = false,
+    flags = {"not-on-map", "placeable-off-grid", "not-blueprintable", "not-deconstructable", "not-repairable", "not-flammable",
+      "no-copy-paste"},
+    collision_mask = {layers = {}}, max_health = 1, is_military_target = false,
+    picture = {filename = "__core__/graphics/empty.png", size = 1},
+    working_sound = {sound = {filename = "__landing-party__/sound/" .. k[1] .. ".ogg", volume = k[2],
+      audible_distance_modifier = 2}, max_sounds_per_prototype = 1}}})
+end
+
 -- The dome's catch (dome.lua): the Tesla's chain beam without its own sounds, its catch's sound the cue lp-cue-dome-catch
 -- (round five, B: a deeper bolt and a static crackle; the airburst its explosion entity's). The vanilla beam hummed its
 -- turret's working sound and played its deflection at the target.

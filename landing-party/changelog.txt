@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.427
+Date: 2026-11-16
+  Sounds:
+    - A Kessler-Hayashi orbital strike builds up while its spotter paints the target, a rising hum and chord that ends on its first impact; killing the spotter cuts it off.
+    - Your orbital cannon's strike builds up over its charge the same way, ending on its first impact.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.426
 Date: 2026-11-15
   Sounds:

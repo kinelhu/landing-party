@@ -7341,6 +7341,20 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The orbital strikes' builds** (0.2.427; the Sound Sheet's round six, the whole sequence: the user kept F for
+  Kessler-Hayashi's strike and the cannon's 5 s card, each "good if you just remove the downwards boop that comes in right
+  before the boom at the end (don't replace it with anything)"). The falling rush of the paint's last half second taken
+  out, nothing in its place; the explosions the shells' own, unchanged. A build is an invisible emitter at the strike's
+  point (lp-orbital-build, lp-cannon-build: a simple entity whose working sound is the build), made with the paint and
+  removed at the first impact or when the strike is called off (its spotter killed, its siege over): a sound played by
+  script cannot be stopped, an entity's working sound stops with it. Its length from orbital.lua, read by
+  tools/sound/round6.py: the paint, a pass of the strikes' 10-tick loop (the first shell falls the pass after it turns to
+  fire) and a shell's fall (FALL 30 tiles at speed 3), 740 ticks for Kessler-Hayashi's and 320 for the cannon's; the
+  impact itself up to 9 ticks later, so a build ends at most 0.15 s early, never late. The board had the first impact at
+  730. Checks: orbital (a build with the strike, stopped on its first impact's tick, none left), orbital spotter (stopped
+  when its spotter died), cannon (four strikes, each stopped on its impact's tick), each seen failing with its stop taken
+  out (110 ticks late, left playing, 90 and 190 late). Not heard in a game window: whether a working sound starts at its
+  file's beginning the tick its emitter is made.
 - **Sound, round five wired** (0.2.426; the user's picks, the Sound Sheet's round five). Kept: Grubstake's heavy engine
   (quieter), the laser drone's flight (higher, quieter), Kessler-Hayashi's steps (lower), the siege horn (lower), the
   foot deaths split by the user's answer (Kessler-Hayashi's a machine's fall, A, quieter: its fall 2.6 to 1.6, its whine

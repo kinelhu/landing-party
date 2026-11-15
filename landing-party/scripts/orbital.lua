@@ -135,10 +135,35 @@ local function shadow(s, center, along, lead, silhouette)
   table.insert(storage.kh_shadows, sh)
 end
 
+-- Its build (the Sound Sheet's round six, F, kept): an emitter at its point playing it from the call, removed at its
+-- first impact (stop_build at the fall's end) or when it is called off. Counted for tests.
+local function start_build(s, name, center)
+  local e = s.create_entity{name = name, position = {center[1], center[2]}, force = "neutral"}
+  if e then
+    e.destructible = false
+    storage.orbital_builds = (storage.orbital_builds or 0) + 1
+  end
+  return e
+end
+local function stop_build(st, why)
+  if st.build and st.build.valid then
+    -- (Tests: an impact's stop that many ticks off its first shell's impact; 0 when it ends on it.)
+    if why == "impact" and st.build_end then
+      storage.orbital_build_off = storage.orbital_build_off or {}
+      table.insert(storage.orbital_build_off, game.tick - st.build_end)
+    end
+    st.build.destroy()
+    storage.orbital_builds_stopped = storage.orbital_builds_stopped or {}
+    storage.orbital_builds_stopped[why] = (storage.orbital_builds_stopped[why] or 0) + 1
+  end
+  st.build = nil
+end
+
 function orbital.start(b, s, fs, center, along, spotter, dev)
   storage.kh_strikes = storage.kh_strikes or {}
   table.insert(storage.kh_strikes, {base = b.id, surface = s.index, force = b.force, center = center,
-    along = along, spotter = spotter, fire_at = game.tick + PAINT, k = 0, phase = "paint", dev = dev})
+    along = along, spotter = spotter, fire_at = game.tick + PAINT, k = 0, phase = "paint", dev = dev,
+    build = start_build(s, "lp-orbital-build", center)})
   b.strikes = (b.strikes or 0) + 1
   shadow(s, center, along, PAINT)
   if shared.notices_on() then
@@ -195,7 +220,7 @@ function orbital.from_orbit(s, force, center, at, reach, silhouette)
   local along = math.pi / 4
   table.insert(storage.kh_strikes, {surface = s.index, force = force, center = {center[1], center[2]}, along = along,
     fire_at = game.tick + CANNON_PAINT, paint_for = CANNON_PAINT, k = 0, phase = "paint", player = true, preset = at,
-    reach = reach, cannon = true})
+    reach = reach, cannon = true, build = start_build(s, "lp-cannon-build", center)})
   shadow(s, {center[1], center[2]}, along, CANNON_PAINT, silhouette)
 end
 
@@ -328,17 +353,21 @@ function orbital.tick(tick)
     local st = storage.kh_strikes[i]
     local s = game.surfaces[st.surface]
     local b = storage.bases[st.base]
+    -- (Its build ends on its first impact: build_end, set as its first shell falls.)
+    if st.build_end and tick >= st.build_end then stop_build(st, "impact") end
     if not s then
       table.remove(storage.kh_strikes, i)
     elseif st.phase == "paint" and b and not st.dev and not (b.op and b.op.kind == "siege") then
       -- Its siege over before it falls: called off (it fell on the wall after its siege had packed up, the user's watch,
       -- 2026-11-03).
       trace(b, "its siege is over: called off")
+      stop_build(st, "called off")
       table.remove(storage.kh_strikes, i)
     elseif st.phase == "paint" then
       if not (st.spotter and st.spotter.valid) and not st.player then
         if b then trace(b, "its spotter is down: called off"); b.strikes_off_called = (b.strikes_off_called or 0) + 1 end
         if b then achievements.spotter(game.forces[b.force]) end
+        stop_build(st, "spotter")
         table.remove(storage.kh_strikes, i)
       elseif tick >= st.fire_at then
         st.phase, st.next = "fire", tick
@@ -364,7 +393,9 @@ function orbital.tick(tick)
         paint(st, s, tick)
       end
     elseif tick >= st.next then
-      -- Its point, then a pair each PACE, outward.
+      -- Its point, then a pair each PACE, outward. (Its first shell's impact, a fall of FALL tiles at speed 3 on, ends its
+      -- build: the pass after it turned to fire, 20 to 29 ticks after fire_at.)
+      if st.k == 1 then st.build_end = tick + math.ceil(FALL / 3); st.first_fall = tick end
       for _ = 1, st.k == 1 and 1 or 2 do
         local q = st.queue[st.k]
         if q then fall(st, s, b, q.pos); st.shells = (st.shells or 0) + 1; st.k = st.k + 1 end
@@ -372,6 +403,7 @@ function orbital.tick(tick)
       st.next = tick + PACE
       if st.k > #st.queue then
         if b then b.strike_shells = (b.strike_shells or 0) + st.shells; trace(b, string.format("done: %d shells", st.shells)) end
+        stop_build(st, "impact")
         table.remove(storage.kh_strikes, i)
       end
     end

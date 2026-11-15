@@ -2492,6 +2492,12 @@ scenarios.cannon = function()
       nests_left = S.nests_left, worm_left = S.worm_left, shot2 = S.shot2, last2 = S.last2, shot2b = S.shot2b, shot3 = S.shot3,
       noarray = S.noarray, stats = lp("cannon_stats")}))
     check("cannon: its arcs strike while it charges", (S.arcs or 0) > 0, tostring(S.arcs))
+    -- (Its build, the Sound Sheet's round six, the cannon's: made with each strike's paint, ended at its first impact.)
+    local ob = lp("orbital_builds") or {}
+    local on = #(ob.off or {}) > 0
+    for _, x in ipairs(ob.off or {}) do if x ~= 0 then on = false end end
+    check("cannon: a build with its strikes, ended at their first impacts", (ob.n or 0) >= 1 and ((ob.stopped or {}).impact or 0) >= 1
+      and on and ob.left == 0, serpent.line(ob))
     -- (Its barrel its own sprite over each cannon, slid back as it fires and home again.)
     local cs = lp("cannon_stats")
     check("cannon: each barrel drawn over its cannon, recoiling as it fires", (S.cstats0 and S.cstats0.barrels or 0) == 3
@@ -9186,6 +9192,10 @@ scenarios.orbital = function()
     elseif nostrike then
       check("orbital: strikes off, none called", st.called == 0 and st.shells == 0, serpent.line(st))
     elseif spot then
+      -- (Its build, the Sound Sheet's round six: made with the paint, stopped as its spotter fell; none left playing.)
+      local ob = lp("orbital_builds") or {}
+      check("orbital: its build made with the paint, stopped when its spotter died", (ob.n or 0) >= 1
+        and ((ob.stopped or {}).spotter or 0) >= 1 and not (ob.stopped or {}).impact and ob.left == 0, serpent.line(ob))
       check("orbital: its spotter killed, the strike called off", st.called >= 1 and st.off >= 1 and st.shells == 0,
         serpent.line(st))
       -- (Achievements, 2026-11-03: Eyes first for the player that called it off.)
@@ -9193,6 +9203,12 @@ scenarios.orbital = function()
       check("orbital: Eyes first granted", (got["lp-eyes-first"] or 0) >= 1, serpent.line(got))
     else
       check("orbital: called, its shells walked the wall", st.called >= 1 and st.shells >= 7, serpent.line(st))
+      -- (Its build made with each strike's paint and ended at its first impact; none left playing.)
+      local ob = lp("orbital_builds") or {}
+      local on = #(ob.off or {}) > 0
+      for _, x in ipairs(ob.off or {}) do if x ~= 0 then on = false end end
+      check("orbital: a build with each strike, ended at its first impact", (ob.n or 0) >= st.called
+        and ((ob.stopped or {}).impact or 0) >= 1 and on and ob.left == 0, serpent.line(ob) .. " for " .. tostring(st.called) .. " called")
       -- (Seven on the wall alone, whatever stood behind it, before 0.2.141: the lasers covering the gap held the siege off.)
       check("orbital: the guns covering the lane shelled too", st.guns >= 1 and st.shells > 7, serpent.line(st))
       check("orbital: a lane opened, not the whole wall", S.walls_after and S.walls_after < S.walls0 and S.walls_after > 0,

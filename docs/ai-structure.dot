@@ -77,7 +77,7 @@ digraph ai {
     "strike" [label="strike\n68 lines", width=0.88, fillcolor="#eef2f7"];
     "jammer" [label="jammer\n77 lines", width=0.89, fillcolor="#eef2f7"];
     "dome" [label="dome\n437 lines", width=1.29, fillcolor="#eef2f7"];
-    "orbital" [label="orbital\n381 lines", width=1.22, fillcolor="#eef2f7"];
+    "orbital" [label="orbital\n413 lines", width=1.26, fillcolor="#eef2f7"];
     "scorcher" [label="scorcher\n224 lines", width=1.05, fillcolor="#d9f0d9"];
     "stun" [label="stun\n145 lines", width=0.96, fillcolor="#eef2f7"];
     "fall" [label="fall\n101 lines", width=0.91, fillcolor="#eef2f7"];
@@ -113,7 +113,7 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_11 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1345 lines", width=2.29, fillcolor="#f7dede"];
+    "control" [label="control\n1352 lines", width=2.30, fillcolor="#f7dede"];
     "dev" [label="dev\n611 lines", width=1.48, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n197 lines", width=1.02, fillcolor="#eef2f7"];
