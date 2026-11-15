@@ -13,10 +13,15 @@ Each run dir holds an events.jsonl written while tracing (sims and visits). Per 
 - in truce: buildings lost while a lull's truce held (by anyone: the minute counts are not split by corporation);
 - peaks: the worst five-minute windows of losses (three), and how many fell inside a told window: the director the
   storyteller of the run when they do;
-- peak to valley: the worst five minutes against the median five minutes with any loss.
+- peak to valley: the worst five minutes against the median five minutes with any loss;
+- quiet: per lull, the minutes from its start to the next minute with a loss, against the lull told (its truce), as
+  quiet/told, and how many lulls stayed quiet their truce through (the consult's recovery windows);
+- variety: the entropy of the beat kinds drawn (lulls aside), in bits, and the share of beats the same kind as the one
+  before.
 The loss counts are buildings a minute (the events' minute records), not worth.
 """
 import json
+import math
 import os
 import statistics
 import sys
@@ -72,7 +77,21 @@ def report(run_dir):
     peaks_in = sum(1 for k, _ in worst if inside(k * 5 + 2.5, windows))
     nonzero = [v for v in fives.values() if v > 0]
     p2v = round(worst[0][1] / statistics.median(nonzero), 1) if worst and nonzero else 0
+    quiet, kept = [], 0
+    for a, b in truces:
+        nxt = next((t for t, v in per_min if t > a and v > 0), None)
+        q = (nxt - a) if nxt is not None else (per_min[-1][0] - a if per_min else 0)
+        quiet.append(f"{q:.0f}/{b - a:.0f}")
+        kept += 1 if q >= b - a else 0
+    drawn = [b.get("kind") for b in sorted(beats, key=lambda e: e["t"]) if b.get("kind") != "lull"]
+    counts = {}
+    for k in drawn:
+        counts[k] = counts.get(k, 0) + 1
+    ent = -sum(c / len(drawn) * math.log2(c / len(drawn)) for c in counts.values()) if drawn else 0
+    same = sum(1 for x, y in zip(drawn, drawn[1:]) if x == y)
     return {"run": os.path.basename(run_dir.rstrip("/")), "kinds": kinds,
+            "quiet": f"{kept}/{len(truces)} ({', '.join(quiet)})" if truces else "-",
+            "variety": f"{ent:.2f} bits, {same}/{max(1, len(drawn) - 1)} repeats" if drawn else "-",
             "forecasts": sum(1 for e in ev if e["k"] == "forecast"),
             "lead": f"{leads[0]}/{leads[len(leads) // 2]}" if leads else "-",
             "finished": f"{finished}/{len(over)}", "lost": lost,
@@ -85,7 +104,8 @@ def main(dirs):
     for r in rows:
         k = ", ".join(f"{n} {c}" for n, c in sorted(r["kinds"].items()))
         print(f"{r['run']}: beats {k or 'none'}; forecasts {r['forecasts']}; lead {r['lead']} s; finished {r['finished']}; "
-              f"lost {r['lost']}, told {r['told']}, in truce {r['in_truce']}; peaks told {r['peaks']}, peak to valley {r['p2v']}")
+              f"lost {r['lost']}, told {r['told']}, in truce {r['in_truce']}; peaks told {r['peaks']}, peak to valley {r['p2v']}; "
+              f"quiet {r['quiet']}; variety {r['variety']}")
 
 
 if __name__ == "__main__":
