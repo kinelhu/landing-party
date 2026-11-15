@@ -14,7 +14,7 @@
 <title>Seams (leaves)</title>
 <path fill="#d9f0d9" stroke="black" d="M950.12,-738.25C950.12,-738.25 847.88,-738.25 847.88,-738.25 841.88,-738.25 835.88,-732.25 835.88,-726.25 835.88,-726.25 835.88,-714.25 835.88,-714.25 835.88,-708.25 841.88,-702.25 847.88,-702.25 847.88,-702.25 950.12,-702.25 950.12,-702.25 956.12,-702.25 962.12,-708.25 962.12,-714.25 962.12,-714.25 962.12,-726.25 962.12,-726.25 962.12,-732.25 956.12,-738.25 950.12,-738.25"/>
 <text xml:space="preserve" text-anchor="middle" x="899" y="-721.8" font-family="Helvetica,sans-Serif" font-size="11.00">Seams (leaves)</text>
-<text xml:space="preserve" text-anchor="middle" x="899" y="-709.8" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 1832 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="899" y="-709.8" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 1834 lines</text>
 </g>
 <!-- Settlement -->
 <g id="node6" class="node">
@@ -64,7 +64,7 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M771.88,-235.5C771.88,-235.5 620.12,-235.5 620.12,-235.5 614.12,-235.5 608.12,-229.5 608.12,-223.5 608.12,-223.5 608.12,-203.5 608.12,-203.5 608.12,-197.5 614.12,-191.5 620.12,-191.5 620.12,-191.5 771.88,-191.5 771.88,-191.5 777.88,-191.5 783.88,-197.5 783.88,-203.5 783.88,-203.5 783.88,-223.5 783.88,-223.5 783.88,-229.5 777.88,-235.5 771.88,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="696" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="696" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">22 modules, 9817 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="696" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">22 modules, 9819 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="696" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">army 1061, ops 2525, siege 2144</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
@@ -101,7 +101,7 @@
 <title>Corporation</title>
 <path fill="#f7dede" stroke="black" d="M1091.12,-339.25C1091.12,-339.25 994.88,-339.25 994.88,-339.25 988.88,-339.25 982.88,-333.25 982.88,-327.25 982.88,-327.25 982.88,-307.25 982.88,-307.25 982.88,-301.25 988.88,-295.25 994.88,-295.25 994.88,-295.25 1091.12,-295.25 1091.12,-295.25 1097.12,-295.25 1103.12,-301.25 1103.12,-307.25 1103.12,-307.25 1103.12,-327.25 1103.12,-327.25 1103.12,-333.25 1097.12,-339.25 1091.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="1043" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="1043" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">9 modules, 3214 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="1043" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">9 modules, 3216 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="1043" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">faction 1207</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Corporation -->

@@ -7341,6 +7341,20 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Sound, round four wired** (0.2.425; the user's picks on the Sound Sheet, 2026-11-15). Twelve kept of 24: the
+  dozer's ram (sounds.lua, its attack: three metal impacts at random); engines and steps as walking_sound on the run
+  cycle (sounds_units.lua: a vehicle's one-frame run loops every half tile, so its engine is a bed capped by its
+  aggregation, 3 at once, 2 for heavy vehicles; feet at frames 5 and 16 of the 22-frame run): Grubstake's light engine,
+  Kessler-Hayashi's light and heavy drives, Grubstake's and the player's steps; deaths as dying_sound (light, heavy,
+  drones; the drones' robot blast is their dying explosion's, heard with the whoosh at once, not 12 ticks on as the
+  board laid it); the cues as sound prototypes played by shared.cue: the pods' klaxon (one pulse fewer, the user's
+  note) where a strike force comes down, the landing roar as a hull shows (2 s before its blast; the board had 2.5),
+  the mast's clamps and hum. What one Sound prototype cannot play as the board did (a hum laid over tyres and tracks,
+  clamps then hum, a cut klaxon) is rendered by tools/sound/round4.py to landing-party/sound/ at the board's levels
+  (the user, on the arc flamer's copy: "keep the copy"). Checked in the dump (each prototype's sound), the lint, and
+  three cue checks (director, director blackout, landfx and its off variant), each seen failing with the cue's count
+  removed. Not heard in a game window: an engine played every half tile under its cap may stutter or swell; the
+  aegis, Tesla and Prism took Kessler-Hayashi's heavy drive though the card named the tank and dozer.
 - **Strike forces built for their target** (0.2.421; the user: "what is the unit comp of strikes? Modular? We know that
   unit counters play a big role in balance"). A strike force took its corporation's raw mix, drawn unit by unit: the one
   army in the game that never adapted (camps' own garrisons go through army.composition). Now its units come from its

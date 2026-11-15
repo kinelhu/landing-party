@@ -1259,6 +1259,8 @@ remote.add_interface("landing-party", {
   director = function() return director.state() end,
   -- Tests and the debug panel: director.cmd (on, off, auto, spree [corp], lull, fill, empty, end).
   director_cmd = function(action, arg) return director.cmd(action, arg) end,
+  -- Tests: the faction cues played, by name (shared.cue).
+  sound_cues = function() return storage.sound_cues or {} end,
   -- Films only: the director's panel toggled for a player (/lp director without a console; the manual's still).
   debug_director_panel = function(index)
     local p = game.get_player(index) or game.connected_players[1]

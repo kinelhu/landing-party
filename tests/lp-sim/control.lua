@@ -8096,6 +8096,9 @@ scenarios.director = function()
       info(string.format("director blackout: %s; radar %s, dark %d s, lit %d s; mast up %s, after its death dark %s, over %s, killed %s",
         tostring(S.said), tostring(S.radar ~= nil), S.held, S.free, tostring(S.up), tostring(S.after), tostring(S.over),
         tostring(S.killed)))
+      -- (Its mast's cue, the Sound Sheet's round four: clamps, then its hum, as it goes up.)
+      local mc = (lp("sound_cues") or {})["mast-up"] or 0
+      check("director: blackout, its mast's cue played as it went up", mc >= 1, tostring(mc))
       check("director: blackout, its mast darks the player's radar while it stands", S.said == "blackout" and S.held >= 115
         and S.free <= 5, string.format("%s, dark %d of %d s", tostring(S.said), S.held, S.held + S.free))
       check("director: blackout, its mast destroyed the radar is back and it is over", S.up and S.after == false and S.over
@@ -8658,6 +8661,10 @@ scenarios.director = function()
         and (S.unrecalled or 0) == 0, string.format("%s lull minutes sampled, %s operations still out, %s recalled",
           tostring(S.lull_seen), tostring(S.unrecalled), tostring(d.recalls)))
       -- (Lifted out where they landed until 0.2.419; since, home on foot, none vanishing in the field.)
+      -- (A klaxon where each force comes down, once a force: the Sound Sheet's round four.)
+      local pc = (lp("sound_cues") or {})["pods-alarm"] or 0
+      check("director: a klaxon for every strike force's pods", (d.strike_landings or 0) >= 1 and pc >= d.strike_landings,
+        string.format("%s klaxons, %s landings", tostring(pc), tostring(d.strike_landings)))
       check("director: its strike teams land and walk home, none lifted out in the field",
         (d.strike_landed or 0) >= 1 and (d.strikes_over or 0) >= 1 and (d.strike_lifted or 0) == 0,
         string.format("%s landed, %s teams over, %s lifted, %s joined, %s shipped", tostring(d.strike_landed),
@@ -18080,10 +18087,14 @@ scenarios.landfx = function()
     check("landfx: the queued landing came 420 ticks after its pod (as podland)", S.pod_at and S.land_at
       and S.land_at - S.pod_at >= 400 and S.land_at - S.pod_at <= 440, string.format("pod %s, lander %s", tostring(S.pod_at), tostring(S.land_at)))
     check("landfx: no explosion or projectile entity while its pods fell", S.ents == 0, tostring(S.ents))
+    -- (Its re-entry roar as the hull shows, the Sound Sheet's round four: once for the queued landing; none when off.)
+    local roar = (lp("sound_cues") or {})["landing-roar"] or 0
     if off then
       check("landfx: off, nothing drawn", g.landfx == nil and sr and sr.landfx == nil, serpent.line(g.landfx))
+      check("landfx: off, no landing roar", roar == 0, tostring(roar))
       return
     end
+    check("landfx: the queued landing's roar played as its hull showed", roar >= 1, tostring(roar))
     -- (Crash: a massive and five big explosions, its flash and light, four scorch marks, sixteen puffs of dust, all
     -- drawn; nothing made. Scorch corpses and trivial smoke made the fights of rail and herd turn out otherwise.)
     check("landfx: the direct landing crashed at once", S.g_fx ~= nil and S.g_fx.tick == S.g_landed and S.g_fx.made == 0

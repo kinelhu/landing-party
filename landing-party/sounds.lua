@@ -39,4 +39,9 @@ return {
     "base/sound/fight/laser-3.ogg"}, speed = 1.2, volume = 0.45, every = 20, shots = 8, was = "base/sound/fight/laser-beam.ogg", was_every = 20},
   {id = "kh-rail", units = {"lp-aegis", "lp-grubstake-aegis", "lp-railgunner", "lp-grubstake-railgunner"}, decided = "keep", label = "Kessler-Hayashi Aegis and railgunner", files = {"space-age/sound/entity/railgun/railgun-gunshot-1.ogg",
     "space-age/sound/entity/railgun/railgun-gunshot-2.ogg"}, speed = 1.0, volume = 0.7, every = 120, shots = 2},
+  -- Round four (2026-11-15, the Sound Sheet): the dozer's ram, A kept (B, a crash over stone, dropped). Its three impacts
+  -- picked at random a hit, once a second (its cooldown).
+  {id = "dozer-ram-a", units = {"lp-dozer", "lp-grubstake-dozer"}, decided = "keep", label = "Dozer's ram", round = 4,
+    files = {"base/sound/car-metal-large-impact-1.ogg", "base/sound/car-metal-large-impact-2.ogg",
+      "base/sound/car-metal-large-impact-3.ogg"}, speed = 0.75, volume = 0.7, every = 60, shots = 4, was = "none"},
 }

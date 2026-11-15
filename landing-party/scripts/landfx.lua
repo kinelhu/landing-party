@@ -102,6 +102,8 @@ local function descent_tick(d, tick, s)
     x, y = d.from[1] + (d.at[1] - d.from[1]) * k, d.from[2] + (d.at[2] - d.from[2]) * k
   end
   if not d.hull and tick >= d.launch then
+    -- (Its re-entry roar as the hull shows, its touchdown's blast 2 s on: the Sound Sheet's round four.)
+    shared.cue(s, "landing-roar", {x, y})
     d.hull = rendering.draw_animation{animation = shared.variant(d.corp, "lp-lander") .. FX.fall, target = {x, y - HULL_HEIGHT},
       surface = s, render_layer = "air-object", animation_speed = 0.5}
     d.hull_at = tick

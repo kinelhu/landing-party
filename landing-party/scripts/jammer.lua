@@ -27,6 +27,8 @@ function jammer.raise(surface, pos, force)
     intensity = 0.8, color = CYAN}
   storage.jammers = storage.jammers or {}
   table.insert(storage.jammers, {mast = m, struck = 0})
+  -- (Clamps locking, then its hum: the Sound Sheet's round four.)
+  shared.cue(surface, "mast-up", m.position)
   return m
 end
 

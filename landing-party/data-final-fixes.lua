@@ -111,6 +111,42 @@ do
   end
 end
 
+-- The units' movement and death sounds, and the cues' sound prototypes (sounds_units.lua; round four, the user's picks
+-- on the Sound Sheet, 2026-11-15). units.lua strips every unit's walking and dying sound; these give them back their
+-- own, each with an aggregation (vanilla's limits: a crowd heard as at most max_count at once).
+do
+  local list = require("__landing-party__.sounds_units")
+  local PLATES = {"", "-physical", "-fire", "-laser"}
+  local CATEGORY = {walk = "walking", die = "explosion", cue = "game-effect"}
+  local function path(f) return "__" .. f:match("^([^/]+)") .. "__/" .. f:gsub("^[^/]+/", "") end
+  local function sound(e)
+    local v = {}
+    for _, f in ipairs(e.files) do v[#v + 1] = {filename = path(f), volume = e.volume, speed = e.speed} end
+    return {variations = v, category = CATEGORY[e.slot],
+      aggregation = {max_count = e.max, remove = true, count_already_playing = true}}
+  end
+  for _, e in ipairs(list) do
+    if e.slot == "cue" then
+      data:extend({{type = "sound", name = "lp-cue-" .. e.id, variations = sound(e).variations, category = "game-effect",
+        aggregation = {max_count = e.max, remove = true, count_already_playing = true}}})
+    else
+      for _, base in ipairs(e.units) do
+        for _, plate in ipairs(PLATES) do
+          local u = data.raw.unit[base .. plate]
+          if u then
+            if e.slot == "walk" then
+              u.walking_sound = sound(e)
+              u.running_sound_animation_positions = e.positions
+            else
+              u.dying_sound = sound(e)
+            end
+          end
+        end
+      end
+    end
+  end
+end
+
 -- Hulls turn slower (shared.HULL.TURN): a unit of ours wider than HULL.WIDTH, not a flier.
 do
   local shared = require("__landing-party__.shared")

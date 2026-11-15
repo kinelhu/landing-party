@@ -942,6 +942,13 @@ function shared.truce_held(corp)
   return false
 end
 
+-- A faction cue (sounds_units.lua's slot cue, round four): its sound at a place, counted by name for tests.
+function shared.cue(surface, id, position)
+  storage.sound_cues = storage.sound_cues or {}
+  storage.sound_cues[id] = (storage.sound_cues[id] or 0) + 1
+  if surface and surface.valid then surface.play_sound{path = "lp-cue-" .. id, position = position} end
+end
+
 function shared.notice(target, msg)
   storage.notice_counts = storage.notice_counts or {told = 0, held = 0}
   local told = (type(msg) == "table" and KEEP[msg[1]]) or shared.notices_on()

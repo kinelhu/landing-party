@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.425
+Date: 2026-11-15
+  Sounds:
+    - The corporations' vehicles have engines: Grubstake's light vehicles a rough petrol engine, Kessler-Hayashi's an electric drive over their tyres and tracks.
+    - Grubstake's infantry and your own troops are heard walking.
+    - Light vehicles, heavy vehicles and drones each have a death sound of their own.
+    - The dozer's ram strikes with a heavy metal blow.
+    - A klaxon sounds where a strike force's pods come down, a re-entry roar comes before a camp's landing, and a mast locks and hums as it goes up.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.424
 Date: 2026-11-15
   Bugfixes:

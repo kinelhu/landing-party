@@ -288,6 +288,8 @@ function war.strike_team(b, owner, n, key, land, mix)
     if pods.send(game.surfaces[b.surface], {at[1] + 3 * (sent % 5) - 6, at[2] + 3 * math.floor(sent / 5)}, b.force,
       {kind = "strike", base = b.id, names = load, key = key}) then sent = sent + 1 end
   end
+  -- (Its klaxon where it comes down, once a force, before the pods' own: the Sound Sheet's round four.)
+  if sent > 0 then shared.cue(game.surfaces[b.surface], "pods-alarm", {at[1], at[2]}) end
   return sent
 end
 pods.handlers.strike = function(p, surface, pos)
