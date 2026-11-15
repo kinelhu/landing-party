@@ -7610,6 +7610,57 @@ scenarios.director = function()
     end)
     return
   end
+  -- LP_MIX=armydrop: is the player's army an answer to a drop (0.2.420; the user agreed: walls answer raids, the army
+  -- answers drops)? Two like clusters 300 apart, 150 from the camp, no turrets; a squad of twelve at the first, as if sent
+  -- there when its strike force landed. The same strike force at each in turn (a focus), the camp's own operations off:
+  -- against the squad it breaks, against none it does not.
+  if params.mix == "armydrop" then
+    schedule(120, function()
+      lp("debug_tune", {director = "steady", choice_off = true, director_tune = {grace = 0, fill = 0, hurt_floor = 100,
+        points_per_worth = 1, points_max = 12, warn_minutes = 1, strike_minutes = 4, home_minutes = 3}})
+      local id = (lp("bases") or {})[1]
+      local o = lp("stats", id).origin
+      local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
+      local ux, uy = -o.x / len, -o.y / len
+      -- (300 apart: 80 apart, the first force went on to the second cluster, within its 80 of re-aim, and razed both.)
+      S.A = {math.floor(o.x + ux * 150 - uy * 150), math.floor(o.y + uy * 150 + ux * 150)}
+      S.B = {math.floor(o.x + ux * 150 + uy * 150), math.floor(o.y + uy * 150 - ux * 150)}
+      for _, c in ipairs({S.A, S.B}) do
+        flatten(c[1] - 12, c[2] - 12, c[1] + 12, c[2] + 12)
+        for x = -6, 6, 4 do for y = -4, 4, 8 do
+          surface().create_entity{name = "assembling-machine-2", position = {c[1] + x + 0.5, c[2] + y + 0.5}, force = "player"}
+        end end
+      end
+      -- (A mixed squad, as a player would send: twelve riflemen killed 2 of a force of 12 with its tanks, and all died.)
+      local squad = {"lp-trooper", "lp-trooper", "lp-trooper", "lp-trooper", "lp-trooper", "lp-trooper",
+        "lp-rocket-trooper", "lp-rocket-trooper", "lp-rocket-trooper", "lp-rocket-trooper", "lp-battle-tank", "lp-battle-tank"}
+      for j, name in ipairs(squad) do
+        local q = surface().find_non_colliding_position(name, {S.A[1] + (j % 4) * 3 - 4, S.A[2] - 10 - math.floor(j / 4) * 3}, 10, 0.5)
+        if q then surface().create_entity{name = name, position = q, force = "player"} end
+      end
+    end)
+    schedule(600, function() S.f1 = lp("director_cmd", "focus", S.A) end)
+    schedule(10 * 3600, function()
+      local d = lp("director") or {}
+      S.l1 = (d.lost_strike or {}).player or 0
+      S.rep1 = d.strikes_repelled or 0
+      S.troopers = surface().count_entities_filtered{name = {"lp-trooper", "lp-rocket-trooper", "lp-battle-tank"}, force = "player"}
+      S.f2 = lp("director_cmd", "focus", S.B)
+    end)
+    schedule(END - 60, function()
+      local d = lp("director") or {}
+      local l2 = ((d.lost_strike or {}).player or 0) - (S.l1 or 0)
+      local rep2 = (d.strikes_repelled or 0) - (S.rep1 or 0)
+      info(string.format("director armydrop: %s at A (troopers): razed %.0f, repelled %s, %s troopers left; %s at B (none): razed %.0f, repelled %d",
+        tostring(S.f1), S.l1 or -1, tostring(S.rep1), tostring(S.troopers), tostring(S.f2), l2, rep2))
+      -- (Not "razes less": at parity it razed the whole cluster in the 25 s before it broke, 16 against 16; the squad
+      -- broke it, 11 of 12 lost for 6. Recorded, DESIGN 0.2.420: an answer that costs, not one that saves.)
+      check("director: armydrop, a squad of twelve breaks the strike force; with none it does not break",
+        S.rep1 == 1 and rep2 == 0, string.format("A: razed %.0f, repelled %s; B: razed %.0f, repelled %d",
+        S.l1 or -1, tostring(S.rep1), l2, rep2))
+    end)
+    return
+  end
   -- LP_MIX=beats: the rest of the off-map beats (0.2.421), with a Grubstake camp beside the Serenity one: a joint strike
   -- (two forces of two corporations at one target, landing together); an export contract (that corporation's
   -- operations against the player held, its camps paid at the end); a garrison rotation (shipped out, back by pod); a

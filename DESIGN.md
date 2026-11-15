@@ -7356,6 +7356,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   transmission as a salvage wreck's data core (half of them; emptied, the next strike force's target is tagged), not a
   forecast, which the user removed in 0.2.405. Scenarios director targets (cap order, cluster, the later targets) and
   beats, each check seen failing; the contract's hold on operations reuses the power hold's, not seen failing apart.
+  Is the player's army an answer to a drop (scenario director armydrop, two like clusters, a strike force of 12 at each
+  in turn)? Twelve riflemen standing by the first killed 2 and all died; the force did not break. A mixed squad of
+  twelve (six riflemen, four rocket troopers, two battle tanks) broke it, 6 of 12 killed for 11 of 12 lost; but the
+  force razed the whole cluster in the 25 s before it broke, as much as against none (16 and 16). At parity the army
+  makes a strike cost the corporation; it does not save what it lands on. Open, for the user: whether that is right.
 - **Strike forces walk home** (0.2.419). The user: "The lift makes little sense for factorio? In this game you need a
   rocket to reach space". Its pods come down from orbit as the game's own do; going back up needs a rocket. Its
   survivors, done or broken or recalled, now walk home to their lead camp (or the nearest of their corporation's
