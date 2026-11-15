@@ -39,7 +39,11 @@ settled = ["Grubstake machine-gun buggy and Scorcher", "Grubstake slug buggy", "
            # (Round four's twelve, in the mod since 0.2.425.)
            "Dozer's ram", "Grubstake light engine", "Kessler-Hayashi light and heavy drives", "Grubstake steps",
            "The player's troops' steps", "Light, heavy and drone deaths", "Strike force pods' klaxon",
-           "A camp's landing roar", "A mast going up"]
+           "A camp's landing roar", "A mast going up",
+           # (Round five's nine, in the mod since 0.2.426.)
+           "Grubstake heavy engine", "Laser drone's flight", "Harrier's flight", "Kessler-Hayashi steps",
+           "A siege's horn", "Kessler-Hayashi trooper's death", "Grubstake trooper's death", "Sapper's throw",
+           "A dome's catch"]
 TEXT = {
     4: ("Sounds, round four", "Movement, deaths, the last silent weapons and the events you should hear. Play Now, then "
         "Proposed, and mark each: keep it, drop it, or say how to change it. Where two cards propose the same sound, keep "
@@ -48,6 +52,10 @@ TEXT = {
         "redos: the foot soldiers' deaths split into Kessler-Hayashi's machines and Grubstake's people, a harrier on an "
         "engine and a propeller, a sapper's charge you can hear, a dome catch with electricity, and three orbital calls. "
         "Where cards share a letter series (A, B, C), keep the one you prefer and drop the others."),
+    6: ("Sounds, round six", "Round five's keeps are in the mod, the harrier lower and quieter and the machine's death "
+        "quieter as you asked. One sound left: the orbital strike's call. Round five's whine was too simple, so these three "
+        "lay detuned voices over each other, climb unevenly, and sit on a recording of the game's. Keep one, or say what "
+        "is still wrong."),
 }
 
 page = open(os.path.join(os.path.dirname(__file__), "sound_sheet.tmpl.html")).read()
