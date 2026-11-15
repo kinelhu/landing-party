@@ -10,7 +10,8 @@ Each run dir holds an events.jsonl written while tracing (sims and visits). Per 
 - told share: the player's buildings lost inside a told window (a beat from its start to its end, a strike force from
   its warning to its lift), of all lost; the rest is the corporations' own operations, Synthexis's waves and anything
   else the director did not announce;
-- in truce: buildings lost while a lull's truce held (by anyone: the minute counts are not split by corporation);
+- in truce: buildings lost while a lull's truce held, by anyone, and by the force that killed them where the run
+  counted it (0.2.399 on), and by the corporations the lull held: a truce broken;
 - peaks: the worst five-minute windows of losses (three), and how many fell inside a told window: the director the
   storyteller of the run when they do;
 - peak to valley: the worst five minutes against the median five minutes with any loss;
@@ -42,11 +43,12 @@ def report(run_dir):
     m = lambda t: t / TPM
     beats = [e for e in ev if e["k"] == "beat"]
     kinds = {}
-    windows, truces = [], []
+    windows, truces, held = [], [], []
     for b in beats:
         kinds[b.get("kind")] = kinds.get(b.get("kind"), 0) + 1
         if b.get("kind") == "lull":
             truces.append((m(b["t"]), m(b["t"]) + (b.get("truce") or b.get("minutes") or 0)))
+            held.append((truces[-1], {"lp-" + c for c in (b.get("corps") or [])}))
         else:
             windows.append((m(b["t"]), m(b["t"]) + (b.get("minutes") or 0)))
     strikes = {}
@@ -64,11 +66,21 @@ def report(run_dir):
     leads = sorted(round((s["hit"] - s["warn"]) * 60) for s in strikes.values() if "hit" in s)
     over = [s for s in strikes.values() if "over" in s]
     finished = sum(1 for s in over if s.get("why") == "finished")
-    per_min = [(m(e["t"]), (e.get("losses") or {}).get("player:building", 0)) for e in ev if e["k"] == "minute"]
+    # (A minute record holds the minute before it: its losses placed at its middle, t - 0.5.)
+    per_min = [(m(e["t"]) - 0.5, (e.get("losses") or {}).get("player:building", 0)) for e in ev if e["k"] == "minute"]
     inside = lambda t, ws: any(a <= t <= b for a, b in ws)
     lost = sum(v for _, v in per_min)
     told = sum(v for t, v in per_min if inside(t, windows))
     in_truce = sum(v for t, v in per_min if inside(t, truces))
+    # (By killer, where the run counted it, 0.2.399 on: "player:by:<force>".)
+    by, broken = {}, 0
+    for e in ev:
+        if e["k"] == "minute" and inside(m(e["t"]) - 0.5, truces):
+            forces = set().union(*[fs for (a, b), fs in held if a <= m(e["t"]) - 0.5 <= b])
+            for k, v in (e.get("losses") or {}).items():
+                if k.startswith("player:by:"):
+                    by[k[10:]] = by.get(k[10:], 0) + v
+                    broken += v if k[10:] in forces else 0
     fives = {}
     for t, v in per_min:
         fives[int(t // 5)] = fives.get(int(t // 5), 0) + v
@@ -95,7 +107,9 @@ def report(run_dir):
             "forecasts": sum(1 for e in ev if e["k"] == "forecast"),
             "lead": f"{leads[0]}/{leads[len(leads) // 2]}" if leads else "-",
             "finished": f"{finished}/{len(over)}", "lost": lost,
-            "told": f"{told / lost:.0%}" if lost else "-", "in_truce": in_truce,
+            "told": f"{told / lost:.0%}" if lost else "-",
+            "in_truce": f"{in_truce}" + (f" ({', '.join(f'{k} {v}' for k, v in sorted(by.items(), key=lambda kv: -kv[1]))};"
+                                         f" by the held {broken})" if by else ""),
             "peaks": f"{peaks_in}/{len(worst)}", "p2v": p2v}
 
 

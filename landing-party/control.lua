@@ -284,6 +284,12 @@ script.on_event(defines.events.on_entity_died, function(e)
     local f = ent.force.name
     local k = f .. ":" .. (ent.type == "unit" and "unit" or "building")
     storage.ev_minute[k] = (storage.ev_minute[k] or 0) + 1
+    -- (Buildings by the force that killed them, "player:by:enemy": who razed in a lull, the corporations held or the
+    -- map's biters; fun_report's truce losses.)
+    if ent.type ~= "unit" then
+      local by = f .. ":by:" .. (e.force and e.force.name or "none")
+      storage.ev_minute[by] = (storage.ev_minute[by] or 0) + 1
+    end
   end
   fall.skip(e)
   -- What the factions know: every loss of theirs, by whom (scripts/know.lua).

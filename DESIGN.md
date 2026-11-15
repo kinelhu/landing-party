@@ -7341,6 +7341,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **A truce kept by the strike force too** (0.2.399). A lull's recall set a strike team's end to now, but the team was
+  only sent back at the director's next minute pass, and walked back with distraction by_enemy: in scenario director's
+  climax variant it razed 3 of the player's buildings in the truce. Recalled teams are now sent back at once with
+  distraction none (they walk through the player's guns and may be finished there); a team's own end still walks back
+  by_enemy. Counted: buildings a corporation kills while its truce on the player holds (truce_lost, and truce_lost_strike
+  by its strike units), checked 0 in every director variant (seen failing at 3). The minute events now count the
+  player's buildings by the killing force ("player:by:<force>"), and fun_report splits a truce's losses by killer and by
+  the corporations held. fun_report placed a minute's losses at the minute's end, so a beat's last minute counted inside
+  the lull after it; placed at its middle now.
 - **The climax on demand** (0.2.398). The director's debug panel (/lp director) gains "Climax now" (director.cmd
   climax: a focus surge whose strike force is climax_points strong, told climax_warn ahead, lull_max after it) and a
   line of its climaxes and the strike forces out, each warned (its pods due in m:ss) or landed (its units standing).

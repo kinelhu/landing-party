@@ -7854,6 +7854,10 @@ scenarios.director = function()
         string.format("%s landed, %s teams over, %s lifted, %s in a garrison", tostring(d.strike_landed),
           tostring(d.strikes_over), tostring(d.strike_lifted), tostring(d.strike_enlisted)))
     end
+    -- (A strike team recalled by a lull walked back by_enemy, sent the minute after the truce, and razed 3 of the
+    -- player's buildings in it: LP_MIX=climax, 0.2.398. Since, sent back at once, distraction none.)
+    check("director: in a truce, its strike teams raze nothing of the player's", (d.truce_lost_strike or 0) == 0,
+      string.format("%s by strike teams, %s by the held corporations", tostring(d.truce_lost_strike), tostring(d.truce_lost)))
   end)
 end
 

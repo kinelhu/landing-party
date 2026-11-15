@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.399
+Date: 2026-11-15
+  Bugfixes:
+    - A strike force recalled by a lull walks home at once without fighting, instead of razing on its way back during the truce.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.398
 Date: 2026-11-15
   Changes:

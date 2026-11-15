@@ -97,6 +97,17 @@ function director.note_loss(owner, ent, cause, corp)
       table.insert(s.strike_leads, game.tick - k.warned)
     end
   end
+  -- (A building the corporation killed while its truce on `owner` held: the truce broken; a strike unit's apart. Tests.)
+  if corp then
+    for c, cd in pairs(shared.CORPS) do
+      if cd.force == corp and (storage.truces or {})[c .. "|" .. owner] and game.tick < storage.truces[c .. "|" .. owner] then
+        s.truce_lost = (s.truce_lost or 0) + 1
+        if cause and cause.valid and cause.unit_number and s.strike_unit and s.strike_unit[cause.unit_number] then
+          s.truce_lost_strike = (s.truce_lost_strike or 0) + 1
+        end
+      end
+    end
+  end
   if not s.active then return end
   table.insert(s.losses, {game.tick, owner, v})
 end
@@ -823,6 +834,23 @@ end
 -- Each minute: its teams' pods sent once their warning has run (a camp fallen meanwhile, none); its teams fight on to the
 -- nearest of the player's buildings within 80 of them; at strike_minutes they walk back to where they landed and are
 -- lifted out there, or wherever they are lift_minutes on. A team all dead first is the player's: finished.
+-- Sent back to where they landed, lifted there or at lift_at. `truce`: a lull's recall, distraction none, so they walk
+-- home through the player's guns without fighting (by_enemy, a team recalled in scenario director's lull razed 3 of the
+-- player's on its way back, the minute after the truce, 0.2.398).
+local function walk_back(k, tick, truce)
+  if truce then k.truce = true end
+  k.lift_at = k.lift_at or tick + tun("lift_minutes") * 3600
+  local n = 0
+  for _, u in ipairs(k.units) do
+    if u.valid then
+      n = n + 1
+      u.commandable.set_command{type = defines.command.go_to_location, destination = k.landed_at, radius = 8,
+        distraction = k.truce and defines.distraction.none or defines.distraction.by_enemy}
+    end
+  end
+  return n
+end
+
 local function strike_over(s, key, k, why)
   local b, mine = storage.bases[k.base], {}
   local live = {}
@@ -879,12 +907,8 @@ function director.strikes(s, tick)
           if #back == 0 then strike_over(s, key, k, "lifted") end
         end
       elseif tick >= k.till and k.landed_at then
-        k.lift_at = tick + tun("lift_minutes") * 3600
-        for _, u in ipairs(live) do
-          u.commandable.set_command{type = defines.command.go_to_location, destination = k.landed_at, radius = 8,
-            distraction = defines.distraction.by_enemy}
-        end
-        trace(string.format("strike force %d: %d walking back to %.0f,%.0f to be lifted", key, #live, k.landed_at[1],
+        local n = walk_back(k, tick)
+        trace(string.format("strike force %d: %d walking back to %.0f,%.0f to be lifted", key, n, k.landed_at[1],
           k.landed_at[2]))
       elseif tick >= k.till then strike_over(s, key, k, "lifted")
       elseif #live > 0 then
@@ -999,9 +1023,14 @@ function director.start_lull(s, owner, tick, corps, base_minutes)
   for key, k in pairs(s.strikes or {}) do
     if k.owner == owner and set[k.corp] and not k.at then strike_over(s, key, k, "called off") end
   end
-  for _, k in pairs(s.strikes or {}) do
-    if k.owner == owner and set[k.corp] then
-      if k.at then k.till = math.min(k.till or tick, tick) end
+  -- Those in the field sent back now, not at the next minute's pass, and without fighting on the way.
+  for key, k in pairs(s.strikes or {}) do
+    if k.owner == owner and set[k.corp] and k.at then
+      k.till = math.min(k.till or tick, tick)
+      if k.landed_at then
+        trace(string.format("strike force %d: %d recalled, walking back to %.0f,%.0f to be lifted", key,
+          walk_back(k, tick, true), k.landed_at[1], k.landed_at[2]))
+      end
     end
   end
   s.recalls = (s.recalls or 0) + recalled
