@@ -97,7 +97,17 @@ function director.note_loss(owner, ent, cause, corp)
     local key = s.strike_unit[cause.unit_number]
     local k = s.strikes and s.strikes[key]
     -- (Broken, it razes nothing more: tests.)
-    if k and k.broken then s.lost_after_break = (s.lost_after_break or 0) + 1 end
+    -- (Broken, it razes nothing more but the guns shooting it, which it answers since 0.2.428: tests. A turret counted
+    -- apart, lost_after_break_guns.)
+    -- (From break_grace seconds after it broke: a tank's shell already in the air killed an assembler 83 ticks after, its
+    -- command the walk home, scenario director repel.)
+    if k and k.broken and game.tick > (k.broken_at or 0) + tun("break_grace") * 60 then
+      if ent.type == "ammo-turret" or ent.type == "electric-turret" or ent.type == "fluid-turret" then
+        s.lost_after_break_guns = (s.lost_after_break_guns or 0) + 1
+      else
+        s.lost_after_break = (s.lost_after_break or 0) + 1
+      end
+    end
     if k and not k.hit then
       k.hit = game.tick
       shared.event("strike_hit", {key = key, lead = game.tick - k.warned, pos = {ent.position.x, ent.position.y}})
@@ -1542,11 +1552,23 @@ local function home_of(k)
   if best then k.base = best.id end
   return best
 end
+-- Its walk home (0.2.428; the user, on the walk-home loop: "a squad walking passively under turret fire. Is this really
+-- how we coded things?"): round the player's guns where there is a way (ops.walk_home's `guns`, a cell in reach
+-- home_gun_cost times as dear), its walk distraction none (by_enemy razed on its way, 0.2.418's repel; by_damage fought
+-- each gun to its end); answering fire by bursts, walking (below, answer_seconds), never in a lull's truce (k.lull).
 send_home = function(k, units)
   local b = home_of(k)
   if b then
     k.home = b.id
-    return ops.walk_home(b, units, k.truce)
+    local n = ops.walk_home(b, units, true, nil, tun("home_gun_cost"))
+    local r = ops.last_route
+    if r and r.found and (r.turrets or 0) > 0 then
+      local s = st()
+      s.strike_routed = (s.strike_routed or 0) + 1
+      k.routed, k.exposed = true, r.exposed
+      s.strike_exposed = r.exposed  -- (the last way's cells in a gun's reach: tests)
+    end
+    return n
   end
   -- (Stranded: no camp of its corporation standing. They go to where they landed and stay there till lift_at.)
   k.home = nil
@@ -1555,7 +1577,7 @@ send_home = function(k, units)
     if u.valid then
       n = n + 1
       u.commandable.set_command{type = defines.command.go_to_location, destination = k.landed_at, radius = 8,
-        distraction = k.truce and defines.distraction.none or defines.distraction.by_enemy}
+        distraction = defines.distraction.none}
     end
   end
   return n
@@ -1576,6 +1598,27 @@ end
 -- beam); a unit the engine set to flee (by_enemy) sent on again. (Landed by its target since 0.2.418, a broken
 -- force's tank fled among the player's guns and razed 4 of them, scenario director repel. Home within 40 of the lander
 -- at first: the camp's walls held them off it, and none were home in 8 minutes, scenario director home.)
+-- What is hitting a unit walking home, by a guess (no damage event for every unit: the handler's filter would take every
+-- bullet in the game): the nearest of `owner`'s guns whose reach covers it, else the nearest of its units, cars or
+-- characters within answer_reach.
+local ANSWER_TYPES = {"ammo-turret", "electric-turret", "fluid-turret", "unit", "character", "car", "spider-vehicle"}
+local function attacker_of(u, owner)
+  local best, bd
+  for _, e in ipairs(u.surface.find_entities_filtered{position = u.position, radius = 40, force = owner, type = ANSWER_TYPES}) do
+    local d = (e.position.x - u.position.x) ^ 2 + (e.position.y - u.position.y) ^ 2
+    local reach
+    if e.type == "ammo-turret" or e.type == "electric-turret" or e.type == "fluid-turret" then
+      local r = REACH[e.name]
+      if not r then
+        r = e.prototype.turret_range or (e.prototype.attack_parameters and e.prototype.attack_parameters.range) or 0
+        REACH[e.name] = r
+      end
+      reach = r + 2
+    else reach = tun("answer_reach") end
+    if d <= reach * reach and (not bd or d < bd) then best, bd = e, d end
+  end
+  return best
+end
 walking = function(s)
   for _, k in pairs(s.strikes or {}) do
     if k.lift_at and k.landed_at then
@@ -1607,8 +1650,23 @@ walking = function(s)
             end
           else
             back[#back + 1] = u
-            if not (c and (c.type == defines.command.compound or c.type == defines.command.go_to_location)) then
-              ops.walk_home(b, {u}, k.truce)
+            local un = u.unit_number
+            k.hp, k.answer = k.hp or {}, k.answer or {}
+            local hit = k.hp[un] and u.health < k.hp[un] - 1
+            k.hp[un] = u.health
+            local burst = k.answer[un] and game.tick < k.answer[un].till
+            -- Hit on its way (not in a lull's truce), at most once each answer_gap: a burst at what is hitting it.
+            if hit and not k.lull and not burst and game.tick >= ((k.answer[un] or {}).next or 0) then
+              local att = attacker_of(u, k.owner)
+              if att then
+                u.commandable.set_command{type = defines.command.attack, target = att, distraction = defines.distraction.none}
+                k.answer[un] = {till = game.tick + tun("answer_seconds") * 60, next = game.tick + tun("answer_gap") * 60}
+                s.strike_answers = (s.strike_answers or 0) + 1
+                burst = true
+              end
+            end
+            if not burst and not (c and (c.type == defines.command.compound or c.type == defines.command.go_to_location)) then
+              ops.walk_home(b, {u}, true, nil, tun("home_gun_cost"))
             end
           end
         end
@@ -1624,7 +1682,7 @@ morale = function(s, tick)
       local live = 0
       for _, u in ipairs(k.units) do if u.valid then live = live + 1 end end
       if live > 0 and live <= k.landed_n * (1 - tun("strike_break")) then
-        k.broken = true
+        k.broken, k.broken_at = true, tick
         s.strikes_repelled = (s.strikes_repelled or 0) + 1
         walk_back(k, tick, true)
         shared.event("strike_broken", {key = key, live = live, landed = k.landed_n})
@@ -1994,7 +2052,7 @@ function director.start_lull(s, owner, tick, corps, base_minutes)
   -- Those in the field sent back now, not at the next minute's pass, and without fighting on the way.
   for key, k in pairs(s.strikes or {}) do
     if k.owner == owner and set[k.corp] and k.at then
-      k.till, k.truce = math.min(k.till or tick, tick), true
+      k.till, k.truce, k.lull = math.min(k.till or tick, tick), true, true
       if k.landed_at then
         trace(string.format("strike force %d: %d recalled, walking home", key, walk_back(k, tick, true)))
       end

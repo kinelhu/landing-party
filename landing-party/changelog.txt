@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.428
+Date: 2026-11-16
+  Changes:
+    - A strike force walking home goes round your turrets' reach where it can, and fires back at what shoots it in short bursts instead of walking on passively; it still razes nothing else.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.427
 Date: 2026-11-16
   Sounds:

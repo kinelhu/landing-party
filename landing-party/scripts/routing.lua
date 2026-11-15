@@ -175,13 +175,18 @@ local function sneak_route(b, from, to, opts, wide)
     return false
   end
   local blocked = {}
+  -- opts.gun_cost: within a turret's reach a cell costs that many times as much instead of being shut (a strike force
+  -- walking home, director.lua, 0.2.428: out of a ring of guns by its gap if it has one, else by the shortest way through).
+  local dear = {}
   local function open(i, j)
     if i < 0 or j < 0 or i >= w or j >= h then return false end
     local k = i * h + j
     if blocked[k] == nil then
       local cx, cy = centre(i, j)
       local bad = false
-      if tmark[k] and (cx - to[1]) ^ 2 + (cy - to[2]) ^ 2 > SNEAK_OPEN ^ 2 then bad = true end
+      if tmark[k] and (cx - to[1]) ^ 2 + (cy - to[2]) ^ 2 > SNEAK_OPEN ^ 2 then
+        if opts.gun_cost then dear[k] = opts.gun_cost else bad = true end
+      end
       if not bad and nmark[k] and not in_corridor(cx, cy) then bad = true end
       if not bad and wmark[k] then bad = true end
       -- (On a coarse grid, opts.cell, over more of the cell: water within 2 of a 16-tile cell's middle missed lakeshores,
@@ -281,7 +286,7 @@ local function sneak_route(b, from, to, opts, wide)
       local ni, nj = ci + d[1], cj + d[2]
       local nk = key(ni, nj)
       if not closed[nk] and ((ni == ti and nj == tj) or open(ni, nj)) then
-        local ng = g[ck] + ((d[1] ~= 0 and d[2] ~= 0) and 1.414 or 1)
+        local ng = g[ck] + ((d[1] ~= 0 and d[2] ~= 0) and 1.414 or 1) * (dear[nk] or 1)
         if not g[nk] or ng < g[nk] then
           g[nk], came[nk] = ng, ck
           push(ng + hdist(ni, nj), ni, nj)
@@ -292,7 +297,13 @@ local function sneak_route(b, from, to, opts, wide)
   end
   local nb = 0
   for _, v in pairs(blocked) do if v then nb = nb + 1 end end
-  ops.last_route = {nests = #nests, turrets = #turrets, blocked = nb, cells = w * h, found = found, steps = steps}
+  local exposed = 0
+  if found then
+    local k = key(ti, tj)
+    while k do if dear[k] then exposed = exposed + 1 end; k = came[k] end
+  end
+  ops.last_route = {nests = #nests, turrets = #turrets, blocked = nb, cells = w * h, found = found, steps = steps,
+    exposed = exposed}
   -- Water the box could not get round: once more over a box three times as wide (a lake 100 tiles across kept Grubstake's
   -- raids home for 40 minutes, visit nw; left to the engine, the raiders stood at home: its pathfinder gave up the detour).
   if not found and not wide and steps < 4000 and not opts.partial then return sneak_route(b, from, to, opts, true) end

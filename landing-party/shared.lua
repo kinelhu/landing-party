@@ -568,6 +568,16 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- A strike force's time in the field before it walks home to its camp (director.strikes), and the most it takes to get
   -- there before what is left is its camp's where it stands (lift_minutes, 3, to its landing point until 0.2.419).
   strike_minutes = 8, home_minutes = 5,
+  -- Its way home round the player's guns (0.2.428): a cell within a turret's reach home_gun_cost times as dear, so it
+  -- leaves a ring of guns by its gap where there is one, else by the shortest way through. A named prior.
+  home_gun_cost = 8,
+  -- And not passive under fire (0.2.428): a unit hit on its way home turns on what is hitting it (the nearest of the
+  -- player's guns whose reach covers it, else units within answer_reach) for answer_seconds, then walks on; at most once
+  -- each answer_gap seconds. Never in a lull's truce. (Distraction by_damage instead fought each gun to its end: a broken
+  -- force took a ring of eight guns and razed eight buildings besides, scenario director repelgap.) Named priors.
+  answer_seconds = 3, answer_gap = 10, answer_reach = 20,
+  -- (Kills by a broken force within break_grace seconds of its break are not counted against it: shells already fired.)
+  break_grace = 3,
   -- Its morale (RimWorld's raiders flee when hurt; the user, 2026-11-15, strike forces the player can beat): it breaks
   -- and walks back to be lifted once this share of those landed is lost. A named prior, not measured.
   strike_break = 0.5,

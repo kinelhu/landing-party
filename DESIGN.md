@@ -7382,6 +7382,23 @@ Bugs and surprises the headless runs caught, each kept as a check:
   three cue checks (director, director blackout, landfx and its off variant), each seen failing with the cue's count
   removed. Not heard in a game window: an engine played every half tile under its cap may stutter or swell; the
   aegis, Tesla and Prism took Kessler-Hayashi's heavy drive though the card named the tank and dozer.
+- **A strike force goes home round the guns, and answers fire** (0.2.428; the user, on the mod page's walk-home loop: "a
+  squad walking passively under turret fire. Is this really how we coded things?"). It was: since 0.2.418 a broken or
+  recalled force walked home distraction none (by_enemy had razed four buildings among the guns, scenario director
+  repel), by the camps' own route, which kept clear of nests but not of turrets. Now its way home (ops.walk_home's
+  `guns`, routing.lua's gun_cost) is planned over the player's guns' reach with each cell in reach home_gun_cost (8) times
+  as dear: out of a ring of guns by its gap where there is one, else by the shortest way through. And a unit hit on its
+  way turns on what is hitting it (the nearest gun whose reach covers it, else a unit within answer_reach) for
+  answer_seconds (3), then walks on, at most once each answer_gap (10 s); never in a lull's truce, which holds even
+  under fire. A guess from a health drop in the walking pass, every second, not the damage event (its filter would take
+  every bullet in the game). First tried: by_damage on the walk, and each hit unit fought its gun to the end: in
+  repelgap the broken force took the whole ring of eight and razed eight buildings besides. The rule: a gun that shoots
+  a retreating force may be destroyed; nothing else (lost_after_break 0, guns counted apart; kills within break_grace,
+  3 s, of the break not counted: a tank's shell already in the air took an assembler 83 ticks after). The camps' own
+  returning units keep their way: their raids' approach and retreat are their own operations', not the director's.
+  Scenarios director repel (it answers: the guns' health falls after the break; seen failing with no answers) and
+  repelgap (a gap on the camp's side: its way home has no cell in a gun's reach; seen failing without `guns`); a walk
+  distraction by_damage fails both on razing.
 - **Strike forces built for their target** (0.2.421; the user: "what is the unit comp of strikes? Modular? We know that
   unit counters play a big role in balance"). A strike force took its corporation's raw mix, drawn unit by unit: the one
   army in the game that never adapted (camps' own garrisons go through army.composition). Now its units come from its

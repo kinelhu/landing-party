@@ -5,10 +5,10 @@ digraph layers {
   "Seams (leaves)" [label="Seams (leaves)\n13 modules, 1834 lines", fillcolor="#d9f0d9"];
   "Perception and attempts (any attacker)" [label="Perception and attempts (any attacker)\n6 modules, 1607 lines", fillcolor="#eef2f7"];
   "Knowledge and strategy (per faction)" [label="Knowledge and strategy (per faction)\n2 modules, 316 lines", fillcolor="#eef2f7"];
-  "The director (above every faction)" [label="The director (above every faction)\n2 modules, 2296 lines\ndirector 2166", fillcolor="#f7dede"];
+  "The director (above every faction)" [label="The director (above every faction)\n2 modules, 2354 lines\ndirector 2224", fillcolor="#f7dede"];
   "Corporation" [label="Corporation\n9 modules, 3216 lines\nfaction 1207", fillcolor="#f7dede"];
   "Settlement" [label="Settlement\n16 modules, 6498 lines\nlayout 1747", fillcolor="#f7dede"];
-  "Army and operations" [label="Army and operations\n22 modules, 9857 lines\narmy 1061, ops 2525, siege 2146", fillcolor="#f7dede"];
+  "Army and operations" [label="Army and operations\n22 modules, 9871 lines\narmy 1061, ops 2528, siege 2146", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1607 lines", fillcolor="#eef2f7"];
   "The biotech" [label="The biotech\n5 modules, 8369 lines\nherd 4543, farm 2521", fillcolor="#f7dede"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];

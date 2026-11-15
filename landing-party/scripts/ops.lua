@@ -837,7 +837,9 @@ end
 
 -- Units sent home: round biter country too (four raiders came back from the target and died on the straight way home,
 -- country), with distraction by_damage, or none when `quiet` (a lull's truce: they walk through the player's guns).
-function ops.walk_home(b, units, quiet, overflight)
+-- `guns`: round the player's turrets' reach where it can, each cell in reach that many times as dear (a director's strike
+-- force walking home, 0.2.428: broken among the guns it walked through them; the camps' own returns keep their way).
+function ops.walk_home(b, units, quiet, overflight, guns)
   local h = home(b)
   if not h then return 0 end
   -- (Quiet too whenever its corporation's truce holds: an operation over during a lull, its squad came home through the
@@ -848,7 +850,8 @@ function ops.walk_home(b, units, quiet, overflight)
     if u.valid and not back then
       back = {}
       for _, w in ipairs(ops.route(b, {u.position.x, u.position.y}, {h.position.x, h.position.y},
-        overflight and {turrets = false, worms = true} or {turrets = false, nests = true}) or {}) do
+        overflight and {turrets = false, worms = true} or guns and {turrets = true, nests = true, gun_cost = guns}
+        or {turrets = false, nests = true}) or {}) do
         table.insert(back, {type = defines.command.go_to_location, destination = w, radius = 4, distraction = d})
       end
       table.insert(back, {type = defines.command.go_to_location, destination = h.position, radius = 10, distraction = d})

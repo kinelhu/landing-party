@@ -8120,7 +8120,23 @@ scenarios.director = function()
   -- LP_MIX=repel: a focus strike at the player's factory ringed by gun turrets: the force loses half of those landed,
   -- breaks, walks back untold razing nothing and is lifted, repelled (0.2.406, RimWorld's morale; the user,
   -- 2026-11-15: strike forces the player can beat).
-  if params.mix == "repel" then
+  -- LP_MIX=repelgap (0.2.428): the same ring with a gap on its camp's side: the broken force's way home goes by the gap,
+  -- round the guns (strike_routed, its way's cells in a gun's reach strike_exposed few).
+  if params.mix == "repel" or params.mix == "repelgap" then
+    local gap = params.mix == "repelgap"
+    -- Its guns' health from the tick it broke, to see it answer their fire (0.2.428: walked home passively before).
+    for t = 600, END - 120, 30 do
+      schedule(t, function()
+        local d = lp("director") or {}
+        if not S.hp_break and (d.strikes_repelled or 0) >= 1 then
+          S.hp_break = 0
+          for _, g in pairs(surface().find_entities_filtered{name = "gun-turret", force = "player", position = {0, 0}, radius = 40}) do
+            S.hp_break = S.hp_break + g.health
+          end
+          S.n_break = surface().count_entities_filtered{name = "gun-turret", force = "player", position = {0, 0}, radius = 40}
+        end
+      end)
+    end
     schedule(120, function()
       -- (Its points so that about 16 land, against 16 guns on uranium rounds: 40 against eight on piercing, and 36 against
       -- 16, lost 9 and 10 and their tanks took the guns; never broke.)
@@ -8129,10 +8145,16 @@ scenarios.director = function()
       for x = -16, 16, 4 do for y = -16, 16, 8 do
         surface().create_entity{name = "assembling-machine-2", position = {x + 0.5, y + 0.5}, force = "player"}
       end end
+      local cam = (lp("stats", (lp("bases") or {})[1]) or {}).origin or {x = 1, y = 0}
+      local ca = math.atan2(cam.y, cam.x)
       for a = 0, 15 do
-        local g = surface().create_entity{name = "gun-turret", position = {math.floor(24 * math.cos(a * math.pi / 8)) + 0.5,
-          math.floor(24 * math.sin(a * math.pi / 8)) + 0.5}, force = "player"}
-        if g then g.insert{name = "uranium-rounds-magazine", count = 200} end
+        local ang = a * math.pi / 8
+        local off = math.abs(math.atan2(math.sin(ang - ca), math.cos(ang - ca)))
+        if not (gap and off < math.pi / 4 + 0.01) then
+          local g = surface().create_entity{name = "gun-turret", position = {math.floor(24 * math.cos(ang)) + 0.5,
+            math.floor(24 * math.sin(ang)) + 0.5}, force = "player"}
+          if g then g.insert{name = "uranium-rounds-magazine", count = 200} end
+        end
       end
     end)
     schedule(600, function() S.said = lp("director_cmd", "focus", {0, 0}) end)
@@ -8142,9 +8164,26 @@ scenarios.director = function()
         tostring(S.said), tostring(d.strike_landed), tostring(d.strikes_repelled), tostring(d.strikes_over),
         tostring(d.strikes_finished), tostring(d.lost_after_break), serpent.line(d.tell_keys)))
       -- (Untold: the user, 2026-11-15, "No messages!!!!!"; its retreat is seen, not read.)
-      check("director: repel, the strike force broke at half, untold, and razed nothing after",
+      check("director: " .. params.mix .. ", the strike force broke at half, untold, and razed nothing after but guns",
         (d.strikes_repelled or 0) == 1 and not (d.tell_keys or {})["lp.director-strike-broken"] and (d.lost_after_break or 0) == 0,
-        string.format("%s repelled, %s razed after", tostring(d.strikes_repelled), tostring(d.lost_after_break)))
+        string.format("%s repelled, %s razed after (and %s guns)", tostring(d.strikes_repelled), tostring(d.lost_after_break),
+        tostring(d.lost_after_break_guns)))
+      local hp_end, n_end = 0, surface().count_entities_filtered{name = "gun-turret", force = "player", position = {0, 0}, radius = 40}
+      for _, g in pairs(surface().find_entities_filtered{name = "gun-turret", force = "player", position = {0, 0}, radius = 40}) do
+        hp_end = hp_end + g.health
+      end
+      info(string.format("director %s: guns' health %s at the break, %.0f at the end (%s to %d guns); routed %s, its way %s cells in reach",
+        params.mix, tostring(S.hp_break and math.floor(S.hp_break)), hp_end, tostring(S.n_break), n_end,
+        tostring(d.strike_routed), tostring(d.strike_exposed)))
+      check("director: " .. params.mix .. ", broken, it answers the guns' fire on its way home",
+        S.hp_break and (hp_end < S.hp_break - 50 or (d.lost_after_break_guns or 0) > 0),
+        string.format("health %s at the break, %.0f at the end, %s guns razed", tostring(S.hp_break), hp_end,
+        tostring(d.lost_after_break_guns)))
+      if gap then
+        check("director: repelgap, its way home round the guns, by the gap", (d.strike_routed or 0) >= 1
+          and (d.strike_exposed or 99) <= 3, string.format("routed %s, %s cells in reach", tostring(d.strike_routed),
+          tostring(d.strike_exposed)))
+      end
     end)
     return
   end
