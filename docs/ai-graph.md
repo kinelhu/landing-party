@@ -50,7 +50,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `cannon` | 373 | orbital, threat | control, dev |  | 30, 60 |  | cannon_barrel, cannon_last, cannon_next_pl, cannon_recoil, cannon_recoil_max, cannon_recoils, cannon_shells, cannon_silhouette, cannon_strikes |
 | `prowl` | 367 | base, ops, pool, threat | control |  |  |  | prowl_paths |
 | `perimeter` | 331 | tune | ops |  |  |  |  |
-| `ledger` | 316 | base, ops, standing | control |  | 60, 600 |  |  |
+| `ledger` | 317 | base, ops, standing | control |  | 60, 600 |  |  |
 | `jumper` | 314 | base, ops, rng, threat, tune, war | control, dev |  | 60, 600 |  |  |
 | `burstfx` | 305 | rng | control, dev, herd |  |  |  | burstfx, burstfx_stats |
 | `threat` | 297 | unit_prior | airraid, assault, attempt, cannon, control, costmap, dome, faction, farm, feeds, firemap, herd, herd_learn, intel, jumper, ops, orbital, power, prowl, routing, siege, strike, veterancy, war |  |  |  |  |

@@ -39,7 +39,7 @@ digraph ai {
     "war" [label="war\n699 lines", width=1.58, fillcolor="#eef2f7"];
     "standing" [label="standing\n114 lines", width=0.93, fillcolor="#eef2f7"];
     "pact" [label="pact\n112 lines", width=0.92, fillcolor="#eef2f7"];
-    "ledger" [label="ledger\n316 lines", width=1.15, fillcolor="#eef2f7"];
+    "ledger" [label="ledger\n317 lines", width=1.15, fillcolor="#eef2f7"];
     "rd" [label="rd\n396 lines", width=1.24, fillcolor="#eef2f7"];
     "phases" [label="phases\n269 lines", width=1.10, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
