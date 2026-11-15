@@ -18,8 +18,10 @@ loop() {
   local vf="${pre:+$pre,}fps=$fps,scale=$WIDTH:-2:flags=lanczos"
   # (The GIF a fallback: the desert's grain defeats a GIF's compression, 32 MB at 30 fps and 720 wide; 12 fps, 560 wide,
   # 96 colours about 5 MB, banded. The MP4 of the same loop is a few hundred kB and the portal plays it inline.)
-  local gf="${pre:+$pre,}fps=$(( fps < 12 ? fps : 12 )),scale=560:-2:flags=lanczos"
-  ffmpeg -loglevel error -y "$@" -vf "$gf,split[a][b];[a]palettegen=max_colors=96:stats_mode=full[p];[b][p]paletteuse=dither=none" -loop 0 "$OUT/$name.gif"
+  # (GFPS, GW, GCOL: a loop's GIF its own rate, width and colours, set before the call: walk-home's 8 s at 12 fps was 12.6 MB.)
+  local gr=${GFPS:-12}
+  local gf="${pre:+$pre,}fps=$(( fps < gr ? fps : gr )),scale=${GW:-560}:-2:flags=lanczos"
+  ffmpeg -loglevel error -y "$@" -vf "$gf,split[a][b];[a]palettegen=max_colors=${GCOL:-96}:stats_mode=full[p];[b][p]paletteuse=dither=none" -loop 0 "$OUT/$name.gif"
   ffmpeg -loglevel error -y "$@" -vf "$vf" -an -c:v libx264 -pix_fmt yuv420p -crf 26 -preset slow -movflags +faststart "$OUT/$name.mp4"
   local s; s=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT/$name.mp4")
   man+=("$(printf '{"name": "%s", "caption": "%s", "seconds": %.1f, "gif_bytes": %d, "mp4_bytes": %d}' "$name" "$caption" "$s" \
@@ -30,7 +32,7 @@ loop() {
 CROP="crop=860:540:80:40"
 loop pods 30 "$CROP" "A Kessler-Hayashi strike force's pods coming down beside a factory's labs." -framerate 30 -i "$FR/pods-%05d.png"
 loop strike-fight 30 "$CROP" "The strike force among the labs." -framerate 30 -i "$FR/fight-%05d.png"
-loop walk-home 30 "" "A strike force broken by a ring of guns, walking home between them." -framerate 30 -i "$FR/home-%05d.png"
+GFPS=6 GW=440 GCOL=64 loop walk-home 30 "" "A strike force broken by a ring of guns, walking home between them." -framerate 30 -i "$FR/home-%05d.png"
 L=media/release/loops
 loop tesla 30 "" "Kessler-Hayashi's Tesla units' lightning on your troops." -i "$L/tesla.mp4"
 loop bombers 30 "" "Grubstake's bomb drones diving on your troopers on the march." -i "$L/bombers.mp4"

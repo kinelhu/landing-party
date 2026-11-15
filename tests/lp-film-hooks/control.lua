@@ -18,11 +18,28 @@
 --   director = {{at =, cmd =, arg =}}   the director's hand (remote director_cmd) `at` ticks after the film's first;
 --                         cmd "panel" opens its panel for player 1 (remote debug_director_panel). With it, every 30 ticks:
 --                         points "dstrike" (the latest strike force's landing spot, then where it landed), "dforce"
---                         (the centre of its live units; "dstrike<n>", "dforce<n>" each force's), "salvage" (the latest wreck), "mast" (a mast standing);
+--                         (the median of its live units' positions, "dforcemean" their mean; "dstrike<n>", "dforce<n>" each force's), "salvage" (the latest wreck), "mast" (a mast standing);
 --                         events "strike<n>:sent", "strike<n>:landed", "strike<n>:broken", "salvage", "mast".
 --   trace = true          keeps the settlements' trace labels (off otherwise: a lander's "depot | parts 28 | ..." was in
 --                         the trailer's rough cut, 2026-11-04).
 local P = {}
+
+-- A force's centre: the median of its live units' x and y (a straggler or a death no longer drags it; the walk-home loop's
+-- camera jumped with the mean, 2026-11-16), and the mean as it was ("dforcemean<n>", for a still to be refilmed as before).
+local function centres(units)
+  local xs, ys, sx, sy = {}, {}, 0, 0
+  for _, u in ipairs(units or {}) do
+    if u.valid then
+      xs[#xs + 1], ys[#ys + 1] = u.position.x, u.position.y
+      sx, sy = sx + u.position.x, sy + u.position.y
+    end
+  end
+  local n = #xs
+  if n == 0 then return nil end
+  table.sort(xs); table.sort(ys)
+  local function mid(t) return n % 2 == 1 and t[(n + 1) / 2] or (t[n / 2] + t[n / 2 + 1]) / 2 end
+  return {mid(xs), mid(ys)}, {sx / n, sy / n}
+end
 
 local function lp(fn, ...) return remote.call("landing-party", fn, ...) end
 
@@ -92,20 +109,14 @@ local function tick(t)
         -- (Each its own too: "dstrike<n>", "dforce<n>".)
         local p = kk.landed_at or kk.land
         if p then S.points["dstrike" .. key] = {p[1], p[2]} end
-        local sx, sy, n = 0, 0, 0
-        for _, u in ipairs(kk.units or {}) do
-          if u.valid then sx, sy, n = sx + u.position.x, sy + u.position.y, n + 1 end
-        end
-        if n > 0 then S.points["dforce" .. key] = {sx / n, sy / n} end
+        local med, mean = centres(kk.units)
+        if med then S.points["dforce" .. key], S.points["dforcemean" .. key] = med, mean end
       end
       if k then
         local p = k.landed_at or k.land
         if p then S.points.dstrike = {p[1], p[2]} end
-        local sx, sy, n = 0, 0, 0
-        for _, u in ipairs(k.units or {}) do
-          if u.valid then sx, sy, n = sx + u.position.x, sy + u.position.y, n + 1 end
-        end
-        if n > 0 then S.points.dforce = {sx / n, sy / n} end
+        local med, mean = centres(k.units)
+        if med then S.points.dforce, S.points.dforcemean = med, mean end
       end
       local w = dr.salvage and dr.salvage[#dr.salvage]
       if w and w.wreck and w.wreck.valid then S.points.salvage = {w.wreck.position.x, w.wreck.position.y}; ev("salvage") end

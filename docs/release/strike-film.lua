@@ -6,8 +6,10 @@
 --     scripts/film.sh director-film-film fork.zip docs/release/strike-film.lua docs/sim/film-strike-loops
 -- (Its events, from the manual's film-log: strike1:sent 32400, strike1:landed 32820, strike2:broken 34050.)
 local C2 = {-143, 254}
+-- (track_smooth 1 s on a tracked move, 2026-11-16: the force's centre read each frame jumped as its units died or
+-- straggled, and the walk-home camera was rough; the toolkit eases toward it instead.)
 local function move(name, after, dt, frames, pos, z0, z1, track)
-  return {name = name, after = after, dt = dt, frames = frames, every = 2, track = track,
+  return {name = name, after = after, dt = dt, frames = frames, every = 2, track = track, track_smooth = track and 1.0 or nil,
     from = {pos = pos, zoom = z0, daytime = 0.02}, to = {zoom = z1, daytime = 0.02}}
 end
 local function each()
