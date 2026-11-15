@@ -7667,8 +7667,8 @@ scenarios.director = function()
         and S.over2 and S.tag2_gone, string.format("%s, taken %s, over %s, tag gone %s", tostring(S.said2), tostring(S.taken),
         tostring(S.over2), tostring(S.tag2_gone)))
       -- (0.2.416: priced on its tag, paid to the camp that destroyed it, a strike force sent at it.)
-      check("director: bounty, its price on the tag, paid to the destroyer's camp, a strike force sent at it",
-        S.text and S.text:find("bounty: %d+ parts") and (S.paid or 0) >= lp("director_prior", "bounty_parts")
+      check("director: bounty, whose on the tag, paid to the destroyer's camp, a strike force sent at it",
+        S.text and S.text:find(" bounty", 1, true) and (S.paid or 0) >= lp("director_prior", "bounty_parts")
         and (S.strike or 0) > 0, string.format("tag %s, paid %s, strike %s", tostring(S.text), tostring(S.paid),
         tostring(S.strike)))
     end)

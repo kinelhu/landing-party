@@ -794,11 +794,12 @@ function director.start_bounty(s, owner, tick, why)
   local corps = at_war(owner)
   local era = math.max(1, (s.read and s.read.era) or 1)
   local parts = tun("bounty_parts") * era
-  -- Priced in the world (the tag names who pays and what), paid to the camp whose units destroy it, a strike force sent
-  -- at it (0.2.416; a tag reading "Bounty" alone said nothing of who or why, and one camp's raid was no convergence).
+  -- Named in the world (the tag says whose bounty), paid to the camp whose units destroy it, a strike force sent at it
+  -- (0.2.416; a tag reading "Bounty" alone said nothing of who, and one camp's raid was no convergence). Its price off
+  -- the tag since 0.2.417 (the user: "Im just not sure what the payout being visible to the player brings").
   s.bounty = {owner = owner, pos = {e.position.x, e.position.y}, entity = e, weight = tun("bounty_weight"),
     till = tick + tun("bounty_minutes") * 3600, parts = parts, corps = corps, tag = f and f.add_chart_tag(e.surface,
-      {position = e.position, text = string.format("%s bounty: %d parts", names(corps), parts),
+      {position = e.position, text = string.format("%s bounty", names(corps)),
       icon = {type = "virtual", name = "signal-alert"}})}
   s.bounty.strike = director.strike_force(s, owner, corps, tick, 1, nil, s.bounty.pos)
   s.bounties = (s.bounties or 0) + 1
@@ -1131,10 +1132,21 @@ war.on_strike_landed = function(key, units)
     if k.lift_at then
       u.commandable.set_command{type = defines.command.go_to_location, destination = k.landed_at, radius = 8,
         distraction = k.truce and defines.distraction.none or defines.distraction.by_enemy}
+    elseif u.type == "unit" then
+      -- In one group, at its slowest's pace (0.2.417): sent each on its own, its harriers flew 250 tiles ahead into the
+      -- player's guns and the force broke at half before its tanks came (railbase_end, every strike within 40 s).
+      if not (k.group and k.group.valid) then
+        k.group = u.surface.create_unit_group{position = k.landed_at, force = u.force}
+      end
+      k.group.add_member(u)
     else
       u.commandable.set_command{type = defines.command.attack_area, destination = k.target, radius = 32,
         distraction = defines.distraction.by_enemy}
     end
+  end
+  if k.group and k.group.valid and not k.lift_at then
+    k.group.set_command{type = defines.command.attack_area, destination = k.target, radius = 32,
+      distraction = defines.distraction.by_enemy}
   end
 end
 
@@ -1146,6 +1158,8 @@ end
 -- player's on its way back, the minute after the truce, 0.2.398).
 local function walk_back(k, tick, truce)
   if truce then k.truce = true end
+  -- (Out of its group first: its command would hold them.)
+  if k.group and k.group.valid then k.group.destroy() end
   k.lift_at = k.lift_at or tick + tun("lift_minutes") * 3600
   local n = 0
   for _, u in ipairs(k.units) do
@@ -1191,6 +1205,7 @@ local function strike_over(s, key, k, why)
   if why == "finished" then s.strikes_finished = (s.strikes_finished or 0) + 1 end
   for _, u in ipairs(live) do u.destroy() end
   if k.tag and k.tag.valid then k.tag.destroy() end
+  if k.group and k.group.valid then k.group.destroy() end
   local f = game.forces[k.owner]
   if f and k.alert and k.alert.valid then f.remove_alert{entity = k.alert} end
   -- (Its lifted: those lifted at its landing point as they came back, and the rest now.)
@@ -1249,9 +1264,15 @@ function director.strikes(s, tick)
           if not bd or d < bd then best, bd = e, d end
         end
         local dest = best and {best.position.x, best.position.y} or k.target
+        -- (Its group re-aimed as one when it is done with its last; members out of it on their own.)
+        local g = k.group and k.group.valid and k.group
+        if g and (not g.command or g.state == defines.group_state.finished) then
+          g.set_command{type = defines.command.attack_area, destination = dest, radius = 32,
+            distraction = defines.distraction.by_enemy}
+        end
         for _, u in ipairs(live) do
           local cmd = u.commandable and u.commandable.command
-          if not cmd or cmd.type ~= defines.command.attack_area then
+          if not (g and u.commandable.parent_group == g) and (not cmd or cmd.type ~= defines.command.attack_area) then
             u.commandable.set_command{type = defines.command.attack_area, destination = dest, radius = 32,
               distraction = defines.distraction.by_enemy}
           end

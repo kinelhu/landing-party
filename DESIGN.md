@@ -7341,6 +7341,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Strike forces move as one** (0.2.417). On railbase_end (0.2.416, seed 1) every strike force broke within 40 s of
+  its pods: landed behind its camp 250 tiles from its target, each unit sent on its own, its harriers were at the
+  player's guns in 25 s and the force had lost half before its tanks came. Now its units join one unit group as they
+  land, which gathers and moves at its slowest's pace; the minute pass re-aims the group, the walk back releases it.
+  The bounty's tag names only whose it is (the user: "Im just not sure what the payout being visible to the player
+  brings"); the payout stays, off the tag.
 - **A bounty with teeth** (0.2.416). In the visits each bounty drew the nearest camp's raid (4 of 5 taken) and no
   convergence, its tag reading "Bounty" alone. Now its tag names who pays and how much ("Kessler-Hayashi bounty: 150
   parts", bounty_parts an era), the camp of the corporation whose units destroy it nearest it is paid (note_loss
