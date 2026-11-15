@@ -15,6 +15,15 @@ hero, the siege plan and the orbital strike strip (nw-khwall's siege no longer d
 march), the Grubstake column (the fortress fork's column stays bunched at its yard), and the Synthexis pictures (no
 change to show). `CUT_ONLY=out1,out2` cuts only those.
 
+**Filmed 2026-11-15, at 0.2.422, on the laptop** (`m-director.lua`, `m-director-panel.lua`, on scenario director's film
+set, `scripts/film_fork.sh director 12345 13 film`; the beats driven by the plugin's `director` list): the Headquarters
+chapter's six stills, `stills/strike-pods.jpg` (a strike force's pods coming down among the player's assemblers and
+labs), `strike-fight.jpg` (Grubstake's force in the labs), `strike-broken.jpg` (a force broken by a ring of gun turrets
+on its way home), `blackout-mast.jpg` (a mast in a gap of a Grubstake camp's wall), `salvage.jpg` (a crashed shuttle
+and four guards) and `director-panel.jpg` (the `/lp director` panel, at 3840x2160 so it is whole). The set's power
+(an electric energy interface beside each cluster) is cropped out. Not made: the map tags (bounty, strike target,
+contract, rotation), which show only in map view, and the helper's screenshots render the world view only.
+
 How they are made:
 
 - **Films**: one params file each in `docs/manual/shots/m-*.lua` (its header gives the save, the fork and the

@@ -15,6 +15,11 @@
 --   dev = {{tick =, args = {...}, at = {x, y} | {toward = tiles} | {wall = true}}}   /lp tools at a tick.
 --   fx = {{tick =, kind = "wave" | "rise", at = {x, y}, radius =}}   the dome's looks on the gallery's first building.
 --   ripples = {{tick =, pos = {x, y}, name = "lp-dome-ripple"}}      the dome's catch played there.
+--   director = {{at =, cmd =, arg =}}   the director's hand (remote director_cmd) `at` ticks after the film's first;
+--                         cmd "panel" opens its panel for player 1 (remote debug_director_panel). With it, every 30 ticks:
+--                         points "dstrike" (the latest strike force's landing spot, then where it landed), "dforce"
+--                         (the centre of its live units; "dstrike<n>", "dforce<n>" each force's), "salvage" (the latest wreck), "mast" (a mast standing);
+--                         events "strike<n>:sent", "strike<n>:landed", "strike<n>:broken", "salvage", "mast".
 --   trace = true          keeps the settlements' trace labels (off otherwise: a lander's "depot | parts 28 | ..." was in
 --                         the trailer's rough cut, 2026-11-04).
 local P = {}
@@ -64,6 +69,51 @@ local function tick(t)
       lp("dev", d.args, at)
       log("lp-film-hooks: /lp " .. table.concat(d.args, " ") .. " at " .. at[1] .. "," .. at[2] .. ", tick " .. t)
     end
+  end
+  if P.director then
+    S.t0 = S.t0 or t
+    for _, d in ipairs(P.director) do
+      if t == S.t0 + d.at then
+        local said
+        if d.cmd == "panel" then said = lp("debug_director_panel", 1)
+        else said = lp("director_cmd", d.cmd, d.arg) end
+        log("lp-film-hooks: director " .. d.cmd .. " " .. serpent.line(d.arg) .. ": " .. tostring(said) .. ", tick " .. t)
+      end
+    end
+    if t % 30 == 0 then
+      local dr = lp("director") or {}
+      local k = dr.strikes and dr.strike_n and dr.strikes[dr.strike_n]
+      S.devents = S.devents or {}
+      local function ev(name) if not S.devents[name] then S.devents[name] = t end end
+      for key, kk in pairs(dr.strikes or {}) do
+        if kk.at then ev("strike" .. key .. ":sent") end
+        if kk.landed_at then ev("strike" .. key .. ":landed") end
+        if kk.broken then ev("strike" .. key .. ":broken") end
+        -- (Each its own too: "dstrike<n>", "dforce<n>".)
+        local p = kk.landed_at or kk.land
+        if p then S.points["dstrike" .. key] = {p[1], p[2]} end
+        local sx, sy, n = 0, 0, 0
+        for _, u in ipairs(kk.units or {}) do
+          if u.valid then sx, sy, n = sx + u.position.x, sy + u.position.y, n + 1 end
+        end
+        if n > 0 then S.points["dforce" .. key] = {sx / n, sy / n} end
+      end
+      if k then
+        local p = k.landed_at or k.land
+        if p then S.points.dstrike = {p[1], p[2]} end
+        local sx, sy, n = 0, 0, 0
+        for _, u in ipairs(k.units or {}) do
+          if u.valid then sx, sy, n = sx + u.position.x, sy + u.position.y, n + 1 end
+        end
+        if n > 0 then S.points.dforce = {sx / n, sy / n} end
+      end
+      local w = dr.salvage and dr.salvage[#dr.salvage]
+      if w and w.wreck and w.wreck.valid then S.points.salvage = {w.wreck.position.x, w.wreck.position.y}; ev("salvage") end
+      for _, m in pairs(dr.masts or {}) do
+        if m.mast and m.mast.valid then S.points.mast = {m.mast.position.x, m.mast.position.y}; ev("mast") end
+      end
+    end
+    for name, at in pairs(S.devents or {}) do events[name] = at end
   end
   for _, r in ipairs(P.ripples or {}) do
     if t == r.tick then game.surfaces[1].create_entity{name = r.name or "lp-dome-ripple", position = r.pos} end

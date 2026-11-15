@@ -39,6 +39,8 @@ losses. The largest strike forces bring {{< var director.climax_times >}} that.
 **Where it lands.** Its pods come down within {{< var director.strike_land >}} tiles of its target, at the spot the
 fewest of your turrets can reach. That is usually inside your walls.
 
+![A strike force's pods come down on their thrusters between a row of assemblers and a row of labs.](media/stills/strike-pods.jpg)
+
 **What it goes for.** A strike force has a reason for its target.
 
 - First, revenge. If one group of your guns has killed {{< var director.grudge_kills >}} of a corporation's units in the
@@ -65,6 +67,10 @@ person, and while it is out no other attack on you starts, nor for {{< var direc
 yours is nearest. Once it has lost {{< var director.strike_break_pct >}}% of the units that landed, it breaks and
 walks home without fighting.
 
+![A Grubstake strike force among the labs it came for. One lab is already wrecked.](media/stills/strike-fight.jpg)
+
+![A strike force broken by a ring of gun turrets, on its way home through the cluster it attacked.](media/stills/strike-broken.jpg)
+
 **Going home.** There is no lift off the planet without a rocket, so a strike force walks back to its camp. There its
 survivors join the garrison if the camp has room, and the rest leave on the camp's rocket. Survivors you let go make a
 camp stronger. Units still on the road after {{< var director.home_minutes >}} minutes join the camp where they stand.
@@ -85,6 +91,8 @@ and stops working when you destroy it.
   {{< var director.blackout_radius >}} tiles for {{< var director.blackout_minutes >}} minutes. While they are dark,
   strike forces land without warning.
 
+![A blackout mast in a gap of a Grubstake camp's wall, beside its lander.](media/stills/blackout-mast.jpg)
+
 ## The bounty
 
 A corporation's headquarters may put a price on one of your most valuable buildings: a machine, a generator, a lab, a
@@ -102,6 +110,8 @@ It holds a load of materials that grows with your progress, and one piece of equ
 chance. Survivors of the crew guard it. If you leave it {{< var director.salvage_claim >}} minutes while a guard still
 stands, their corporation takes it for parts and the guards go home. A wreck left unguarded is gone after
 {{< var director.salvage_expire >}} minutes.
+
+![A crashed shuttle, four of its crew standing guard round it.](media/stills/salvage.jpg)
 
 About {{< var director.datacore_word >}} of the wrecks also carry a data core. Empty such a wreck and the target of the
 next strike force is marked on your map as soon as it is chosen.
@@ -145,3 +155,5 @@ The **Director** map setting chooses how headquarters plays:
 The **Difficulty** setting scales the size of strike forces as it scales everything else. The `/lp director` command
 opens a panel that shows what headquarters is doing and can order any of these moves at once, for trying them out (see
 [Chat commands](reference.qmd#sec-commands)).
+
+![The director panel: what headquarters is doing, its latest orders, and a button for each one.](media/stills/director-panel.jpg)

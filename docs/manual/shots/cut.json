@@ -65,5 +65,12 @@
     {"world": [-143.5, -51.5], "dy": -10, "label": "Drills"},
     {"world": [-143.5, -47.5], "dy": -25, "label": "Pylon"},
     {"world": [-149, -42], "dy": -10, "label": "Generator"},
-    {"world": [-136, -53], "label": "The staked ore patch"}]}
- ]}
+    {"world": [-136, -53], "label": "The staked ore patch"}]},
+
+  {"out": "stills/strike-pods.jpg", "src": "film-m-director/pods-0315.png", "box": [530, 185, 1530, 852], "width": 1000},
+  {"out": "stills/strike-fight.jpg", "src": "film-m-director/fight-0120.png", "box": [580, 280, 1500, 893], "width": 920},
+  {"out": "stills/strike-broken.jpg", "src": "film-m-director/home-0300.png", "box": [500, 440, 1900, 1180], "width": 1400},
+  {"out": "stills/blackout-mast.jpg", "src": "film-m-director/mast-z12.png", "box": [170, 0, 1470, 867], "width": 1300},
+  {"out": "stills/salvage.jpg", "src": "film-m-director/salvage-z13.png", "box": [630, 290, 1930, 1157], "width": 1300},
+  {"out": "stills/director-panel.jpg", "src": "film-m-director-panel/panel.png", "box": [360, 540, 3462, 1430], "width": 1600}
+]}

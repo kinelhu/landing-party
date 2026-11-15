@@ -7610,6 +7610,65 @@ scenarios.director = function()
     end)
     return
   end
+  -- LP_MIX=film: the manual's director pictures (docs/manual/shots/m-director.lua), set up and forked, its beats driven
+  -- by the film's plugin (tests/lp-film-hooks, director = {...}): a Grubstake camp beside the Serenity one; the
+  -- player's two clusters of assemblers and labs, powered, 150 toward spawn, the second ringed by eight gun turrets (a
+  -- strike force breaks there and walks home); a rocket silo by the first (the launch jammer's), a radar by the
+  -- Grubstake camp (the blackout's). The camps' own operations off, so nothing else razes the set.
+  if params.mix == "film" then
+    schedule(120, function()
+      lp("debug_tune", {director = "steady", choice_off = true, director_tune = {grace = 0, fill = 0, hurt_floor = 100,
+        points_per_worth = 1, points_max = 16, warn_minutes = 1, strike_minutes = 3, home_minutes = 4,
+        salvage_claim = 60, salvage_expire = 120}})
+      S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+      local id = (lp("bases") or {})[1]
+      local o = lp("stats", id).origin
+      local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
+      local ux, uy = -o.x / len, -o.y / len
+      local function at(along, aside) return {math.floor(o.x + ux * along - uy * aside), math.floor(o.y + uy * along + ux * aside)} end
+      local function cluster(c, ring)
+        flatten(c[1] - 22, c[2] - 22, c[1] + 22, c[2] + 22)
+        for x = -9, 9, 6 do
+          surface().create_entity{name = "assembling-machine-2", position = {c[1] + x + 0.5, c[2] - 4.5}, force = "player",
+            recipe = "iron-gear-wheel"}
+          surface().create_entity{name = "lab", position = {c[1] + x + 0.5, c[2] + 4.5}, force = "player"}
+        end
+        for x = -12, 12, 6 do
+          surface().create_entity{name = "medium-electric-pole", position = {c[1] + x + 0.5, c[2] + 0.5}, force = "player"}
+        end
+        local e = surface().create_entity{name = "electric-energy-interface", position = {c[1] + 15, c[2] + 0.5}, force = "player"}
+        if e then e.power_production, e.electric_buffer_size = 1e7, 1e8 end
+        if ring then
+          for a = 0, 7 do
+            local g = surface().create_entity{name = "gun-turret", position = {math.floor(c[1] + 16 * math.cos(a * math.pi / 4)) + 0.5,
+              math.floor(c[2] + 16 * math.sin(a * math.pi / 4)) + 0.5}, force = "player"}
+            if g then g.insert{name = "uranium-rounds-magazine", count = 200} end
+          end
+        end
+      end
+      S.c1, S.c2 = at(150, 0), at(150, 140)
+      cluster(S.c1, false)
+      cluster(S.c2, true)
+      local si = at(110, -60)
+      flatten(si[1] - 8, si[2] - 8, si[1] + 8, si[2] + 8)
+      surface().create_entity{name = "rocket-silo", position = si, force = "player"}
+      info("film: camp " .. id .. " at " .. serpent.line(o) .. ", clusters " .. serpent.line(S.c1) .. " and " .. serpent.line(S.c2)
+        .. ", silo " .. serpent.line(si))
+    end)
+    schedule(5 * 3600, function()
+      local go = S.g and (lp("stats", S.g) or {}).origin
+      if not go then info("film: no Grubstake camp"); return end
+      local len = math.max(1, math.sqrt(go.x * go.x + go.y * go.y))
+      local r = {math.floor(go.x - go.x / len * 120), math.floor(go.y - go.y / len * 120)}
+      flatten(r[1] - 4, r[2] - 4, r[1] + 4, r[2] + 4)
+      surface().create_entity{name = "radar", position = r, force = "player"}
+      local e = surface().create_entity{name = "electric-energy-interface", position = {r[1] + 3, r[2]}, force = "player"}
+      surface().create_entity{name = "medium-electric-pole", position = {r[1] + 1.5, r[2] + 2.5}, force = "player"}
+      if e then e.power_production, e.electric_buffer_size = 1e6, 1e7 end
+      info("film: Grubstake camp " .. S.g .. " at " .. serpent.line(go) .. ", radar " .. serpent.line(r))
+    end)
+    return
+  end
   -- LP_MIX=armydrop: is the player's army an answer to a drop (0.2.420; the user agreed: walls answer raids, the army
   -- answers drops)? Two like clusters 300 apart, 150 from the camp, no turrets; a squad of twelve at the first, as if sent
   -- there when its strike force landed. The same strike force at each in turn (a focus), the camp's own operations off:

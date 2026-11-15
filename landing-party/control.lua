@@ -1259,6 +1259,11 @@ remote.add_interface("landing-party", {
   director = function() return director.state() end,
   -- Tests and the debug panel: director.cmd (on, off, auto, spree [corp], lull, fill, empty, end).
   director_cmd = function(action, arg) return director.cmd(action, arg) end,
+  -- Films only: the director's panel toggled for a player (/lp director without a console; the manual's still).
+  debug_director_panel = function(index)
+    local p = game.get_player(index) or game.connected_players[1]
+    return p and director_gui.toggle(p) or false
+  end,
   director_prior = function(k) return director.tune(k) end,
   director_lines = function() return director_gui.lines() end,
   -- Tests and visits: what the director reads of a player force, beside a fuller reading (director.readings).
