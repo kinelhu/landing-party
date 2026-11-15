@@ -7341,6 +7341,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **A truce kept by responders, escorts and interceptors** (0.2.404). 0.2.403 changed nothing on seeds 3 to 5 and seed 1
+  got worse (108 to the held corporation in truces, 8 on 0.2.402). Each truce loss now records the killer's command
+  type, its distraction and its unit group: 35 of seed 1's 46 were returning units under a single go_to_location with
+  by_enemy, 9 harriers still in a unit group's attack_area. Army's settle (a response's or intercept's survivors) and a
+  convoy's end sent their units home with by_enemy, past ops.walk_home. Both now go quiet while the corporation holds
+  a truce, train intercepts are not sent against a force under truce, and the recall disbands those out. Scenario
+  train LP_MIX=truce: a lull before the train comes; 2 intercepts and the train hit without, none with. (0.2.403's
+  claim that it would clear the rest was wrong: I had not looked at who else sends units home.)
 - **A truce kept whenever it holds** (0.2.403). On 0.2.402 the held corporations razed 8, 0, 55, 14 and 41 of the
   player's buildings in railbase_end's truces (seeds 1 to 5; 224, 0, 123, 252 and 77 on 0.2.400). What was left: units
   set walking home after the recall (operations ending in the truce, against another corporation or out of it) and

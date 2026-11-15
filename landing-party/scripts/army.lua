@@ -328,9 +328,11 @@ local function settle(b, trace)
         if u.valid then
           alive = alive + 1
           pool.give_one(b, u)
+          -- (Quiet in its corporation's truce: by_enemy, a response's or intercept's survivors walked home through the
+          -- player's base and razed in railbase_end's truces, 0.2.404.)
           if r.home.valid then
             u.commandable.set_command{type = defines.command.go_to_location, destination = r.home.position, radius = 8,
-              distraction = defines.distraction.by_enemy}
+              distraction = shared.truce_held(b.corp) and defines.distraction.none or defines.distraction.by_enemy}
           end
         end
       end
@@ -632,7 +634,7 @@ local function travel(b, trace)
           pool.give_one(b, e)
           if c.home.valid then
             e.commandable.set_command{type = defines.command.go_to_location, destination = c.home.position, radius = 8,
-              distraction = defines.distraction.by_enemy}
+              distraction = shared.truce_held(b.corp) and defines.distraction.none or defines.distraction.by_enemy}
           end
         end
       end
@@ -656,7 +658,10 @@ local function intercept(b, trace)
   local lp = b.lander.position
   local best, bd
   for _, other in pairs(game.forces) do
-    if other ~= f and not shared.is_biters(other.name) and other.name ~= "neutral" and not f.get_cease_fire(other) then
+    -- (Not a force its corporation holds a truce with: a lull holds its attacks, a train's carriage included.)
+    local truce = storage.truces and storage.truces[b.corp .. "|" .. other.name]
+    if other ~= f and not shared.is_biters(other.name) and other.name ~= "neutral" and not f.get_cease_fire(other)
+      and not (truce and game.tick < truce) then
       for _, train in pairs(game.train_manager.get_trains{surface = b.lander.surface, force = other}) do
         for _, car in pairs(train.carriages) do
           local d = (car.position.x - lp.x) ^ 2 + (car.position.y - lp.y) ^ 2

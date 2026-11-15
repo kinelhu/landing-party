@@ -2222,6 +2222,15 @@ function ops.tick(b, tick, trace, army)
       if u.valid and (u.position.x - b.origin.x) ^ 2 + (u.position.y - b.origin.y) ^ 2 > r * r then far[#far + 1] = u end
     end
     for _, u in ipairs(b.returning or {}) do far[#far + 1] = u end
+    -- Its intercepts out (army's, at the player's trains) called off: their units home with the rest.
+    for i = #(b.raids or {}), 1, -1 do
+      local r = b.raids[i]
+      if r.kind == "intercept" then
+        for _, u in ipairs(r.members or {}) do if u.valid then pool.give_one(b, u); far[#far + 1] = u end end
+        if r.group and r.group.valid then r.group.destroy() end
+        table.remove(b.raids, i)
+      end
+    end
     local n = #far > 0 and ops.walk_home(b, far, true) or 0
     if n > 0 then trace(b, string.format("%d on their way home or out walk home quietly: a truce on %s", n, b.recall.owner)) end
   end

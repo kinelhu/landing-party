@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.404
+Date: 2026-11-15
+  Bugfixes:
+    - A lull holds a corporation's attacks on your trains too, and its responders and convoy escorts walk home without fighting through your base.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.403
 Date: 2026-11-15
   Bugfixes:

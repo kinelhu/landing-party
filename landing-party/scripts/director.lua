@@ -114,6 +114,11 @@ function director.note_loss(owner, ent, cause, corp)
             for _, u in ipairs(b.returning or {}) do
               if u.valid and u.unit_number == cause.unit_number then role = "returning" end
             end
+            for _, r in ipairs(b.raids or {}) do
+              for _, u in ipairs(r.members or {}) do
+                if u.valid and u.unit_number == cause.unit_number then role = role .. "+" .. tostring(r.kind) end
+              end
+            end
           end
         end
         -- (Who broke it, for the event stream: a strike team, an operation's squad, or another of its units.)
@@ -122,7 +127,30 @@ function director.note_loss(owner, ent, cause, corp)
             pos = {math.floor(ent.position.x), math.floor(ent.position.y)},
             from = cause and cause.valid and {math.floor(cause.position.x), math.floor(cause.position.y)} or nil,
             cmd = cause and cause.valid and cause.commandable and cause.commandable.command
-              and cause.commandable.command.type or nil})
+              and cause.commandable.command.type or nil,
+            -- (Its command's own distraction, or its first step's, and what it was engaging: who ordered it.)
+            dist = (function()
+              local c = cause and cause.valid and cause.commandable and cause.commandable.command
+              if not c then return nil end
+              local d = c.distraction or (c.commands and c.commands[1] and c.commands[1].distraction)
+              if not d then return "default" end
+              for name, v in pairs(defines.distraction) do if v == d then return name end end
+              return tostring(d)
+            end)(),
+            ctype = (function()
+              local c = cause and cause.valid and cause.commandable and cause.commandable.command
+              if c then for name, v in pairs(defines.command) do if v == c.type then return name end end end
+            end)(),
+            group = cause and cause.valid and cause.commandable and cause.commandable.parent_group and (function()
+              local g = cause.commandable.parent_group
+              local c = g.command
+              if c then for name, v in pairs(defines.command) do if v == c.type then return name end end end
+              return "idle"
+            end)() or nil,
+            steps = cause and cause.valid and cause.commandable and cause.commandable.command
+              and cause.commandable.command.commands and #cause.commandable.command.commands or nil,
+            engaged = cause and cause.valid and cause.commandable and cause.commandable.distraction_command
+              and cause.commandable.distraction_command.type or nil})
         end
       end
     end

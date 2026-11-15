@@ -1335,8 +1335,13 @@ end
 
 -- Train: a player rail line with a locomotive and a wagon 110 tiles from the lander; the settlement (a depot
 -- and parts granted) must send interceptors that damage or destroy the train.
+-- LP_MIX=truce: a director's lull called before the train comes: no interceptors while it holds (0.2.404: the
+-- intercepts, at the player's trains, went on through the truces, and their survivors walked home by_enemy through
+-- railbase_end's base).
 scenarios.train = function()
+  local truce = params.mix == "truce"
   schedule(200, function() lp("debug_depot", storage.id, 3000) end)
+  if truce then schedule(STRIKE - 60, function() S.lull = lp("director_cmd", "lull") end) end
   schedule(STRIKE, function()
     local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
     local dx, dy = -lander.position.x, -lander.position.y
@@ -1373,6 +1378,11 @@ scenarios.train = function()
     local hurt = not (S.loco and S.loco.valid) or S.loco.health < S.hp or not (S.wagon and S.wagon.valid)
       or S.wagon.health < S.wagon.max_health
     check("train: there was a train", S.loco ~= nil, tostring(S.loco ~= nil))
+    if truce then
+      check("train: truce, no interceptors sent while it held, the train unhurt", S.lull == "lull" and st.intercepts == 0
+        and not hurt, string.format("%s, %s intercepts, hurt %s", tostring(S.lull), tostring(st.intercepts), tostring(hurt)))
+      return
+    end
     check("train: interceptors were sent", st.intercepts > 0, st.intercepts)
     check("train: they hit it", hurt, string.format("locomotive %s, wagon %s",
       (S.loco and S.loco.valid) and string.format("%.0f/%.0f", S.loco.health, S.hp) or "destroyed",
