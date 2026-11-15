@@ -953,7 +953,8 @@ local function finish(b, outcome, trace, army)
     end
   end
   for _, e in ipairs(op.works or {}) do if e.valid then e.destroy() end end
-  if outcome == "done" or outcome == "spent" or outcome == "claimed" then b.ops_done = b.ops_done + 1 else b.ops_aborted = b.ops_aborted + 1 end
+  if outcome == "done" or outcome == "spent" or outcome == "claimed" then b.ops_done = b.ops_done + 1
+  elseif outcome ~= "recalled" then b.ops_aborted = b.ops_aborted + 1 end
   -- Its losing streak (the user, 2026-11-04: stop after failures in a row): operations against a player that failed one
   -- after another, whatever their target; one done, or anything razed (control.lua), ends it. war.lua stands down on it.
   -- (A siege spent that razed nothing a failure: counted done, a siege of 41 that all came back with nothing razed ended
@@ -962,7 +963,7 @@ local function finish(b, outcome, trace, army)
   if tt_ and against_player(tt_.owner) and not op.clearance then
     local razed_by = (b.razed or 0) - (op.razed0 or b.razed or 0)
     if outcome == "done" or outcome == "claimed" or (outcome == "spent" and razed_by > 0) then b.fail_streak = 0
-    else b.fail_streak = (b.fail_streak or 0) + 1 end
+    elseif outcome ~= "recalled" then b.fail_streak = (b.fail_streak or 0) + 1 end
   end
   local lost = op.launched - alive(op)
   b.next_op = game.tick + tune.sooner(b.corp, (outcome == "done" or outcome == "spent" or outcome == "claimed") and GAP_DONE
@@ -2195,6 +2196,20 @@ function ops.tick(b, tick, trace, army)
   if not b.op and b.answer and tick % 300 == 150 and not storage.raids_off and not storage.army_off
     and not army.withdrawing(b) and home(b) then
     return answer(b, trace, army)
+  end
+  -- Recalled by a lull (director.start_lull): its operation against the player held ends now, its units home. (A truce
+  -- stopped launches only: after railbase_end's climax the player read that both corporations were holding their
+  -- attacks and lost 398 buildings in the 15 minutes to sieges already out, 0.2.397.)
+  if b.op and b.recall then
+    local op = b.op
+    local t = op.target and b.intel.targets[op.target]
+    local owner = op.owner or (t and t.owner)
+    local held = owner == b.recall.owner and not op.clearance
+    b.recall = nil
+    if held then
+      trace(b, string.format("%s recalled: a truce on %s", op.kind, owner))
+      return finish(b, "recalled", trace, army)
+    end
   end
   if b.op then
     -- (And when its strike asks, op.step_at: orbital.lua, at its paint and its fall.)

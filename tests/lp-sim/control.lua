@@ -7443,6 +7443,7 @@ scenarios.director = function()
       fill = 0.2, hurt_floor = hurt and 0.02 or 100}
     for k, v in pairs(quick) do t[k] = v end
     lp("debug_tune", {director = not off and "steady" or false, director_tune = t})
+
     for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end
     local o = lp("stats", storage.id).origin
     -- The player's factory core across spawn from the camp, past its sensors: its worth for the loss share.
@@ -7614,6 +7615,32 @@ scenarios.director = function()
     end)
     return
   end
+  -- LP_MIX=recall: a lull called while the camp has an operation out against the player recalls it (0.2.397: a truce
+  -- held launches only; after railbase_end's climax the player was told of a hold and lost 398 buildings in it).
+  if params.mix == "recall" then
+    schedule(121, function() lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100}}) end)
+    for t = 3 * 3600, END - 3 * 3600, 30 do
+      schedule(t, function()
+        if S.called then return end
+        local st = lp("stats", storage.id)
+        if st and st.ops and st.ops.op_started and st.ops.op_phase then
+          S.called, S.op_was = game.tick, st.ops.op_phase
+          lp("director_cmd", "lull")
+        end
+      end)
+    end
+    schedule(END - 60, function()
+      local st = lp("stats", storage.id)
+      local d = lp("director") or {}
+      local recalled = 0
+      for _, l in ipairs(st.ops.log or {}) do if l.outcome == "recalled" and l.started <= (S.called or 0) then recalled = recalled + 1 end end
+      info(string.format("director recall: lull called at %s with an operation out (%s); %d recalled; out now %s since %s",
+        tostring(S.called), tostring(S.op_was), recalled, tostring(st.ops.op_phase), tostring(st.ops.op_started)))
+      check("director: recall, a lull calls home the operation out against the player", S.called and recalled == 1,
+        string.format("called %s, %d recalled", tostring(S.called), recalled))
+    end)
+    return
+  end
   local focus, focusoff = params.mix == "focus", params.mix == "focusoff"
   if focus or focusoff then
     schedule(61, function()
@@ -7705,6 +7732,18 @@ scenarios.director = function()
     end)
     return
   end
+  -- (Each minute in a lull: an operation from before it still out is a recall missed, 0.2.397.)
+  for m = 2, END / 3600 - 1 do
+    schedule(m * 3600 + 30, function()
+      local d = lp("director") or {}
+      if d.phase ~= "lull" or not d.lull_from then return end
+      S.lull_seen = (S.lull_seen or 0) + 1
+      for _, id in ipairs(lp("bases") or {}) do
+        local st = lp("stats", id)
+        if st and st.ops and st.ops.op_started and st.ops.op_started < d.lull_from then S.unrecalled = (S.unrecalled or 0) + 1 end
+      end
+    end)
+  end
   schedule(END - 60, function()
     local d = lp("director") or {}
     local st = lp("stats", storage.id)
@@ -7772,6 +7811,9 @@ scenarios.director = function()
       check("director: a lull after every beat but one under way, each forecast first",
         (d.lulls or 0) >= (d.beats or 0) - 1 and (d.forecasts or 0) >= (d.beats or 0),
         string.format("%s beats, %s lulls, %s forecasts", tostring(d.beats), tostring(d.lulls), tostring(d.forecasts)))
+      check("director: in a lull, no operation from before it still out (recalled)", (S.lull_seen or 0) > 0
+        and (S.unrecalled or 0) == 0, string.format("%s lull minutes sampled, %s operations still out, %s recalled",
+          tostring(S.lull_seen), tostring(S.unrecalled), tostring(d.recalls)))
       check("director: its strike teams land, stay out of the garrison and are lifted out",
         (d.strike_landed or 0) >= 1 and (d.strikes_over or 0) >= 1 and (d.strike_enlisted or 0) == 0,
         string.format("%s landed, %s teams over, %s lifted, %s in a garrison", tostring(d.strike_landed),

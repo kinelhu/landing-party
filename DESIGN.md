@@ -7341,6 +7341,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **A lull recalls what is out** (0.2.397). scripts/fun_report.py on railbase_end's steady visit (0.2.394, seed 1):
+  548 of the player's buildings lost inside truces, 398 of them in the 15 minutes after the climax, while the player
+  read that Grubstake and Kessler-Hayashi "are holding their attacks": a truce stopped launches only, and the sieges
+  and raids already out went on. Now a lull recalls the held corporations' operations against that player (ops'
+  b.recall: outcome "recalled", neither done nor failed, so no step toward standing down), calls off a strike force not
+  yet landed and sends one in the field back to its pods. Scenario director LP_MIX=recall: a lull called while the
+  camp's raid is out brings it home in the next tick (seen failing with the recall taken out: 0 recalled); the default
+  run samples each lull minute for an operation from before it (none). LP_MIX=climax joins the regression list (60
+  minutes: at 40 its climax came in the run's last minute, the lull after it past the end).
 - **Nine scenarios broken since 0.2.380, found and fixed** (0.2.396). The night's changed regression (341 runs on
   0.2.395): 331 passed; one failure was the night's (step4 read gentle's lull as steady's: now 1.5 times, its truce 15),
   nine were not and failed the same on 0.2.390. Bisected on a worktree: all nine pass on 6b8645a and fail from cc3ea32

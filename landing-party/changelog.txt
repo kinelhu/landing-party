@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.397
+Date: 2026-11-15
+  Changes:
+    - When the director calls a lull, the corporations it holds call home their attacks already under way, and its strike forces leave.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.396
 Date: 2026-11-15
   Bugfixes:

@@ -988,6 +988,23 @@ function director.start_lull(s, owner, tick, corps, base_minutes)
   local held = {}
   if corps and #corps > 0 then held = corps else for corp in pairs(shared.CORPS) do held[#held + 1] = corp end; table.sort(held) end
   for _, corp in ipairs(held) do storage.truces[corp .. "|" .. owner] = tick + truce * 3600 end
+  -- Its operations out against the player recalled (ops' b.recall), and its own strike teams sent back to be lifted: a
+  -- truce held launches only, and the player told of a hold lost 398 buildings in it to sieges already out.
+  local set = {}
+  for _, corp in ipairs(held) do set[corp] = true end
+  local recalled = 0
+  for _, b in pairs(storage.bases or {}) do
+    if set[b.corp] and not b.fallen and b.op then b.recall = {owner = owner, at = tick}; recalled = recalled + 1 end
+  end
+  for key, k in pairs(s.strikes or {}) do
+    if k.owner == owner and set[k.corp] and not k.at then strike_over(s, key, k, "called off") end
+  end
+  for _, k in pairs(s.strikes or {}) do
+    if k.owner == owner and set[k.corp] then
+      if k.at then k.till = math.min(k.till or tick, tick) end
+    end
+  end
+  s.recalls = (s.recalls or 0) + recalled
   s.phase, s.phase_till = "lull", tick + minutes * 3600
   s.lull_from, s.lull_owner, s.lull_corps = tick, owner, held
   s.lulls = (s.lulls or 0) + 1
