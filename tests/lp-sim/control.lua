@@ -7614,7 +7614,10 @@ scenarios.director = function()
   -- answers drops)? Two like clusters 300 apart, 150 from the camp, no turrets; a squad of twelve at the first, as if sent
   -- there when its strike force landed. The same strike force at each in turn (a focus), the camp's own operations off:
   -- against the squad it breaks, against none it does not.
-  if params.mix == "armydrop" then
+  -- LP_MIX=armyradar: the same, its squad waiting where the pods land (the radar case: seen coming, told 2 minutes ahead
+  -- with the place; the user, 2026-11-15, "the fair comparison is an army already set up at the landing site").
+  if params.mix == "armydrop" or params.mix == "armyradar" then
+    local waiting = params.mix == "armyradar"
     schedule(120, function()
       lp("debug_tune", {director = "steady", choice_off = true, director_tune = {grace = 0, fill = 0, hurt_floor = 100,
         points_per_worth = 1, points_max = 12, warn_minutes = 1, strike_minutes = 4, home_minutes = 3}})
@@ -7632,14 +7635,25 @@ scenarios.director = function()
         end end
       end
       -- (A mixed squad, as a player would send: twelve riflemen killed 2 of a force of 12 with its tanks, and all died.)
-      local squad = {"lp-trooper", "lp-trooper", "lp-trooper", "lp-trooper", "lp-trooper", "lp-trooper",
-        "lp-rocket-trooper", "lp-rocket-trooper", "lp-rocket-trooper", "lp-rocket-trooper", "lp-battle-tank", "lp-battle-tank"}
-      for j, name in ipairs(squad) do
-        local q = surface().find_non_colliding_position(name, {S.A[1] + (j % 4) * 3 - 4, S.A[2] - 10 - math.floor(j / 4) * 3}, 10, 0.5)
-        if q then surface().create_entity{name = name, position = q, force = "player"} end
+      S.place = function(at)
+        local squad = {"lp-trooper", "lp-trooper", "lp-trooper", "lp-trooper", "lp-trooper", "lp-trooper",
+          "lp-rocket-trooper", "lp-rocket-trooper", "lp-rocket-trooper", "lp-rocket-trooper", "lp-battle-tank", "lp-battle-tank"}
+        for j, name in ipairs(squad) do
+          local q = surface().find_non_colliding_position(name, {at[1] + (j % 4) * 3 - 4, at[2] - math.floor(j / 4) * 3}, 10, 0.5)
+          if q then surface().create_entity{name = name, position = q, force = "player"} end
+        end
+      end
+      if not waiting then S.place({S.A[1], S.A[2] - 10}) end
+    end)
+    schedule(600, function()
+      S.f1 = lp("director_cmd", "focus", S.A)
+      if waiting then
+        local d = lp("director") or {}
+        local k = d.strikes and d.strikes[d.strike_n]
+        S.land = k and k.land
+        if S.land then S.place(S.land) end
       end
     end)
-    schedule(600, function() S.f1 = lp("director_cmd", "focus", S.A) end)
     schedule(10 * 3600, function()
       local d = lp("director") or {}
       S.l1 = (d.lost_strike or {}).player or 0
@@ -7655,6 +7669,12 @@ scenarios.director = function()
         tostring(S.f1), S.l1 or -1, tostring(S.rep1), tostring(S.troopers), tostring(S.f2), l2, rep2))
       -- (Not "razes less": at parity it razed the whole cluster in the 25 s before it broke, 16 against 16; the squad
       -- broke it, 11 of 12 lost for 6. Recorded, DESIGN 0.2.420: an answer that costs, not one that saves.)
+      if waiting then
+        check("director: armyradar, a squad of twelve waiting where it lands breaks it and razes less than against none",
+          S.rep1 == 1 and rep2 == 0 and (S.l1 or 1e9) < l2, string.format("A: razed %.0f, repelled %s, %s of the squad left; B: razed %.0f, repelled %d",
+          S.l1 or -1, tostring(S.rep1), tostring(S.troopers), l2, rep2))
+        return
+      end
       check("director: armydrop, a squad of twelve breaks the strike force; with none it does not break",
         S.rep1 == 1 and rep2 == 0, string.format("A: razed %.0f, repelled %s; B: razed %.0f, repelled %d",
         S.l1 or -1, tostring(S.rep1), l2, rep2))
