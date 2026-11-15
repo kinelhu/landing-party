@@ -7341,6 +7341,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Salvage claimed** (0.2.414; the user, 2026-11-15: "Perhaps corporations could also target salvage drops? And get a
+  part infusion if they destroy them? Could allow for a 'self cleaning' loop"). A wreck uncollected salvage_claim (10)
+  minutes with a guard standing is its corporation's: gone, salvage_parts (300) an era to its nearest camp, its guards
+  enlisted there and walking home (quiet). Its guards killed, it is the player's to take; unguarded and uncollected
+  salvage_expire (60) minutes, it is gone. The era read 0 early, and a wreck then had no gear, two guards and a claim of
+  no parts: counted from 1. Scenario director salvage: claimed (300 parts, its 4 guards home), expired once its guards
+  died; with salvage_claim 1,000, none claimed (seen failing).
 - **Salvage, rare and guarded** (0.2.413; the user, 2026-11-15: "We should stop further salvage until the player has
   destroyed/collected the previous one. And it should be rare, especially later game when the player is generally
   playing from map view or another planet"; "why not include (loot box style) a piece of gear with chance for

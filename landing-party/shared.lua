@@ -464,6 +464,10 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
       "personal-roboport-mk2-equipment", "speed-module-3", "productivity-module-3", "quality-module-3"},
   },
   salvage_quality = {{"normal", 0.5}, {"uncommon", 0.3}, {"rare", 0.14}, {"epic", 0.05}, {"legendary", 0.01}},
+  -- Claimed by its corporation (the user, 2026-11-15: "corporations could also target salvage drops? And get a part
+  -- infusion ... a self cleaning loop"): uncollected salvage_claim minutes with a guard standing, the wreck is theirs,
+  -- salvage_parts an era to their nearest camp, the guards home; unguarded and uncollected salvage_expire, it is gone.
+  salvage_claim = 10, salvage_parts = 300, salvage_expire = 60,
   -- The research breakthrough (docs/director.md, off-map beats): a corporation at war buys its next node of research at
   -- once, its fund untouched; research_cost of the budget. Its new units are the tell.
   research_cost = 1,

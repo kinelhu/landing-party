@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.414
+Date: 2026-11-15
+  Changes:
+    - A crashed shuttle left alone while its guards stand is claimed by their corporation after 10 minutes: the wreck is gone and their camp gains parts. One left unguarded and uncollected disappears after an hour.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.413
 Date: 2026-11-15
   Changes:

@@ -7494,7 +7494,33 @@ scenarios.director = function()
   -- its cargo, tagged; emptied, its tag gone and counted taken.
   if params.mix == "salvage" then
     schedule(120, function() lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100,
-      salvage_chance = 100}}) end)
+      salvage_chance = 100, salvage_claim = 1, salvage_expire = 1}}) end)
+    -- (Claimed: a wreck left a minute with its guards, gone, the camp's parts up, its guards its own; 0.2.414. Expired: one
+    -- whose guards were killed, gone a minute on, nobody's.)
+    schedule(3 * 3600, function()
+      local id = (lp("bases") or {})[1]
+      S.parts0 = (lp("director") or {}).salvage_parts or 0
+      S.claimed0 = (lp("director") or {}).salvage_claimed or 0
+      lp("director_cmd", "salvage")
+      local d = lp("director") or {}
+      local w = d.salvage and d.salvage[#d.salvage]
+      S.cw, S.cguards = w and w.wreck, w and #(w.guards or {})
+    end)
+    schedule(3 * 3600 + 2 * 3600, function()
+      local id = (lp("bases") or {})[1]
+      local d = lp("director") or {}
+      S.parts1 = d.salvage_parts or 0
+      S.claimed, S.cgone = (d.salvage_claimed or 0) - S.claimed0, not (S.cw and S.cw.valid)
+      lp("director_cmd", "salvage")
+      d = lp("director") or {}
+      local w = d.salvage and d.salvage[#d.salvage]
+      S.ew = w and w.wreck
+      for _, u in ipairs(w and w.guards or {}) do if u.valid then u.die("player") end end
+    end)
+    schedule(3 * 3600 + 4 * 3600, function()
+      local d = lp("director") or {}
+      S.expired, S.egone = d.salvage_expired, not (S.ew and S.ew.valid)
+    end)
     schedule(600, function()
       S.said = lp("director_cmd", "salvage")
       -- (A lull with a wreck uncollected brings none, however sure the chance: 0.2.413.)
@@ -7527,6 +7553,11 @@ scenarios.director = function()
         tostring(S.items), tostring(S.dist), tostring(S.tag), tostring(S.taken), tostring(S.gone)))
       check("director: salvage, its survivors guard it, its loot box a piece of gear of a rolled quality", (S.guards or 0) >= 4
         and S.gear and S.gear.name and S.gear.quality, string.format("%s guards, %s", tostring(S.guards), serpent.line(S.gear)))
+      check("director: salvage, left guarded it is claimed, parts to the camp; unguarded and left it expires",
+        S.claimed == 1 and S.cgone and S.parts1 - S.parts0 >= lp("director_prior", "salvage_parts") and S.expired == 1
+        and S.egone,
+        string.format("claimed %s (%s guards, gone %s, parts %s to %s), expired %s (gone %s)", tostring(S.claimed),
+        tostring(S.cguards), tostring(S.cgone), tostring(S.parts0), tostring(S.parts1), tostring(S.expired), tostring(S.egone)))
       check("director: salvage, none while one lies uncollected, one again once it is taken", S.n_held == 1 and S.n_after == 2,
         string.format("%s with one out, %s after it was taken", tostring(S.n_held), tostring(S.n_after)))
     end)

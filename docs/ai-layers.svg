@@ -79,15 +79,15 @@
 <title>The director (above every faction)</title>
 <path fill="#f7dede" stroke="black" d="M315.62,-842C315.62,-842 162.38,-842 162.38,-842 156.38,-842 150.38,-836 150.38,-830 150.38,-830 150.38,-810 150.38,-810 150.38,-804 156.38,-798 162.38,-798 162.38,-798 315.62,-798 315.62,-798 321.62,-798 327.62,-804 327.62,-810 327.62,-810 327.62,-830 327.62,-830 327.62,-836 321.62,-842 315.62,-842"/>
 <text xml:space="preserve" text-anchor="middle" x="239" y="-827.55" font-family="Helvetica,sans-Serif" font-size="11.00">The director (above every faction)</text>
-<text xml:space="preserve" text-anchor="middle" x="239" y="-815.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 1711 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="239" y="-803.55" font-family="Helvetica,sans-Serif" font-size="11.00">director 1582</text>
+<text xml:space="preserve" text-anchor="middle" x="239" y="-815.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 1744 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="239" y="-803.55" font-family="Helvetica,sans-Serif" font-size="11.00">director 1615</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Seams (leaves) -->
 <g id="edge31" class="edge">
 <title>The director (above every faction)&#45;&gt;Seams (leaves)</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.5" d="M328.09,-806.64C393.19,-797.54 483.61,-784.75 563,-773 652.64,-759.73 755.61,-743.77 823.68,-733.11"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.5" points="823.98,-736.61 833.31,-731.6 822.89,-729.69 823.98,-736.61"/>
-<text xml:space="preserve" text-anchor="middle" x="629.97" y="-764.45" font-family="Helvetica,sans-Serif" font-size="9.00">2</text>
+<path fill="none" stroke="#8899aa" stroke-width="1.8" d="M328.09,-806.64C393.19,-797.54 483.61,-784.75 563,-773 652.45,-759.76 755.19,-743.83 823.26,-733.18"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.8" points="823.53,-736.68 832.87,-731.67 822.44,-729.76 823.53,-736.68"/>
+<text xml:space="preserve" text-anchor="middle" x="629.97" y="-764.45" font-family="Helvetica,sans-Serif" font-size="9.00">3</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Perception and attempts (any attacker) -->
 <g id="edge30" class="edge">

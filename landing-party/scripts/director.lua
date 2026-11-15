@@ -15,6 +15,7 @@
 local shared = require("__landing-party__.shared")
 local valuemap = require("__landing-party__.scripts.valuemap")
 local ops = require("__landing-party__.scripts.ops")
+local pool = require("__landing-party__.scripts.pool")
 local stance = require("__landing-party__.scripts.stance")
 local faction = require("__landing-party__.scripts.faction")
 local farm = require("__landing-party__.scripts.farm")
@@ -1311,7 +1312,8 @@ function director.salvage(s, owner, tick, forced)
     sp.y + math.sin(a) * d}, 40, 1)
   local wreck = p and surface.create_entity{name = "crash-site-spaceship-wreck-big-1", position = p, force = "neutral"}
   if not wreck then return nil end
-  local era = (s.read and s.read.era) or 1
+  -- (From 1: the readings' era is 0 early, and a wreck then had no gear, two guards and its claim no parts.)
+  local era = math.max(1, (s.read and s.read.era) or 1)
   local cargo = era >= 3 and {{"processing-unit", 50}, {"low-density-structure", 20}}
     or era >= 2 and {{"advanced-circuit", 60}, {"steel-plate", 100}} or {{"electronic-circuit", 60}, {"iron-gear-wheel", 60}}
   for _, it in ipairs(cargo) do wreck.insert{name = it[1], count = it[2]} end
@@ -1338,7 +1340,7 @@ function director.salvage(s, owner, tick, forced)
   end
   -- Its survivors guard it (RimWorld's ship parts come guarded): 2 + 2 per era of a corporation at war's infantry, a tank
   -- from era 2, standing by the wreck (stopped: they fight what comes, they do not go looking).
-  local guards = 0
+  local guards, guard_units = 0, {}
   -- (Its corporation: one at war, else the lull's own, held: a wreck in a lull, the held at war with nobody, had none.)
   local corp = pick(s, owner, tick)
   if not corp then
@@ -1355,6 +1357,7 @@ function director.salvage(s, owner, tick, forced)
       local u = q and surface.create_entity{name = name, position = q, force = shared.CORPS[corp].force}
       if u then
         guards = guards + 1
+        guard_units[#guard_units + 1] = u
         u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.by_enemy}
       end
     end
@@ -1363,7 +1366,7 @@ function director.salvage(s, owner, tick, forced)
   local tag = f.add_chart_tag(surface, {position = p, text = "Crashed shuttle", icon = {type = "item", name = cargo[1][1]}})
   f.add_custom_alert(wreck, {type = "item", name = cargo[1][1]}, {"lp.salvage-crashed"}, true) -- notice-ok: an alert on a thing in the world, not a message
   s.salvage = s.salvage or {}
-  table.insert(s.salvage, {wreck = wreck, tag = tag, owner = owner})
+  table.insert(s.salvage, {wreck = wreck, tag = tag, owner = owner, at = tick, corp = corp, guards = guard_units, era = era})
   s.salvaged = (s.salvaged or 0) + 1
   s.salvage_guards = guards
   s.salvage_gear = gear and {name = gear, quality = quality} or nil
@@ -1373,16 +1376,46 @@ function director.salvage(s, owner, tick, forced)
   return wreck
 end
 
--- Its wrecks emptied: tag and alert gone.
+-- Its wrecks: emptied, taken (tag and alert gone); uncollected salvage_claim minutes with a guard standing, claimed by
+-- its corporation (parts to its nearest camp, the guards walk home there); unguarded and uncollected salvage_expire, gone.
 local function salvage_tick(s)
+  local tick = game.tick
   for i = #(s.salvage or {}), 1, -1 do
     local w = s.salvage[i]
     local empty = not w.wreck.valid or w.wreck.get_inventory(defines.inventory.chest).is_empty()
-    if empty then
+    local alive = {}
+    for _, u in ipairs(w.guards or {}) do if u.valid then alive[#alive + 1] = u end end
+    local how = empty and "taken"
+      or (#alive > 0 and tick - (w.at or tick) >= tun("salvage_claim") * 3600 and "claimed")
+      or (#alive == 0 and tick - (w.at or tick) >= tun("salvage_expire") * 3600 and "expired") or nil
+    if how then
       if w.tag and w.tag.valid then w.tag.destroy() end
       local f = game.forces[w.owner]
       if f and w.wreck.valid then f.remove_alert{entity = w.wreck} end
-      s.salvage_taken = (s.salvage_taken or 0) + 1
+      if how == "claimed" then
+        local best, bd
+        for _, b in pairs(storage.bases or {}) do
+          if b.corp == w.corp and not b.fallen and b.lander and b.lander.valid then
+            local d = (b.lander.position.x - w.wreck.position.x) ^ 2 + (b.lander.position.y - w.wreck.position.y) ^ 2
+            if not bd or d < bd then best, bd = b, d end
+          end
+        end
+        local parts = tun("salvage_parts") * (w.era or 1)
+        if best then
+          best.parts = best.parts + parts
+          s.salvage_parts = (s.salvage_parts or 0) + parts
+          for _, u in ipairs(alive) do pool.enlist(best, u) end
+          pool.give(best, alive)
+          ops.walk_home(best, alive, true)
+        end
+        s.salvage_claimed = (s.salvage_claimed or 0) + 1
+        trace(string.format("salvage claimed by %s: %d parts to camp %s, %d guards home", tostring(w.corp), parts,
+          tostring(best and best.id), #alive))
+      end
+      if how ~= "taken" and w.wreck.valid then w.wreck.destroy() end
+      if how == "taken" then s.salvage_taken = (s.salvage_taken or 0) + 1 end
+      if how == "expired" then s.salvage_expired = (s.salvage_expired or 0) + 1 end
+      shared.event("salvage_over", {why = how})
       table.remove(s.salvage, i)
     end
   end
