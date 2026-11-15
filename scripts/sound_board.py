@@ -3,6 +3,10 @@ the unit has it now and as proposed, each fired at the unit's rate, as one video
 can). The game's recordings at the proposal's speed (pitch and pace together, as the Sound prototype's speed) and volume.
 
     uv run --with pillow scripts/sound_board.py [out.mp4]      (default media/sound/board.mp4)
+    uv run --with pillow scripts/sound_board.py --table docs/sound/round4.lua [out.mp4]
+                                                                another table (a round's proposal, not yet the mod's);
+                                                                its was may be a list, a voice may be synth (sox
+                                                                arguments), a card cut to dur seconds, its now in words
     uv run --with pillow scripts/sound_board.py --clips <dir>   each sound's two clips as mp3 and a manifest.json there
                                                                 (the feedback page, docs/sound/board.html)
 """
@@ -15,13 +19,16 @@ DATA = os.path.join(os.path.expanduser("~/Library/Application Support/Steam/stea
 W, H, RATE = 1280, 720, 44100
 
 
+TABLE = os.path.join(REPO, "landing-party", "sounds.lua")
+
+
 def table():
     code = ('local t = dofile(%r) local out = {} for _, e in ipairs(t) do out[#out + 1] = e end '
             'local function enc(v) if type(v) == "table" then local parts, arr = {}, #v > 0 '
             'for k, x in pairs(v) do parts[#parts + 1] = (arr and "" or string.format("%%q:", k)) .. enc(x) end '
             'return (arr and "[" or "{") .. table.concat(parts, ",") .. (arr and "]" or "}") '
             'elseif type(v) == "string" then return string.format("%%q", v) else return tostring(v) end end '
-            'print(enc(out))') % os.path.join(REPO, "landing-party", "sounds.lua")
+            'print(enc(out))') % TABLE
     return json.loads(subprocess.run(["luajit", "-e", code], capture_output=True, text=True, check=True).stdout)
 
 
@@ -37,7 +44,15 @@ def card(path, title, sub):
     im.save(path)
 
 
-def burst(out, files, speed, volume, every, shots, layers=(), rounds=1, gap=0):
+def synth_wav(args, tmp):
+    """A voice made by sox from its arguments (after "sox -n out.wav"), once per distinct set."""
+    out = os.path.join(tmp, "synth-%08x.wav" % (hash(args) & 0xffffffff))
+    if not os.path.exists(out):
+        subprocess.run(["sox", "-n", "-r", str(RATE), "-c", "1", out] + args.split(), check=True)
+    return out
+
+
+def burst(out, files, speed, volume, every, shots, layers=(), rounds=1, gap=0, synth=None, dur=None):
     """shots of the files in turn, every ticks apart, at speed and volume, to a wav (silence for "none"). Each shot may be
     rounds rounds gap ticks apart (a burst), and each round may lay more sounds over it: layers, a list of
     {files, speed, volume, offset (ticks)}."""
@@ -46,16 +61,21 @@ def burst(out, files, speed, volume, every, shots, layers=(), rounds=1, gap=0):
                         "%.2f" % max(1.5, shots * every / 60), out], check=True)
         return
     args, parts, n = ["ffmpeg", "-loglevel", "error", "-y"], [], 0
-    voices = [{"files": files, "speed": speed, "volume": volume, "offset": 0}] + list(layers)
+    tmp = os.path.dirname(out)
+    voices = ([{"files": files, "speed": speed, "volume": volume, "offset": 0}] if files else []) + list(layers)
+    if synth:
+        voices.append({"synth": synth, "speed": 1.0, "volume": 1.0, "offset": 0})
     for i in range(shots):
         for r in range(rounds):
             for v in voices:
-                args += ["-i", os.path.join(DATA, v["files"][(i * rounds + r) % len(v["files"])])]
+                src = synth_wav(v["synth"], tmp) if v.get("synth") else os.path.join(DATA, v["files"][(i * rounds + r) % len(v["files"])])
+                args += ["-i", src]
                 delay = int((i * every + r * gap + v.get("offset", 0)) / 60 * 1000)
                 parts.append("[%d:a]aresample=%d,asetrate=%d,aresample=%d,volume=%.2f,adelay=%d|%d[a%d]"
-                             % (n, RATE, int(RATE * v["speed"]), RATE, v["volume"], delay, delay, n))
+                             % (n, RATE, int(RATE * v.get("speed", 1.0)), RATE, v.get("volume", 1.0), delay, delay, n))
                 n += 1
-    mix = ";".join(parts) + ";" + "".join("[a%d]" % i for i in range(n)) + "amix=inputs=%d:normalize=0[o]" % n
+    mix = ";".join(parts) + ";" + "".join("[a%d]" % i for i in range(n)) + "amix=inputs=%d:normalize=0" % n
+    mix += (",atrim=0:%.2f,afade=t=out:st=%.2f:d=0.4" % (dur, max(0, dur - 0.4)) if dur else "") + "[o]"
     subprocess.run(args + ["-filter_complex", mix, "-map", "[o]", "-ac", "2", out], check=True)
 
 
@@ -92,7 +112,18 @@ def clips(d):
     print("clips: %s (%d sounds)" % (d, len(man)))
 
 
+def now_files(e):
+    w = e.get("was")
+    if w:
+        return w if isinstance(w, list) else [w]
+    return e["files"]
+
+
 def main():
+    global TABLE
+    if len(sys.argv) > 2 and sys.argv[1] == "--table":
+        TABLE = os.path.abspath(sys.argv[2])
+        del sys.argv[1:3]
     if len(sys.argv) > 2 and sys.argv[1] == "--clips":
         return clips(sys.argv[2])
     out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(REPO, "media", "sound", "board.mp4")
@@ -100,14 +131,22 @@ def main():
     tmp = tempfile.mkdtemp(prefix="lp-board-")
     segs = []
     for n, e in enumerate(table()):
-        now = [e["was"]] if e.get("was") else e["files"]
+        now = now_files(e)
         for tag, files, speed, vol in (("now", now, 1.0, 1.0), ("proposed", e["files"], e["speed"], e["volume"])):
             k = "%02d-%s" % (n, tag)
             img, wav, seg = (os.path.join(tmp, k + x) for x in (".png", ".wav", ".mp4"))
-            sub = ("as now: " + ("silent" if now == ["none"] else os.path.basename(now[0]).rsplit("-", 1)[0])) if tag == "now" else \
-                  "proposed: %s at speed %.2f, volume %.2f" % (os.path.basename(e["files"][0]).rsplit("-", 1)[0], speed, vol)
-            card(img, "%d. %s" % (n + 1, e["label"]), sub)
-            burst(wav, files, speed, vol, e["every"], e["shots"])
+            if tag == "now":
+                sub = "as now: " + (e.get("now") or ("silent" if now == ["none"] else os.path.basename(now[0]).rsplit("-", 1)[0]))
+            elif e.get("detail"):
+                sub = "proposed: " + e["detail"]
+            else:
+                sub = "proposed: %s at speed %.2f, volume %.2f" % (os.path.basename(e["files"][0]).rsplit("-", 1)[0], speed, vol)
+            card(img, "%d. %s" % (n + 1, e["label"]), sub[:75])
+            if tag == "now":
+                burst(wav, files, speed, vol, e.get("was_every", e["every"]), e["shots"], dur=e.get("dur"))
+            else:
+                burst(wav, files, speed, vol, e["every"], e["shots"], e.get("layers", []), e.get("rounds", 1), e.get("gap", 0),
+                      e.get("synth"), e.get("dur"))
             segment(seg, img, wav)
             segs.append(seg)
     lst = os.path.join(tmp, "list.txt")
