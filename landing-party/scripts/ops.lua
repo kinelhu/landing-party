@@ -819,6 +819,34 @@ local function truck_piece(op)
   if op.piece == "lp-howitzer" and m and m.valid then return m end
 end
 
+-- Units sent home: round biter country too (four raiders came back from the target and died on the straight way home,
+-- country), with distraction by_damage, or none when `quiet` (a lull's truce: they walk through the player's guns).
+function ops.walk_home(b, units, quiet, overflight)
+  local h = home(b)
+  if not h then return 0 end
+  local d = quiet and defines.distraction.none or defines.distraction.by_damage
+  local back, n
+  for _, u in ipairs(units) do
+    if u.valid and not back then
+      back = {}
+      for _, w in ipairs(ops.route(b, {u.position.x, u.position.y}, {h.position.x, h.position.y},
+        overflight and {turrets = false, worms = true} or {turrets = false, nests = true}) or {}) do
+        table.insert(back, {type = defines.command.go_to_location, destination = w, radius = 4, distraction = d})
+      end
+      table.insert(back, {type = defines.command.go_to_location, destination = h.position, radius = 10, distraction = d})
+    end
+  end
+  n = 0
+  for _, u in ipairs(units) do
+    if u.valid then
+      n = n + 1
+      u.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+        commands = back}
+    end
+  end
+  return n
+end
+
 local function finish(b, outcome, trace, army)
   local op = b.op
   local h = home(b)
@@ -869,30 +897,10 @@ local function finish(b, outcome, trace, army)
     b.next_strip = game.tick + (storage.strip_fast and 2 * 3600 or STRIP_COOL)
     for _, e in ipairs(op.camp or {}) do if e.valid then e.destroy() end end
   end
-  -- Home round biter country too (four raiders came back from the target and died on the straight way home, country).
   -- Recalled by a lull, they walk home without answering fire: by_damage, a squad recalled through the player's base
-  -- shot back at its turrets and razed 115 to 141 of the player's buildings in railbase_end's truces (0.2.399).
-  local quiet = outcome == "recalled" and defines.distraction.none or defines.distraction.by_damage
-  local back
-  for _, u in ipairs(op.members) do
-    if u.valid and h and not back then
-      back = {}
-      for _, w in ipairs(ops.route(b, {u.position.x, u.position.y}, {h.position.x, h.position.y},
-        op.overflight and {turrets = false, worms = true} or {turrets = false, nests = true}) or {}) do
-        table.insert(back, {type = defines.command.go_to_location, destination = w, radius = 4, distraction = quiet})
-      end
-      table.insert(back, {type = defines.command.go_to_location, destination = h.position, radius = 10, distraction = quiet})
-    end
-  end
-  for _, u in ipairs(op.members) do
-    if u.valid then
-      pool.give_one(b, u)
-      if h then
-        u.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
-          commands = back}
-      end
-    end
-  end
+  -- shot back at its turrets (scenario director recall, 0.2.400).
+  for _, u in ipairs(op.members) do if u.valid then pool.give_one(b, u) end end
+  ops.walk_home(b, op.members, outcome == "recalled", op.overflight)
   local t = b.intel.targets[op.target]
   -- Razed nothing and attacked, or razed nothing and lost raiders on the way: resistance there.
   if t and op.kind == "raid" and op.razed0 and b.razed == op.razed0 and (op.attacked or alive(op) < op.launched) then
@@ -2201,6 +2209,14 @@ function ops.tick(b, tick, trace, army)
   -- Recalled by a lull (director.start_lull): its operation against the player held ends now, its units home. (A truce
   -- stopped launches only: after railbase_end's climax the player read that both corporations were holding their
   -- attacks and lost 398 buildings in the 15 minutes to sieges already out, 0.2.397.)
+  -- Those already on their way home from an operation over before the lull walk on without answering fire (they had
+  -- by_damage: Grubstake's harriers and scorchers coming back through the player's base razed 77 to 252 in
+  -- railbase_end's truces, 0.2.400).
+  if b.recall and b.returning and #b.returning > 0 then
+    local n = ops.walk_home(b, b.returning, true)
+    if n > 0 then trace(b, string.format("%d on their way home walk on quietly: a truce on %s", n, b.recall.owner)) end
+  end
+  if b.recall and not b.op then b.recall = nil end
   if b.op and b.recall then
     local op = b.op
     local t = op.target and b.intel.targets[op.target]

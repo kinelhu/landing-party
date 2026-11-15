@@ -7341,6 +7341,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **A truce kept by those already going home** (0.2.401). 0.2.400 changed nothing on railbase_end (the same numbers to
+  the building): the killers were units of operations over before the lull (role "returning" since), on their way
+  home with by_damage. A lull's recall now reaches a held camp with units returning (b.recall set without an
+  operation out): ops.walk_home (finish's way home, routed round biter country, now shared) sends them on with
+  distraction none. Scenario director recallback: guns on a returning squad's way once it is 100 tiles out, 5 razed
+  without, none with.
 - **A truce kept on the way home** (0.2.400). railbase_end's steady visits on 0.2.399 still lost 77 to 252 of the
   player's buildings to the held corporations inside truces (4 of 5 seeds; every lull's first minutes had losses).
   Counted by killer entity (minute events "player:cause:<name>") and per loss in a truce (event truce_loss: the

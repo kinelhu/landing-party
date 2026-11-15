@@ -7652,20 +7652,23 @@ scenarios.director = function()
   end
   -- LP_MIX=recall: a lull called while the camp has an operation out against the player recalls it (0.2.397: a truce
   -- held launches only; after railbase_end's climax the player was told of a hold and lost 398 buildings in it).
-  if params.mix == "recall" then
+  -- LP_MIX=recallback: the same, a squad already on its way home from an operation over (b.returning) when the lull
+  -- comes, guns on its way (0.2.400: by_damage, Grubstake's returning harriers razed 77 to 252 in railbase_end's truces).
+  if params.mix == "recall" or params.mix == "recallback" then
+    local back = params.mix == "recallback"
     schedule(121, function() lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100}}) end)
     for t = 3 * 3600, END - 3 * 3600, 30 do
       schedule(t, function()
         if S.called then return end
         local st = lp("stats", storage.id)
-        local m, o = st and st.ops and st.ops.op_members or {}, st and st.origin
+        local m, o = st and (back and st.returning_at or st.ops and st.ops.op_members) or {}, st and st.origin
         local cx, cy = 0, 0
         for _, u in ipairs(m) do cx, cy = cx + u[1] / #m, cy + u[2] / #m end
         local dx, dy = o and o.x - cx or 0, o and o.y - cy or 0
         local len = math.max(1, math.sqrt(dx * dx + dy * dy))
         -- (Out, 100 tiles from its camp at least: guns by a squad still mustering stood in the camp's own reach, and its
         -- flamer and tank shot them in self-defence.)
-        if st and st.ops and st.ops.op_started and st.ops.op_phase and #m > 0 and len > 100 then
+        if st and st.ops and (back or st.ops.op_started and st.ops.op_phase) and #m > 0 and len > 100 then
           S.called, S.op_was = game.tick, st.ops.op_phase
           -- The player's guns on its way home, 20 tiles toward its camp and 6 aside: shot at as it walks back.
           S.guns = 0
@@ -7686,7 +7689,7 @@ scenarios.director = function()
       for _, l in ipairs(st.ops.log or {}) do if l.outcome == "recalled" and l.started <= (S.called or 0) then recalled = recalled + 1 end end
       info(string.format("director recall: lull called at %s with an operation out (%s); %d recalled; out now %s since %s",
         tostring(S.called), tostring(S.op_was), recalled, tostring(st.ops.op_phase), tostring(st.ops.op_started)))
-      check("director: recall, a lull calls home the operation out against the player", S.called and recalled == 1,
+      check("director: recall, a lull calls home the operation out against the player", S.called and (back or recalled == 1),
         string.format("called %s, %d recalled", tostring(S.called), recalled))
       -- (Its squad walked home by_damage and shot back at the player's guns on the way: railbase_end's truces, 115 to
       -- 141 of the player's buildings, 0.2.399. Distraction none since.)

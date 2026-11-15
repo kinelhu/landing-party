@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.401
+Date: 2026-11-15
+  Bugfixes:
+    - Units already heading home from an attack when a lull begins walk on without shooting at your defences.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.400
 Date: 2026-11-15
   Bugfixes:

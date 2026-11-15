@@ -955,6 +955,7 @@ function base.stats(b)
     lost = b.lost, rebuilt = b.rebuilt, rebuild_pending = #b.rebuild,
     doctrine = b.doctrine, hubs = #b.hubs, blocks = #b.blocks, biter_losses = b.hazard and #b.hazard.log or 0, walls = #b.walls, road_tiles = b.road_tiles,
     radars = #b.radars, depots = #b.depots, garrison = #b.garrison, returning = #(b.returning or {}),
+    returning_at = (function() local o = {} for _, u in ipairs(b.returning or {}) do if u.valid then o[#o + 1] = {u.position.x, u.position.y} end end return o end)(),
     roster = table_size(b.roster or {}), units_built = b.units_built,
     units_lost = b.units_lost, howitzer_down = b.howitzer_down, parked = b.parked and b.parked.valid or false,
     parked_ghost = b.parked_ghost and b.parked_ghost.valid or false, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0,

@@ -111,6 +111,9 @@ function director.note_loss(owner, ent, cause, corp)
             for _, u in ipairs(b.op and b.op.members or {}) do
               if u.valid and u.unit_number == cause.unit_number then role = "op " .. tostring(b.op.kind) end
             end
+            for _, u in ipairs(b.returning or {}) do
+              if u.valid and u.unit_number == cause.unit_number then role = "returning" end
+            end
           end
         end
         -- (Who broke it, for the event stream: a strike team, an operation's squad, or another of its units.)
@@ -1042,7 +1045,10 @@ function director.start_lull(s, owner, tick, corps, base_minutes)
   for _, corp in ipairs(held) do set[corp] = true end
   local recalled = 0
   for _, b in pairs(storage.bases or {}) do
-    if set[b.corp] and not b.fallen and b.op then b.recall = {owner = owner, at = tick}; recalled = recalled + 1 end
+    if set[b.corp] and not b.fallen and (b.op or (b.returning and #b.returning > 0)) then
+      b.recall = {owner = owner, at = tick}
+      if b.op then recalled = recalled + 1 end
+    end
   end
   for key, k in pairs(s.strikes or {}) do
     if k.owner == owner and set[k.corp] and not k.at then strike_over(s, key, k, "called off") end
