@@ -30,13 +30,13 @@ digraph ai {
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="The director (above every faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "director" [label="director\n2138 lines", width=3.18, fillcolor="#f7dede"];
+    "director" [label="director\n2166 lines", width=3.21, fillcolor="#f7dede"];
     "director_gui" [label="director_gui\n130 lines", width=0.94, fillcolor="#eef2f7"];
   }
   subgraph cluster_4 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "faction" [label="faction\n1207 lines", width=2.14, fillcolor="#f7dede"];
     "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
-    "war" [label="war\n698 lines", width=1.58, fillcolor="#eef2f7"];
+    "war" [label="war\n699 lines", width=1.58, fillcolor="#eef2f7"];
     "standing" [label="standing\n114 lines", width=0.93, fillcolor="#eef2f7"];
     "pact" [label="pact\n112 lines", width=0.92, fillcolor="#eef2f7"];
     "ledger" [label="ledger\n316 lines", width=1.15, fillcolor="#eef2f7"];

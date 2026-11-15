@@ -7862,7 +7862,8 @@ scenarios.director = function()
       S.r1 = lp("director_cmd", "strike", "research")
       lp("debug_setting", "lp-difficulty", "normal")
       local k = last()
-      S.k1 = {kind = k.kind, land = k.land, cover = k.cover, target = k.target, sent = k.sent}
+      S.k1 = {kind = k.kind, land = k.land, cover = k.cover, target = k.target, sent = k.sent, mix = k.mix, raw = k.mix_raw,
+        guards = k.guards}
       S.r2 = lp("director_cmd", "strike")
       k = last()
       S.k2 = {kind = k.kind, target = k.target}
@@ -7900,6 +7901,15 @@ scenarios.director = function()
         tostring(S.k1 and dist(S.k1.target, S.labs)), tostring(S.k1 and dist(S.k1.land, S.k1.target)), tostring(S.k1 and S.k1.cover)))
       check("director: targets, unforced, retaliation at the cluster of guns that killed its units", S.r2 == "strike: retaliation"
         and dist(S.k2.target, S.gun) < 10, string.format("%s at %s", tostring(S.r2), serpent.line(S.k2 and S.k2.target)))
+      -- (Its units tilted against the labs' three gun turrets, 0.2.421: the raw mix until then.)
+      local tilted = false
+      for name, x in pairs(S.k1 and S.k1.mix or {}) do
+        local r = S.k1.raw and S.k1.raw[name]
+        if r and r > 0 and math.abs(x / r - 1) > 0.05 then tilted = true end
+      end
+      check("director: targets, its units tilted against its target's guards", (S.k1 and S.k1.guards or 0) >= 3 and tilted,
+        string.format("%s guards, mix %s, raw %s", tostring(S.k1 and S.k1.guards), serpent.line(S.k1 and S.k1.mix),
+        serpent.line(S.k1 and S.k1.raw)))
       check("director: targets, its difficulty after the cap: hard, 1.5 times points_max", S.k1 and S.k1.sent
         == math.floor(lp("director_prior", "points_max") * 1.5), string.format("%s sent", tostring(S.k1 and S.k1.sent)))
       local where = {oil = S.oil, logistics = S.robo, army = S.bar, engineer = S.eng}

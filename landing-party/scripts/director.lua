@@ -382,7 +382,7 @@ local function tell(owner, key, ...)
   end
 end
 
-local morale, walking, send_home, masts_tick, bounty_tick -- (below: after walk_back, start_mast and start_bounty)
+local morale, walking, send_home, masts_tick, bounty_tick, strike_mix -- (below: after walk_back, start_mast and start_bounty)
 
 function director.tick(tick)
   if tick % 300 == 150 and storage.director then morale(storage.director, tick) end
@@ -886,7 +886,7 @@ function director.start_rotation(s, owner, tick, why)
     end
   end
   if not best then return false end
-  local out = pool.take(best, 999, pool.GUARD)
+  local out = pool.take(best, tun("rotation_max"), pool.GUARD)
   local p = pad_of(best)
   for _, u in ipairs(out) do if u.valid then pool.discharge(best, u.unit_number); u.destroy() end end
   beam(p)
@@ -1409,6 +1409,7 @@ local function strike(s, owner, corps, tick, mult, warn, aim, want)
     pods_at = tick + minutes * 3600, kind = kind or "known", tent = tent, land = land, cover = cover,
     hunt = kind == "engineer" and tent or nil}
   s.strikes[key] = k
+  strike_mix(lead, k)  -- (Its mix as chosen, for the record and tests; drawn again as its pods go.)
   s.reinforced = (s.reinforced or 0) + n
   s.points_sent = (s.points_sent or 0) + n
   s.strike_lead = lead.id
@@ -1633,6 +1634,33 @@ morale = function(s, tick)
   end
 end
 
+-- Its mix: the camp's composition, tilted against the guards of its target (shared.DIRECTOR's strike_guard).
+local COUNTERS = require("__landing-party__.counters")
+local GUARD_TYPES = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret", "unit", "car", "spider-vehicle"}
+strike_mix = function(b, k)
+  local m = army.composition(b, army.mix(b))
+  local mind = (shared.CORPS[b.corp] or {}).mind or {}
+  local w = (mind.counter or 0) * tun("strike_counter")
+  if w <= 0 or not k.target then return m end
+  local surface = b.lander.surface
+  local seen, n = {}, 0
+  for _, e in ipairs(surface.find_entities_filtered{position = k.target, radius = tun("strike_guard"), force = k.owner,
+    type = GUARD_TYPES}) do
+    seen[e.name] = (seen[e.name] or 0) + 1
+    n = n + 1
+  end
+  if n == 0 then return m end
+  local out = {}
+  for name, x in pairs(m) do
+    local row = COUNTERS[shared.variant(b.corp, name)] or COUNTERS[name]
+    local sc = 0
+    if row then for key, c in pairs(seen) do sc = sc + (row[key] or 0) * c / n end end
+    out[name] = x * math.max(0.1, 1 + w * sc)
+  end
+  k.mix, k.mix_raw, k.guards = out, m, n
+  return out
+end
+
 local function strike_over(s, key, k, why)
   local b, mine = storage.bases[k.base], {}
   local live = {}
@@ -1672,7 +1700,7 @@ function director.strikes(s, tick)
     if not k.at then
       if tick >= k.pods_at then
         local b = storage.bases[k.base]
-        local pods_sent = b and war.strike_team(b, k.owner, k.sent, key, k.land) or 0
+        local pods_sent = b and war.strike_team(b, k.owner, k.sent, key, k.land, strike_mix(b, k)) or 0
         if pods_sent == 0 then strike_over(s, key, k, "no camp")
         else
           k.at, k.till = tick, tick + tun("strike_minutes") * 3600

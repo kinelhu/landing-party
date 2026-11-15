@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.421
+Date: 2026-11-15
+  Changes:
+    - A strike force's units are now chosen to counter what has been killing its corporation's units and what guards its target.
+    - A garrison rotation ships out at most 40 units.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.420
 Date: 2026-11-15
   Changes:

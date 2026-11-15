@@ -485,6 +485,8 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- A garrison rotation: one camp's garrison, all but pool.GUARD, ships out on its rocket and comes back by pod
   -- rotation_minutes later, as many in its corporation's current mix: a window, tagged at the camp.
   rotation_minutes = 15, rotation_cost = 1,
+  -- (At most rotation_max out, a strike force's size: on railbase_end 71 to 194 left and came back by up to 49 pods.)
+  rotation_max = 40,
   -- The intercepted transmission (a lull's reward; a forecast only if earned, the user having removed told pacing in
   -- 0.2.405): a salvage wreck carries a data core datacore_chance of the time; emptied, the next strike force's target
   -- is tagged on the map as it is chosen.
@@ -523,6 +525,11 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- the user agreed, 2026-11-15; behind its camp until 0.2.418, the force marched 250 tiles into railbase_end's 135
   -- flamers and broke before its first hit, every time). The player's army, not more turrets, its answer.
   strike_land = 40,
+  -- Its units (0.2.421; the user: "unit counters play a big role in balance"): its camp's composition (army.composition:
+  -- countering what killed its corporation's units, fliers over weak anti-air), then tilted against what guards its
+  -- target, the player's guns and units within strike_guard of it, by the arena's counter table at strike_counter of
+  -- its corporation's own counter weight (mind.counter). The raw mix until now: the one army that never adapted.
+  strike_guard = 60, strike_counter = 1,
   power_hold = 10,
   -- Step 3 (decided overnight 2026-11-14, for review): a drop wave, wave_size landings of one corporation at once (the
   -- landing queue, each seeing the last), wave_cost; its camps an expedition (not counted against the camp cap, no

@@ -7341,6 +7341,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Strike forces built for their target** (0.2.421; the user: "what is the unit comp of strikes? Modular? We know that
+  unit counters play a big role in balance"). A strike force took its corporation's raw mix, drawn unit by unit: the one
+  army in the game that never adapted (camps' own garrisons go through army.composition). Now its units come from its
+  camp's composition (countering what killed its corporation's units, fliers over weak anti-air), tilted against what
+  guards its target: the player's guns and units within strike_guard (60), by the arena's counter table at its
+  corporation's own counter weight (mind.counter; strike_counter 1). Scenario director targets: three gun turrets by the
+  labs, every unit's weight moved (seen failing at strike_counter 0). The army scenarios after: the waiting squad still
+  breaks it (razed 8 against 6 before, 5 of the squad left against 8); the unordered squad razed 0 against 16, one run
+  each. The garrison rotation ships out rotation_max (40) at most: on railbase_end 71 to 194 went and came back by up to
+  49 pods. The five railbase_end visits on 0.2.420 (before this): razed 457, 380, 393, 219, 518 against off's 257, 101,
+  340, 317, 468; 12 of 15 forces broke after fighting; retaliation by cluster fired on seeds 3 and 4; no survivor joined
+  a camp (all full), all shipped; every visit's first strike at the same roboport (the strike stream seeded by the
+  save's map seed, one draw in a real game); no joint strike or contract in three hours at 0.1 each.
 - **The rest of the director, unpostponed** (0.2.420; the user, 2026-11-15: "nothing is postponed until after
   playtest"). (1) A strike force's difficulty and adaptation now apply after points_max: on any established base the
   worth term passed the cap (railbase_end's 103 against 40), so easy, hard and very hard all sent 40 and adaptation

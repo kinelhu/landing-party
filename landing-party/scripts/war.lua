@@ -99,8 +99,8 @@ local function tell(key, corp, b)
 end
 
 -- The detachment: n units of the settlement's mix and what they cost at the markup.
-local function detachment(b, n)
-  local m = army.mix(b)
+local function detachment(b, n, m)
+  m = m or army.mix(b)
   local names, cost = {}, 0
   for _ = 1, n do
     local name = rng.weighted(b.rng, m)
@@ -275,9 +275,10 @@ function war.rotation_in(b, n)
 end
 
 -- (`land`: where the director chose, by its target, director.lua's landing_spot; else behind the camp.)
-function war.strike_team(b, owner, n, key, land)
+-- (`mix`: the director's, its camp's composition tilted against its target's guards, director.lua's strike_mix.)
+function war.strike_team(b, owner, n, key, land, mix)
   if storage.pods_off or b.fallen or not (b.lander and b.lander.valid) or n <= 0 then return 0 end
-  local names = detachment(b, n)
+  local names = detachment(b, n, mix)
   local at = land or behind(b, owner)
   local sent = 0
   for k = 1, #names, POD_LOAD do
