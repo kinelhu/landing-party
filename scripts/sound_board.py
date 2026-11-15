@@ -86,24 +86,25 @@ def segment(out, image, wav, pad=0.6):
 
 
 def clips(d):
+    """Each card's two clips as mp3 (now, proposed) and a manifest, for a listening page; the board's own logic."""
     os.makedirs(d, exist_ok=True)
     tmp = tempfile.mkdtemp(prefix="lp-clips-")
     man = []
-    for e in table():
-        now = [e["was"]] if e.get("was") else e["files"]
-        row = {k: e[k] for k in ("id", "label", "speed", "volume", "every")}
-        row["round"] = e.get("round", 1)
-        row["detail"] = e.get("detail", "")
-        row["decided"] = e.get("decided", "")
-        row["file"] = os.path.basename(e["files"][0]).rsplit("-", 1)[0].replace(".ogg", "")
-        row["now"] = "silent" if now == ["none"] else os.path.basename(now[0]).rsplit("-", 1)[0].replace(".ogg", "")
+    for n, e in enumerate(table()):
+        now = now_files(e)
+        row = {"n": n + 1, "id": e["id"], "label": e["label"], "detail": e.get("detail", ""), "decided": e.get("decided", ""),
+               "units": e.get("units", []), "round": e.get("round", 1)}
+        row["now"] = e.get("now") or ("silent" if now == ["none"] else os.path.basename(now[0]).rsplit("-", 1)[0])
+        if not row["detail"]:
+            row["detail"] = "%s at speed %.2f, volume %.2f" % (os.path.basename(e["files"][0]).rsplit("-", 1)[0], e["speed"],
+                                                              e["volume"])
         for tag, files, speed, vol in (("now", now, 1.0, 1.0), ("proposed", e["files"], e["speed"], e["volume"])):
             wav = os.path.join(tmp, e["id"] + "-" + tag + ".wav")
             if tag == "now":
-                we = e.get("was_every", e["every"])
-                burst(wav, files, speed, vol, we, max(e["shots"], int(e["shots"] * e["every"] / we)))
+                burst(wav, files, speed, vol, e.get("was_every", e["every"]), e["shots"], dur=e.get("dur"))
             else:
-                burst(wav, files, speed, vol, e["every"], e["shots"], e.get("layers", []), e.get("rounds", 1), e.get("gap", 0))
+                burst(wav, files, speed, vol, e["every"], e["shots"], e.get("layers", []), e.get("rounds", 1), e.get("gap", 0),
+                      e.get("synth"), e.get("dur"))
             mp3 = os.path.join(d, e["id"] + "-" + tag + ".mp3")
             subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", wav, "-af", "apad=pad_dur=0.3", "-c:a", "libmp3lame",
                             "-b:a", "96k", mp3], check=True)

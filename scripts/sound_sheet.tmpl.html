@@ -1,0 +1,188 @@
+<title>Landing Party Sound Sheet</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* A field sheet, one row per sound, Now against Proposed, verdict chips and a note on the right. */
+:root {
+  --bg: #eef0ec; --panel: #ffffff; --ink: #1d2320; --muted: #5d6a64; --line: #d3d9d4;
+  --grub: #a8661c; --grub-bg: #f5e6d2; --kh: #1f7a80; --kh-bg: #d7ecee; --both: #5a4f7a; --both-bg: #e6e2f0;
+  --player: #4d6b2e; --player-bg: #e1ebd6; --on: #24503a; --on-bg: #d6eadc; --off: #8a2f2a; --off-bg: #f3dcda;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif; --body: "Source Sans 3", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #151a18; --panel: #1e2522; --ink: #e5ebe7; --muted: #94a39c; --line: #313b37;
+  --grub: #e2a157; --grub-bg: #3a2c1b; --kh: #5cc3c9; --kh-bg: #17363a; --both: #b7a8e6; --both-bg: #2c2740;
+  --player: #a9cf7f; --player-bg: #26331b; --on: #a6e0bb; --on-bg: #1f3c2b; --off: #f0a29c; --off-bg: #43211f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #151a18; --panel: #1e2522; --ink: #e5ebe7; --muted: #94a39c; --line: #313b37;
+  --grub: #e2a157; --grub-bg: #3a2c1b; --kh: #5cc3c9; --kh-bg: #17363a; --both: #b7a8e6; --both-bg: #2c2740;
+  --player: #a9cf7f; --player-bg: #26331b; --on: #a6e0bb; --on-bg: #1f3c2b; --off: #f0a29c; --off-bg: #43211f; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.45 }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 28px 60px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+h1 { font-family: var(--display); font-weight: 700; font-size: 34px; letter-spacing: .01em; margin: 0; text-wrap: balance }
+h2 { font-family: var(--display); font-weight: 600; font-size: 22px; letter-spacing: .02em; margin: 34px 0 0; text-wrap: balance }
+.lede { color: var(--muted); max-width: 64ch; margin: 6px 0 0 }
+.status { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 10px }
+.progress { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 4px }
+.list { display: grid; gap: 12px; margin-top: 16px }
+.row { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px }
+@media (max-width: 720px) { .row { grid-template-columns: 1fr } }
+.head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap }
+.num { font-family: var(--mono); color: var(--muted); font-size: 13px }
+.name { font-family: var(--display); font-weight: 600; font-size: 21px; letter-spacing: .01em }
+.chip { font-family: var(--display); font-weight: 600; font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 3px }
+.chip.Grubstake { color: var(--grub); background: var(--grub-bg) }
+.chip.Kessler-Hayashi { color: var(--kh); background: var(--kh-bg) }
+.chip.Both { color: var(--both); background: var(--both-bg) }
+.chip.Player { color: var(--player); background: var(--player-bg) }
+.spec { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 6px }
+.detail { font-size: 13px; margin-top: 4px }
+.pair { font-size: 13px; margin-top: 4px; color: var(--both) }
+.plays { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap }
+.play { font: 600 14px var(--body); border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 4px;
+  padding: 7px 14px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center }
+.play:hover { border-color: var(--muted) }
+.play[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink) }
+.play[disabled] { opacity: .5; cursor: default }
+.play small { font-weight: 400; color: inherit; opacity: .7 }
+.play:focus-visible, .tag:focus-visible, textarea:focus-visible { outline: 2px solid var(--kh); outline-offset: 2px }
+.tags { display: flex; flex-wrap: wrap; gap: 6px }
+.tag { font: 500 13px var(--body); border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 999px;
+  padding: 4px 11px; cursor: pointer }
+.tag[aria-pressed="true"] { background: var(--on-bg); color: var(--on); border-color: var(--on) }
+.tag.drop[aria-pressed="true"] { background: var(--off-bg); color: var(--off); border-color: var(--off) }
+textarea { width: 100%; box-sizing: border-box; margin-top: 10px; min-height: 58px; resize: vertical; font: 14px var(--body);
+  color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 8px }
+.done { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted) }
+.done b { font-family: var(--display); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; color: var(--ink); width: 100% }
+.q { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px }
+.q p { margin: 0 0 10px; max-width: 70ch }
+.saved { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 4px; min-height: 1em }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+<div class="wrap">
+  <h1>Sounds, round four</h1>
+  <p class="lede">Movement, deaths, the last silent weapons and the events you should hear. Play Now, then Proposed, and mark each: keep it, drop it, or say how to change it. Where two cards propose the same sound, keep the one you prefer and drop the other. Nothing goes into the mod until it is kept here.</p>
+  <div class="done" id="done"></div>
+  <div class="status" id="status">Connecting to the sheet's store…</div>
+  <div class="progress" id="progress"></div>
+  <h2>Questions</h2>
+  <div class="list" id="questions"></div>
+  <h2>Sounds</h2>
+  <div class="list" id="list"></div>
+</div>
+<script>
+const ROUND = __ROUND__;
+const ROWS = __ROWS__;
+const QUESTIONS = __QUESTIONS__;
+const SETTLED = __SETTLED__;
+(() => { const d = document.getElementById("done"); const b = document.createElement("b"); b.textContent = "Settled in rounds one to three"; d.appendChild(b);
+  SETTLED.forEach(x => { const s = document.createElement("span"); s.textContent = x; d.appendChild(s) }) })();
+const TAGS = [["keep", "Keep"], ["drop", "Drop"], ["higher", "Higher pitch"], ["lower", "Lower pitch"], ["louder", "Louder"],
+  ["quieter", "Quieter"], ["shorter", "Shorter"], ["other", "Try another sound"]];
+const list = document.getElementById("list"), qs = document.getElementById("questions"), status = document.getElementById("status");
+const state = {}; let db = null; let playing = null;
+function stop() { if (playing) { playing.audio.pause(); playing.audio.currentTime = 0; playing.btn.setAttribute("aria-pressed", "false"); playing = null } }
+const pairOf = id => { const m = id.match(/^(.*)-([ab])$/); return m ? m[1] : null };
+function noteBox(key) {
+  const ta = document.createElement("textarea"); ta.id = `note-${key}`; ta.placeholder = "Anything else about this one";
+  let timer = null;
+  ta.addEventListener("input", () => { state[key].note = ta.value; clearTimeout(timer); timer = setTimeout(() => save(key), 700) });
+  return ta;
+}
+function savedMark(key) { const s = document.createElement("div"); s.className = "saved"; s.id = `saved-${key}`; return s }
+ROWS.forEach(r => {
+  state[r.key] = {tags: [], note: ""};
+  const el = document.createElement("section"); el.className = "row";
+  const left = document.createElement("div");
+  left.innerHTML = `<div class="head"><span class="num">${String(r.n).padStart(2, "0")}</span><span class="name"></span><span class="chip"></span></div>
+    <div class="spec"></div><div class="detail"></div><div class="pair"></div><div class="plays"></div>`;
+  left.querySelector(".name").textContent = r.label;
+  const chip = left.querySelector(".chip"); chip.textContent = r.faction; chip.classList.add(r.faction);
+  left.querySelector(".spec").textContent = `now: ${r.now}`;
+  left.querySelector(".detail").textContent = "proposed: " + (r.detail || "");
+  const p = pairOf(r.id);
+  if (p) { const other = ROWS.find(x => x.id !== r.id && pairOf(x.id) === p); if (other) left.querySelector(".pair").textContent = `One of two for the same sound, with ${String(other.n).padStart(2, "0")}: keep one.` }
+  const plays = left.querySelector(".plays");
+  [["Now", r.src_now, r.src_now ? "" : "silent"], ["Proposed", r.src_new, ""]].forEach(([label, src, note]) => {
+    const b = document.createElement("button"); b.className = "play"; b.type = "button"; b.setAttribute("aria-pressed", "false");
+    b.innerHTML = `▶ ${label}${note ? ` <small>(${note})</small>` : ""}`;
+    if (!src) { b.disabled = true; plays.appendChild(b); return }
+    const a = new Audio(src); a.preload = "auto";
+    a.addEventListener("ended", () => { if (playing && playing.audio === a) stop() });
+    b.addEventListener("click", () => { const was = playing && playing.audio === a; stop(); if (!was) { a.play().catch(() => {}); playing = {audio: a, btn: b}; b.setAttribute("aria-pressed", "true") } });
+    plays.appendChild(b);
+  });
+  const right = document.createElement("div");
+  const tags = document.createElement("div"); tags.className = "tags";
+  TAGS.forEach(([k, label]) => {
+    const t = document.createElement("button"); t.className = "tag" + (k === "drop" ? " drop" : ""); t.type = "button"; t.id = `tag-${r.key}-${k}`;
+    t.textContent = label; t.setAttribute("aria-pressed", "false");
+    t.addEventListener("click", () => {
+      const s = state[r.key]; const on = s.tags.includes(k);
+      if (on) s.tags = s.tags.filter(x => x !== k);
+      else if (k === "keep" || k === "drop") s.tags = [k];
+      else s.tags = s.tags.filter(x => x !== "keep" && x !== "drop").concat(k);
+      paint(r.key); save(r.key);
+    });
+    tags.appendChild(t);
+  });
+  right.append(tags, noteBox(r.key), savedMark(r.key));
+  el.append(left, right); list.appendChild(el);
+});
+QUESTIONS.forEach(q => {
+  const key = `q-${q.id}-r${ROUND}`; state[key] = {tags: [], note: "", options: q.options.map(o => o[0])};
+  const el = document.createElement("section"); el.className = "q";
+  const t = document.createElement("p"); t.textContent = q.text;
+  const tags = document.createElement("div"); tags.className = "tags";
+  q.options.forEach(([k, label]) => {
+    const b = document.createElement("button"); b.className = "tag"; b.type = "button"; b.id = `tag-${key}-${k}`;
+    b.textContent = label; b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => { const s = state[key]; s.tags = s.tags.includes(k) ? [] : [k]; paint(key); save(key) });
+    tags.appendChild(b);
+  });
+  el.append(t, tags, noteBox(key), savedMark(key)); qs.appendChild(el);
+});
+function progress() {
+  const n = ROWS.filter(r => state[r.key].tags.length || state[r.key].note).length;
+  const m = QUESTIONS.filter(q => { const s = state[`q-${q.id}-r${ROUND}`]; return s.tags.length || s.note }).length;
+  document.getElementById("progress").textContent = `${n} of ${ROWS.length} sounds and ${m} of ${QUESTIONS.length} questions answered`;
+}
+function paint(key) {
+  const opts = state[key].options || TAGS.map(x => x[0]);
+  opts.forEach(k => { const el = document.getElementById(`tag-${key}-${k}`); if (el) el.setAttribute("aria-pressed", state[key].tags.includes(k) ? "true" : "false") });
+  const ta = document.getElementById(`note-${key}`); if (ta && document.activeElement !== ta) ta.value = state[key].note || "";
+  progress();
+}
+progress();
+const pending = {};
+async function save(key) {
+  const mark = document.getElementById(`saved-${key}`);
+  if (!db) { mark.textContent = "Not saved: this view can't reach the sheet's store"; return }
+  if (pending[key]) { pending[key].again = true; return }
+  pending[key] = {again: false}; mark.textContent = "Saving…";
+  try {
+    await db.doc(`feedback/${key}`).set({tags: state[key].tags, note: state[key].note, at: Date.now()});
+    mark.textContent = "Saved";
+  } catch (e) { mark.textContent = "Not saved: " + (e && e.code || "the store refused it") }
+  const again = pending[key].again; delete pending[key]; if (again) save(key);
+}
+(async () => {
+  const timeout = setTimeout(() => { if (!db) status.textContent = "Can't reach the sheet's store from this view: you can listen, but answers won't save." }, 10000);
+  try { db = window.claude && await window.claude.use("db") } catch (e) { db = null }
+  clearTimeout(timeout);
+  if (!db) { status.textContent = "Can't reach the sheet's store from this view: you can listen, but answers won't save."; return }
+  status.textContent = "Answers save as you go.";
+  db.collection("feedback").onSnapshot(snap => {
+    (snap.docs || snap).forEach(d => {
+      const v = typeof d.data === "function" ? d.data() : d.data; const id = d.id;
+      if (state[id] && v) { state[id].tags = v.tags || []; state[id].note = v.note || ""; paint(id) }
+    });
+  }, () => { status.textContent = "The sheet's store stopped answering: reload to keep saving." });
+})();
+</script>
