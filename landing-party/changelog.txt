@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.422
+Date: 2026-11-15
+  Locale:
+    - The Chat notices setting says which notices are always shown: first landings, destroyed bases and arriving threats.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.421
 Date: 2026-11-15
   Changes:
