@@ -7341,6 +7341,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The breakthrough sweep** (0.2.410; docs/director.md 9f, the user's proposal of 2026-11-14). A raid razes within 16
+  of its target and goes home, while a Synthexis wave through a gap broke up to 6,154 buildings. Now a raid of a
+  corporation the director has committed (a surge or a focus strike; never at gentle) that razed its target having lost
+  at most a quarter (shared.SWEEP.loss) with no gun within 30 of it sweeps on to the player's nearest building within 48
+  (reach) no gun covers, 6 times at most (max). The rest of 9f's design, a breach the camp remembers as its trigger, a
+  marked breach, the strike force into the sweep, a looting variant for Grubstake, is not built. Scenario director
+  sweep: six unguarded clusters 20 apart, one raid in a surge swept 5 times and razed all six; sweepoff (no director)
+  three raids razed three, none swept.
 - **The bounty** (0.2.409; docs/director.md, off-map beats). A director beat (beat_weights.bounty 0.15, bounty_cost 1):
   the player's building of most value known to the camps at war is priced; tagged "Bounty" on the player's map, it is
   bounty_weight (8) times as relevant to every camp (ops' relevance, within 8 tiles of it) for bounty_minutes (15) or

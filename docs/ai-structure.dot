@@ -64,7 +64,7 @@ digraph ai {
   }
   subgraph cluster_6 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n1061 lines", width=1.98, fillcolor="#f7dede"];
-    "ops" [label="ops\n2486 lines", width=3.56, fillcolor="#f7dede"];
+    "ops" [label="ops\n2515 lines", width=3.59, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n295 lines", width=1.13, fillcolor="#eef2f7"];
     "airraid" [label="airraid\n127 lines", width=0.94, fillcolor="#eef2f7"];

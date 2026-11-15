@@ -2090,6 +2090,35 @@ local function step(b, trace, army)
     end
     if game.tick - op.last_kill > NO_KILL_TICKS then return finish(b, "aborted", trace, army) end
     if left == 0 then
+      -- Through and unopposed in a director's push: on to the next building no gun covers (the breakthrough sweep,
+      -- shared.SWEEP). A raid razes within 16 of its target and goes home, a Synthexis wave through the same gap broke
+      -- up to 6,154 of the player's buildings (docs/director.md 9f).
+      local d = storage.director
+      local c = d and d.active and d.commit
+      if t and t.owner ~= "enemy" and not op.thieving and c and c.corps[b.corp] and game.tick < c.till
+        and t.owner == c.owner and turrets == 0 and n >= (1 - shared.SWEEP.loss) * op.launched
+        and (op.sweeps or 0) < shared.SWEEP.max
+        and (storage.director_force or shared.setting("lp-director", "steady")) ~= "gentle" then
+        local best, bd
+        for _, e in ipairs(surface.find_entities_filtered{position = pos, radius = shared.SWEEP.reach, type = TYPES,
+          force = t.owner}) do
+          local dd = (e.position.x - pos[1]) ^ 2 + (e.position.y - pos[2]) ^ 2
+          if (not bd or dd < bd) and surface.count_entities_filtered{position = e.position, radius = DEFENCE_RADIUS,
+            type = TURRETS, force = t.owner, limit = 1} == 0 then best, bd = e, dd end
+        end
+        if best then
+          op.pos, op.sweeps, op.last_kill = {best.position.x, best.position.y}, (op.sweeps or 0) + 1, game.tick
+          b.sweeps = (b.sweeps or 0) + 1
+          for _, u in ipairs(op.members) do
+            if u.valid then
+              u.commandable.set_command{type = defines.command.attack, target = best, distraction = defines.distraction.by_damage}
+            end
+          end
+          trace(b, string.format("raid sweeps on (%d): to %s at %.0f,%.0f, %d of %d strong, nothing guarding it", op.sweeps,
+            best.name, best.position.x, best.position.y, n, op.launched))
+          return
+        end
+      end
       trace(b, string.format("raid finds nothing left within 16 of %.0f,%.0f (%d turrets within %d)", pos[1], pos[2],
         turrets, DEFENCE_RADIUS))
       return finish(b, "done", trace, army)

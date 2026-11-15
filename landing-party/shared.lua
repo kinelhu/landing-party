@@ -844,6 +844,12 @@ function shared.event(kind, fields)
   helpers.write_file("landing-party/events.jsonl", helpers.table_to_json(e) .. "\n", true)
 end
 
+-- The breakthrough sweep (docs/director.md 9f; the user, 2026-11-14: "another type of operation ... linked to director
+-- pressure"): a raid of a corporation the director has committed (a surge or a focus strike, not gentle) that razed its
+-- target having lost at most `loss` of its strength, no gun covering it, sweeps on to the player's nearest building
+-- within `reach` that no gun covers, `max` times at most. Named priors.
+shared.SWEEP = {loss = 0.25, reach = 48, max = 6}
+
 -- A director's lull holding `corp` against some force now (storage.truces, "corp|owner" to the tick it ends): its units
 -- then walk home without answering fire (ops.walk_home, the leash).
 function shared.truce_held(corp)

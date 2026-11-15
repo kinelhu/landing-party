@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.410
+Date: 2026-11-15
+  Features:
+    - Breakthrough: during a surge, a raid that gets through unopposed sweeps on from target to target while nothing guards the next one.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.409
 Date: 2026-11-15
   Features:

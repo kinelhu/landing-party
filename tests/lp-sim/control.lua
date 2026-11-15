@@ -7469,6 +7469,53 @@ scenarios.director = function()
     end)
     return
   end
+  -- LP_MIX=sweep: the breakthrough sweep (0.2.410): six unguarded clusters of the player's, 20 tiles apart in a row 150
+  -- from the camp, the first known; a surge (its camps committed): a raid razes the first and sweeps on down the row.
+  -- LP_MIX=sweepoff: no surge, the camp raids at its own pace: one cluster a raid, no sweep.
+  if params.mix == "sweep" or params.mix == "sweepoff" then
+    local on = params.mix == "sweep"
+    schedule(120, function()
+      lp("debug_tune", {director = on and "steady" or false, director_tune = {grace = 0, fill = 0, hurt_floor = 100,
+        surge_minutes = 30}})
+      local id = (lp("bases") or {})[1]
+      local o = lp("stats", id).origin
+      local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
+      local ux, uy = -o.x / len, -o.y / len
+      S.row = {}
+      for k = 0, 5 do
+        local at = {math.floor(o.x + ux * 150 - uy * 20 * k), math.floor(o.y + uy * 150 + ux * 20 * k)}
+        flatten(at[1] - 5, at[2] - 5, at[1] + 5, at[2] + 5)
+        for j = 0, 1 do
+          surface().create_entity{name = "assembling-machine-1", position = {at[1] + 4 * j + 0.5, at[2] + 0.5}, force = "player"}
+        end
+        S.row[#S.row + 1] = at
+      end
+      lp("debug_needed", id, S.row[1])
+      for _ = 1, 2 do lp("debug_depot", id, 3000) end
+    end)
+    if on then schedule(2 * 3600 + 600, function() S.said = lp("director_cmd", "surge") end) end
+    schedule(END - 60, function()
+      local id = (lp("bases") or {})[1]
+      local st = lp("stats", id) or {}
+      local razed = 0
+      for _, at in ipairs(S.row or {}) do
+        if surface().count_entities_filtered{position = at, radius = 8, name = "assembling-machine-1", force = "player"} == 0 then
+          razed = razed + 1
+        end
+      end
+      info(string.format("director sweep (%s): %s; sweeps %s, clusters razed %d of %d, raids %s", params.mix,
+        tostring(S.said), tostring(st.sweeps), razed, #(S.row or {}), tostring(st.ops and st.ops.launched)))
+      if on then
+        check("director: sweep, in a surge a raid through sweeps on down the unguarded row", S.said == "surge"
+          and (st.sweeps or 0) >= 2 and razed >= 3, string.format("%s, %s sweeps, %d razed", tostring(S.said),
+          tostring(st.sweeps), razed))
+      else
+        check("director: sweepoff, at its own pace no sweep", (st.sweeps or 0) == 0, string.format("%s sweeps, %d razed",
+          tostring(st.sweeps), razed))
+      end
+    end)
+    return
+  end
   -- LP_MIX=bounty: the bounty (0.2.409): two of the player's buildings the camp knows; forced, the dearer is priced and
   -- tagged, and the camp weighs it bounty_weight times as much as once the bounty is over; a second, its target
   -- destroyed, is over, taken, its tag gone.
