@@ -66,12 +66,12 @@ textarea { width: 100%; box-sizing: border-box; margin-top: 10px; min-height: 58
 @media (prefers-reduced-motion: reduce) { * { transition: none !important } }
 </style>
 <div class="wrap">
-  <h1>Sounds, round four</h1>
-  <p class="lede">Movement, deaths, the last silent weapons and the events you should hear. Play Now, then Proposed, and mark each: keep it, drop it, or say how to change it. Where two cards propose the same sound, keep the one you prefer and drop the other. Nothing goes into the mod until it is kept here.</p>
+  <h1>__TITLE__</h1>
+  <p class="lede">__LEDE__</p>
   <div class="done" id="done"></div>
   <div class="status" id="status">Connecting to the sheet's store…</div>
   <div class="progress" id="progress"></div>
-  <h2>Questions</h2>
+  <h2 id="qh">Questions</h2>
   <div class="list" id="questions"></div>
   <h2>Sounds</h2>
   <div class="list" id="list"></div>
@@ -81,14 +81,14 @@ const ROUND = __ROUND__;
 const ROWS = __ROWS__;
 const QUESTIONS = __QUESTIONS__;
 const SETTLED = __SETTLED__;
-(() => { const d = document.getElementById("done"); const b = document.createElement("b"); b.textContent = "Settled in rounds one to three"; d.appendChild(b);
+(() => { const d = document.getElementById("done"); const b = document.createElement("b"); b.textContent = "Settled in earlier rounds"; d.appendChild(b);
   SETTLED.forEach(x => { const s = document.createElement("span"); s.textContent = x; d.appendChild(s) }) })();
 const TAGS = [["keep", "Keep"], ["drop", "Drop"], ["higher", "Higher pitch"], ["lower", "Lower pitch"], ["louder", "Louder"],
   ["quieter", "Quieter"], ["shorter", "Shorter"], ["other", "Try another sound"]];
 const list = document.getElementById("list"), qs = document.getElementById("questions"), status = document.getElementById("status");
 const state = {}; let db = null; let playing = null;
 function stop() { if (playing) { playing.audio.pause(); playing.audio.currentTime = 0; playing.btn.setAttribute("aria-pressed", "false"); playing = null } }
-const pairOf = id => { const m = id.match(/^(.*)-([ab])$/); return m ? m[1] : null };
+const pairOf = id => { const m = id.match(/^(.*)-([abc])$/); return m ? m[1] : null };
 function noteBox(key) {
   const ta = document.createElement("textarea"); ta.id = `note-${key}`; ta.placeholder = "Anything else about this one";
   let timer = null;
@@ -107,7 +107,10 @@ ROWS.forEach(r => {
   left.querySelector(".spec").textContent = `now: ${r.now}`;
   left.querySelector(".detail").textContent = "proposed: " + (r.detail || "");
   const p = pairOf(r.id);
-  if (p) { const other = ROWS.find(x => x.id !== r.id && pairOf(x.id) === p); if (other) left.querySelector(".pair").textContent = `One of two for the same sound, with ${String(other.n).padStart(2, "0")}: keep one.` }
+  if (p) {
+    const others = ROWS.filter(x => x.id !== r.id && pairOf(x.id) === p).map(x => String(x.n).padStart(2, "0"));
+    if (others.length) left.querySelector(".pair").textContent = `One of ${others.length + 1} for the same sound, with ${others.join(" and ")}: keep one.`;
+  }
   const plays = left.querySelector(".plays");
   [["Now", r.src_now, r.src_now ? "" : "silent"], ["Proposed", r.src_new, ""]].forEach(([label, src, note]) => {
     const b = document.createElement("button"); b.className = "play"; b.type = "button"; b.setAttribute("aria-pressed", "false");
@@ -148,6 +151,7 @@ QUESTIONS.forEach(q => {
   });
   el.append(t, tags, noteBox(key), savedMark(key)); qs.appendChild(el);
 });
+if (!QUESTIONS.length) document.getElementById("qh").hidden = true;
 function progress() {
   const n = ROWS.filter(r => state[r.key].tags.length || state[r.key].note).length;
   const m = QUESTIONS.filter(q => { const s = state[`q-${q.id}-r${ROUND}`]; return s.tags.length || s.note }).length;

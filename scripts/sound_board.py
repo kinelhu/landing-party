@@ -52,6 +52,9 @@ def synth_wav(args, tmp):
     return out
 
 
+AF = None  # (the main voice's filter: set per card by the callers, e.get("af"))
+
+
 def burst(out, files, speed, volume, every, shots, layers=(), rounds=1, gap=0, synth=None, dur=None):
     """shots of the files in turn, every ticks apart, at speed and volume, to a wav (silence for "none"). Each shot may be
     rounds rounds gap ticks apart (a burst), and each round may lay more sounds over it: layers, a list of
@@ -62,7 +65,7 @@ def burst(out, files, speed, volume, every, shots, layers=(), rounds=1, gap=0, s
         return
     args, parts, n = ["ffmpeg", "-loglevel", "error", "-y"], [], 0
     tmp = os.path.dirname(out)
-    voices = ([{"files": files, "speed": speed, "volume": volume, "offset": 0}] if files else []) + list(layers)
+    voices = ([{"files": files, "speed": speed, "volume": volume, "offset": 0, "af": AF}] if files else []) + list(layers)
     if synth:
         voices.append({"synth": synth, "speed": 1.0, "volume": 1.0, "offset": 0})
     for i in range(shots):
@@ -71,8 +74,10 @@ def burst(out, files, speed, volume, every, shots, layers=(), rounds=1, gap=0, s
                 src = synth_wav(v["synth"], tmp) if v.get("synth") else os.path.join(DATA, v["files"][(i * rounds + r) % len(v["files"])])
                 args += ["-i", src]
                 delay = int((i * every + r * gap + v.get("offset", 0)) / 60 * 1000)
-                parts.append("[%d:a]aresample=%d,asetrate=%d,aresample=%d,volume=%.2f,adelay=%d|%d[a%d]"
-                             % (n, RATE, int(RATE * v.get("speed", 1.0)), RATE, v.get("volume", 1.0), delay, delay, n))
+                # (af: an ffmpeg filter on this voice, round five's propeller beat: tremolo, highpass.)
+                af = ("," + v["af"]) if v.get("af") else ""
+                parts.append("[%d:a]aresample=%d,asetrate=%d,aresample=%d,volume=%.2f%s,adelay=%d|%d[a%d]"
+                             % (n, RATE, int(RATE * v.get("speed", 1.0)), RATE, v.get("volume", 1.0), af, delay, delay, n))
                 n += 1
     mix = ";".join(parts) + ";" + "".join("[a%d]" % i for i in range(n)) + "amix=inputs=%d:normalize=0" % n
     mix += (",atrim=0:%.2f,afade=t=out:st=%.2f:d=0.4" % (dur, max(0, dur - 0.4)) if dur else "") + "[o]"
@@ -103,8 +108,11 @@ def clips(d):
             if tag == "now":
                 burst(wav, files, speed, vol, e.get("was_every", e["every"]), e["shots"], dur=e.get("dur"))
             else:
+                global AF
+                AF = e.get("af")
                 burst(wav, files, speed, vol, e["every"], e["shots"], e.get("layers", []), e.get("rounds", 1), e.get("gap", 0),
                       e.get("synth"), e.get("dur"))
+                AF = None
             mp3 = os.path.join(d, e["id"] + "-" + tag + ".mp3")
             subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", wav, "-af", "apad=pad_dur=0.3", "-c:a", "libmp3lame",
                             "-b:a", "96k", mp3], check=True)
@@ -146,8 +154,11 @@ def main():
             if tag == "now":
                 burst(wav, files, speed, vol, e.get("was_every", e["every"]), e["shots"], dur=e.get("dur"))
             else:
+                global AF
+                AF = e.get("af")
                 burst(wav, files, speed, vol, e["every"], e["shots"], e.get("layers", []), e.get("rounds", 1), e.get("gap", 0),
                       e.get("synth"), e.get("dur"))
+                AF = None
             segment(seg, img, wav)
             segs.append(seg)
     lst = os.path.join(tmp, "list.txt")

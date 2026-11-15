@@ -15,7 +15,7 @@ def faction(r):
     i = r["id"]
     if i.startswith(("gs-", "harrier")):
         return "Grubstake"
-    if i.startswith(("kh-", "drone")):
+    if i.startswith(("kh-", "drone", "dome", "orbital")):
         return "Kessler-Hayashi"
     if i.startswith("player"):
         return "Player"
@@ -35,10 +35,24 @@ for r in man:
 settled = ["Grubstake machine-gun buggy and Scorcher", "Grubstake slug buggy", "Grubstake tank cannon",
            "Grubstake harrier's gun", "Kessler-Hayashi trooper's laser", "Kessler-Hayashi tank cannon",
            "Kessler-Hayashi Tesla", "Kessler-Hayashi laser drone", "Kessler-Hayashi Aegis and railgunner",
-           "Arc flamer's bolt"]
+           "Arc flamer's bolt",
+           # (Round four's twelve, in the mod since 0.2.425.)
+           "Dozer's ram", "Grubstake light engine", "Kessler-Hayashi light and heavy drives", "Grubstake steps",
+           "The player's troops' steps", "Light, heavy and drone deaths", "Strike force pods' klaxon",
+           "A camp's landing roar", "A mast going up"]
+TEXT = {
+    4: ("Sounds, round four", "Movement, deaths, the last silent weapons and the events you should hear. Play Now, then "
+        "Proposed, and mark each: keep it, drop it, or say how to change it. Where two cards propose the same sound, keep "
+        "the one you prefer and drop the other. Nothing goes into the mod until it is kept here."),
+    5: ("Sounds, round five", "Round four's twelve keeps are in the mod. Here are its four tweaks as you asked, and the "
+        "redos: the foot soldiers' deaths split into Kessler-Hayashi's machines and Grubstake's people, a harrier on an "
+        "engine and a propeller, a sapper's charge you can hear, a dome catch with electricity, and three orbital calls. "
+        "Where cards share a letter series (A, B, C), keep the one you prefer and drop the others."),
+}
 
 page = open(os.path.join(os.path.dirname(__file__), "sound_sheet.tmpl.html")).read()
-page = (page.replace("__ROUND__", str(ROUND)).replace("__ROWS__", json.dumps(rows))
+title, lede = TEXT.get(ROUND, ("Sounds, round %d" % ROUND, ""))
+page = (page.replace("__TITLE__", html.escape(title)).replace("__LEDE__", html.escape(lede)).replace("__ROUND__", str(ROUND)).replace("__ROWS__", json.dumps(rows))
         .replace("__QUESTIONS__", json.dumps(QUESTIONS)).replace("__SETTLED__", json.dumps(settled)))
 open(OUT, "w").write(page)
 print("%s: %d sounds, %d questions, %.1f MB" % (OUT, len(rows), len(QUESTIONS), os.path.getsize(OUT) / 1e6))
