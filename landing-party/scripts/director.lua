@@ -1289,10 +1289,21 @@ function director.salvage(s, owner, tick, forced)
     s.salvage_rng = {s = rng.new((game.surfaces[1] and game.surfaces[1].map_gen_settings.seed or 1) + 104729).s}
   end
   local r = s.salvage_rng
-  if not forced and rng.next(r) >= tun("salvage_chance") then return nil end
   local f = game.forces[owner]
   local surface = game.surfaces[1]
   if not (f and surface) then return nil end
+  if not forced then
+    -- (One at a time: none while a wreck lies uncollected.)
+    if s.salvage and #s.salvage > 0 then return nil end
+    -- (A player there in person, a character on this surface and not in the remote view.)
+    local here = false
+    for _, p in pairs(f.connected_players) do
+      if p.character and p.physical_surface == surface and p.controller_type == defines.controllers.character then here = true end
+    end
+    if not here and not storage.trace then return nil end
+    local era = math.max(1, (s.read and s.read.era) or 1)
+    if rng.next(r) >= tun("salvage_chance") / era then return nil end
+  end
   local sp = f.get_spawn_position(surface)
   local a = rng.next(r) * 2 * math.pi
   local d = tun("salvage_distance")
@@ -1304,9 +1315,49 @@ function director.salvage(s, owner, tick, forced)
   local cargo = era >= 3 and {{"processing-unit", 50}, {"low-density-structure", 20}}
     or era >= 2 and {{"advanced-circuit", 60}, {"steel-plate", 100}} or {{"electronic-circuit", 60}, {"iron-gear-wheel", 60}}
   for _, it in ipairs(cargo) do wreck.insert{name = it[1], count = it[2]} end
+  -- The loot box: one piece of gear from the era's pool, its quality rolled (prototypes present only: a mod off, its
+  -- piece or its quality left out).
+  local pool = {}
+  for _, name in ipairs(tun("salvage_gear")[math.min(3, era)] or {}) do
+    if prototypes.item[name] then pool[#pool + 1] = name end
+  end
+  local gear, quality
+  if #pool > 0 then
+    gear = pool[math.floor(rng.next(r) * #pool) + 1]
+    local x, q = rng.next(r), "normal"
+    for _, qs in ipairs(tun("salvage_quality")) do
+      x = x - qs[2]
+      if x < 0 then q = qs[1]; break end
+    end
+    quality = prototypes.quality[q] and q or "normal"
+    wreck.insert{name = gear, count = 1, quality = quality}
+  end
   for k = 1, 3 do
     local q = surface.find_non_colliding_position("crash-site-spaceship-wreck-small-" .. k, {p.x + 4 * k - 8, p.y + 3}, 8, 1)
     if q then surface.create_entity{name = "crash-site-spaceship-wreck-small-" .. k, position = q, force = "neutral"} end
+  end
+  -- Its survivors guard it (RimWorld's ship parts come guarded): 2 + 2 per era of a corporation at war's infantry, a tank
+  -- from era 2, standing by the wreck (stopped: they fight what comes, they do not go looking).
+  local guards = 0
+  -- (Its corporation: one at war, else the lull's own, held: a wreck in a lull, the held at war with nobody, had none.)
+  local corp = pick(s, owner, tick)
+  if not corp then
+    for _, c in ipairs(s.lull_corps or {}) do if c ~= "biotech" and faction.alive(c) > 0 then corp = c; break end end
+  end
+  if corp and corp ~= "biotech" and shared.CORPS[corp] then
+    local names = {}
+    for _ = 1, 2 + 2 * era do names[#names + 1] = rd.unit(corp, "lp-infantry") end
+    if era >= 2 then names[#names + 1] = rd.unit(corp, "lp-tank") end
+    for k, name in ipairs(names) do
+      local a2 = k / #names * 2 * math.pi
+      local q = prototypes.entity[name] and surface.find_non_colliding_position(name, {p.x + 7 * math.cos(a2),
+        p.y + 7 * math.sin(a2)}, 8, 0.5)
+      local u = q and surface.create_entity{name = name, position = q, force = shared.CORPS[corp].force}
+      if u then
+        guards = guards + 1
+        u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.by_enemy}
+      end
+    end
   end
   f.chart(surface, {{p.x - 16, p.y - 16}, {p.x + 16, p.y + 16}})
   local tag = f.add_chart_tag(surface, {position = p, text = "Crashed shuttle", icon = {type = "item", name = cargo[1][1]}})
@@ -1314,8 +1365,11 @@ function director.salvage(s, owner, tick, forced)
   s.salvage = s.salvage or {}
   table.insert(s.salvage, {wreck = wreck, tag = tag, owner = owner})
   s.salvaged = (s.salvaged or 0) + 1
-  shared.event("salvage", {pos = {p.x, p.y}, cargo = cargo[1][1]})
-  trace(string.format("salvage: a shuttle crashed at %.0f,%.0f with %d %s", p.x, p.y, cargo[1][2], cargo[1][1]))
+  s.salvage_guards = guards
+  s.salvage_gear = gear and {name = gear, quality = quality} or nil
+  shared.event("salvage", {pos = {p.x, p.y}, cargo = cargo[1][1], gear = gear, quality = quality, guards = guards, corp = corp})
+  trace(string.format("salvage: a shuttle crashed at %.0f,%.0f with %d %s and a %s %s, %d of %s's guarding it", p.x, p.y,
+    cargo[1][2], cargo[1][1], tostring(quality), tostring(gear), guards, tostring(corp)))
   return wreck
 end
 

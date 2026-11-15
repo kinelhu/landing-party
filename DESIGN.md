@@ -7341,6 +7341,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Salvage, rare and guarded** (0.2.413; the user, 2026-11-15: "We should stop further salvage until the player has
+  destroyed/collected the previous one. And it should be rare, especially later game when the player is generally
+  playing from map view or another planet"; "why not include (loot box style) a piece of gear with chance for
+  quality?"). salvage_chance 0.2 over the player's era (0.5 a lull before); none while a wreck lies uncollected; none
+  unless a player is on the surface in person (a character, not the remote view; waived while tracing, the sims have no
+  players). Guarded by 2 + 2 per era of a corporation's infantry, a tank from era 2, stopped by the wreck (one at war,
+  else the lull's own: a wreck in a lull had none, the held at war with nobody). Its loot box: one piece of gear from
+  the era's pool (shared salvage_gear: weapons and armour, equipment, modules), its quality rolled (normal 0.5,
+  uncommon 0.3, rare 0.14, epic 0.05, legendary 0.01), beside the bulk. Scenario director salvage: 4 guards and an
+  uncommon light armour; a lull with a wreck out brought none, one again once it was taken (with the rule off, 2 with
+  one out: seen failing).
 - **The research breakthrough** (0.2.412; docs/director.md, off-map beats). A director beat (beat_weights.research
   0.1, research_cost 1, always in the draw): the corporation at war picked as for a spree buys its next node at once
   (rd.choose, lent the fund and the fund then as it was). Nothing told; its new units are the tell. Panel "Research".

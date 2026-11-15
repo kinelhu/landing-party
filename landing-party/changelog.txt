@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.413
+Date: 2026-11-15
+  Changes:
+    - Salvage is rarer, and rarer still later in the game. There is never more than one wreck at a time, and only while you are on the planet in person.
+    - A crashed shuttle is guarded by its survivors, and holds a piece of gear of random quality besides its cargo.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.412
 Date: 2026-11-15
   Features:

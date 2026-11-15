@@ -449,9 +449,21 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- The bounty (docs/director.md, off-map beats): the player's building of most value the camps at war know, priced by
   -- headquarters, bounty_weight times as relevant to every camp for bounty_minutes or till it falls; tagged on the map.
   bounty_weight = 8, bounty_minutes = 15, bounty_cost = 1,
-  -- Lull salvage (docs/director.md, a lull's reward): salvage_chance of the lulls, a rival shuttle crashed
-  -- salvage_distance from the player's spawn, its cargo by the player's era; tagged, an alert on it. Named priors.
-  salvage_chance = 0.5, salvage_distance = 150,
+  -- Lull salvage (docs/director.md, a lull's reward): salvage_chance over the player's era of the lulls, a rival shuttle
+  -- crashed salvage_distance from the player's spawn, its cargo by the era; tagged, an alert on it. None while one lies
+  -- uncollected, none unless a player is on the surface in person (the user, 2026-11-15: "rare, especially later game
+  -- when the player is generally playing from map view or another planet"; 0.5 a lull until 0.2.413). Named priors.
+  salvage_chance = 0.2, salvage_distance = 150,
+  -- Its loot box (the user, 2026-11-15: "a piece of gear with chance for quality"): one piece from its era's pool, its
+  -- quality rolled by these shares, beside the bulk. Named priors.
+  salvage_gear = {
+    {"submachine-gun", "heavy-armor", "light-armor", "solar-panel-equipment", "night-vision-equipment"},
+    {"modular-armor", "energy-shield-equipment", "exoskeleton-equipment", "personal-roboport-equipment", "battery-equipment",
+      "personal-laser-defense-equipment", "speed-module-2", "productivity-module-2", "efficiency-module-2"},
+    {"power-armor", "power-armor-mk2", "fission-reactor-equipment", "energy-shield-mk2-equipment", "battery-mk2-equipment",
+      "personal-roboport-mk2-equipment", "speed-module-3", "productivity-module-3", "quality-module-3"},
+  },
+  salvage_quality = {{"normal", 0.5}, {"uncommon", 0.3}, {"rare", 0.14}, {"epic", 0.05}, {"legendary", 0.01}},
   -- The research breakthrough (docs/director.md, off-map beats): a corporation at war buys its next node of research at
   -- once, its fund untouched; research_cost of the budget. Its new units are the tell.
   research_cost = 1,
