@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.406
+Date: 2026-11-15
+  Changes:
+    - A strike force that loses half of its units breaks and retreats to be lifted out, without fighting on the way.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.405
 Date: 2026-11-15
   Changes:

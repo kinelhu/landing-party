@@ -90,6 +90,8 @@ function director.note_loss(owner, ent, cause, corp)
     -- (Its first hit, for the warning's lead: told to first loss.)
     local key = s.strike_unit[cause.unit_number]
     local k = s.strikes and s.strikes[key]
+    -- (Broken, it razes nothing more: tests.)
+    if k and k.broken then s.lost_after_break = (s.lost_after_break or 0) + 1 end
     if k and not k.hit then
       k.hit = game.tick
       shared.event("strike_hit", {key = key, lead = game.tick - k.warned, pos = {ent.position.x, ent.position.y}})
@@ -333,7 +335,10 @@ local function tell(owner, key, ...)
   end
 end
 
+local morale -- (below, after walk_back)
+
 function director.tick(tick)
+  if tick % 300 == 150 and storage.director then morale(storage.director, tick) end
   if tick % 3600 ~= 0 then return end
   local s = st()
   -- (Its state a minute, on or off, and the minute's losses on each side: the event stream.)
@@ -880,6 +885,7 @@ war.on_strike_landed = function(key, units)
   local k = s and s.strikes and s.strikes[key]
   if not k then for _, u in ipairs(units) do if u.valid then u.destroy() end end; return end
   s.strike_landed = (s.strike_landed or 0) + #units
+  k.landed_n = (k.landed_n or 0) + #units
   s.strike_unit = s.strike_unit or {}
   if not k.landed_at and units[1] then
     k.landed_at = {units[1].position.x, units[1].position.y}
@@ -934,6 +940,25 @@ local function walk_back(k, tick, truce)
   return n
 end
 
+-- Its strike forces' morale, every 5 s: one that has lost strike_break of those landed breaks, walks back without
+-- fighting (walk_back's truce: distraction none) and is lifted out where it landed; repelled, the player's win short of
+-- killing them all (4 of 38 were, against a base nobody defended: railbase_end, 0.2.394).
+morale = function(s, tick)
+  for key, k in pairs(s.strikes or {}) do
+    if k.at and k.landed_at and not k.lift_at and not k.broken and (k.landed_n or 0) > 0 then
+      local live = 0
+      for _, u in ipairs(k.units) do if u.valid then live = live + 1 end end
+      if live > 0 and live <= k.landed_n * (1 - tun("strike_break")) then
+        k.broken = true
+        s.strikes_repelled = (s.strikes_repelled or 0) + 1
+        walk_back(k, tick, true)
+        shared.event("strike_broken", {key = key, live = live, landed = k.landed_n})
+        trace(string.format("strike force %d broke: %d of %d left, walking back to be lifted", key, live, k.landed_n))
+      end
+    end
+  end
+end
+
 local function strike_over(s, key, k, why)
   local b, mine = storage.bases[k.base], {}
   local live = {}
@@ -975,10 +1000,10 @@ function director.strikes(s, tick)
       for _, u in ipairs(k.units) do if u.valid then live[#live + 1] = u; cx, cy = cx + u.position.x, cy + u.position.y end end
       k.units = live
       local landed = tick - k.at > 2 * 3600
-      if landed and #live == 0 then strike_over(s, key, k, k.lift_at and "lifted" or "finished")
+      if landed and #live == 0 then strike_over(s, key, k, k.broken and "repelled" or k.lift_at and "lifted" or "finished")
       elseif k.lift_at then
         -- Walking back: lifted where they landed, or wherever they are at lift_at.
-        if tick >= k.lift_at then strike_over(s, key, k, "lifted")
+        if tick >= k.lift_at then strike_over(s, key, k, k.broken and "repelled" or "lifted")
         else
           local back = {}
           for _, u in ipairs(live) do
@@ -989,7 +1014,7 @@ function director.strikes(s, tick)
             else back[#back + 1] = u end
           end
           k.units = back
-          if #back == 0 then strike_over(s, key, k, "lifted") end
+          if #back == 0 then strike_over(s, key, k, k.broken and "repelled" or "lifted") end
         end
       elseif tick >= k.till and k.landed_at then
         local n = walk_back(k, tick)

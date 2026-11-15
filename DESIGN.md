@@ -7341,6 +7341,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Strike forces break** (0.2.406; the user, 2026-11-15: strike forces the player can beat). RimWorld's morale: a
+  strike force that has lost strike_break (0.5, a named prior) of those landed breaks, walks back with distraction none
+  and is lifted out where it landed: repelled, untold (the user: "No messages!!!!!"). Checked every 5 s. Before, 4 of
+  38 forces on railbase_end were finished and the rest fought their 8 minutes out. Scenario director repel: a focus
+  strike of 16 at a factory ringed by 16 gun turrets on uranium rounds breaks at 7 left and razes nothing after; with
+  strike_break 1 it never breaks (the check seen failing). (40 against eight guns on piercing rounds, and 36 against
+  16, lost 9 and 10 and their tanks took the guns.)
 - **Told as RimWorld tells it** (0.2.405; the user, 2026-11-15: "I really don't like the way you're broadcasting lulls
   and strikes... look at how rimworld does it"). The storyteller is never heard: no notice of a lull, a spree, a surge,
   a focus or a climax, no forecast, no map tag on a focus (0.2.393 to 0.2.404 read them all out, each with its

@@ -475,6 +475,9 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- A strike force's time in the field before it walks back to its landing point (director.strikes), and the most it
   -- takes to get there before what is left is lifted out.
   strike_minutes = 8, lift_minutes = 3,
+  -- Its morale (RimWorld's raiders flee when hurt; the user, 2026-11-15, strike forces the player can beat): it breaks
+  -- and walks back to be lifted once this share of those landed is lost. A named prior, not measured.
+  strike_break = 0.5,
   -- A fun director (Fable's consult, docs/reviews/2026-11-15-fun-director-consult.md; the user: "please do your best to
   -- create a fun director"). Telegraphed: a strike force told warn_minutes before its pods (the orbital cannon's paint
   -- the precedent), a climax's climax_warn; steady and gentle tell each beat as they draw it, forecast_minutes at least

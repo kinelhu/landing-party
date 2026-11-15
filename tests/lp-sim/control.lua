@@ -7423,6 +7423,37 @@ scenarios.director = function()
       S.farm = lp("farm_arrive", 1)
     end)
   end
+  -- LP_MIX=repel: a focus strike at the player's factory ringed by gun turrets: the force loses half of those landed,
+  -- breaks, walks back untold razing nothing and is lifted, repelled (0.2.406, RimWorld's morale; the user,
+  -- 2026-11-15: strike forces the player can beat).
+  if params.mix == "repel" then
+    schedule(120, function()
+      -- (Its points so that about 16 land, against 16 guns on uranium rounds: 40 against eight on piercing, and 36 against
+      -- 16, lost 9 and 10 and their tanks took the guns; never broke.)
+      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100, points_per_worth = 0.18}})
+      flatten(-30, -30, 30, 30)
+      for x = -16, 16, 4 do for y = -16, 16, 8 do
+        surface().create_entity{name = "assembling-machine-2", position = {x + 0.5, y + 0.5}, force = "player"}
+      end end
+      for a = 0, 15 do
+        local g = surface().create_entity{name = "gun-turret", position = {math.floor(24 * math.cos(a * math.pi / 8)) + 0.5,
+          math.floor(24 * math.sin(a * math.pi / 8)) + 0.5}, force = "player"}
+        if g then g.insert{name = "uranium-rounds-magazine", count = 200} end
+      end
+    end)
+    schedule(600, function() S.said = lp("director_cmd", "focus", {0, 0}) end)
+    schedule(END - 60, function()
+      local d = lp("director") or {}
+      info(string.format("director repel: %s; %s landed, %s repelled, %s over (%s finished), %s razed after it broke, told %s",
+        tostring(S.said), tostring(d.strike_landed), tostring(d.strikes_repelled), tostring(d.strikes_over),
+        tostring(d.strikes_finished), tostring(d.lost_after_break), serpent.line(d.tell_keys)))
+      -- (Untold: the user, 2026-11-15, "No messages!!!!!"; its retreat is seen, not read.)
+      check("director: repel, the strike force broke at half, untold, and razed nothing after",
+        (d.strikes_repelled or 0) == 1 and not (d.tell_keys or {})["lp.director-strike-broken"] and (d.lost_after_break or 0) == 0,
+        string.format("%s repelled, %s razed after", tostring(d.strikes_repelled), tostring(d.lost_after_break)))
+    end)
+    return
+  end
   -- LP_MIX=cmd: its debug panel's hand (director.cmd, remote director_cmd), each action and what it did: on, a spree for
   -- Serenity (its pace halved), the beat ended (its pace back), a lull (every truce on), ended (the truces off), the
   -- budget filled and emptied, a climax (its strike force told climax_warn ahead), off (not active).
