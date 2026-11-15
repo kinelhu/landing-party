@@ -7469,6 +7469,36 @@ scenarios.director = function()
     end)
     return
   end
+  -- LP_MIX=salvage: a lull's salvage (0.2.411): forced, a shuttle wrecked salvage_distance from the player's spawn with
+  -- its cargo, tagged; emptied, its tag gone and counted taken.
+  if params.mix == "salvage" then
+    schedule(120, function() lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100}}) end)
+    schedule(600, function()
+      S.said = lp("director_cmd", "salvage")
+      local d = lp("director") or {}
+      local w = d.salvage and d.salvage[1]
+      S.wreck = w and w.wreck
+      S.tag = w and w.tag and w.tag.valid
+      S.items = S.wreck and S.wreck.valid and S.wreck.get_inventory(defines.inventory.chest).get_item_count() or 0
+      S.dist = S.wreck and math.sqrt(S.wreck.position.x ^ 2 + S.wreck.position.y ^ 2)
+      S.tagref = w and w.tag
+      if S.wreck and S.wreck.valid then S.wreck.get_inventory(defines.inventory.chest).clear() end
+    end)
+    schedule(600 + 600, function()
+      local d = lp("director") or {}
+      S.taken, S.gone = d.salvage_taken, not (S.tagref and S.tagref.valid)
+    end)
+    schedule(END - 60, function()
+      info(string.format("director salvage: %s; %s items, %s from spawn, tagged %s; emptied, taken %s, tag gone %s",
+        tostring(S.said), tostring(S.items), tostring(S.dist and math.floor(S.dist)), tostring(S.tag), tostring(S.taken),
+        tostring(S.gone)))
+      check("director: salvage, a wreck with its cargo, tagged; emptied, taken and its tag gone", S.said == "salvage"
+        and S.items > 0 and S.tag and S.dist and math.abs(S.dist - lp("director_prior", "salvage_distance")) < 45
+        and S.taken == 1 and S.gone, string.format("%s, %s items, %s off, tagged %s, taken %s, gone %s", tostring(S.said),
+        tostring(S.items), tostring(S.dist), tostring(S.tag), tostring(S.taken), tostring(S.gone)))
+    end)
+    return
+  end
   -- LP_MIX=sweep: the breakthrough sweep (0.2.410): six unguarded clusters of the player's, 20 tiles apart in a row 150
   -- from the camp, the first known; a surge (its camps committed): a raid razes the first and sweeps on down the row.
   -- LP_MIX=sweepoff: no surge, the camp raids at its own pace: one cluster a raid, no sweep.

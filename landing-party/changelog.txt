@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.411
+Date: 2026-11-15
+  Features:
+    - Salvage: during some lulls a rival shuttle crashes near your base with useful cargo, marked on your map with an alert.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.410
 Date: 2026-11-15
   Features:

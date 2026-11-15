@@ -449,6 +449,9 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- The bounty (docs/director.md, off-map beats): the player's building of most value the camps at war know, priced by
   -- headquarters, bounty_weight times as relevant to every camp for bounty_minutes or till it falls; tagged on the map.
   bounty_weight = 8, bounty_minutes = 15, bounty_cost = 1,
+  -- Lull salvage (docs/director.md, a lull's reward): salvage_chance of the lulls, a rival shuttle crashed
+  -- salvage_distance from the player's spawn, its cargo by the player's era; tagged, an alert on it. Named priors.
+  salvage_chance = 0.5, salvage_distance = 150,
   -- Step 3 (decided overnight 2026-11-14, for review): a drop wave, wave_size landings of one corporation at once (the
   -- landing queue, each seeing the last), wave_cost; its camps an expedition (not counted against the camp cap, no
   -- reliefs, the landing clock untouched) until expedition_minutes, then the user's settle rule (2026-11-14): settles

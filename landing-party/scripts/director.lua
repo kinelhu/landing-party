@@ -376,6 +376,7 @@ function director.tick(tick)
   if tick % 300 == 150 and storage.director then morale(storage.director, tick) end
   if tick % 60 == 30 and storage.director and storage.director.masts then masts_tick(storage.director, tick) end
   if tick % 60 == 30 and storage.director and storage.director.bounty then bounty_tick(storage.director, tick) end
+  if tick % 300 == 200 and storage.director and storage.director.salvage then director.salvage_tick(storage.director) end
   if tick % 3600 ~= 0 then return end
   local s = st()
   -- (Its state a minute, on or off, and the minute's losses on each side: the event stream.)
@@ -1254,6 +1255,61 @@ end
 -- `corps`: the corporations held, those of the beat that earned it (the user, 2026-11-14, agreed): the others keep
 -- their own pace. Held all, on the start save the lulls took more of Kessler-Hayashi's own pressure than its sprees
 -- added (the player's buildings lost: off 1,155, steady 607, chaotic 352). None given (the panel's "Lull now"): all.
+-- A lull's reward, salvage_chance of them (or `forced`): a rival shuttle crashed salvage_distance from the player's
+-- spawn, the vanilla crash site's wrecks, its cargo by the player's era; a tag and an alert on it (a thing in the world,
+-- RimWorld's blue letter; no message), the alert gone once it is emptied.
+function director.salvage(s, owner, tick, forced)
+  -- (Its own stream: drawn from the beats' it would shift every beat after the first lull.)
+  if not s.salvage_rng then
+    s.salvage_rng = {s = rng.new((game.surfaces[1] and game.surfaces[1].map_gen_settings.seed or 1) + 104729).s}
+  end
+  local r = s.salvage_rng
+  if not forced and rng.next(r) >= tun("salvage_chance") then return nil end
+  local f = game.forces[owner]
+  local surface = game.surfaces[1]
+  if not (f and surface) then return nil end
+  local sp = f.get_spawn_position(surface)
+  local a = rng.next(r) * 2 * math.pi
+  local d = tun("salvage_distance")
+  local p = surface.find_non_colliding_position("crash-site-spaceship-wreck-big-1", {sp.x + math.cos(a) * d,
+    sp.y + math.sin(a) * d}, 40, 1)
+  local wreck = p and surface.create_entity{name = "crash-site-spaceship-wreck-big-1", position = p, force = "neutral"}
+  if not wreck then return nil end
+  local era = (s.read and s.read.era) or 1
+  local cargo = era >= 3 and {{"processing-unit", 50}, {"low-density-structure", 20}}
+    or era >= 2 and {{"advanced-circuit", 60}, {"steel-plate", 100}} or {{"electronic-circuit", 60}, {"iron-gear-wheel", 60}}
+  for _, it in ipairs(cargo) do wreck.insert{name = it[1], count = it[2]} end
+  for k = 1, 3 do
+    local q = surface.find_non_colliding_position("crash-site-spaceship-wreck-small-" .. k, {p.x + 4 * k - 8, p.y + 3}, 8, 1)
+    if q then surface.create_entity{name = "crash-site-spaceship-wreck-small-" .. k, position = q, force = "neutral"} end
+  end
+  f.chart(surface, {{p.x - 16, p.y - 16}, {p.x + 16, p.y + 16}})
+  local tag = f.add_chart_tag(surface, {position = p, text = "Crashed shuttle", icon = {type = "item", name = cargo[1][1]}})
+  f.add_custom_alert(wreck, {type = "item", name = cargo[1][1]}, {"lp.salvage-crashed"}, true) -- notice-ok: an alert on a thing in the world, not a message
+  s.salvage = s.salvage or {}
+  table.insert(s.salvage, {wreck = wreck, tag = tag, owner = owner})
+  s.salvaged = (s.salvaged or 0) + 1
+  shared.event("salvage", {pos = {p.x, p.y}, cargo = cargo[1][1]})
+  trace(string.format("salvage: a shuttle crashed at %.0f,%.0f with %d %s", p.x, p.y, cargo[1][2], cargo[1][1]))
+  return wreck
+end
+
+-- Its wrecks emptied: tag and alert gone.
+local function salvage_tick(s)
+  for i = #(s.salvage or {}), 1, -1 do
+    local w = s.salvage[i]
+    local empty = not w.wreck.valid or w.wreck.get_inventory(defines.inventory.chest).is_empty()
+    if empty then
+      if w.tag and w.tag.valid then w.tag.destroy() end
+      local f = game.forces[w.owner]
+      if f and w.wreck.valid then f.remove_alert{entity = w.wreck} end
+      s.salvage_taken = (s.salvage_taken or 0) + 1
+      table.remove(s.salvage, i)
+    end
+  end
+end
+director.salvage_tick = salvage_tick
+
 function director.start_lull(s, owner, tick, corps, base_minutes)
   local minutes = math.floor((base_minutes or tun("lull_minutes")) * ((tun("lull_scale") or {})[director.personality()] or 1))
   -- (Its truce on the camps truce_max at most, the rest of the lull the director's alone, no beat: a truce of 30 minutes
@@ -1293,6 +1349,7 @@ function director.start_lull(s, owner, tick, corps, base_minutes)
   s.lull_from, s.lull_owner, s.lull_corps = tick, owner, held
   s.lulls = (s.lulls or 0) + 1
   shared.event("beat", {kind = "lull", minutes = minutes, truce = truce, corps = held})
+  director.salvage(s, owner, tick)
   trace(string.format("lull: %s's operations against %s held %d minutes (no beat for %d)", table.concat(held, ", "), owner,
     truce, minutes))
 end
@@ -1378,6 +1435,8 @@ function director.cmd(action, arg)
     local at = type(arg) == "table" and {arg[1] or arg.x, arg[2] or arg.y} or nil
     if not director.start_surge(s, owner, tick, action == "focus", "forced", at) then return "no corporation at war with a camp standing" end
     return action == "focus" and (s.focus and "focus strike" or "surge (no focus known)") or "surge"
+  elseif action == "salvage" then
+    return director.salvage(s, owner, tick, true) and "salvage" or "no place for a wreck"
   elseif action == "bounty" then
     if s.bounty then return "a bounty is up" end
     return director.start_bounty(s, owner, tick, "forced") and "bounty" or "no target of the player's known"

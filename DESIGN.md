@@ -7341,6 +7341,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Lull salvage** (0.2.411; docs/director.md, a lull's reward). salvage_chance (0.5) of the lulls, by a stream of its
+  own (from the beats' it would shift every beat after the first lull), a rival shuttle crashes salvage_distance (150)
+  from the player's spawn: the vanilla crash site's wrecks, cargo by the player's era (circuits and gears; advanced
+  circuits and steel; processing units and low density structures). A chart tag and an alert on the wreck (RimWorld's
+  blue letter; no message), gone once it is emptied. The director's first gift; every other beat is a threat. Panel
+  "Salvage". Scenario director salvage: forced, 120 items 150 off, tagged; emptied, taken and the tag gone; kept full,
+  neither (the check seen failing).
 - **The breakthrough sweep** (0.2.410; docs/director.md 9f, the user's proposal of 2026-11-14). A raid razes within 16
   of its target and goes home, while a Synthexis wave through a gap broke up to 6,154 buildings. Now a raid of a
   corporation the director has committed (a surge or a focus strike; never at gentle) that razed its target having lost
