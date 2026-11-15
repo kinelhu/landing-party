@@ -1,6 +1,7 @@
 # Landing Party: mod portal page (draft)
 
-Drafted 2026-11-10 for the user to edit, brought up to 0.2.339 on 2026-11-12; nothing here is published. Paste the part below the line into the portal's
+Drafted 2026-11-10 for the user to edit, brought up to 0.2.339 on 2026-11-12 and to 0.2.427 (released as 0.3.0) on
+2026-11-16; nothing here is published. Paste the part below the line into the portal's
 "Information" field. Placeholders in [square brackets].
 
 Portal fields:
@@ -10,7 +11,10 @@ Portal fields:
 - **Tags:** Combat, Enemies, Planets (if offered), Big mod
 - **License:** MIT
 - **Source:** [repository link, if published]
+- **Version:** 0.3.0, a public beta
 - **Gallery:** docs/release/gallery/*.jpg, in order (captions below, under "Gallery captions")
+- **Loops in the text:** media/release/gifs/, each an MP4 (a few hundred kB; the portal plays mp4 and webm inline with
+  the image syntax) and a GIF fallback (3 to 8 MB). Placeholders [gif: name] mark where each goes, once hosted.
 - **Thumbnail:** landing-party/thumbnail.png (in the mod; 144 by 144)
 
 ---
@@ -27,16 +31,47 @@ own economies. They fight you, each other and the biters.
 raids what you leave unguarded, skims your belts, strips your ore and drives Killdozers through your walls. It steals
 more than it destroys, and what it takes sits in its yard until you come for it.
 
+[gif: flak]
+
 **Kessler-Hayashi** arrives after your first rocket. An armed contractor that lives in orbit, it pushes a line of posts
 toward you, cuts your outposts off, besieges your walls with mortars dropped from orbit and calls orbital strikes on
 them. Its laser lines, shield domes, lightning tanks and blue arc flamers are the hardest defences on the planet, and
 it clears the biter nests round its camps with railgunners, more of them as the biters evolve.
+
+[gif: arcflamer] [gif: tesla]
 
 **Synthexis** takes over the biter nests. It breeds its own strains in farms of captured spawners and sends waves with
 intent: it scouts your walls, finds the weak face, and learns from what kills its waves.
 
 Each faction researches, fields its own units with their own look and sound, and answers what you do to it. They choose
 between raids, sieges, thefts and air strikes by what your defences can and cannot stop.
+
+[gif: prism] [gif: bombers]
+
+## Headquarters
+
+Above the camps, Grubstake's and Kessler-Hayashi's headquarters run the war. They announce nothing: their attacks come
+in waves with lulls between them, and you feel the pace rather than read it.
+
+- **Strike forces:** headquarters drops a force by pod beside something it wants, at the point your turrets reach
+  least. Grubstake goes for your power and the pumps that feed your boilers; Kessler-Hayashi for your rocket silos,
+  landing pads and labs; anyone for a train station, your roboports or your oil. A gun that keeps killing their units
+  becomes a target itself, and so do your army's barracks. The force fights until it has lost too many, then walks home
+  to its camp, where its survivors join the garrison or leave on the camp's rocket. Those you catch on the way never
+  reach it.
+- **Warning:** a strike force is told when it lands. Your radar sees its pods coming before that, where it covers the
+  ground they come down on. A strike at your power is always told ahead, its target marked on the map, and the
+  corporations hold their other attacks on you while it is out.
+- **Units chosen for the target:** a strike force brings what counters the guns and troops guarding what it came for.
+  Your army, waiting where its pods come down, is the answer to it.
+- **And more:** a launch jammer mast that keeps pausing your rocket silo; a blackout mast that shuts down your radars; a
+  bounty on one of your buildings, every camp's first target for a while; a crashed shuttle with salvage and a piece of
+  gear inside, guarded by its crew, claimed by its corporation if you leave it; export contracts, garrison rotations,
+  joint strikes by two corporations, and research jumps that bring new units to the field.
+
+[gif: pods] [gif: strike-fight] [gif: walk-home]
+
+The Director setting picks its temper: Steady, Gentle, Chaotic, or Off for the factions acting alone.
 
 ## Your side
 
@@ -59,18 +94,28 @@ between raids, sieges, thefts and air strikes by what your defences can and cann
 - **Spoils:** each faction's technology can be taken from its wreckage: cluster shells, rail rifles, pheromone bait and
   more.
 
+[gif: cannon-strike]
+
+## Sound
+
+The corporations' units have their own weapons, engines, footsteps and deaths: Grubstake heavy and rough,
+Kessler-Hayashi tight and electric. Their events are heard too: a klaxon as a strike force's pods come down, the roar
+of a camp landing, a siege horn, a mast's clamps locking, a shield dome catching a shell, the rising charge of an
+orbital strike into its first impact.
+
 ## Settings
 
-A difficulty preset, and under it each faction on or off, when it arrives, its most bases, strength, aggression and
-income; the time between landings; revenge landings; Kessler-Hayashi's orbital strikes; Grubstake's theft; Synthexis's
-most cultures, largest attack and learning.
+The Director (above), a difficulty preset, and under it each faction on or off, when it arrives, its most bases,
+strength, aggression and income; the time between landings; revenge landings; Kessler-Hayashi's orbital strikes;
+Grubstake's theft; Synthexis's most cultures, largest attack and learning.
 
 ## Requirements and notes
 
 - Factorio 2.1 with Space Age.
 - Works on a new game or an existing one: the factions arrive by their own triggers (chemical science, the first rocket,
   the biters).
-- Multiplayer: [tested status at release].
+- Multiplayer: tested headless and with a client, the factions and headquarters in play, without a desync; two clients
+  using the army and the faction panels together are not yet covered.
 - No known incompatible mods. Report clashes on the discussion page.
 - A player manual (PDF): [link].
 
@@ -85,8 +130,10 @@ most cultures, largest attack and learning.
 7. Grubstake bomb drones diving on a squad of troopers.
 8. A Grubstake Killdozer charging through a wall.
 9. Your orbital cannons on a platform over Nauvis.
-10. An orbital strike from your cannons on a nest field.
+10. An orbital strike from your cannons on a Synthexis culture.
+11. A Kessler-Hayashi strike force's pods coming down beside a factory's labs.
 
-Loops (media/release/loops): bombers, flak, prism, tesla (the showcase film, `loops.py`), and strike: nine cannons'
-strike at full reach on a Synthexis culture (from the trailer's culture reel, 2026-11-12). And arcflamer: Kessler-Hayashi's arc flamer's bolts and
-blue burn (docs/review/clip-arcflamer.lua, 0.2.350).
+Loops (media/release/gifs, docs/release/gifs.sh; manifest.json has each one's caption, length and sizes): pods,
+strike-fight and walk-home (the director's film set, docs/release/strike-film.lua, 2026-11-16); tesla, bombers, prism,
+flak (the showcase film, 2026-11-12); arcflamer (0.2.350); cannon-strike (the trailer's culture reel, 2026-11-12).
+The 2026-11-12 sources stay in media/release/loops.
