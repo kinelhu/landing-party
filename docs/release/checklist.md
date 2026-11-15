@@ -27,8 +27,11 @@ manual revisited after calibration; an art direction pass before the playtest.
   twelve largest sheets (25 to 22 MB), so the zip would be about 145 MB; lossy (pngquant) about half, at a risk to the
   art. Not done: the art's files are untouched.
 - **The music credit** in the trailer's description and on the page.
-- **Multiplayer**: `scripts/mp.sh` showed no desync in two runs (2026-11-07); two clients using the army and the faction
-  GUIs are not yet covered.
+- **Multiplayer**: `scripts/mp.sh` showed no desync in two runs (2026-11-07). With the director (2026-11-15, 0.2.426):
+  heavy mode passed with ten of its beats out, and a client played 8 minutes at half speed through sieges, strikes and
+  the director's strike and joint commands, no desync (the joint itself impossible on that save: one corporation at
+  war). On the way: a ledger from before 0.2.325 crashed its first collection (fixed, 0.2.424). Not yet covered: two
+  clients using the army and the faction GUIs.
 - Whether the page links the manual PDF and the source repository.
 
 ## Still to do before upload
