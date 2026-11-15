@@ -52,6 +52,16 @@ echo "server up: $(rcon '/sc rcon.print(game.tick)') ticks"
 
 tick() { rcon '/sc rcon.print(game.tick)' | tail -1; }
 HEAVY="${LP_HEAVY:-90}"
+# The director's beats forced first (2026-11-15, 0.2.422), so heavy mode saves and reloads their state: strike forces
+# by kind, a joint strike, a contract, a rotation, salvage with its data core, a bounty, the masts, a lull and a climax.
+# (Two runs before the director had no beat of its own in either.)
+director_beats="strike strike|research strike|power strike|logistics joint contract rotation salvage|core bounty jammer blackout lull climax"
+rcon "/sc remote.call('landing-party', 'director_cmd', 'on')" > /dev/null
+for b in $director_beats; do
+  a="${b%%|*}"; arg="${b#*|}"; [ "$arg" = "$b" ] && arg=""
+  r=$(rcon "/sc rcon.print(tostring(remote.call('landing-party', 'director_cmd', '$a'${arg:+, '$arg'})))" | tail -1)
+  echo "  director $b: $r"
+done
 t0=$(tick); rcon "/toggle-heavy-mode" > /dev/null; sleep "$HEAVY"; rcon "/toggle-heavy-mode" > /dev/null; t1=$(tick)
 echo "heavy mode: ticks $t0 to $t1 ($((t1 - t0)) ticks)"
 
@@ -69,7 +79,7 @@ for l in $landers; do
       events+=("raid|${near%,*}|${near#*,}" "strip|${near%,*}|${near#*,}");;
   esac
 done
-events+=("wave|0|0" "land serenity 400|0|0" "raid|0|0")
+events+=("wave|0|0" "land serenity 400|0|0" "raid|0|0" "director strike|0|0" "director joint|0|0")
 
 if [ -z "${LP_NOCLIENT:-}" ]; then
   "$FACTORIO" --config "$C/config/config.ini" --mp-connect "127.0.0.1:$PORT" --disable-audio > "$OUT/client.log" 2>&1 &
@@ -83,7 +93,10 @@ if [ -z "${LP_NOCLIENT:-}" ]; then
     e="${events[$((i % ${#events[@]}))]}"; i=$((i + 1))
     verb="${e%%|*}"; rest="${e#*|}"; x="${rest%%|*}"; y="${rest#*|}"
     args=$(printf '"%s",' $verb); args="{${args%,}}"
-    rcon "/sc remote.call('landing-party', 'dev', $args, {$x, $y}, 1)" > /dev/null
+    case "$verb" in
+      director\ *) rcon "/sc remote.call('landing-party', 'director_cmd', '${verb#director }')" > /dev/null;;
+      *) rcon "/sc remote.call('landing-party', 'dev', $args, {$x, $y}, 1)" > /dev/null;;
+    esac
     echo "  $(tick): $verb at $x,$y"
     sleep 30
   done
