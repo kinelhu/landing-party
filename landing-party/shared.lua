@@ -437,12 +437,15 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- a surge or a focus only with two camps at war or more.
   surge_cost = 2, surge_factor = 2, surge_add = 1, surge_minutes = 15, focus_cost = 3, focus_weight = 4, focus_radius = 64,
   -- (supply back in steady's draw at 0.1, 0.2.393: the one beat the player can win outright, its pod tagged.)
-  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2, wave = 0.15, supply = 0.1, jammer = 0.15},
+  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2, wave = 0.15, supply = 0.1, jammer = 0.15, blackout = 0.15},
   -- The launch jammer (the user, 2026-11-15: "a camp building a massive jammer blocking rocket exports intermittently"):
   -- a Kessler-Hayashi camp at war within jam_radius of the player's rocket silo raises a mast; while it stands the
   -- silos within jam_radius of it are held jam_on seconds in every jam_on + jam_off, for jam_minutes; jam_cost. Drawn
   -- only with such a silo. Named priors.
   jam_radius = 500, jam_on = 30, jam_off = 60, jam_minutes = 20, jam_cost = 2,
+  -- The blackout mast: a Grubstake camp at war raises one, and the player's radars within blackout_radius of it are dark
+  -- for blackout_minutes (its strike forces then land unseen); drawn only with a radar of the player's in its reach.
+  blackout_radius = 300, blackout_minutes = 15, blackout_cost = 2,
   -- Step 3 (decided overnight 2026-11-14, for review): a drop wave, wave_size landings of one corporation at once (the
   -- landing queue, each seeing the last), wave_cost; its camps an expedition (not counted against the camp cap, no
   -- reliefs, the landing clock untouched) until expedition_minutes, then the user's settle rule (2026-11-14): settles

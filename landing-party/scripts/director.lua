@@ -261,21 +261,33 @@ local function rng_of(s)
   return s.rng
 end
 
--- A launch jammer's site: Kessler-Hayashi's camp at war nearest one of `owner`'s rocket silos within jam_radius.
-local function jam_site(owner)
-  if stance.standing("serenity", owner) ~= "enemy" then return nil end
-  local best, bd, silo
+-- Its masts (the user, 2026-11-15): a camp raises one, and while it stands the player's entities of `type` within its
+-- radius are held (disabled_by_script, a status in their GUI), `on` seconds of every `on` + `off`, or all along. The
+-- launch jammer, Kessler-Hayashi's, at rocket silos; the blackout mast, Grubstake's, at radars (strike forces then land
+-- unseen: strike's radar cover reads working radars only). Drawn only with such an entity in a camp's reach.
+local MASTS = {
+  jammer = {corp = "serenity", type = "rocket-silo", status = "lp.silo-jammed", radius = "jam_radius", on = "jam_on",
+    off = "jam_off", minutes = "jam_minutes", cost = "jam_cost", text = "Kessler-Hayashi jammer"},
+  blackout = {corp = "grubstake", type = "radar", status = "lp.radar-blacked-out", radius = "blackout_radius",
+    minutes = "blackout_minutes", cost = "blackout_cost", text = "Grubstake blackout mast"},
+}
+
+-- A mast's site: its corporation's camp at war nearest one of `owner`'s entities of its type within its radius.
+local function mast_site(kind, owner)
+  local m = MASTS[kind]
+  if stance.standing(m.corp, owner) ~= "enemy" then return nil end
+  local best, bd, near
   for _, b in pairs(storage.bases or {}) do
-    if b.corp == "serenity" and not b.fallen and not b.expedition and b.lander and b.lander.valid then
+    if b.corp == m.corp and not b.fallen and not b.expedition and b.lander and b.lander.valid then
       local lp = b.lander.position
-      for _, e in ipairs(b.lander.surface.find_entities_filtered{type = "rocket-silo", force = owner, position = lp,
-        radius = tun("jam_radius")}) do
+      for _, e in ipairs(b.lander.surface.find_entities_filtered{type = m.type, force = owner, position = lp,
+        radius = tun(m.radius)}) do
         local d = (e.position.x - lp.x) ^ 2 + (e.position.y - lp.y) ^ 2
-        if not bd or d < bd then best, bd, silo = b, d, e end
+        if not bd or d < bd then best, bd, near = b, d, e end
       end
     end
   end
-  return best, silo
+  return best, near
 end
 
 local function draw(s, owner)
@@ -285,8 +297,10 @@ local function draw(s, owner)
   -- (A surge with one camp too: its intensity is the cap on that camp's siege tier, the consult; a focus wants two.)
   local list = camps >= 2 and {"spree", "surge", "focus", "wave", "supply", "climax"} or {"spree", "surge", "wave", "supply",
     "climax"}
-  -- (The launch jammer only with a silo in a camp's reach and none up already.)
-  if not s.jam and jam_site(owner) then list[#list + 1] = "jammer" end
+  -- (A mast only with its target in a camp's reach and none of its kind up already.)
+  for _, kind in ipairs({"jammer", "blackout"}) do
+    if not (s.masts and s.masts[kind]) and mast_site(kind, owner) then list[#list + 1] = kind end
+  end
   local total = 0
   for _, k in ipairs(list) do total = total + (w[k] or 0) end
   local x = rng.next(s.rng) * total
@@ -306,7 +320,7 @@ end
 local function cost_of(beat)
   if beat == "climax" then return tun("cap") end
   return tun((beat == "surge" and "surge_cost") or (beat == "focus" and "focus_cost") or (beat == "wave" and "wave_cost")
-    or (beat == "supply" and "supply_cost") or (beat == "jammer" and "jam_cost") or "spree_cost")
+    or (beat == "supply" and "supply_cost") or (MASTS[beat] and MASTS[beat].cost) or "spree_cost")
 end
 
 -- The place on the player's ground its camps know best: their targets against the player, by cell of focus_radius,
@@ -355,11 +369,11 @@ local function tell(owner, key, ...)
   end
 end
 
-local morale, jam_tick -- (below: after walk_back, and after start_jam)
+local morale, masts_tick -- (below: after walk_back, and after start_mast)
 
 function director.tick(tick)
   if tick % 300 == 150 and storage.director then morale(storage.director, tick) end
-  if tick % 60 == 30 and storage.director and storage.director.jam then jam_tick(storage.director, tick) end
+  if tick % 60 == 30 and storage.director and storage.director.masts then masts_tick(storage.director, tick) end
   if tick % 3600 ~= 0 then return end
   local s = st()
   -- (Its state a minute, on or off, and the minute's losses on each side: the event stream.)
@@ -547,9 +561,10 @@ function director.tick(tick)
       local _, camps = at_war(owner)
       if camps < 2 then s.next_beat = "surge" end
     end
-    if s.next_beat == "jammer" then
+    if MASTS[s.next_beat] then
+      local kind = s.next_beat
       s.phase, s.next_beat = "fill", nil
-      if director.start_jam(s, owner, tick, why) then s.budget = s.budget - tun("jam_cost") end
+      if director.start_mast(s, kind, owner, tick, why) then s.budget = s.budget - tun(MASTS[kind].cost) end
       return
     end
     if s.next_beat == "supply" then
@@ -646,65 +661,67 @@ pods.handlers.supply = function(p, surface, pos)
   if s then crate_at(s, p.n, surface, {pos.x, pos.y}) end
 end
 
--- The launch jammer now: its mast raised by the camp, 20 tiles toward the silo; a chart tag on it while it stands (a
--- thing in the world, not a message). jam_tick holds the silos.
-function director.start_jam(s, owner, tick, why)
-  local b, silo = jam_site(owner)
+-- A mast now: raised by the camp 20 tiles toward its target, a chart tag on it while it stands (a thing in the world,
+-- not a message). masts_tick holds its targets.
+function director.start_mast(s, kind, owner, tick, why)
+  local m = MASTS[kind]
+  local b, near = mast_site(kind, owner)
   if not b then return false end
-  local lp, sp = b.lander.position, silo.position
+  local lp, sp = b.lander.position, near.position
   local dx, dy = sp.x - lp.x, sp.y - lp.y
   local len = math.max(1, math.sqrt(dx * dx + dy * dy))
   local mast = jammer.raise(b.lander.surface, {lp.x + dx / len * 20, lp.y + dy / len * 20}, b.force)
   if not mast then return false end
   local f = game.forces[owner]
-  s.jam = {mast = mast, owner = owner, base = b.id, from = tick, till = tick + tun("jam_minutes") * 3600, held = {},
-    tag = f and f.add_chart_tag(mast.surface, {position = mast.position, text = "Kessler-Hayashi jammer",
+  s.masts = s.masts or {}
+  s.masts[kind] = {mast = mast, owner = owner, base = b.id, from = tick, till = tick + tun(m.minutes) * 3600, held = {},
+    tag = f and f.add_chart_tag(mast.surface, {position = mast.position, text = m.text,
       icon = {type = "virtual", name = "signal-alert"}})}
-  s.jams = (s.jams or 0) + 1
+  s.mast_count = s.mast_count or {}
+  s.mast_count[kind] = (s.mast_count[kind] or 0) + 1
   s.beats = s.beats + 1
-  shared.event("beat", {kind = "jammer", corps = {"serenity"}, minutes = tun("jam_minutes"), pos = {mast.position.x,
-    mast.position.y}})
-  trace(string.format("launch jammer: camp %d's mast at %.0f,%.0f, %s's silos within %d held %d s in every %d, %d minutes (%s)",
-    b.id, mast.position.x, mast.position.y, owner, tun("jam_radius"), tun("jam_on"), tun("jam_on") + tun("jam_off"),
-    tun("jam_minutes"), why or "forced"))
+  shared.event("beat", {kind = kind, corps = {m.corp}, minutes = tun(m.minutes), pos = {mast.position.x, mast.position.y}})
+  trace(string.format("%s: camp %d's mast at %.0f,%.0f, %s's %s within %d held%s, %d minutes (%s)", kind, b.id,
+    mast.position.x, mast.position.y, owner, m.type, tun(m.radius), m.on and string.format(" %d s in every %d", tun(m.on),
+    tun(m.on) + tun(m.off)) or "", tun(m.minutes), why or "forced"))
   return true
 end
 
-local function jam_release(j)
+local function mast_release(j)
   for _, e in pairs(j.held) do
     if e.valid then e.disabled_by_script = false; e.custom_status = nil end
   end
   j.held = {}
 end
 
--- Every second while a jammer stands: the silos in its reach held its on-seconds of each cycle, a status in their GUI;
--- over at its minutes (the mast lowered) or when the player destroys it.
-jam_tick = function(s, tick)
-  local j = s.jam
-  if not j then return end
-  if not j.mast.valid or tick >= j.till then
-    jam_release(j)
-    if j.tag and j.tag.valid then j.tag.destroy() end
-    local killed = not j.mast.valid
-    if j.mast.valid then jammer.lower(j.mast) end
-    if killed then s.jams_killed = (s.jams_killed or 0) + 1 end
-    shared.event("jam_over", {why = killed and "destroyed" or "done", jammed = j.jammed or 0})
-    trace(string.format("launch jammer over: %s, %d silo-seconds held", killed and "destroyed" or "its time", j.jammed or 0))
-    s.jam = nil
-    return
-  end
-  local cycle = tun("jam_on") + tun("jam_off")
-  local on = ((tick - j.from) / 60) % cycle < tun("jam_on")
-  if on then
-    for _, e in ipairs(j.mast.surface.find_entities_filtered{type = "rocket-silo", force = j.owner, position = j.mast.position,
-      radius = tun("jam_radius")}) do
-      j.held[e.unit_number] = e
-      e.disabled_by_script = true
-      e.custom_status = {diode = defines.entity_status_diode.red, label = {"lp.silo-jammed"}}
-      j.jammed = (j.jammed or 0) + 1
+-- Every second while a mast stands: its targets in reach held (its on-seconds of each cycle, or all along), a status in
+-- their GUI; over at its minutes (the mast lowered) or when the player destroys it.
+masts_tick = function(s, tick)
+  for kind, j in pairs(s.masts) do
+    local m = MASTS[kind]
+    if not j.mast.valid or tick >= j.till then
+      mast_release(j)
+      if j.tag and j.tag.valid then j.tag.destroy() end
+      local killed = not j.mast.valid
+      if j.mast.valid then jammer.lower(j.mast) end
+      if killed then s.masts_killed = s.masts_killed or {}; s.masts_killed[kind] = (s.masts_killed[kind] or 0) + 1 end
+      shared.event("mast_over", {kind = kind, why = killed and "destroyed" or "done", held = j.jammed or 0})
+      trace(string.format("%s over: %s, %d entity-seconds held", kind, killed and "destroyed" or "its time", j.jammed or 0))
+      s.masts[kind] = nil
+    else
+      local on = not m.on or ((tick - j.from) / 60) % (tun(m.on) + tun(m.off)) < tun(m.on)
+      if on then
+        for _, e in ipairs(j.mast.surface.find_entities_filtered{type = m.type, force = j.owner, position = j.mast.position,
+          radius = tun(m.radius)}) do
+          j.held[e.unit_number] = e
+          e.disabled_by_script = true
+          e.custom_status = {diode = defines.entity_status_diode.red, label = {m.status}}
+          j.jammed = (j.jammed or 0) + 1
+        end
+      else
+        mast_release(j)
+      end
     end
-  else
-    jam_release(j)
   end
 end
 
@@ -1310,9 +1327,10 @@ function director.cmd(action, arg)
     local at = type(arg) == "table" and {arg[1] or arg.x, arg[2] or arg.y} or nil
     if not director.start_surge(s, owner, tick, action == "focus", "forced", at) then return "no corporation at war with a camp standing" end
     return action == "focus" and (s.focus and "focus strike" or "surge (no focus known)") or "surge"
-  elseif action == "jammer" then
-    if s.jam then return "a jammer is up" end
-    return director.start_jam(s, owner, tick, "forced") and "launch jammer" or "no Kessler-Hayashi camp at war near a silo"
+  elseif MASTS[action] then
+    if s.masts and s.masts[action] then return action .. " is up" end
+    return director.start_mast(s, action, owner, tick, "forced") and action or ("no " .. MASTS[action].corp
+      .. " camp at war near a " .. MASTS[action].type)
   elseif action == "climax" then
     -- Steady's climax now (the panel's "Climax now"): a focus surge whose strike force is climax_points strong, told
     -- climax_warn ahead, lull_max after it.

@@ -7341,6 +7341,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The blackout mast** (0.2.408). The launch jammer generalised to masts (director.lua MASTS: corporation, target type,
+  radius, cycle, minutes, cost). Grubstake's: a camp at war within blackout_radius (300) of one of the player's radars
+  raises one; the radars within its reach are dark (disabled_by_script, "Blacked out by Grubstake") for blackout_minutes
+  (15), back at once when it is destroyed. A strike force's radar cover reads working radars only, so in a blackout it
+  lands unseen. beat_weights.blackout 0.15, blackout_cost 2; panel "Blackout mast". Scenario director blackout: the
+  radar dark 121 of 121 s, back once the mast died; out of reach dark 0 (seen failing).
 - **The launch jammer** (0.2.407; the user, 2026-11-15: "a camp building a massive jammer blocking rocket exports
   intermittently"). A director beat (beat_weights.jammer 0.15, jam_cost 2), drawn only when a Kessler-Hayashi camp at war
   stands within jam_radius (500) of one of the player's rocket silos and no jammer is up: the camp raises a mast (the

@@ -7446,13 +7446,14 @@ scenarios.director = function()
     end
     schedule(660 + 181 * 60, function()
       local d = lp("director") or {}
-      S.up = d.jam and d.jam.mast and d.jam.mast.valid
-      if S.up then d.jam.mast.die("player") end
+      local j = d.masts and d.masts.jammer
+      S.up = j and j.mast and j.mast.valid
+      if S.up then j.mast.die("player") end
     end)
     schedule(660 + 185 * 60, function()
       local d = lp("director") or {}
       S.after = S.silo and S.silo.valid and S.silo.disabled_by_script
-      S.over, S.killed = d.jam == nil, d.jams_killed
+      S.over, S.killed = not (d.masts and d.masts.jammer), d.masts_killed and d.masts_killed.jammer
     end)
     schedule(END - 60, function()
       info(string.format("director jammer: %s; silo %s, held %d s, free %d s; mast up %s, after its death held %s, over %s, killed %s",
@@ -7460,10 +7461,60 @@ scenarios.director = function()
         tostring(S.killed)))
       local share = S.held / math.max(1, S.held + S.free)
       local want = lp("director_prior", "jam_on") / (lp("director_prior", "jam_on") + lp("director_prior", "jam_off"))
-      check("director: jammer, its mast holds the silo a third of the time", S.said == "launch jammer"
+      check("director: jammer, its mast holds the silo a third of the time", S.said == "jammer"
         and math.abs(share - want) < 0.1, string.format("%s, held %d of %d s", tostring(S.said), S.held, S.held + S.free))
       check("director: jammer, its mast destroyed the silo is free and it is over", S.up and S.after == false and S.over
         and S.killed == 1, string.format("up %s, held after %s, over %s, killed %s", tostring(S.up), tostring(S.after),
+        tostring(S.over), tostring(S.killed)))
+    end)
+    return
+  end
+  -- LP_MIX=blackout: Grubstake's blackout mast (0.2.408): a Grubstake camp, the player's powered radar 120 tiles from
+  -- it; forced, its mast dark the radar all along; the mast destroyed, the radar back and the mast's time over.
+  if params.mix == "blackout" then
+    schedule(120, function()
+      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100}})
+      S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    end)
+    schedule(4 * 3600, function()
+      local o = S.g and (lp("stats", S.g) or {}).origin
+      if not o then return end
+      local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
+      local at = {math.floor(o.x - o.x / len * 120), math.floor(o.y - o.y / len * 120)}
+      flatten(at[1] - 4, at[2] - 4, at[1] + 4, at[2] + 4)
+      S.radar = surface().create_entity{name = "radar", position = at, force = "player"}
+      local e = surface().create_entity{name = "electric-energy-interface", position = {at[1] + 3, at[2]}, force = "player"}
+      surface().create_entity{name = "medium-electric-pole", position = {at[1] + 1.5, at[2] + 2.5}, force = "player"}
+      if e then e.power_production, e.electric_buffer_size = 1e6, 1e7 end
+    end)
+    schedule(4 * 3600 + 600, function() S.said = lp("director_cmd", "blackout") end)
+    S.held, S.free = 0, 0
+    for t = 4 * 3600 + 660, 4 * 3600 + 660 + 120 * 60, 60 do
+      schedule(t, function()
+        if S.radar and S.radar.valid then
+          if S.radar.disabled_by_script then S.held = S.held + 1 else S.free = S.free + 1 end
+        end
+      end)
+    end
+    schedule(4 * 3600 + 660 + 121 * 60, function()
+      local d = lp("director") or {}
+      local j = d.masts and d.masts.blackout
+      S.up = j and j.mast and j.mast.valid
+      if S.up then j.mast.die("player") end
+    end)
+    schedule(4 * 3600 + 660 + 125 * 60, function()
+      local d = lp("director") or {}
+      S.after = S.radar and S.radar.valid and S.radar.disabled_by_script
+      S.over, S.killed = not (d.masts and d.masts.blackout), d.masts_killed and d.masts_killed.blackout
+    end)
+    schedule(END - 60, function()
+      info(string.format("director blackout: %s; radar %s, dark %d s, lit %d s; mast up %s, after its death dark %s, over %s, killed %s",
+        tostring(S.said), tostring(S.radar ~= nil), S.held, S.free, tostring(S.up), tostring(S.after), tostring(S.over),
+        tostring(S.killed)))
+      check("director: blackout, its mast darks the player's radar while it stands", S.said == "blackout" and S.held >= 115
+        and S.free <= 5, string.format("%s, dark %d of %d s", tostring(S.said), S.held, S.held + S.free))
+      check("director: blackout, its mast destroyed the radar is back and it is over", S.up and S.after == false and S.over
+        and S.killed == 1, string.format("up %s, dark after %s, over %s, killed %s", tostring(S.up), tostring(S.after),
         tostring(S.over), tostring(S.killed)))
     end)
     return
