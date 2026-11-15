@@ -7369,6 +7369,9 @@ Bugs and surprises the headless runs caught, each kept as a check:
   domehub's "its projector killed, their shells land": the guns fire on the camp's mining outpost 213 tiles off rather
   than the cluster at 150, so nothing falls there before or after (artillery flares made by script did not steer them;
   the projector's hub also stood under the lander's dome); its setup wants a site the camp's spread cannot reach.
+  Closed after 0.2.397: the check is the dome's, not the guns' choice of target, so once the projector dies the guns'
+  position fires 24 shells by script at the cluster's military targets (a shell made by script is caught as a fired
+  one is): 10 to 6 with it killed, 10 to 14 with it kept (the check seen failing).
 - **Fun, measured** (0.2.395). scripts/fun_report.py reads a run's events for the consult's measures: beats by kind,
   forecasts, the warning's lead to a strike force's first hit, strike forces the player finished, the share of the
   player's buildings lost inside a told window (a beat, or a strike force from its warning to its lift), losses in a

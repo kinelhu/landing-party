@@ -7299,6 +7299,24 @@ scenarios.domehub = function()
         S.built1 = mil(S.at)
         if S.pj.valid then S.pj.die("player") end
         S.built1b = mil(S.at)
+        -- Aimed: the guns pick their own targets and, once the camp had spread (0.2.380 on), chose an outpost 213
+        -- tiles off over the cluster at 150 (10 -> 14, failing since). The check is the dome's, not the guns' choice:
+        -- shells fired from the guns at the cluster's targets, two every 15 s for 3 minutes.
+        for k = 1, 12 do
+          schedule(t * 3600 + 3 * 3600 + k * 900, function()
+            local from = S.turrets[1] and S.turrets[1].valid and S.turrets[1].position or {S.at[1] + 150, S.at[2]}
+            local ts = {}
+            for _, e in pairs(surface().find_entities_filtered{position = S.at, radius = 60, force = "lp-serenity"}) do
+              if e.is_military_target then ts[#ts + 1] = e end
+            end
+            table.sort(ts, function(a, b) return a.unit_number < b.unit_number end)
+            for j = 1, math.min(2, #ts) do
+              local e = ts[(k * 2 + j) % #ts + 1]
+              surface().create_entity{name = "artillery-projectile", position = from, target = e.position, force = "player", speed = 1}
+            end
+            S.aimed = (S.aimed or 0) + math.min(2, #ts)
+          end)
+        end
       end)
       schedule(t * 3600 + 7 * 3600, function()
         S.built2 = mil(S.at)
@@ -7321,7 +7339,7 @@ scenarios.domehub = function()
     check("domehub: its dome caught their shells and the cluster stood", (pr.caught or 0) > 0 and S.built1 and S.built0
       and S.built1 >= S.built0 - 1, string.format("caught %s, %s -> %s", tostring(pr.caught), tostring(S.built0), tostring(S.built1)))
     check("domehub: its projector killed, their shells land", S.built2 and S.built1b and S.built2 < S.built1b,
-      string.format("%s -> %s", tostring(S.built1b), tostring(S.built2)))
+      string.format("%s -> %s, %s aimed", tostring(S.built1b), tostring(S.built2), tostring(S.aimed)))
   end)
 end
 
