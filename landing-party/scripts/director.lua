@@ -325,7 +325,10 @@ local function tell(owner, key, ...)
   -- (Told or held, counted: every beat told at default settings, scenario director's check.)
   if f and (#f.players > 0 or storage.trace) then
     local s = st()
-    if shared.notice(f, {key, ...}) then s.tell_told = (s.tell_told or 0) + 1
+    if shared.notice(f, {key, ...}) then
+      s.tell_told = (s.tell_told or 0) + 1
+      s.tell_keys = s.tell_keys or {}
+      s.tell_keys[key] = (s.tell_keys[key] or 0) + 1
     else s.tell_held = (s.tell_held or 0) + 1; s.tell_held_keys = s.tell_held_keys or {}; s.tell_held_keys[key] = true end
   end
 end
@@ -467,8 +470,9 @@ function director.tick(tick)
     trace(string.format("next beat: %s (costs %d; budget %.2f)%s", s.next_beat, cost_of(s.next_beat), s.budget,
       s.hold_till and string.format(", held till %d min", math.floor(s.hold_till / 3600)) or ""))
   end
-  -- The forecast (RimWorld's intercepted transmission): steady and gentle tell the beat drawn, by whom, forecast_minutes
-  -- at least before it comes; told once its corporation is known (a camp at war standing). Chaotic tells nothing.
+  -- The beat drawn and its corporation, fixed forecast_minutes at least before it comes (a camp at war standing). Not
+  -- told since 0.2.405 (the user, 2026-11-15, on RimWorld: the storyteller is never heard, a threat is told when it
+  -- arrives); kept as the beat's lead time and its event.
   if (s.phase == "fill" or s.phase == "lull") and s.next_beat and not s.told_at and director.personality() ~= "chaotic" then
     local kind = s.next_beat
     -- (In a lull its truce makes no corporation at war: the held ones are named, those with a camp standing.)
@@ -483,14 +487,12 @@ function director.tick(tick)
         s.next_corp = held[1]
       end
       if s.next_corp then
-        tell(owner, "lp.director-next-" .. kind, shared.CORPS[s.next_corp].name)
         s.told_at = tick
       end
     elseif kind == "surge" or kind == "focus" or kind == "climax" then
       local corps = at_war(owner)
       if #corps == 0 then table.sort(held); corps = held end
       if #corps > 0 then
-        tell(owner, kind == "climax" and "lp.director-next-climax" or "lp.director-next-surge", names(corps))
         s.told_at = tick
       end
     else s.told_at = tick end
@@ -836,26 +838,39 @@ local function strike(s, owner, corps, tick, mult, warn)
   s.reinforced = (s.reinforced or 0) + n
   s.points_sent = (s.points_sent or 0) + n
   s.strike_lead = lead.id
-  -- Told first (who, what, where, when), the pods minutes later: a chart tag at its target until it is over, an alert on
-  -- the player's building nearest it, a notice with its place. (Until 0.2.393 the pods came down in the tick of the
-  -- notice, out of radar cover, and the player learnt of it from the engine's alerts; Fable's fun consult.)
+  -- Told as RimWorld tells a raid (the user, 2026-11-15): when it lands, by director.on_strike_landed. Ahead only if the
+  -- player's radar sees where its pods come down (behind the lead camp): who, how many, where, when. A player who built
+  -- radar cover over the camps earns the lead time. (0.2.393 to 0.2.404 warned every strike at its target, the
+  -- director's intent read out; Fable's fun consult had asked for it.)
   local surface = lead.lander.surface
   local c = shared.CORPS[lead.corp]
-  local gps = string.format("[gps=%.0f,%.0f,%s]", tx, ty, surface.name)
+  local lp = lead.lander.position
+  -- (Seen: within a working radar's constant reveal, its prototype's nearby reach in chunks, quality's included. Not
+  -- LuaForce.is_chunk_visible: headless, with no player connected, a powered radar's own chunk read unseen.)
+  local seen = false
   if f then
-    k.tag = f.add_chart_tag(surface, {position = {tx, ty}, text = c.name .. " strike force",
-      icon = {type = "virtual", name = c.icon}})
-    local e = surface.find_entities_filtered{position = {tx, ty}, radius = 60, force = f, type = STRIKE_TYPES, limit = 1}[1]
-    if e then
-      for _, p in pairs(f.players) do
-        p.add_custom_alert(e, {type = "virtual", name = c.icon}, {"lp.director-strike-warn", c.name, n, minutes, gps}, true) -- notice-ok: a fair warning, the director's
+    local cx, cy = math.floor(lp.x / 32), math.floor(lp.y / 32)
+    for _, r in ipairs(surface.find_entities_filtered{type = "radar", force = f, position = lp, radius = 32 * 8}) do
+      local reach = r.prototype.get_max_distance_of_nearby_sector_revealed(r.quality) or 0
+      local rx, ry = math.floor(r.position.x / 32), math.floor(r.position.y / 32)
+      if r.status == defines.entity_status.working and math.abs(rx - cx) <= reach and math.abs(ry - cy) <= reach then
+        seen = true
+        break
       end
     end
   end
-  tell(owner, "lp.director-strike-warn", c.name, n, minutes, gps)
-  shared.event("strike_warn", {key = key, corp = lead.corp, n = n, pos = {tx, ty}, minutes = minutes, base = lead.id})
-  trace(string.format("strike force %d: %d units behind camp %d, at %.0f,%.0f, told %d minutes before its pods", key, n,
-    lead.id, tx, ty, minutes))
+  if seen then
+    k.seen = true
+    s.strike_seen = (s.strike_seen or 0) + 1
+    local gps = string.format("[gps=%.0f,%.0f,%s]", lp.x, lp.y, surface.name)
+    k.tag = f.add_chart_tag(surface, {position = {lp.x, lp.y}, text = c.name .. " pods inbound",
+      icon = {type = "virtual", name = c.icon}})
+    tell(owner, "lp.director-strike-seen", c.name, n, gps, minutes)
+  end
+  shared.event("strike_warn", {key = key, corp = lead.corp, n = n, pos = {tx, ty}, minutes = minutes, base = lead.id,
+    seen = seen or false})
+  trace(string.format("strike force %d: %d units behind camp %d, at %.0f,%.0f, its pods in %d minutes (%s)", key, n,
+    lead.id, tx, ty, minutes, seen and "seen by radar, told" or "unseen"))
   return n
 end
 
@@ -868,7 +883,20 @@ war.on_strike_landed = function(key, units)
   s.strike_unit = s.strike_unit or {}
   if not k.landed_at and units[1] then
     k.landed_at = {units[1].position.x, units[1].position.y}
+    s.strike_landings = (s.strike_landings or 0) + 1
     shared.event("strike_landed", {key = key, n = #units, pos = k.landed_at})
+    -- Told as it lands: a notice with its place, a tag there and an alert on its first unit while the force is out.
+    local f, c = game.forces[k.owner], shared.CORPS[k.corp]
+    if f and c then
+      local surface = units[1].surface
+      if k.tag and k.tag.valid then k.tag.destroy() end
+      k.tag = f.add_chart_tag(surface, {position = k.landed_at, text = c.name .. " strike force",
+        icon = {type = "virtual", name = c.icon}})
+      local gps = string.format("[gps=%.0f,%.0f,%s]", k.landed_at[1], k.landed_at[2], surface.name)
+      k.alert = units[1]
+      f.add_custom_alert(units[1], {type = "virtual", name = c.icon}, {"lp.director-strike-landed", c.name, k.sent, gps}, true) -- notice-ok: a threat landed, told as it arrives
+      tell(k.owner, "lp.director-strike-landed", c.name, k.sent, gps)
+    end
   end
   for _, u in ipairs(units) do
     k.units[#k.units + 1] = u
@@ -920,6 +948,8 @@ local function strike_over(s, key, k, why)
   if why == "finished" then s.strikes_finished = (s.strikes_finished or 0) + 1 end
   for _, u in ipairs(live) do u.destroy() end
   if k.tag and k.tag.valid then k.tag.destroy() end
+  local f = game.forces[k.owner]
+  if f and k.alert and k.alert.valid then f.remove_alert{entity = k.alert} end
   -- (Its lifted: those lifted at its landing point as they came back, and the rest now.)
   local left = (k.lifted or 0) + #live
   trace(string.format("strike force %d over (%s): %d of %d lifted out", key, why, left, k.sent))
@@ -1019,14 +1049,7 @@ function director.start_surge(s, owner, tick, focused, why, at, climax)
   -- climax_warn ahead). (Sent before the focus was set until 0.2.393: a focus strike's team went for the last focus's
   -- point or the camp's own target.)
   local sent = strike(s, owner, corps, tick, climax and tun("climax_points") or 1, climax and tun("climax_warn") or nil)
-  -- The focus's area on the map while it lasts.
-  if at and game.forces[owner] then
-    local surface = game.surfaces[1]
-    if s.focus_tag and s.focus_tag.valid then s.focus_tag.destroy() end
-    s.focus_tag = surface and game.forces[owner].add_chart_tag(surface, {position = at, text = string.format(
-      "%s: attacks on this area, %d min", names(corps), minutes), icon = {type = "virtual", name = "signal-alert"}})
-    s.focus_tag_till = till
-  end
+  -- (No tag on the focus's area since 0.2.405: the director's intent, not a thing in the world.)
   shared.event("beat", {kind = climax and "climax" or focused and "focus" or "surge", corps = corps, minutes = minutes,
     strike = sent, lead = s.strike_lead, focus = s.focus and s.focus.pos or nil})
   s.climax_beat = climax or nil
@@ -1043,13 +1066,6 @@ function director.start_surge(s, owner, tick, focused, why, at, climax)
   trace(string.format("%s: %s against %s %dx as often, %d more at once, for %d minutes%s (budget %.2f left; %s)",
     climax and "climax" or focused and "focus strike" or "surge", table.concat(corps, ", "), owner, factor, tun("surge_add"), minutes,
     at and string.format(", on %.0f,%.0f", at[1], at[2]) or "", s.budget, why or "forced"))
-  if at then
-    local surface = game.surfaces[1]
-    tell(owner, climax and "lp.director-climax" or "lp.director-focus", names(corps), string.format("[gps=%.0f,%.0f,%s]",
-      at[1], at[2], surface and surface.name or "nauvis"), minutes)
-  else
-    tell(owner, "lp.director-surge", names(corps), minutes)
-  end
   return true
 end
 
@@ -1098,7 +1114,6 @@ function director.start_lull(s, owner, tick, corps, base_minutes)
   shared.event("beat", {kind = "lull", minutes = minutes, truce = truce, corps = held})
   trace(string.format("lull: %s's operations against %s held %d minutes (no beat for %d)", table.concat(held, ", "), owner,
     truce, minutes))
-  tell(owner, #held > 1 and "lp.director-lull-many" or "lp.director-lull", names(held), truce)
 end
 
 -- A lull's time does not count on the ladder (stance.rung: minutes since the last raze): its clock moved on by the lull,
@@ -1143,7 +1158,6 @@ function director.start_spree(s, owner, corp, tick, why)
   end
   trace(string.format("spree: %s's operations against %s %dx as often for %d minutes, a strike force of %d by pod (budget %.2f left; %s)",
     corp, owner, tun("spree_factor"), minutes, sent, s.budget, why or "forced"))
-  tell(owner, "lp.director-spree", shared.CORPS[corp].name, minutes)
 end
 
 -- The debug panel's and tests' hand on it (director_gui.lua, remote director_cmd): on (steady, no grace), off, a spree

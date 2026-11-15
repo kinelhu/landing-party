@@ -7341,6 +7341,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Told as RimWorld tells it** (0.2.405; the user, 2026-11-15: "I really don't like the way you're broadcasting lulls
+  and strikes... look at how rimworld does it"). The storyteller is never heard: no notice of a lull, a spree, a surge,
+  a focus or a climax, no forecast, no map tag on a focus (0.2.393 to 0.2.404 read them all out, each with its
+  minutes). A threat is told when it is in the world: a strike force as its pods land (notice, chart tag where it
+  landed, an alert on its first unit while it is out); a drop wave's landings and a supply drop's pod as before. Ahead
+  only from the world: a strike force is told before its pods come down when a working radar of the player's covers its
+  lead camp (the radar prototype's nearby reach, in chunks), so radar cover over the camps earns the lead time; unseen,
+  it arrives unannounced. The pods' delay (warn_minutes, climax_warn) and the beats' lead time stay as pacing. Radar by
+  computation, not LuaForce.is_chunk_visible: headless, a powered radar's own chunk read unseen. Scenario director:
+  its pacing never told, every strike told as it lands, none ahead unseen; cmd: a radar 40 tiles from the camp, the
+  climax's pods seen and told (failed before the radar was counted).
 - **A truce kept by responders, escorts and interceptors** (0.2.404). 0.2.403 changed nothing on seeds 3 to 5 and seed 1
   got worse (108 to the held corporation in truces, 8 on 0.2.402). Each truce loss now records the killer's command
   type, its distraction and its unit group: 35 of seed 1's 46 were returning units under a single go_to_location with

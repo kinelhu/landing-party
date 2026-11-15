@@ -7428,7 +7428,18 @@ scenarios.director = function()
   -- budget filled and emptied, a climax (its strike force told climax_warn ahead), off (not active).
   if params.mix == "cmd" then
     local function pace() return lp("sooner", "serenity", 3600) end
+    -- The player's radar 40 tiles from the camp, powered: its climax's pods seen coming and told ahead (0.2.405).
     schedule(120, function()
+      local o = lp("stats", storage.id).origin
+      local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
+      local at = {o.x - o.x / len * 40, o.y - o.y / len * 40}
+      flatten(at[1] - 4, at[2] - 4, at[1] + 4, at[2] + 4)
+      S.radar = surface().create_entity{name = "radar", position = at, force = "player"}
+      local e = surface().create_entity{name = "electric-energy-interface", position = {at[1] + 3, at[2]}, force = "player"}
+      surface().create_entity{name = "medium-electric-pole", position = {at[1] + 1.5, at[2] + 2.5}, force = "player"}
+      if e then e.power_production, e.electric_buffer_size = 1e6, 1e7 end
+    end)
+    schedule(600, function()
       S.r = {}
       S.r.on = lp("director_cmd", "on")
       S.r.spree = lp("director_cmd", "spree", "serenity")
@@ -7451,7 +7462,8 @@ scenarios.director = function()
       S.r.climax = lp("director_cmd", "climax", {0, 0})
       local d = lp("director") or {}
       S.r.climaxes, S.r.phase_climax = d.climaxes, d.phase
-      for _, k in pairs(d.strikes or {}) do S.r.climax_warn = math.floor((k.pods_at - k.warned) / 3600 + 0.5) end
+      for _, k in pairs(d.strikes or {}) do S.r.climax_warn = math.floor((k.pods_at - k.warned) / 3600 + 0.5); S.r.seen = k.seen end
+      S.r.seen_told = (d.tell_keys or {})["lp.director-strike-seen"]
       S.r.panel = table.concat(lp("director_lines") or {}, " | ")
       lp("director_cmd", "end")
       S.r.off = lp("director_cmd", "off")
@@ -7467,9 +7479,10 @@ scenarios.director = function()
       check("director: cmd, the budget filled and emptied", r.budget_full == 4 and r.budget_empty == 0,
         string.format("%s then %s", tostring(r.budget_full), tostring(r.budget_empty)))
       -- (The panel's "Climax now", 0.2.398: steady's climax on demand, for looks in game.)
-      check("director: cmd, a climax, its strike force told climax_warn ahead", r.climaxes == 1 and r.phase_climax == "surge"
-        and r.climax_warn == lp("director_prior", "climax_warn"), string.format("%s, %s climaxes, %s, told %s min ahead",
-        tostring(r.climax), tostring(r.climaxes), tostring(r.phase_climax), tostring(r.climax_warn)))
+      check("director: cmd, a climax, its pods seen by the player's radar and told climax_warn ahead", r.climaxes == 1
+        and r.phase_climax == "surge" and r.climax_warn == lp("director_prior", "climax_warn") and r.seen and r.seen_told == 1,
+        string.format("%s, %s climaxes, %s, %s min ahead, seen %s, told %s", tostring(r.climax), tostring(r.climaxes),
+        tostring(r.phase_climax), tostring(r.climax_warn), tostring(r.seen), tostring(r.seen_told)))
       check("director: cmd, the panel tells the climax and its strike force due", (r.panel or ""):find("climaxes 1;", 1, true)
         and (r.panel or ""):find("#1 2 due in 5:00", 1, true), r.panel or "nil")
       check("director: cmd, off", r.active_off == false, tostring(r.active_off))
@@ -7913,12 +7926,18 @@ scenarios.director = function()
       -- razed 0.67 times off; 0.2.391 made it an operation of its own.)
       -- (A fun director, 0.2.393, Fable's consult: told, warned, recovered. Until then at default settings the spree
       -- alone was told, a strike team's pods landed in the tick of its notice, and a lull followed only a costly beat.)
-      local short = 0
-      for _, l in ipairs(d.strike_leads or {}) do if l < lp("director_prior", "warn_minutes") * 3600 then short = short + 1 end end
-      check("director: every beat and lull told at default settings", (d.tell_held or 0) == 0 and (d.tell_told or 0) >= 2,
-        string.format("%s told, %s held %s", tostring(d.tell_told), tostring(d.tell_held), serpent.line(d.tell_held_keys)))
-      check("director: its strike forces warned before they hit, warn_minutes at least",
-        #(d.strike_leads or {}) >= 1 and short == 0, string.format("leads %s", serpent.line(d.strike_leads)))
+      -- (RimWorld's way since 0.2.405, the user, 2026-11-15: the director's pacing never told, its strike forces told as
+      -- they land, ahead only under the player's radar; none here covers the camp. 0.2.393 to 0.2.404 told every beat,
+      -- lull and forecast, and warned every strike at its target.)
+      local keys = d.tell_keys or {}
+      local pacing = 0
+      for k, n in pairs(keys) do if not (k:find("strike") or k:find("wave") or k:find("supply") or k:find("settled")
+        or k:find("departed")) then pacing = pacing + n end end
+      check("director: its pacing never told, every strike force told as it lands and none ahead unseen",
+        pacing == 0 and (d.strike_landings or 0) >= 1 and keys["lp.director-strike-landed"] == d.strike_landings
+        and not keys["lp.director-strike-seen"] and (d.strike_seen or 0) == 0 and (d.tell_held or 0) == 0,
+        string.format("told %s, %s landings, %s seen, %s held", serpent.line(keys), tostring(d.strike_landings),
+        tostring(d.strike_seen), tostring(d.tell_held)))
       check("director: a lull after every beat but one under way, each forecast first",
         (d.lulls or 0) >= (d.beats or 0) - 1 and (d.forecasts or 0) >= (d.beats or 0),
         string.format("%s beats, %s lulls, %s forecasts", tostring(d.beats), tostring(d.lulls), tostring(d.forecasts)))

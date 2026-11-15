@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.405
+Date: 2026-11-15
+  Changes:
+    - The director no longer announces its own pacing: no messages for lulls, stepped-up attacks or forecasts.
+    - A strike force is announced when it lands, with an alert and a map tag on the spot. It is announced ahead only when one of your radars covers the camp it comes from.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.404
 Date: 2026-11-15
   Bugfixes:

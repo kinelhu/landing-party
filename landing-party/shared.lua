@@ -797,14 +797,11 @@ shared.TINT = {r = 0.62, g = 0.8, b = 1, a = 1}
 -- longer provokes (ops.encroached); the rig's dig is 2.5 minutes with a dust line; a prospect plants a lit stake.
 -- (Always told: the army's two stuck-player hints, once each a force, command.lua; a tutorial's, not chatter.)
 local KEEP = {["lp.fallen"] = true, ["lp.hint-no-beacon"] = true, ["lp.hint-no-relay"] = true,
-  -- (A threat the director starts is always told, and its lulls: docs/director.md, fairness. Until 0.2.393 the spree
-  -- alone: at default settings the surge, the focus, the wave, the supply drop and the lulls were held, and the player
-  -- met the director as one chat line a spree; Fable's fun consult.)
-  ["lp.director-spree"] = true, ["lp.director-surge"] = true, ["lp.director-focus"] = true, ["lp.director-wave"] = true,
-  ["lp.director-lull"] = true, ["lp.director-lull-many"] = true, ["lp.director-supply"] = true,
-  ["lp.director-supply-in"] = true, ["lp.director-supply-lost"] = true, ["lp.director-strike-warn"] = true,
-  ["lp.director-next-spree"] = true, ["lp.director-next-surge"] = true, ["lp.director-next-wave"] = true,
-  ["lp.director-next-climax"] = true, ["lp.director-climax"] = true}
+  -- (A threat the director starts is told as it arrives, RimWorld's way, the user, 2026-11-15: its strike force as it
+  -- lands, or seen coming by radar; its drop wave and supply drop. Its own pacing, sprees, surges, lulls and forecasts,
+  -- is never told since 0.2.405; 0.2.393 to 0.2.404 read them all out.)
+  ["lp.director-wave"] = true, ["lp.director-supply"] = true, ["lp.director-supply-in"] = true,
+  ["lp.director-supply-lost"] = true, ["lp.director-strike-seen"] = true, ["lp.director-strike-landed"] = true}
 -- Whether a faction may land (its setting lp-<id>-enabled, runtime-global, on by default): off, it never lands again
 -- (phases, faction.next_corp, farm's arrival); camps already standing stay. (The user, 2026-11-08: "We do need an on/off
 -- switch".)

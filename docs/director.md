@@ -317,6 +317,14 @@ went for belts and poles, and vanished; recovery was not promised; the beats wer
 Measures (visits' metrics, section 3 of the consult): beats, lulls, forecasts, climaxes, notices told and held,
 strikes finished by the player, the warning's lead to the first hit.
 
+## 9h. Told as RimWorld tells it (the user, 2026-11-15, built 0.2.405)
+
+"I really don't like the way you're broadcasting lulls and strikes... look at how rimworld does it." Replaces 9g's
+telling: the storyteller is never heard (no lull, spree, surge, focus or climax notice, no forecast); a threat is told
+when it is in the world (a strike force as it lands, a drop wave's landings, a supply drop's pod), with an alert and a
+tag on the spot; told ahead only when the world shows it, a strike force when the player's radar covers its lead camp.
+The climax gets nothing of its own: its size tells it. The rhythm (lulls, their truces, the beats' lead time) stays.
+
 ## 10. Build order
 
 (The user, 2026-11-14: "once we're happy with the director on paper, a set of visits with various director settings on
