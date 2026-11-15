@@ -258,6 +258,22 @@ end
 -- filled the cap with its mix's cheaper units and the camp built fewer harriers and scorchers: on railbase_end, five
 -- seeds, steady razed 0.67 times off, 1.23 without them, 0.2.391.) Its units come out where the pods touch down
 -- (pods.handlers.strike) and are the director's to order. Returns the pods sent.
+-- A garrison rotation's return (director.lua): n units of its current mix by pod beside the camp, into its garrison
+-- (pods.handlers.relief: they come out and make for the camp).
+function war.rotation_in(b, n)
+  if b.fallen or not (b.lander and b.lander.valid) or n <= 0 then return 0 end
+  local names = detachment(b, n)
+  local h = b.lander.position
+  local sent = 0
+  for k = 1, #names, POD_LOAD do
+    local load = {}
+    for i = k, math.min(#names, k + POD_LOAD - 1) do load[#load + 1] = names[i] end
+    if pods.send(game.surfaces[b.surface], {h.x + 3 * (sent % 5) - 6, h.y + 14 + 3 * math.floor(sent / 5)}, b.force,
+      {kind = "relief", base = b.id, names = load}) then sent = sent + 1 end
+  end
+  return sent
+end
+
 -- (`land`: where the director chose, by its target, director.lua's landing_spot; else behind the camp.)
 function war.strike_team(b, owner, n, key, land)
   if storage.pods_off or b.fallen or not (b.lander and b.lander.valid) or n <= 0 then return 0 end

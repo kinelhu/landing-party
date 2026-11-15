@@ -437,7 +437,8 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- a surge or a focus only with two camps at war or more.
   surge_cost = 2, surge_factor = 2, surge_add = 1, surge_minutes = 15, focus_cost = 3, focus_weight = 4, focus_radius = 64,
   -- (supply back in steady's draw at 0.1, 0.2.393: the one beat the player can win outright, its pod tagged.)
-  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2, wave = 0.15, supply = 0.1, jammer = 0.15, blackout = 0.15, bounty = 0.15, research = 0.1},
+  beat_weights = {spree = 0.5, surge = 0.3, focus = 0.2, wave = 0.15, supply = 0.1, jammer = 0.15, blackout = 0.15, bounty = 0.15, research = 0.1,
+    joint = 0.1, contract = 0.1, rotation = 0.1},
   -- The launch jammer (the user, 2026-11-15: "a camp building a massive jammer blocking rocket exports intermittently"):
   -- a Kessler-Hayashi camp at war within jam_radius of the player's rocket silo raises a mast; while it stands the
   -- silos within jam_radius of it are held jam_on seconds in every jam_on + jam_off, for jam_minutes; jam_cost. Drawn
@@ -473,6 +474,21 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- The research breakthrough (docs/director.md, off-map beats): a corporation at war buys its next node of research at
   -- once, its fund untouched; research_cost of the budget. Its new units are the tell.
   research_cost = 1,
+  -- The rest of the off-map beats (0.2.421, the user, 2026-11-15: "nothing is postponed until after playtest"):
+  -- A joint strike (docs/director.md 9e, the director's part of joint operations): two corporations at war each send a
+  -- strike force of joint_share of its points at one target, landing together; a focus strike's cost.
+  joint_share = 0.6, joint_cost = 3,
+  -- An export contract: a corporation's camps hold every operation against the player contract_minutes and export;
+  -- each camp the player has not hit in that time is paid contract_parts an era at its end (a camp left alone through a
+  -- contract comes out stronger). Tagged at each camp.
+  contract_minutes = 20, contract_parts = 400, contract_cost = 1,
+  -- A garrison rotation: one camp's garrison, all but pool.GUARD, ships out on its rocket and comes back by pod
+  -- rotation_minutes later, as many in its corporation's current mix: a window, tagged at the camp.
+  rotation_minutes = 15, rotation_cost = 1,
+  -- The intercepted transmission (a lull's reward; a forecast only if earned, the user having removed told pacing in
+  -- 0.2.405): a salvage wreck carries a data core datacore_chance of the time; emptied, the next strike force's target
+  -- is tagged on the map as it is chosen.
+  datacore_chance = 0.5,
   -- Strike targets by motive (the user, 2026-11-15, the targets re-inventoried; by worth until 0.2.418, a big pole and
   -- poles' neighbours chosen): retaliation first, the player's gun that killed grudge_kills of the corporation's units
   -- within grudge_minutes; else a kind drawn, the corporation's own (strike_motive) strike_motive_weight times another's,
@@ -486,8 +502,19 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
     water = {"offshore-pump"},
     export = {"rocket-silo", "cargo-landing-pad"},
     station = {"train-stop"},
+    -- (0.2.420, the user, 2026-11-15, "nothing is postponed": roboports (a rebuild blocked, the hub to defend), the
+    -- player's army's barracks, oil by name below; the engineer, a strike hunting the player in person.)
+    logistics = {"roboport"},
   },
-  strike_kind_order = {"research", "power", "water", "export", "station"},
+  -- Kinds read by name, not type (a refinery and a chemical plant are assembling machines).
+  strike_kind_names = {oil = {"oil-refinery", "chemical-plant"}, army = {"lp-barracks"}},
+  strike_kind_order = {"research", "power", "water", "export", "station", "logistics", "oil", "army", "engineer"},
+  -- The engineer (RimWorld's manhunters by dropship): its weight in the draw, only with a player there in person, the
+  -- force re-aimed at their character every minute. Rare: the likeliest to feel unfair.
+  strike_engineer_weight = 0.3,
+  -- Retaliation by cluster (0.2.420): a gun's kills summed with those of the player's guns within grudge_cluster of it
+  -- (railbase_end's 135 flamers spread their kills and no one gun reached grudge_kills; the belt is the grudge).
+  grudge_cluster = 30,
   -- (Synthexis sends no strike force, not one of shared.CORPS: labs Kessler-Hayashi's, beside its silos.)
   strike_motive = {grubstake = {"power", "water"}, serenity = {"export", "research"}},
   strike_motive_weight = 3, strike_candidates = 12, strike_cluster = 24,

@@ -7610,6 +7610,80 @@ scenarios.director = function()
     end)
     return
   end
+  -- LP_MIX=beats: the rest of the off-map beats (0.2.421), with a Grubstake camp beside the Serenity one: a joint strike
+  -- (two forces of two corporations at one target, landing together); an export contract (that corporation's
+  -- operations against the player held, its camps paid at the end); a garrison rotation (shipped out, back by pod); a
+  -- salvage wreck with a data core, emptied: the next strike force's target tagged.
+  if params.mix == "beats" then
+    schedule(120, function()
+      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100, points_per_worth = 1,
+        warn_minutes = 100, contract_minutes = 3, rotation_minutes = 2, salvage_claim = 60}})
+      S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+      flatten(-10, -10, 10, 10)
+      for j = -1, 1 do surface().create_entity{name = "lab", position = {4 * j + 0.5, 0.5}, force = "player"} end
+      -- (A steam engine too: Grubstake's motive, power, apart from Serenity's labs, so its partner goes where it chose,
+      -- not where its own motive would.)
+      flatten(50, 50, 70, 70)
+      surface().create_entity{name = "steam-engine", position = {60.5, 60.5}, direction = defines.direction.east, force = "player"}
+    end)
+    schedule(5 * 3600, function()
+      local id = (lp("bases") or {})[1]
+      S.ids = lp("bases") or {}
+      S.joint = lp("director_cmd", "joint")
+      local d = lp("director") or {}
+      local ks = {}
+      for _, k in pairs(d.strikes or {}) do ks[#ks + 1] = k end
+      S.jk = ks
+      S.contract = lp("director_cmd", "contract")
+      d = lp("director") or {}
+      S.ccorp = d.contract and d.contract.corp
+      S.ctags = d.contract and #d.contract.tags
+      for _, i in ipairs(S.ids) do lp("debug_units", i, "lp-infantry", 6) end
+      S.rot = lp("director_cmd", "rotation")
+      d = lp("director") or {}
+      S.rn = d.rotation and d.rotation.n
+      S.rbase = d.rotation and d.rotation.base
+      S.rg0 = S.rbase and (lp("stats", S.rbase) or {}).garrison
+      S.sal = lp("director_cmd", "salvage", "core")
+      d = lp("director") or {}
+      local w = d.salvage and d.salvage[#d.salvage]
+      S.core = w and w.core
+      if w and w.wreck and w.wreck.valid then w.wreck.get_inventory(defines.inventory.chest).clear() end
+    end)
+    schedule(5 * 3600 + 600, function()
+      S.ints = (lp("director") or {}).intercepts
+      S.istrike = lp("director_cmd", "strike", "research")
+      local d = lp("director") or {}
+      local k = d.strikes and d.strikes[d.strike_n] or {}
+      S.itag = k.ttag and k.ttag.valid and k.ttag.text
+    end)
+    schedule(5 * 3600 + 5 * 3600, function()
+      local d = lp("director") or {}
+      S.paid, S.cdone = d.contract_paid, d.contract and d.contract.done
+      S.back = d.rotated_back
+      S.held = d.contract_held
+    end)
+    schedule(END - 60, function()
+      local a, b = S.jk and S.jk[1], S.jk and S.jk[2]
+      local same = a and b and a.corp ~= b.corp and math.abs(a.target[1] - b.target[1]) < 1
+        and math.abs(a.target[2] - b.target[2]) < 1 and a.pods_at == b.pods_at
+      info(string.format("director beats: %s (%s forces, same target and time %s); %s %s (%s tags), paid %s, done %s; %s %s units of camp %s, back %s; %s core %s, intercepts %s, %s tag %s",
+        tostring(S.joint), tostring(S.jk and #S.jk), tostring(same), tostring(S.contract), tostring(S.ccorp), tostring(S.ctags),
+        tostring(S.paid), tostring(S.cdone), tostring(S.rot), tostring(S.rn), tostring(S.rbase), tostring(S.back),
+        tostring(S.sal), tostring(S.core), tostring(S.ints), tostring(S.istrike), tostring(S.itag)))
+      check("director: beats, a joint strike: two corporations' forces at one target, landing together", S.joint == "joint"
+        and #(S.jk or {}) == 2 and same, string.format("%s, %s forces, same %s", tostring(S.joint), tostring(S.jk and #S.jk), tostring(same)))
+      check("director: beats, an export contract tagged at its camps, its camps paid at its end", S.contract == "contract"
+        and (S.ctags or 0) >= 1 and S.cdone and (S.paid or 0) >= lp("director_prior", "contract_parts"),
+        string.format("%s, %s tags, done %s, paid %s", tostring(S.contract), tostring(S.ctags), tostring(S.cdone), tostring(S.paid)))
+      check("director: beats, a garrison rotation shipped out and back by pod", S.rot == "rotation" and (S.rn or 0) > 0
+        and S.back == S.rn, string.format("%s, %s out, %s back", tostring(S.rot), tostring(S.rn), tostring(S.back)))
+      check("director: beats, a wreck's data core emptied: the next strike force's target tagged, intercepted", S.core
+        and S.ints == 1 and S.itag and S.itag:find("intercepted", 1, true), string.format("core %s, intercepts %s, tag %s",
+        tostring(S.core), tostring(S.ints), tostring(S.itag)))
+    end)
+    return
+  end
   -- LP_MIX=home: a strike force's survivors walk home (0.2.419; the user: "you need a rocket to reach space"): at three
   -- labs 150 from the camp, nothing defending them, two minutes in the field; it walks home and joins the garrison,
   -- none lifted out in the field. LP_MIX=homefull: the garrison full first (60 more infantry), so they board the pad
@@ -7665,7 +7739,7 @@ scenarios.director = function()
   if params.mix == "targets" then
     schedule(120, function()
       lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100, points_per_worth = 1,
-        warn_minutes = 100, strike_minutes = 3, power_hold = 1}})
+        warn_minutes = 100, strike_minutes = 3, power_hold = 1, points_max = 10}})  -- (10: below its worth's 17, the cap binds)
       local id = (lp("bases") or {})[1]
       local o = lp("stats", id).origin
       local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
@@ -7680,13 +7754,27 @@ scenarios.director = function()
         surface().create_entity{name = "gun-turret", position = q, force = "player"}
       end
       surface().create_entity{name = "steam-engine", position = {S.power[1] + 0.5, S.power[2] + 0.5}, direction = defines.direction.east, force = "player"}
-      local g = surface().create_entity{name = "gun-turret", position = S.gun, force = "player"}
-      for _, f in ipairs({"lp-grubstake", "lp-serenity"}) do
-        for _ = 1, 25 do
-          local u = surface().create_entity{name = "lp-infantry", position = {S.gun[1] + 30, S.gun[2]}, force = f}
-          if u then u.die("player", g) end
+      -- (Three guns 8 apart, 8 kills each: none at grudge_kills alone, their cluster past it; 0.2.420. One gun with 25
+      -- until then: railbase_end's 135 flamers spread their kills and no strike was ever retaliation.)
+      for j = -1, 1 do
+        local q = {S.gun[1] + 8 * j, S.gun[2]}
+        flatten(q[1] - 2, q[2] - 2, q[1] + 2, q[2] + 2)
+        local g = surface().create_entity{name = "gun-turret", position = q, force = "player"}
+        for _, f in ipairs({"lp-grubstake", "lp-serenity"}) do
+          for _ = 1, 8 do
+            local u = surface().create_entity{name = "lp-infantry", position = {q[1] + 30, q[2]}, force = f}
+            if u then u.die("player", g) end
+          end
         end
       end
+      -- The later targets (0.2.420): a chemical plant (oil), a roboport (logistics), the army's barracks; a character
+      -- (the engineer).
+      S.oil, S.robo, S.bar, S.eng = at(150, 140), at(150, -140), at(230, 60), at(230, -60)
+      for _, p in ipairs({S.oil, S.robo, S.bar, S.eng}) do flatten(p[1] - 6, p[2] - 6, p[1] + 6, p[2] + 6) end
+      surface().create_entity{name = "chemical-plant", position = {S.oil[1] + 0.5, S.oil[2] + 0.5}, force = "player"}
+      surface().create_entity{name = "roboport", position = S.robo, force = "player"}
+      surface().create_entity{name = "lp-barracks", position = {S.bar[1] + 0.5, S.bar[2] + 0.5}, force = "player"}
+      surface().create_entity{name = "character", position = S.eng, force = "player"}
       lp("debug_needed", id, S.labs)
       for _ = 1, 2 do lp("debug_depot", id, 3000) end
     end)
@@ -7698,9 +7786,12 @@ scenarios.director = function()
     -- (All before the camp's first raid, a camp out on one not deciding and the hold unseen; their pods 100 minutes off,
     -- none landing to raze the next's target.)
     schedule(600, function()
+      -- (Hard: its difficulty after the cap since 0.2.420, 40 times 1.5; before, 40 whatever the difficulty.)
+      lp("debug_setting", "lp-difficulty", "hard")
       S.r1 = lp("director_cmd", "strike", "research")
+      lp("debug_setting", "lp-difficulty", "normal")
       local k = last()
-      S.k1 = {kind = k.kind, land = k.land, cover = k.cover, target = k.target}
+      S.k1 = {kind = k.kind, land = k.land, cover = k.cover, target = k.target, sent = k.sent}
       S.r2 = lp("director_cmd", "strike")
       k = last()
       S.k2 = {kind = k.kind, target = k.target}
@@ -7713,6 +7804,12 @@ scenarios.director = function()
       S.k3 = {kind = k.kind, adv = k.advertised, ttag = k.ttag and k.ttag.valid, target = k.target}
       S.told1 = ((lp("director") or {}).tell_keys or {})["lp.director-strike-target"] or 0
       S.r4 = lp("director_cmd", "strike")
+      S.later = {}
+      for _, want in ipairs({"oil", "logistics", "army", "engineer"}) do
+        local said = lp("director_cmd", "strike", want)
+        local kk = last()
+        S.later[want] = {said = said, target = kk.target}
+      end
     end)
     schedule(600 + 4 * 3600, function()
       local id = (lp("bases") or {})[1]
@@ -7730,8 +7827,19 @@ scenarios.director = function()
         S.r1 == "strike: research" and dist(S.k1.target, S.labs) < 8 and dist(S.k1.land, S.k1.target) <= land + 1
         and S.k1.cover == 0, string.format("%s, %s off the labs, landing %s off, %s turrets", tostring(S.r1),
         tostring(S.k1 and dist(S.k1.target, S.labs)), tostring(S.k1 and dist(S.k1.land, S.k1.target)), tostring(S.k1 and S.k1.cover)))
-      check("director: targets, unforced, retaliation at the gun that killed its units", S.r2 == "strike: retaliation"
-        and dist(S.k2.target, S.gun) < 2, string.format("%s at %s", tostring(S.r2), serpent.line(S.k2 and S.k2.target)))
+      check("director: targets, unforced, retaliation at the cluster of guns that killed its units", S.r2 == "strike: retaliation"
+        and dist(S.k2.target, S.gun) < 10, string.format("%s at %s", tostring(S.r2), serpent.line(S.k2 and S.k2.target)))
+      check("director: targets, its difficulty after the cap: hard, 1.5 times points_max", S.k1 and S.k1.sent
+        == math.floor(lp("director_prior", "points_max") * 1.5), string.format("%s sent", tostring(S.k1 and S.k1.sent)))
+      local where = {oil = S.oil, logistics = S.robo, army = S.bar, engineer = S.eng}
+      local ok, got = true, {}
+      for want, p in pairs(where) do
+        local r = (S.later or {})[want] or {}
+        got[#got + 1] = string.format("%s: %s %s off", want, tostring(r.said), tostring(r.target and math.floor(dist(r.target, p))))
+        if r.said ~= "strike: " .. want or dist(r.target, p) > 6 then ok = false end
+      end
+      table.sort(got)
+      check("director: targets, oil, roboports, the army's barracks and the engineer each a target", ok, table.concat(got, "; "))
       check("director: targets, at power, told ahead with its target tagged; the camp's operations held; none more in the hold",
         S.r3 == "strike: power" and dist(S.k3.target, S.power) < 4 and S.k3.adv and S.k3.ttag and S.told1 == S.told0 + 1
         and S.r4 == "no target of that kind" and S.held1 > S.held0 and S.l1 == S.l0,

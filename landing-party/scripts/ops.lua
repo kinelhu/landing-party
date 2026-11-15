@@ -671,6 +671,9 @@ local function choose(b, army)
     -- A director's power strike out (director.lua, power_hold): nothing against that player but self-defence, the
     -- blackout the strike's alone.
     local dh = player and storage.director and storage.director.power_hold and storage.director.power_hold[t.owner]
+    -- An export contract (director.lua): this corporation's camps hold every operation against that player.
+    local dc = player and storage.director and storage.director.contract
+    if dc and dc.corp == b.corp and dc.owner == t.owner and game.tick < dc.till and not battery(t) then held = true end
     if dh and game.tick < dh and not battery(t) then
       held = true
       storage.director.power_held = (storage.director.power_held or 0) + 1

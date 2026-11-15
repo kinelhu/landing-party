@@ -7341,6 +7341,21 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The rest of the director, unpostponed** (0.2.420; the user, 2026-11-15: "nothing is postponed until after
+  playtest"). (1) A strike force's difficulty and adaptation now apply after points_max: on any established base the
+  worth term passed the cap (railbase_end's 103 against 40), so easy, hard and very hard all sent 40 and adaptation
+  never counted; hard now sends 60, very hard 80, an unhurt player up to twice. (2) Retaliation by cluster: a gun's kills
+  summed with those of the player's guns within grudge_cluster (30); railbase_end's flamers spread their kills and no
+  strike was ever retaliation. The player's army's units count too, their nearest barracks the target. (3) The later
+  targets: oil (refineries and chemical plants, by name), roboports, the army's barracks, and the engineer (0.3 in the
+  draw, in person only, the force re-aimed at the character every minute). (4) The off-map beats: a joint strike (two
+  corporations' forces of 0.6 each at the first's target, landing together; the director's part of joint operations,
+  one operation drawing several camps' units still not built); an export contract (a corporation's camps hold off the
+  player 20 minutes, a beam at each pad a minute, a tag at each; paid 400 parts an era each camp the player did not hit);
+  a garrison rotation (one camp's garrison but two ships out, back by pod 15 minutes later, tagged); the intercepted
+  transmission as a salvage wreck's data core (half of them; emptied, the next strike force's target is tagged), not a
+  forecast, which the user removed in 0.2.405. Scenarios director targets (cap order, cluster, the later targets) and
+  beats, each check seen failing; the contract's hold on operations reuses the power hold's, not seen failing apart.
 - **Strike forces walk home** (0.2.419). The user: "The lift makes little sense for factorio? In this game you need a
   rocket to reach space". Its pods come down from orbit as the game's own do; going back up needs a rocket. Its
   survivors, done or broken or recalled, now walk home to their lead camp (or the nearest of their corporation's

@@ -348,6 +348,12 @@ as the game's own; nothing goes up without a rocket. Its survivors walk home to 
 has room, the rest off on its rocket from the pad. The way home is a retreat the player can chase; a strike repelled
 without killing it all leaves its camp a little stronger.
 
+## 9k. The rest, unpostponed (the user, 2026-11-15, built 0.2.420)
+
+Difficulty and adaptation after the strike force's cap; retaliation by cluster of guns; oil, roboports, the army's
+barracks and the engineer as targets; a joint strike, an export contract, a garrison rotation; the intercepted
+transmission earned from a salvage wreck's data core, a target tagged, never the pacing told.
+
 ## 10. Build order
 
 (The user, 2026-11-14: "once we're happy with the director on paper, a set of visits with various director settings on

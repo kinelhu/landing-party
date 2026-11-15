@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.420
+Date: 2026-11-15
+  Changes:
+    - Difficulty and the director's adaptation now scale a strike force on large bases too (hard sends half as many again).
+    - A strike force retaliates against the cluster of guns that has killed most of its corporation's units, or against your army's barracks.
+    - Strike forces can now target oil processing, roboports, your army's barracks and, rarely, you in person.
+    - New director beats: a joint strike by two corporations, an export contract (a corporation holds off and ships out, its camps paid if left alone), a garrison rotation (a camp's garrison ships out and returns by pod).
+    - A crashed shuttle may carry a data core: emptying it marks the next strike force's target on the map.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.419
 Date: 2026-11-15
   Changes:
