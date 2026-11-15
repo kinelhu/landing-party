@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.426
+Date: 2026-11-15
+  Sounds:
+    - Grubstake's heavy vehicles have a diesel engine over their tracks, its harrier a rattling propeller engine, the laser drones a high whine in flight.
+    - Kessler-Hayashi's foot soldiers are heard walking in armoured steps.
+    - Foot soldiers' deaths: Kessler-Hayashi's fall as machines, Grubstake's go down with their kit clattering.
+    - The sapper's throw is heard before its charge goes off.
+    - A horn sounds where a siege sets up, and a shield dome's catch crackles with a deeper bolt.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.425
 Date: 2026-11-15
   Sounds:

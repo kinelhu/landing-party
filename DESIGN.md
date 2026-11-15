@@ -7341,6 +7341,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Sound, round five wired** (0.2.426; the user's picks, the Sound Sheet's round five). Kept: Grubstake's heavy engine
+  (quieter), the laser drone's flight (higher, quieter), Kessler-Hayashi's steps (lower), the siege horn (lower), the
+  foot deaths split by the user's answer (Kessler-Hayashi's a machine's fall, A, quieter: its fall 2.6 to 1.6, its whine
+  1.2 to 0.75; Grubstake's, B, the hit with its kit clattering), the sapper's throw (A), the dome's catch (B), the
+  harrier's flight (B, lower and quieter: its engine's speed 1.9 to 1.6, about three semitones; its volume 0.55 to 0.4,
+  its rattle 0.06 to 0.045). Layered sounds rendered by tools/sound/round5.py (a death in three variations, picked at
+  random). The siege horn a cue at a siege's bombard (where it sets up); the dome's catch a cue at each catch, its beam
+  the Tesla's chain beam copied without its working hum and its deflection (lp-dome-beam), replacing them; its
+  airburst stays the catch's explosion entity's. Checked in the dump, the lint, and two cue checks (dome, a sound for
+  every shell caught, 15 of 15; siegetier, its horn as it bombards), each seen failing with the cue's count removed; the
+  seven dome variants, domehub and the four siegetier variants pass. Not as the board played: the sapper's blast lands on
+  its attack's tick (its charge's damage instant), not two thirds of a second after the throw; delaying it would delay
+  the damage, a balance change, not made.
 - **Sound, round four wired** (0.2.425; the user's picks on the Sound Sheet, 2026-11-15). Twelve kept of 24: the
   dozer's ram (sounds.lua, its attack: three metal impacts at random); engines and steps as walking_sound on the run
   cycle (sounds_units.lua: a vehicle's one-frame run loops every half tile, so its engine is a bed capped by its

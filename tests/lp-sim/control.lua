@@ -2180,6 +2180,10 @@ scenarios.siegetier = function()
     info("siegetier: " .. serpent.line({tier = S.tier, mortars = S.max_mortars, fired = S.max_fired, loaded = S.max_loaded,
       assaults = o.assaults, razed = o.assault_razed, siege = siege}))
     check("siegetier: a siege of the tier asked for", S.tier == tier, tostring(S.tier))
+    -- (Its horn as it set up to bombard, the Sound Sheet's round five.)
+    local horn = (lp("sound_cues") or {})["siege-horn"] or 0
+    check("siegetier: its horn as it began to bombard", (S.max_mortars or 0) > 0 and horn >= 1, string.format("%d horns, %s mortars",
+      horn, tostring(S.max_mortars)))
     if params.mix == "2" or params.mix == "" then
       check("siegetier: two mortars", S.max_mortars == 2, tostring(S.max_mortars))
       check("siegetier: more than one mortar's shells fired", (S.max_fired or 0) > 40, tostring(S.max_fired))
@@ -8767,6 +8771,9 @@ scenarios.dome = function()
     info(string.format("dome: %d shells fired, dome %s, lost %d (buildings and units)", S.loaded - left, serpent.line(d), lost))
     -- Its lander's dome over its pad's generators (at 30 tiles they stood at 33 outside it: a camp landed in nwa's
     -- artillery's reach lost them in 75 seconds, its hull went down and its lander with it; the visits at 0.2.359).
+    -- (A cue for every shell caught, the Sound Sheet's round five: its bolt and crackle, the beam's own sounds off.)
+    local dc = (lp("sound_cues") or {})["dome-catch"] or 0
+    check("dome: a catch's sound for every shell caught", dc == d.caught, string.format("%d sounds, %d caught", dc, d.caught))
     if mix == "whole" then
       -- (Caught a flat 300 for any battery before; seen failing with HOLD's guns counted as one: whole 54.)
       local cd = prototypes.entity["artillery-turret"].attack_parameters.cooldown

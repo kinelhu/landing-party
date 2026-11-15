@@ -1651,6 +1651,8 @@ local function siege_step(b, trace, army)
       if op.label and op.label.valid then op.label.destroy() end
       op.phase, op.phase_at = "bombard", game.tick
       alert(b, b.intel.targets[op.target], "lp.alert-siege", op.site)
+      -- (Its horn where it sets up, the Sound Sheet's round five.)
+      shared.cue(s, "siege-horn", {op.site[1], op.site[2]})
       trace(b, string.format("siege: %d mortars up with %d shells", #op.mortars, op.loaded - op.shells_fired))
       -- An armed camp's siege calls its orbital strike on the wall (scripts/orbital.lua).
       if not op.clearance then orbital.call(b, op) end

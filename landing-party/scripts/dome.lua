@@ -143,6 +143,7 @@ end
 -- "A hemisphere effect rippling from the impact"): a bolt from its tower's crown (TOWER_CROWN tiles up; the lander's for
 -- the camp's dome) to the shell, a small burst where it dies, and the ripple (data.lua: lp-dome-ripple).
 local TOWER_CROWN, LANDER_CROWN = 3.4, 2
+local BEAM = "lp-dome-beam" -- (the Tesla's chain beam without its sounds: data-final-fixes.lua)
 -- The hit seen over the whole dome (0.2.192; the user, 2026-11-04: "shouldn't the effect come from the impact and
 -- dissipate over the whole bubble?"): a flash where the shell met its skin and a wave across it from there (data.lua:
 -- lp-dome-wave-k, the impact's direction from the south, counter-clockwise seen from above), scaled to its radius. Its
@@ -180,10 +181,12 @@ local function catch(b, d, pr)
   pr.destroy()
   if d.anchor and d.anchor.valid then
     local crown = d.anchor.name:find("dome-projector", 1, true) and TOWER_CROWN or LANDER_CROWN
-    s.create_entity{name = "chain-tesla-turret-beam-start", position = d.anchor.position, source = d.anchor,
+    s.create_entity{name = BEAM, position = d.anchor.position, source = d.anchor,
       source_offset = {0, -crown}, target_position = pos, duration = 12}
   end
   s.create_entity{name = "explosion", position = pos}
+  -- (Its bolt and crackle, the Sound Sheet's round five; the beam's own sounds taken off, data-final-fixes.lua.)
+  shared.cue(s, "dome-catch", pos)
   dome.wave(d, pos)
   d.left, d.caught = math.max(0, d.left - 1 / full(b, d)), d.caught + 1
   alert(b, pos, d)
@@ -385,9 +388,10 @@ end
 local function pd_catch(d, pr)
   local s, pos = pr.surface, pr.position
   pr.destroy()
-  s.create_entity{name = "chain-tesla-turret-beam-start", position = d.anchor.position, source = d.anchor,
+  s.create_entity{name = BEAM, position = d.anchor.position, source = d.anchor,
     source_offset = {0, -TOWER_CROWN}, target_position = pos, duration = 12}
   s.create_entity{name = "explosion", position = pos}
+  shared.cue(s, "dome-catch", pos)
   dome.wave(d, pos)
   d.left, d.caught = math.max(0, d.left - 1 / full({force = d.force}, d)), d.caught + 1
   if d.left <= 1e-9 then d.left, d.down_till, d.breaks = 0, game.tick + BREAK, d.breaks + 1 end

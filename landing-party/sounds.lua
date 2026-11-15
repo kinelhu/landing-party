@@ -44,4 +44,9 @@ return {
   {id = "dozer-ram-a", units = {"lp-dozer", "lp-grubstake-dozer"}, decided = "keep", label = "Dozer's ram", round = 4,
     files = {"base/sound/car-metal-large-impact-1.ogg", "base/sound/car-metal-large-impact-2.ogg",
       "base/sound/car-metal-large-impact-3.ogg"}, speed = 0.75, volume = 0.7, every = 60, shots = 4, was = "none"},
+  -- Round five: the sapper's throw, louder, before the blast its charge already makes (A kept; the board's gap of two
+  -- thirds of a second before the blast is not had: the charge's damage and blast land on the attack's tick).
+  {id = "sapper-a", units = {"lp-sapper", "lp-grubstake-sapper"}, decided = "keep", label = "Sapper's throw", round = 5,
+    files = {"base/sound/fight/throw-grenade-1.ogg", "base/sound/fight/throw-grenade-2.ogg"}, speed = 0.8, volume = 1.0,
+    every = 180, shots = 3},
 }

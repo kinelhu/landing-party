@@ -147,6 +147,24 @@ do
   end
 end
 
+-- The dome's catch (dome.lua): the Tesla's chain beam without its own sounds, its catch's sound the cue lp-cue-dome-catch
+-- (round five, B: a deeper bolt and a static crackle; the airburst its explosion entity's). The vanilla beam hummed its
+-- turret's working sound and played its deflection at the target.
+do
+  local v = data.raw.beam["chain-tesla-turret-beam-start"]
+  if v then
+    local b = table.deepcopy(v)
+    b.name, b.working_sound = "lp-dome-beam", nil
+    local d = b.action and b.action.action_delivery
+    if d and d.target_effects then
+      local keep = {}
+      for _, t in ipairs(d.target_effects) do if t.type ~= "play-sound" then keep[#keep + 1] = t end end
+      d.target_effects = keep
+    end
+    data:extend({b})
+  end
+end
+
 -- Hulls turn slower (shared.HULL.TURN): a unit of ours wider than HULL.WIDTH, not a flier.
 do
   local shared = require("__landing-party__.shared")

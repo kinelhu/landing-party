@@ -69,14 +69,14 @@ digraph ai {
     "intel" [label="intel\n295 lines", width=1.13, fillcolor="#eef2f7"];
     "airraid" [label="airraid\n127 lines", width=0.94, fillcolor="#eef2f7"];
     "cannon" [label="cannon\n373 lines", width=1.21, fillcolor="#eef2f7"];
-    "siege" [label="siege\n2144 lines", width=3.18, fillcolor="#f7dede"];
+    "siege" [label="siege\n2146 lines", width=3.18, fillcolor="#f7dede"];
     "assault" [label="assault\n142 lines", width=0.96, fillcolor="#eef2f7"];
     "strip" [label="strip\n238 lines", width=1.06, fillcolor="#eef2f7"];
     "answers" [label="answers\n138 lines", width=0.95, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
     "strike" [label="strike\n68 lines", width=0.88, fillcolor="#eef2f7"];
     "jammer" [label="jammer\n77 lines", width=0.89, fillcolor="#eef2f7"];
-    "dome" [label="dome\n433 lines", width=1.28, fillcolor="#eef2f7"];
+    "dome" [label="dome\n437 lines", width=1.29, fillcolor="#eef2f7"];
     "orbital" [label="orbital\n381 lines", width=1.22, fillcolor="#eef2f7"];
     "scorcher" [label="scorcher\n224 lines", width=1.05, fillcolor="#d9f0d9"];
     "stun" [label="stun\n145 lines", width=0.96, fillcolor="#eef2f7"];
