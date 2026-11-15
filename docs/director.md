@@ -309,7 +309,7 @@ went for belts and poles, and vanished; recovery was not promised; the beats wer
 - **Warned.** A strike force told warn_minutes (2) before its pods: a chart tag at its target, an alert on the
   player's nearest building, a notice with its size and place. A focus strike's area tagged while it lasts.
 - **Answerable, finishable.** A team goes for buildings that matter and the guns, fights what shoots it, then walks
-  back to its landing point to be lifted out: the player can catch it and finish it.
+  home to its camp (9j; to its landing point to be lifted out until 0.2.419): the player can catch it and finish it.
 - **Recovery.** A lull after every beat, lull_floor (5) to lull_max (30) by what the beat cost; hurt reachable on a
   late base (0.01 of worth, three times the usual).
 - **A cycle.** Steady's every fourth beat the climax: a focus strike costing the whole budget, twice the strike force,
@@ -340,6 +340,13 @@ user: "As long as we advertise its a target?" So a strike at power or water is t
 tagged, and every operation against that player is held while it is out and 10 minutes after: the blackout is the
 strike's, not the next raid's. Only with a player there in person, until a custom alert's reach from another surface is
 probed. Later: roboports, oil, the army's depot, a strike hunting the engineer.
+
+## 9j. How a strike force leaves (the user, 2026-11-15, built 0.2.419)
+
+"The lift makes little sense for factorio? In this game you need a rocket to reach space." Pods come down from orbit,
+as the game's own; nothing goes up without a rocket. Its survivors walk home to their camp: into its garrison while it
+has room, the rest off on its rocket from the pad. The way home is a retreat the player can chase; a strike repelled
+without killing it all leaves its camp a little stronger.
 
 ## 10. Build order
 

@@ -7341,6 +7341,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Strike forces walk home** (0.2.419). The user: "The lift makes little sense for factorio? In this game you need a
+  rocket to reach space". Its pods come down from orbit as the game's own do; going back up needs a rocket. Its
+  survivors, done or broken or recalled, now walk home to their lead camp (or the nearest of their corporation's
+  standing) by ops.walk_home, quiet in a truce or broken, through or round the player's base: a retreat the player can
+  chase. Within the camp's claim they join its garrison while it has room (army.cap), the camp's own returning units
+  after that (its gates, pool.give); the rest leave on its pad's rocket, an export's beam. Those still out after
+  home_minutes (5) are the camp's where they stand. None stranded is lifted; with no camp of theirs standing they hold
+  where they landed. Lifted out where they landed until now, with nothing to show it. First tried: home within 40 of
+  the lander, and the camp's walls kept all six off it for 8 minutes (scenario director home); now within its claim.
+  Scenarios director home (joined, none shipped) and homefull (garrison full: all shipped, none joined), each seen
+  failing with the room check forced the other way. The cost: a repelled strike can make its camp stronger, capped by
+  the garrison's room.
 - **Strike forces land by their target, chosen by motive** (0.2.418). The 0.2.417 visit with units' killers counted
   (railbase_end, seed 1): all three forces landed behind their camp at about 191,630, marched to targets near y 375 and
   broke before or at their first hit, 23 to 31 of each killed by flamethrower turrets. Now its pods land within

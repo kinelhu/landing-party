@@ -531,9 +531,9 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- player's worth, times the difficulty, the personality and the adaptation, points_max a camp at most (on the user's
   -- saves at steady: start about 11, nwa the cap). Its first beat a spree; supply drops out of steady's draw.
   points_per_worth = 0.02, points_max = 40,
-  -- A strike force's time in the field before it walks back to its landing point (director.strikes), and the most it
-  -- takes to get there before what is left is lifted out.
-  strike_minutes = 8, lift_minutes = 3,
+  -- A strike force's time in the field before it walks home to its camp (director.strikes), and the most it takes to get
+  -- there before what is left is its camp's where it stands (lift_minutes, 3, to its landing point until 0.2.419).
+  strike_minutes = 8, home_minutes = 5,
   -- Its morale (RimWorld's raiders flee when hurt; the user, 2026-11-15, strike forces the player can beat): it breaks
   -- and walks back to be lifted once this share of those landed is lost. A named prior, not measured.
   strike_break = 0.5,

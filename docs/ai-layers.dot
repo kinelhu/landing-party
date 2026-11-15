@@ -5,7 +5,7 @@ digraph layers {
   "Seams (leaves)" [label="Seams (leaves)\n13 modules, 1832 lines", fillcolor="#d9f0d9"];
   "Perception and attempts (any attacker)" [label="Perception and attempts (any attacker)\n6 modules, 1607 lines", fillcolor="#eef2f7"];
   "Knowledge and strategy (per faction)" [label="Knowledge and strategy (per faction)\n2 modules, 316 lines", fillcolor="#eef2f7"];
-  "The director (above every faction)" [label="The director (above every faction)\n2 modules, 1997 lines\ndirector 1868", fillcolor="#f7dede"];
+  "The director (above every faction)" [label="The director (above every faction)\n2 modules, 2050 lines\ndirector 1921", fillcolor="#f7dede"];
   "Corporation" [label="Corporation\n9 modules, 3196 lines\nfaction 1207", fillcolor="#f7dede"];
   "Settlement" [label="Settlement\n16 modules, 6498 lines\nlayout 1747", fillcolor="#f7dede"];
   "Army and operations" [label="Army and operations\n22 modules, 9814 lines\narmy 1061, ops 2522, siege 2144", fillcolor="#f7dede"];
@@ -40,7 +40,7 @@ digraph layers {
   "The biotech" -> "Perception and attempts (any attacker)" [label="15", penwidth=4.8];
   "The biotech" -> "Seams (leaves)" [label="8", penwidth=3.0];
   "The biotech" -> "The player's army" [label="1", penwidth=1.2];
-  "The director (above every faction)" -> "Army and operations" [label="2", penwidth=1.5];
+  "The director (above every faction)" -> "Army and operations" [label="3", penwidth=1.8];
   "The director (above every faction)" -> "Corporation" [label="4", penwidth=2.0];
   "The director (above every faction)" -> "Perception and attempts (any attacker)" [label="1", penwidth=1.2];
   "The director (above every faction)" -> "Seams (leaves)" [label="3", penwidth=1.8];

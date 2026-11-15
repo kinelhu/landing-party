@@ -79,8 +79,8 @@
 <title>The director (above every faction)</title>
 <path fill="#f7dede" stroke="black" d="M315.62,-842C315.62,-842 162.38,-842 162.38,-842 156.38,-842 150.38,-836 150.38,-830 150.38,-830 150.38,-810 150.38,-810 150.38,-804 156.38,-798 162.38,-798 162.38,-798 315.62,-798 315.62,-798 321.62,-798 327.62,-804 327.62,-810 327.62,-810 327.62,-830 327.62,-830 327.62,-836 321.62,-842 315.62,-842"/>
 <text xml:space="preserve" text-anchor="middle" x="239" y="-827.55" font-family="Helvetica,sans-Serif" font-size="11.00">The director (above every faction)</text>
-<text xml:space="preserve" text-anchor="middle" x="239" y="-815.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 1997 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="239" y="-803.55" font-family="Helvetica,sans-Serif" font-size="11.00">director 1868</text>
+<text xml:space="preserve" text-anchor="middle" x="239" y="-815.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 2050 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="239" y="-803.55" font-family="Helvetica,sans-Serif" font-size="11.00">director 1921</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Seams (leaves) -->
 <g id="edge31" class="edge">
@@ -114,9 +114,9 @@
 <!-- The director (above every faction)&#45;&gt;Army and operations -->
 <g id="edge28" class="edge">
 <title>The director (above every faction)&#45;&gt;Army and operations</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.5" d="M239,-797.64C239,-777.84 239,-747.55 239,-721.25 239,-721.25 239,-721.25 239,-567.62 239,-492.05 220.13,-462.57 261,-399 323.89,-301.18 375.23,-304.2 483,-260.5 518.67,-246.04 559.63,-235.8 596.04,-228.72"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.5" points="596.28,-232.24 605.46,-226.95 594.98,-225.36 596.28,-232.24"/>
-<text xml:space="preserve" text-anchor="middle" x="240.73" y="-517.08" font-family="Helvetica,sans-Serif" font-size="9.00">2</text>
+<path fill="none" stroke="#8899aa" stroke-width="1.8" d="M239,-797.64C239,-777.84 239,-747.55 239,-721.25 239,-721.25 239,-721.25 239,-567.62 239,-492.05 220.13,-462.57 261,-399 323.89,-301.18 375.23,-304.2 483,-260.5 518.51,-246.1 559.27,-235.89 595.57,-228.82"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.8" points="595.83,-232.33 605.01,-227.04 594.54,-225.45 595.83,-232.33"/>
+<text xml:space="preserve" text-anchor="middle" x="240.73" y="-517.08" font-family="Helvetica,sans-Serif" font-size="9.00">3</text>
 </g>
 <!-- The biotech -->
 <g id="node9" class="node">

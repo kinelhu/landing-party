@@ -24,6 +24,7 @@ local pods = require("__landing-party__.scripts.pods")
 local war = require("__landing-party__.scripts.war")
 local jammer = require("__landing-party__.scripts.jammer")
 local rd = require("__landing-party__.scripts.rd")
+local army = require("__landing-party__.scripts.army")
 
 local director = {}
 
@@ -375,7 +376,7 @@ local function tell(owner, key, ...)
   end
 end
 
-local morale, walking, masts_tick, bounty_tick -- (below: after walk_back, start_mast and start_bounty)
+local morale, walking, send_home, masts_tick, bounty_tick -- (below: after walk_back, start_mast and start_bounty)
 
 function director.tick(tick)
   if tick % 300 == 150 and storage.director then morale(storage.director, tick) end
@@ -1290,10 +1291,9 @@ war.on_strike_landed = function(key, units)
     s.strike_unit[u.unit_number] = key
     -- (A team already sent back: its late pods walk home with it. Pods in flight at a lull's recall landed and went
     -- for their target in the truce: railbase_end's climax, 3 of 80 down when recalled, Grubstake razed 224 in it.)
-    if k.truce and not k.lift_at then k.lift_at = game.tick + tun("lift_minutes") * 3600 end
+    if k.truce and not k.lift_at then k.lift_at = game.tick + tun("home_minutes") * 3600 end
     if k.lift_at then
-      u.commandable.set_command{type = defines.command.go_to_location, destination = k.landed_at, radius = 8,
-        distraction = k.truce and defines.distraction.none or defines.distraction.by_enemy}
+      send_home(k, {u})
     elseif u.type == "unit" then
       -- In one group, at its slowest's pace (0.2.417): sent each on its own, its harriers flew 250 tiles ahead into the
       -- player's guns and the force broke at half before its tanks came (railbase_end, every strike within 40 s).
@@ -1314,17 +1314,37 @@ end
 
 -- Each minute: its teams' pods sent once their warning has run (a camp fallen meanwhile, none); its teams fight on to the
 -- nearest of the player's buildings within 80 of them; at strike_minutes they walk back to where they landed and are
--- lifted out there, or wherever they are lift_minutes on. A team all dead first is the player's: finished.
+-- home to their camp (walking, send_home). A team all dead first is the player's: finished.
 -- Sent back to where they landed, lifted there or at lift_at. `truce`: a lull's recall, distraction none, so they walk
 -- home through the player's guns without fighting (by_enemy, a team recalled in scenario director's lull razed 3 of the
 -- player's on its way back, the minute after the truce, 0.2.398).
-local function walk_back(k, tick, truce)
-  if truce then k.truce = true end
-  -- (Out of its group first: its command would hold them.)
-  if k.group and k.group.valid then k.group.destroy() end
-  k.lift_at = k.lift_at or tick + tun("lift_minutes") * 3600
+-- Home (the user, 2026-11-15: "The lift makes little sense for factorio? ... you need a rocket to reach space"): its
+-- lead camp, or the nearest of its corporation's standing; none, stranded. Walked there by ops.walk_home (quiet in a
+-- truce or broken); at the camp, into its garrison while it has room (army.cap), the rest to its launchpad (its lander
+-- with none) and off on its rocket, an export's beam. Lifted out where they landed until 0.2.419.
+local function home_of(k)
+  local b = storage.bases[k.base]
+  if b and not b.fallen and b.lander and b.lander.valid then return b end
+  local best, bd
+  for _, c in pairs(storage.bases or {}) do
+    if c.corp == k.corp and not c.fallen and c.lander and c.lander.valid and k.landed_at then
+      local d = (c.lander.position.x - k.landed_at[1]) ^ 2 + (c.lander.position.y - k.landed_at[2]) ^ 2
+      if not bd or d < bd then best, bd = c, d end
+    end
+  end
+  if best then k.base = best.id end
+  return best
+end
+send_home = function(k, units)
+  local b = home_of(k)
+  if b then
+    k.home = b.id
+    return ops.walk_home(b, units, k.truce)
+  end
+  -- (Stranded: no camp of its corporation standing. They go to where they landed and stay there till lift_at.)
+  k.home = nil
   local n = 0
-  for _, u in ipairs(k.units) do
+  for _, u in ipairs(units) do
     if u.valid then
       n = n + 1
       u.commandable.set_command{type = defines.command.go_to_location, destination = k.landed_at, radius = 8,
@@ -1333,31 +1353,55 @@ local function walk_back(k, tick, truce)
   end
   return n
 end
+local function walk_back(k, tick, truce)
+  if truce then k.truce = true end
+  -- (Out of its group first: its command would hold them.)
+  if k.group and k.group.valid then k.group.destroy() end
+  k.lift_at = k.lift_at or tick + tun("home_minutes") * 3600
+  return send_home(k, k.units)
+end
 
 -- Its strike forces' morale, every 5 s: one that has lost strike_break of those landed breaks, walks back without
 -- fighting (walk_back's truce: distraction none) and is lifted out where it landed; repelled, the player's win short of
 -- killing them all (4 of 38 were, against a base nobody defended: railbase_end, 0.2.394).
--- Its forces walking back (a truce or broken), every second: lifted as they reach its landing point; a unit the engine
--- set to flee, by_enemy, sent on again (0.2.418, below).
+-- Its forces walking home, every second: within its camp's claim (its walls and gates the camp's own returning units',
+-- pool.give), into its garrison while it has room, else off on its pad's rocket (its lander's with none: an export's
+-- beam); a unit the engine set to flee (by_enemy) sent on again. (Landed by its target since 0.2.418, a broken
+-- force's tank fled among the player's guns and razed 4 of them, scenario director repel. Home within 40 of the lander
+-- at first: the camp's walls held them off it, and none were home in 8 minutes, scenario director home.)
 walking = function(s)
   for _, k in pairs(s.strikes or {}) do
-    -- (Walking back in a truce or broken: a unit the engine set to flee, by_enemy, sent on again. Landed by its target
-    -- since 0.2.418, a broken force's tank fled among the player's guns and razed 4 of them: scenario director repel.)
-    -- (And lifted as they reach its landing point, every second: left idle there till the minute's pass, they fought.)
-    if k.lift_at and k.truce and k.landed_at then
+    if k.lift_at and k.landed_at then
+      local b = k.home and storage.bases[k.home]
+      if b and (b.fallen or not (b.lander and b.lander.valid)) then b = nil; send_home(k, k.units) end
       local back = {}
       for _, u in ipairs(k.units) do
         if u.valid then
-          if (u.position.x - k.landed_at[1]) ^ 2 + (u.position.y - k.landed_at[2]) ^ 2 <= 16 * 16 then
-            s.strike_lifted = (s.strike_lifted or 0) + 1
-            k.lifted = (k.lifted or 0) + 1
-            u.destroy()
+          local c = u.commandable and u.commandable.command
+          local r = b and math.max(60, b.claim_radius or 0)
+          if not b then
+            back[#back + 1] = u  -- (Stranded: held where it landed.)
+          elseif (u.position.x - b.lander.position.x) ^ 2 + (u.position.y - b.lander.position.y) ^ 2 <= r * r then
+            s.strike_unit[u.unit_number] = nil
+            if pool.strength(b) < army.cap(b) then
+              pool.enlist(b, u)
+              pool.give_one(b, u)
+              s.strike_joined = (s.strike_joined or 0) + 1
+              k.joined = (k.joined or 0) + 1
+            else
+              local pad
+              for _, x in ipairs(b.launchpads or {}) do if x.valid then pad = x; break end end
+              pad = pad or b.lander
+              rendering.draw_line{from = pad, to = {pad.position.x, pad.position.y - 60}, surface = pad.surface,
+                color = {0.6, 0.85, 1, 0.8}, width = 6, time_to_live = 90}
+              s.strike_shipped = (s.strike_shipped or 0) + 1
+              k.shipped = (k.shipped or 0) + 1
+              u.destroy()
+            end
           else
             back[#back + 1] = u
-            local c = u.commandable and u.commandable.command
-            if u.commandable and not (c and c.type == defines.command.go_to_location) then
-              u.commandable.set_command{type = defines.command.go_to_location, destination = k.landed_at, radius = 8,
-                distraction = defines.distraction.none}
+            if not (c and (c.type == defines.command.compound or c.type == defines.command.go_to_location)) then
+              ops.walk_home(b, {u}, k.truce)
             end
           end
         end
@@ -1377,7 +1421,7 @@ morale = function(s, tick)
         s.strikes_repelled = (s.strikes_repelled or 0) + 1
         walk_back(k, tick, true)
         shared.event("strike_broken", {key = key, live = live, landed = k.landed_n})
-        trace(string.format("strike force %d broke: %d of %d left, walking back to be lifted", key, live, k.landed_n))
+        trace(string.format("strike force %d broke: %d of %d left, walking home", key, live, k.landed_n))
       end
     end
   end
@@ -1392,19 +1436,28 @@ local function strike_over(s, key, k, why)
   for _, g in ipairs(b and b.garrison or {}) do
     if g.valid and mine[g.unit_number] then s.strike_enlisted = (s.strike_enlisted or 0) + 1 end
   end
-  s.strike_lifted = (s.strike_lifted or 0) + #live
   s.strikes_over = (s.strikes_over or 0) + 1
   if why == "finished" then s.strikes_finished = (s.strikes_finished or 0) + 1 end
-  for _, u in ipairs(live) do u.destroy() end
+  -- (Those still out at its end: its camp's where they stand, on their way back (pool.give); stranded, gone.)
+  local hb = k.home and storage.bases[k.home]
+  if hb and not hb.fallen and hb.lander and hb.lander.valid then
+    for _, u in ipairs(live) do pool.enlist(hb, u) end
+    pool.give(hb, live)
+    s.strike_joined = (s.strike_joined or 0) + #live
+    k.joined = (k.joined or 0) + #live
+  else
+    s.strike_lifted = (s.strike_lifted or 0) + #live
+    for _, u in ipairs(live) do u.destroy() end
+  end
   if k.tag and k.tag.valid then k.tag.destroy() end
   if k.ttag and k.ttag.valid then k.ttag.destroy() end
   if k.group and k.group.valid then k.group.destroy() end
   local f = game.forces[k.owner]
   if f and k.alert and k.alert.valid then f.remove_alert{entity = k.alert} end
-  -- (Its lifted: those lifted at its landing point as they came back, and the rest now.)
-  local left = (k.lifted or 0) + #live
-  trace(string.format("strike force %d over (%s): %d of %d lifted out", key, why, left, k.sent))
-  shared.event("strike_over", {key = key, left = left, sent = k.sent, why = why})
+  local left = (k.joined or 0) + (k.shipped or 0) + (k.lifted or 0) + (hb and 0 or #live)
+  trace(string.format("strike force %d over (%s): %d of %d home (%d joined camp %s, %d shipped off)", key, why, left,
+    k.sent, k.joined or 0, tostring(k.home), k.shipped or 0))
+  shared.event("strike_over", {key = key, left = left, sent = k.sent, why = why, joined = k.joined, shipped = k.shipped})
   s.strikes[key] = nil
   for un, kk in pairs(s.strike_unit or {}) do if kk == key then s.strike_unit[un] = nil end end
 end
@@ -1428,8 +1481,10 @@ function director.strikes(s, tick)
       local landed = tick - k.at > 2 * 3600
       if landed and #live == 0 then strike_over(s, key, k, k.broken and "repelled" or k.lift_at and "lifted" or "finished")
       elseif k.lift_at then
-        -- Walking back: lifted where they landed, or wherever they are at lift_at.
-        if tick >= k.lift_at then strike_over(s, key, k, k.broken and "repelled" or "lifted")
+        -- Walking home (walking, every second): over once all are home or at lift_at, the rest the camp's where they
+        -- stand. Stranded: lifted where they landed.
+        if tick >= k.lift_at or (k.home and #live == 0) then strike_over(s, key, k, k.broken and "repelled" or "lifted")
+        elseif k.home then
         else
           local back = {}
           for _, u in ipairs(live) do
@@ -1444,8 +1499,7 @@ function director.strikes(s, tick)
         end
       elseif tick >= k.till and k.landed_at then
         local n = walk_back(k, tick)
-        trace(string.format("strike force %d: %d walking back to %.0f,%.0f to be lifted", key, n, k.landed_at[1],
-          k.landed_at[2]))
+        trace(string.format("strike force %d: %d walking home to camp %s", key, n, tostring(k.home)))
       elseif tick >= k.till then strike_over(s, key, k, "lifted")
       elseif #live > 0 then
         local c = {cx / #live, cy / #live}
@@ -1681,7 +1735,7 @@ function director.start_lull(s, owner, tick, corps, base_minutes)
   local held = {}
   if corps and #corps > 0 then held = corps else for corp in pairs(shared.CORPS) do held[#held + 1] = corp end; table.sort(held) end
   for _, corp in ipairs(held) do storage.truces[corp .. "|" .. owner] = tick + truce * 3600 end
-  -- Its operations out against the player recalled (ops' b.recall), and its own strike teams sent back to be lifted: a
+  -- Its operations out against the player recalled (ops' b.recall), and its own strike teams sent home: a
   -- truce held launches only, and the player told of a hold lost 398 buildings in it to sieges already out.
   local set = {}
   for _, corp in ipairs(held) do set[corp] = true end
@@ -1700,8 +1754,7 @@ function director.start_lull(s, owner, tick, corps, base_minutes)
     if k.owner == owner and set[k.corp] and k.at then
       k.till, k.truce = math.min(k.till or tick, tick), true
       if k.landed_at then
-        trace(string.format("strike force %d: %d recalled, walking back to %.0f,%.0f to be lifted", key,
-          walk_back(k, tick, true), k.landed_at[1], k.landed_at[2]))
+        trace(string.format("strike force %d: %d recalled, walking home", key, walk_back(k, tick, true)))
       end
     end
   end

@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.419
+Date: 2026-11-15
+  Changes:
+    - A strike force's survivors no longer vanish: they walk home to their camp, joining its garrison while it has room; the rest leave on the camp's rocket.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.418
 Date: 2026-11-15
   Changes:

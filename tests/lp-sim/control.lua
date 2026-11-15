@@ -7610,6 +7610,53 @@ scenarios.director = function()
     end)
     return
   end
+  -- LP_MIX=home: a strike force's survivors walk home (0.2.419; the user: "you need a rocket to reach space"): at three
+  -- labs 150 from the camp, nothing defending them, two minutes in the field; it walks home and joins the garrison,
+  -- none lifted out in the field. LP_MIX=homefull: the garrison full first (60 more infantry), so they board the pad
+  -- and leave on its rocket, none joining.
+  if params.mix == "home" or params.mix == "homefull" then
+    local full = params.mix == "homefull"
+    schedule(120, function()
+      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100, points_per_worth = 1,
+        points_max = 12, warn_minutes = 1, strike_minutes = 2, home_minutes = 8},
+        -- (Room for them: the camp's cap was its garrison, 8, and two of six shipped.)
+        levers = not full and {serenity = {strength = 4}, grubstake = {strength = 4}} or nil})
+      local id = (lp("bases") or {})[1]
+      local o = lp("stats", id).origin
+      local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
+      S.labs = {math.floor(o.x - o.x / len * 150), math.floor(o.y - o.y / len * 150)}
+      flatten(S.labs[1] - 8, S.labs[2] - 8, S.labs[1] + 8, S.labs[2] + 8)
+      for j = 0, 2 do surface().create_entity{name = "lab", position = {S.labs[1] + 4 * j - 4 + 0.5, S.labs[2] + 0.5}, force = "player"} end
+      if full then lp("debug_units", id, "lp-infantry", 60) end
+    end)
+    schedule(600, function()
+      local id = (lp("bases") or {})[1]
+      S.g0 = (lp("stats", id) or {}).garrison
+      S.said = lp("director_cmd", "strike", "research")
+    end)
+    schedule(END - 60, function()
+      local d = lp("director") or {}
+      local id = (lp("bases") or {})[1]
+      S.g1 = (lp("stats", id) or {}).garrison
+      info(string.format("director %s: %s; %s landed, %s over, joined %s, shipped %s, lifted %s; garrison %s to %s",
+        params.mix, tostring(S.said), tostring(d.strike_landed), tostring(d.strikes_over), tostring(d.strike_joined),
+        tostring(d.strike_shipped), tostring(d.strike_lifted), tostring(S.g0), tostring(S.g1)))
+      local joined, shipped = d.strike_joined or 0, d.strike_shipped or 0
+      if full then
+        check("director: homefull, its garrison full, the survivors leave on its rocket, none joining",
+          S.said == "strike: research" and (d.strikes_over or 0) == 1 and shipped > 0 and joined == 0
+          and (d.strike_lifted or 0) == 0, string.format("%s, over %s, joined %d, shipped %d, lifted %s", tostring(S.said),
+          tostring(d.strikes_over), joined, shipped, tostring(d.strike_lifted)))
+      else
+        check("director: home, the survivors walk home and join the garrison, none lifted out in the field",
+          S.said == "strike: research" and (d.strikes_over or 0) == 1 and joined > 0 and shipped == 0
+          and (d.strike_lifted or 0) == 0 and (S.g1 or 0) >= (S.g0 or 0) + joined - 2,
+          string.format("%s, over %s, joined %d, shipped %d, lifted %s, garrison %s to %s", tostring(S.said),
+          tostring(d.strikes_over), joined, shipped, tostring(d.strike_lifted), tostring(S.g0), tostring(S.g1)))
+      end
+    end)
+    return
+  end
   -- LP_MIX=targets: strike targets by motive (0.2.418): labs 150 from the camp, three gun turrets on its camp side; a
   -- steam engine 60 aside; a gun turret 60 the other side that has killed 25 of each corporation's units. In turn: at the
   -- labs, landing within strike_land where no turret reaches; unforced, retaliation at that gun; at power, told ahead,
@@ -8362,10 +8409,11 @@ scenarios.director = function()
       check("director: in a lull, no operation from before it still out (recalled)", (S.lull_seen or 0) > 0
         and (S.unrecalled or 0) == 0, string.format("%s lull minutes sampled, %s operations still out, %s recalled",
           tostring(S.lull_seen), tostring(S.unrecalled), tostring(d.recalls)))
-      check("director: its strike teams land, stay out of the garrison and are lifted out",
-        (d.strike_landed or 0) >= 1 and (d.strikes_over or 0) >= 1 and (d.strike_enlisted or 0) == 0,
-        string.format("%s landed, %s teams over, %s lifted, %s in a garrison", tostring(d.strike_landed),
-          tostring(d.strikes_over), tostring(d.strike_lifted), tostring(d.strike_enlisted)))
+      -- (Lifted out where they landed until 0.2.419; since, home on foot, none vanishing in the field.)
+      check("director: its strike teams land and walk home, none lifted out in the field",
+        (d.strike_landed or 0) >= 1 and (d.strikes_over or 0) >= 1 and (d.strike_lifted or 0) == 0,
+        string.format("%s landed, %s teams over, %s lifted, %s joined, %s shipped", tostring(d.strike_landed),
+          tostring(d.strikes_over), tostring(d.strike_lifted), tostring(d.strike_joined), tostring(d.strike_shipped)))
     end
     -- (A strike team recalled by a lull walked back by_enemy, sent the minute after the truce, and razed 3 of the
     -- player's buildings in it: LP_MIX=climax, 0.2.398. Since, sent back at once, distraction none.)

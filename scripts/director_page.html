@@ -356,7 +356,7 @@ function describe(run) {
   for (const k of (run.strikes || [])) {
     const lead = k.hit != null ? `, first hit ${Math.round((k.hit - k.warn) * 60)} s after its warning` : '';
     items.push({m: k.warn, html: `${CORP_NAME[k.corp] || k.corp} strike force of ${k.n} told, landing in ${k.minutes} min${lead}`});
-    if (k.over != null) items.push({m: k.over, html: `${CORP_NAME[k.corp] || k.corp} strike force ${k.why === 'finished' ? 'destroyed by the player' : `lifted out, ${k.left} of ${k.n} left`}`});
+    if (k.over != null) items.push({m: k.over, html: `${CORP_NAME[k.corp] || k.corp} strike force ${k.why === 'finished' ? 'destroyed by the player' : `gone home, ${k.left} of ${k.n} left`}`});
   }
   for (const t of run.texts) if (/holds|gap paid|no lull|corrected/.test(t.text)) items.push({m: t.m, html: `<span style="color:var(--dim)">${t.text}</span>`});
   items.sort((a, b) => a.m - b.m);
