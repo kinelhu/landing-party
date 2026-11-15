@@ -7356,8 +7356,10 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flee, distraction by_enemy, 3.5 s into its walk back, and those that reached the landing point stood idle till the
   minute's lift and fought. A force walking back is now seen to every second: its units at the landing point lifted, any
   off its walk sent on again (repel: 0 razed after). Scenario director cmd's radar moved by the climax's target (its own
-  factory's flatten had razed the first place tried). Assumed, not tested on a real save yet: that the player's army
-  is a fair answer to a drop at a gap.
+  factory's flatten had razed the first place tried). The visit (railbase_end, seed 1, 0.2.418): three forces, at the
+  boilers' pumps (told ahead), a station and a focus, each landing where no turret reached; each hit within 2 s of its
+  pods and fought about 3 minutes before breaking at half (0.2.417: broke 40 to 100 s in, before or at its first hit);
+  razed worth 480 (0.2.417 95, off 257). Assumed, not tested: that the player's army is a fair answer to a drop at a gap.
 - **Strike forces move as one** (0.2.417). On railbase_end (0.2.416, seed 1) every strike force broke within 40 s of
   its pods: landed behind its camp 250 tiles from its target, each unit sent on its own, its harriers were at the
   player's guns in 25 s and the force had lost half before its tanks came. Now its units join one unit group as they
