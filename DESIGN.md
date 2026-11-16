@@ -7468,6 +7468,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the ground 160 out (past the camp's own sweeps), a spawner by it placed as the drop is sent: retried, 1 swept, the
   spawner gone; seen failing with the retry off (0 retries, the spawner standing). Before/after, the quick set plus cut
   and raid: identical in all 52 runs.
+  The nwa seed 1 visit on 0.2.433 (90 minutes, steady): all checks pass, mined 11,768 and made 2,345 (0 and 0 on 0.2.429,
+  12,520 and 2,495 on 0.2.432). The far scan found ore 280 tiles out (-551,909, 320 from its given-up ground) and after
+  its second drop the headquarters mined there at 533 to 628 a minute; the biters at evolution 0.99 kept taking its walls
+  and turrets (17 rebuilds waiting at once), its parts went to those, and it starved twice more, a drop each time, a new
+  far mine ordered after the third. No retry of the given-up ground was needed (ore further out was found). Read: it
+  fights on and earns in bursts; the map, not a stall, holds it down. Not tuned further before the playtest.
 - **The Skyguard's description** (0.2.430): it said the trooper fires missiles at flying units; it has carried a long
   tracking laser (units.lua, lp-rail-beam) since it was built. Fixed in the locale; caught in the manual audit.
 - **The night of 2026-11-16 on 0.2.429** (the user: "All of those are due, and I agree"). The full regression: 360 of
