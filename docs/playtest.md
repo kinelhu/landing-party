@@ -1,6 +1,6 @@
 # Playtest kit
 
-Mod 0.2.427, rewritten 2026-11-16 for the release playtest (0.3.0). The last kit was for 0.2.162 (2026-10-31); since,
+Mod 0.2.433, rewritten 2026-11-16 for the release playtest (0.3.0). The last kit was for 0.2.162 (2026-10-31); since,
 the director, the sounds and most of the factions' behaviour are new, and none of it has been seen in a game window.
 Everything below is checked headless only. Chat notices are off: the world should tell you what happens.
 
@@ -41,7 +41,8 @@ to see the beats you missed.
 5. **The lulls.** After every beat the factions go quiet for a while; nothing announces it. Did you feel them? Did you
    use them?
 6. **The odd beats.** A mast (a launch jammer by a silo, a blackout mast by your radars), a bounty on one of your
-   buildings, a crashed shuttle with guards and a loot box, an export contract, a garrison rotation. Without messages,
+   buildings, a crashed shuttle with guards and a loot box, an export contract, a garrison rotation, a supply drop
+   to a camp that has stopped earning (destroy the crate; still earning nothing, the camp leaves). Without messages,
    did you understand each from what you saw (the mast, the map tags, the alert)?
 7. **The sounds.** Engines, footsteps, deaths, the pods' klaxon, the landing roar, the siege horn, the dome's catch,
    the orbital strike's build into its first impact. Anything too loud, too repetitive, out of place? Do engines
