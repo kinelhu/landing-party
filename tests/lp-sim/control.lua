@@ -918,7 +918,7 @@ scenarios.launches = function()
   end)
 end
 
--- Starve (lifeline.lua, 0.2.432): at the strike every ore tile within 400 of the camp goes, its drills with it, and its
+-- Starve (lifeline.lua, 0.2.432): at the strike every ore tile within 500 of the camp goes (past LIFELINE.search), its drills with it, and its
 -- parts to 0: it can never mine again. Starving shared.LIFELINE.minutes on, its corporation drops it a crate of parts;
 -- it takes it, and having made nothing since, it departs leave minutes after. LP_MIX=starveleave: the
 -- crate is destroyed as it lands (the player's answer), the drop lost and the camp departs the same. The camp's own
@@ -940,16 +940,28 @@ scenarios.starve = function()
     local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
     local c = lander.position
     local n = 0
-    for _, r in pairs(surface().find_entities_filtered{type = "resource", position = c, radius = 400}) do r.destroy(); n = n + 1 end
+    for _, r in pairs(surface().find_entities_filtered{type = "resource", position = c, radius = 500}) do r.destroy(); n = n + 1 end
     for _, d in pairs(lp_entities("lp-drill")) do d.destroy() end
     lp("debug_parts", storage.id, -counter("parts"))
     S.center = {c.x, c.y}
+    -- A given-up mine's ground 160 tiles out (past its camp's own sweeps, 120), a spawner by it once the drop is sent:
+    -- with no ore further out either, the drop's arrival tries that ground again, Kessler-Hayashi sweeping the spawner
+    -- from orbit first.
+    S.ground = {c.x + 160, c.y}
+    lp("debug_mine_danger", storage.id, {S.ground})
     check("starve: its ore gone", n > 0, n .. " ore entities")
   end)
   for t = STRIKE + 3600, END, 3600 do
     schedule(t, function()
       local st = lp("stats", storage.id)
-      if st.lifelines > 0 and not S.sent_at then S.sent_at = game.tick end
+      if st.lifelines > 0 and not S.sent_at then
+        S.sent_at = game.tick
+        local g = S.ground
+        if g and not leave then
+          S.spawner = surface().create_entity{name = "biter-spawner", force = "enemy",
+            position = surface().find_non_colliding_position("biter-spawner", {g[1] + 10, g[2]}, 20, 1)}
+        end
+      end
       if st.departed and not S.left_at then S.left_at = game.tick end
       if leave and S.center then
         for _, ch in pairs(surface().find_entities_filtered{name = "iron-chest", force = FORCE, position = S.center, radius = 40}) do
@@ -966,6 +978,11 @@ scenarios.starve = function()
         string.format("%d destroyed, %d lost", S.crates_destroyed or 0, st.lifelines_lost))
     else
       check("starve: the drop reached the camp", st.lifeline_parts >= L.parts, st.lifeline_parts .. " parts")
+      -- (Its scan out to LIFELINE.search found nothing, so the given-up ground was tried again, swept first.)
+      check("starve: no ore further out, the given-up ground tried again, swept from orbit", st.lifeline_retries >= 1
+        and st.mine_danger == 0 and st.retry_swept >= 1 and S.spawner and not S.spawner.valid,
+        string.format("%d retries, %d swept, %d marks left, spawner %s", st.lifeline_retries, st.retry_swept, st.mine_danger,
+          S.spawner and S.spawner.valid and "standing" or "gone"))
     end
     -- (Not before leave minutes after the drop: one drop, then the way out.)
     check("starve: the camp departed after its drop", st.departed ~= nil and S.sent_at and S.left_at

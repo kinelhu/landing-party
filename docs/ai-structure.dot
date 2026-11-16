@@ -43,12 +43,12 @@ digraph ai {
     "rd" [label="rd\n396 lines", width=1.24, fillcolor="#eef2f7"];
     "phases" [label="phases\n269 lines", width=1.10, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
-    "lifeline" [label="lifeline\n124 lines", width=0.94, fillcolor="#eef2f7"];
+    "lifeline" [label="lifeline\n154 lines", width=0.97, fillcolor="#eef2f7"];
   }
   subgraph cluster_5 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "base" [label="base\n997 lines", width=1.91, fillcolor="#eef2f7"];
     "construction" [label="construction\n446 lines", width=1.30, fillcolor="#d9f0d9"];
-    "planner" [label="planner\n380 lines", width=1.22, fillcolor="#eef2f7"];
+    "planner" [label="planner\n391 lines", width=1.23, fillcolor="#eef2f7"];
     "layout" [label="layout\n1747 lines", width=2.74, fillcolor="#f7dede"];
     "wfc" [label="wfc\n380 lines", width=1.22, fillcolor="#d9f0d9"];
     "wfc_serenity" [label="wfc_serenity\n134 lines", width=0.95, fillcolor="#d9f0d9"];
@@ -114,7 +114,7 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_11 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1353 lines", width=2.30, fillcolor="#f7dede"];
+    "control" [label="control\n1367 lines", width=2.32, fillcolor="#f7dede"];
     "dev" [label="dev\n611 lines", width=1.48, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n197 lines", width=1.02, fillcolor="#eef2f7"];
@@ -251,6 +251,7 @@ digraph ai {
   "ledger" -> "standing";
   "lifeline" -> "base";
   "lifeline" -> "pods";
+  "lifeline" -> "threat";
   "map" -> "chart";
   "map" -> "names";
   "map" -> "standing";

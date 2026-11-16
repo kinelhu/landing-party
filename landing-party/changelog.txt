@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.433
+Date: 2026-11-16
+  Changes:
+    - A starving camp looks for ore further out. Finding none, it tries the ground it gave up again once its supply drop arrives; Kessler-Hayashi shells the nests there from orbit first.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.432
 Date: 2026-11-16
   Changes:

@@ -7,6 +7,7 @@
 local shared = require("__landing-party__.shared")
 local base = require("__landing-party__.scripts.base")
 local pods = require("__landing-party__.scripts.pods")
+local threat = require("__landing-party__.scripts.threat")
 
 local lifeline = {}
 local L = shared.LIFELINE
@@ -68,6 +69,32 @@ local function send(b, tick)
   tell("lp.lifeline", shared.corp_label(b.corp), where(surface, at))
 end
 
+local function retry(b, surface)
+  local queue, n = {}, 0
+  if shared.CORPS[b.corp].clears_nests then
+    local seen = {}
+    for _, p in ipairs(b.mine_danger) do
+      for _, e in ipairs(surface.find_entities_filtered{position = p, radius = L.sweep, type = {"unit-spawner", "turret"},
+        force = shared.NEST_FORCES}) do
+        if not seen[e.unit_number] then
+          seen[e.unit_number] = true
+          n = n + 1
+          for _ = 1, threat.shells_for("lp-orbital-projectile", e) do queue[#queue + 1] = e end
+        end
+      end
+    end
+    if #queue > 0 then
+      storage.orbitals = storage.orbitals or {}
+      table.insert(storage.orbitals, {base = b.id, surface = surface.index, force = b.force, queue = queue, i = 1})
+    end
+  end
+  base.trace(b, string.format("starving, no ore further out: its %d given-up mines' ground tried again%s", #b.mine_danger,
+    #queue > 0 and string.format(", %d nests and worms swept from orbit first (%d shells)", n, #queue) or ""))
+  b.mine_danger, b.no_far_site = nil, nil
+  b.retries = (b.retries or 0) + 1
+  b.retry_swept = (b.retry_swept or 0) + n
+end
+
 local function collect(b, tick)
   local d = b.lifeline
   if not d or d.done then return end
@@ -83,6 +110,9 @@ local function collect(b, tick)
     b.lifeline_parts = (b.lifeline_parts or 0) + L.parts
     base.trace(b, string.format("supply drop reached the camp: %d parts", L.parts))
     tell("lp.lifeline-in", shared.corp_label(b.corp), where(surface, d.pos))
+    -- No ore further out either (planner: b.no_far_site): the given-up ground again, with the parts just come, swept
+    -- from orbit first by a corporation that clears nests.
+    if b.no_far_site and b.mine_danger then retry(b, surface) end
   else
     b.lifelines_lost = (b.lifelines_lost or 0) + 1
     base.trace(b, "supply drop lost: its crate gone before the camp took it")

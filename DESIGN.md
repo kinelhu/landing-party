@@ -7460,8 +7460,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   its headquarters camp lost three crews at each of its first two mines, its third mine ran a while, then it starved
   with "no site fits": the 27 free ore cells in reach all lie within MINE_DANGER of the two given up, the only patch in
   reach. As a headquarters it never departs: two drops reached it (34 minutes apart) and it could spend neither on a
-  mine. Open, for the user: what a starving camp with no safe ore in reach does (a wider search, the danger mark lifted
-  after a drop, or a headquarters that leaves too).
+  mine. The user's answer (2026-11-16, "OK", to: look further, then retry the ground after a drop, Kessler-Hayashi
+  sweeping it from orbit first; a headquarters still never leaves): 0.2.433. With a drop sent (b.lifeline), the planner
+  scans ore out to LIFELINE.search (400) once and looks that far, danger still kept; finding none with its scan done
+  (b.no_far_site), the drop's arrival lifts the marks (lifeline.retry) and a camp that clears nests queues the orbital
+  shells for every nest and worm within LIFELINE.sweep (60) of that ground (as war.barrage queues them). Scenario starve:
+  the ground 160 out (past the camp's own sweeps), a spawner by it placed as the drop is sent: retried, 1 swept, the
+  spawner gone; seen failing with the retry off (0 retries, the spawner standing). Before/after, the quick set plus cut
+  and raid: identical in all 52 runs.
 - **The Skyguard's description** (0.2.430): it said the trooper fires missiles at flying units; it has carried a long
   tracking laser (units.lua, lp-rail-beam) since it was built. Fixed in the locale; caught in the manual audit.
 - **The night of 2026-11-16 on 0.2.429** (the user: "All of those are due, and I agree"). The full regression: 360 of

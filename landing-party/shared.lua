@@ -948,7 +948,11 @@ shared.SWEEP = {loss = 0.25, reach = 48, max = 6}
 -- corporation drops it a crate of parts by pod, out tiles from its lander toward the player, marked; wait minutes on,
 -- if the crate stands, its parts reach the camp. Having made nothing since, leave minutes after the drop a camp departs
 -- (base.depart); a headquarters never does, its next drop hq_gap minutes after the last if it is starving still.
-shared.LIFELINE = {grace = 20, minutes = 10, poor = 150, parts = 300, out = 16, wait = 3, leave = 20, hq_gap = 30}
+-- Starving, a camp looks for ore out to search tiles (its usual reach ends at 160 from its network, its scan at 200);
+-- none there, its drop's arrival lifts its given-up ground's marks to try it again, Kessler-Hayashi shelling the nests and
+-- worms within sweep tiles of that ground from orbit first (as its sweeps do, war.barrage).
+shared.LIFELINE = {grace = 20, minutes = 10, poor = 150, parts = 300, out = 16, wait = 3, leave = 20, hq_gap = 30,
+  search = 400, sweep = 60}
 -- Where crews were killed until a mine was given up (crew.lua), the next mine keeps danger tiles away (site.mining).
 shared.MINE_DANGER = 48
 

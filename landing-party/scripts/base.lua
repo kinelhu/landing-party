@@ -983,7 +983,7 @@ function base.stats(b)
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
     dir_tries = b.dir_tries or 0, dir_launched = b.dir_launched or 0, dir_miss = b.dir_miss,
     lifelines = b.lifelines or 0, lifelines_lost = b.lifelines_lost or 0, lifeline_parts = b.lifeline_parts or 0,
-    mine_danger = #(b.mine_danger or {}),
+    mine_danger = #(b.mine_danger or {}), lifeline_retries = b.retries or 0, retry_swept = b.retry_swept or 0, no_far_site = b.no_far_site,
     fallen = b.fallen, departed = b.departed, expedition = b.expedition ~= nil, exported = b.exported, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius, claims_settled = b.claims_settled, landed = b.landed, gens_max = b.gens_max, hull_down = b.hull_down, perimeter = b.perimeter, perimeter_steps = b.perimeter_steps, warned = b.warned,
     grudge = b.grudge, grudge_till = b.grudge_till, cap = army.cap(b), escort = b.escort, gens_counted = b.gens_counted,
     cleared = b.cleared, under_guns = b.under_guns, reinforced = b.reinforced or 0, on_footing = b.on_footing,

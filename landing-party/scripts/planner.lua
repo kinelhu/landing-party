@@ -171,6 +171,17 @@ local function plan(b, only)
         return string.format("mining at %d,%d", o[1], o[2])
       end
     end
+    -- A starving camp (lifeline.lua: a drop sent) looks further, its ore scanned out to LIFELINE.search once; finding
+    -- nothing there either, it says so (b.no_far_site), and its drop's arrival lets it try the given-up ground again.
+    if b.lifeline then
+      if not b.far_scanned then b.far_scanned = true; site.scan_init(b, shared.LIFELINE.search) end
+      local o, _, cx, cy = site.mining(surface, b, shared.LIFELINE.search, budget)
+      if o then
+        enqueue(b, modules.mining, o, cx, cy)
+        return string.format("mining at %d,%d (starving: further out)", o[1], o[2])
+      end
+      if budget.n > 0 and not (b.ore_scan and b.ore_scan.queue[b.ore_scan.i]) then b.no_far_site = game.tick end
+    end
   end
   -- Maturity: enough blocks for the doctrine, or two minutes with nothing left to claim. A mature
   -- settlement stops expanding; its surplus is exported from a launch pad.

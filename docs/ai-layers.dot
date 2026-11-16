@@ -6,8 +6,8 @@ digraph layers {
   "Perception and attempts (any attacker)" [label="Perception and attempts (any attacker)\n6 modules, 1607 lines", fillcolor="#eef2f7"];
   "Knowledge and strategy (per faction)" [label="Knowledge and strategy (per faction)\n2 modules, 316 lines", fillcolor="#eef2f7"];
   "The director (above every faction)" [label="The director (above every faction)\n2 modules, 2356 lines\ndirector 2226", fillcolor="#f7dede"];
-  "Corporation" [label="Corporation\n10 modules, 3340 lines\nfaction 1207", fillcolor="#f7dede"];
-  "Settlement" [label="Settlement\n16 modules, 6515 lines\nlayout 1747", fillcolor="#f7dede"];
+  "Corporation" [label="Corporation\n10 modules, 3370 lines\nfaction 1207", fillcolor="#f7dede"];
+  "Settlement" [label="Settlement\n16 modules, 6526 lines\nlayout 1747", fillcolor="#f7dede"];
   "Army and operations" [label="Army and operations\n22 modules, 9871 lines\narmy 1061, ops 2528, siege 2146", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1607 lines", fillcolor="#eef2f7"];
   "The biotech" [label="The biotech\n5 modules, 8369 lines\nherd 4543, farm 2521", fillcolor="#f7dede"];
@@ -22,7 +22,7 @@ digraph layers {
   "Corporation" -> "Army and operations" [label="6", penwidth=2.5];
   "Corporation" -> "Knowledge and strategy (per faction)" [label="2", penwidth=1.5];
   "Corporation" -> "Perception and attempts (any attacker)" [label="3", penwidth=1.8];
-  "Corporation" -> "Seams (leaves)" [label="11", penwidth=3.8];
+  "Corporation" -> "Seams (leaves)" [label="12", penwidth=4.0];
   "Corporation" -> "Settlement" [label="7", penwidth=2.8];
   "Heists (Grubstake)" -> "Army and operations" [label="4", penwidth=2.0];
   "Heists (Grubstake)" -> "Corporation" [label="3", penwidth=1.8];

@@ -1297,6 +1297,8 @@ remote.add_interface("landing-party", {
   separate_stats = function() return separate.stats() end,
   belt_stats = function(id) return storage.bases[id] and belts.stats(storage.bases[id]) end,
   debug_crew = function(id, pos, names) return storage.bases[id] and crew.debug_module(storage.bases[id], pos, names) end,
+  -- Tests only: `danger` as the camp's given-up mines' ground (crew.lua's b.mine_danger).
+  debug_mine_danger = function(id, danger) local b = storage.bases[id]; if b then b.mine_danger = danger end end,
   -- Tests only: the mine the planner would pick now with `danger` as the camp's given-up ground (site.mining), its cells
   -- and danger left as they were.
   debug_mine_pick = function(id, danger)
