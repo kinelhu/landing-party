@@ -28,7 +28,7 @@ own economies. They fight you, each other and the biters.
 ## The factions
 
 **Grubstake** arrives once you make chemical science. A prospecting outfit that follows every rush in the system, it
-raids what you leave unguarded, skims your belts, strips your ore and drives Killdozers through your walls. It steals
+raids what you leave unguarded, skims your belts, strips your ore and drives Dozers through your walls. It steals
 more than it destroys, and keeps what it takes in its yard until you destroy the yard.
 
 [gif: flak]
@@ -130,7 +130,7 @@ Grubstake's theft; Synthexis's most cultures, largest attack and learning.
 5. A Kessler-Hayashi shield dome over its camp, catching your artillery's shells.
 6. A Synthexis culture: captured spawners breeding its biters.
 7. Grubstake bomb drones diving on a squad of troopers.
-8. A Grubstake Killdozer charging through a wall.
+8. A Grubstake Dozer charging through a wall.
 9. Twin orbital cannons on your platform, the Skipjack, firing over Nauvis.
 10. An orbital strike from your cannons on a Synthexis culture.
 11. A Kessler-Hayashi strike force's pods coming down beside a factory's furnaces.

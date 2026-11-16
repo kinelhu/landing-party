@@ -12,8 +12,8 @@ freighters it escorts, and sends its camps their orders by beam. Grubstake has n
 whichever of its ships is nearest the latest rush and settle their accounts there.
 
 Both keep reserves in orbit for the work a camp cannot do alone: troops for a raid in force, crates of parts for a
-camp in trouble, masts and survey gear. Both keep books on the engineer's factory as well, and they price its
-buildings the way they price ore.
+camp in trouble, masts and survey gear. Both also keep a ledger of the engineer's factory, with a value on
+each of its buildings.
 :::
 
 ## The pace of the war

@@ -1,6 +1,6 @@
 {
  "_comment": "Written by scripts/roster_page.py --qmd (scripts/manual_qmd.py, booklet) from the prototype dump, shared.lua, the scripts, the locale and docs/manual/words.cfg. Do not edit: run it again.",
- "edition": "For Landing Party 0.2.434",
+ "edition": "For Landing Party 0.2.435",
  "portraits": "media/portraits",
  "factions": {
   "grubstake": {
@@ -39,7 +39,7 @@
   "player": {
    "name": "Your army",
    "color": "B9BEC4",
-   "motto": "Hold the line, then take theirs.",
+   "motto": "The factory must grow.",
    "hero": "media/heroes/player-army.jpg",
    "emblem": "lp-trooper",
    "tab": 1,
@@ -72,13 +72,13 @@
    "health": 900,
    "portrait": "lp-tank",
    "damage": 40,
-   "damage_text": "40 explosion, 80 to buildings",
+   "damage_text": "40 explosion, 80 more to buildings",
    "range": 15,
    "speed": 5.4,
    "cost": "65 parts",
    "era": "From landing",
    "era_level": 0,
-   "role": "An armored tank. Its cannon does three times as much damage to buildings as to units.",
+   "role": "An armored tank. Its shells do extra damage to buildings.",
    "counters": "walls, turret pillboxes, troopers in the open",
    "countered_by": "battle tanks, rocket troopers",
    "blurb": "The Tank is Kessler-Hayashi's siege vehicle, and its shell is made for walls and buildings. Tanks make up most of a siege escort: they wait out of range while the mortars work, then drive in through the breach. Rocket troopers and battle tanks beat it; bullets do little."
@@ -280,7 +280,7 @@
    "air": true,
    "cost": "15 parts",
    "era": "From its level 1",
-   "role": "A cheap scrap helicopter that attacks in numbers.",
+   "role": "A small ducted-fan attack drone, flown in numbers.",
    "counters": "outposts behind a wall",
    "countered_by": "gun turrets, flak turrets, rocket troopers",
    "blurb": "The Scrap copter is a small helicopter built from salvage, with a light gun. Alone it is weak; Grubstake sends them in swarms over walls, cliffs and water, at lone poles and machines. Gun turrets shoot them down. Flamethrower turrets cannot. A copter shot down crashes a few tiles away and damages what it lands on."
@@ -633,7 +633,7 @@
    "health": 120,
    "portrait": "lp-breacher",
    "damage": 15,
-   "damage_text": "15 explosion, 85 to buildings",
+   "damage_text": "15 explosion, 85 more to buildings",
    "range": 12,
    "speed": 7.2,
    "cost": "1 bandwidth",
@@ -684,7 +684,7 @@
    "health": 900,
    "portrait": "lp-battle-tank",
    "damage": 100,
-   "damage_text": "100 explosion, 240 to buildings",
+   "damage_text": "100 explosion, 240 more to buildings",
    "range": 18,
    "speed": 5.4,
    "cost": "6 bandwidth",

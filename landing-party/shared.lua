@@ -50,7 +50,7 @@ shared.CORPS = {
     doctrines = {sprawl = 1}, bases = {["lp-turret"] = "lp-gun-turret", ["lp-infantry"] = "lp-shotgun-hand", ["lp-flamer"] = "lp-flamer-oil"},
     props = {["lp-wall"] = {max_health = 225}},
     -- Its own names for kinds (entity-name.<name>): the Shotgun hand.
-    names = {["lp-infantry"] = "lp-shotgun-hand", ["lp-turret"] = "lp-gun-turret"},
+    names = {["lp-infantry"] = "lp-shotgun-hand", ["lp-turret"] = "lp-gun-turret", ["lp-harrier"] = "lp-scrap-copter"},
     -- Its tech tree (scripts/rd.lua; docs/reviews/2026-10-14-identity-trees-consult.md): never a fair fight.
     tree = {
       {id = "handloads", branch = "scrap-arms", track = {"shotgun-shell", "bullet"}, levels = 5, cost = 400},

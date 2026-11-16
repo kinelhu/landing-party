@@ -18,7 +18,7 @@ PLATES = ("-fire", "-laser", "-physical", "-explosion", "-electric")
 # What each unit is for (words only: every number below comes from the prototypes).
 ROLE = {
     "lp-infantry": "Kessler-Hayashi's basic soldier, armed with a laser rifle. Most of its raiding force",
-    "lp-tank": "An armored tank. Its cannon does three times as much damage to buildings as to units",
+    "lp-tank": "An armored tank. Its shells do extra damage to buildings",
     "lp-walker": "A spider-legged machine that walks over walls and fires rockets",
     "lp-harrier": "A cheap, weak flier with a gun, sent in numbers. Flies over walls, cliffs and water",
     "lp-laser-drone": "An armored flier with a laser. Expensive, so there are few of them",
@@ -103,7 +103,7 @@ def damage(action, mult=1):
         # air.lua's small circle round a single hit (it skips fliers) is still a single hit.
         wrap = a.get("type") == "area" and a.get("radius") == 0.3 and a.get("trigger_target_mask") == ["common"]
         area = f" over {a['radius']} tiles" if a.get("type") == "area" and not wrap else ""
-        only = " to buildings" if a.get("entity_flags") == ["placeable-neutral"] else ""
+        only = " to buildings, on top of the hit" if a.get("entity_flags") == ["placeable-neutral"] else ""
         deliveries = a.get("action_delivery") or []
         for dl in deliveries if isinstance(deliveries, list) else [deliveries]:
             hits = []

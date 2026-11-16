@@ -56,8 +56,8 @@ Five worlds lie on the shipping lanes: Vulcanus with its foundries, Fulgora with
 farms, Aquilo out on the ice, and Nauvis. Freighters and armed platforms run between them, and the companies that own
 those platforms do most of their business in orbit.
 
-Nobody went to Nauvis. It is a green, wet planet, and its native swarm attacks anything that pollutes its air. No
-company had a reason to land there.
+The companies left Nauvis alone. It is a green, wet planet, and its native swarm attacks anything that pollutes its
+air. Nothing on it was worth the cost of landing.
 
 Then an engineer crashed on it. Starting from the wreck of their ship, they built drills, furnaces and belts, and in
 time a factory big enough to be seen from orbit. One day a rocket lifted off from it.

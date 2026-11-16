@@ -891,7 +891,7 @@ def booklet(rp, M, GEN, d, loc, V, shown, lname, copy_png, src, out):
             if (a, t, n) == first:
                 continue
             if "to buildings" in n:
-                parts.append(f"{fmt_n(a)} to buildings")
+                parts.append(f"{fmt_n(a)} more to buildings")  # (on top of the hit: the tank's 40, then 80 more)
             elif t != first[1] or a != first[0]:
                 parts.append(f"{fmt_n(a)} {damage_word(t)}")
         if kind.endswith("railgunner") and len(parts) >= 2:

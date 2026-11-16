@@ -152,7 +152,8 @@ desc:
   entity_bred_big_burster: "A huge biter that bursts at a turret guarding the way in, damaging all turrets nearby."
   entity_bred_scout: "Circles your defenses before an attack."
   entity_bred_carrier: "Carries a new Synthexis culture to wild spawners."
-  entity_harrier: "A cheap scrap helicopter that attacks in numbers."
+  entity_harrier: "A small ducted-fan attack drone, flown in numbers."
+  entity_scrap_copter: "A cheap scrap helicopter that attacks in numbers."
   entity_scavenger: "A flying bomb that targets artillery, mortars and radars."
   entity_laser_drone: "An armored flying drone with a laser. Resists bullets."
   entity_skyguard: "A trooper with a long laser that tracks flying units. Weak against ground targets."
@@ -278,6 +279,6 @@ director:
   climax_times: "double"
   gentle_share: "half"
 mod:
-  version: "0.2.434"
+  version: "0.2.435"
   factorio: "2.1"
   needs: "base, space-age"

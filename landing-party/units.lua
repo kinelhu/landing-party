@@ -1256,7 +1256,7 @@ do
   local c = table.deepcopy(harrier)
   c.name = "lp-constructor"
   c.collision_mask = {layers = {["lp-air"] = true}, not_colliding_with_itself = true}
-  c.localised_name = {"entity-name.lp-harrier"}
+  c.localised_name = {"entity-name.lp-constructor"}
   data:extend({c})
 end
 -- Their fall (scripts/fall.lua, shared.FALL): each kind's body, glow and rotor at heading 0 as one sprite, the body's middle

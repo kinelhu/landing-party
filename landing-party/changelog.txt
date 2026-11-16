@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.435
+Date: 2026-11-16
+  Locale:
+    - Kessler-Hayashi's flier is a strike drone, a ducted-fan attack drone; Grubstake's keeps the name scrap copter. Its constructor drones are named as such.
+    - The Killdozer is the Dozer everywhere, as in the game.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.434
 Date: 2026-11-16
   Locale:
@@ -269,7 +275,7 @@ Date: 2026-11-14
     - Kessler-Hayashi's arc flamer: a blue, all-round flame turret that needs no fuel and spares its own side; Grubstake keeps its oil flamer.
     - Orbital cannons: after artillery, space platforms and tungsten carbide, build huge rail cannons at the edge of a platform over Nauvis, their barrels out over the void. Feed them orbital shells (tungsten carbide from Vulcanus, explosives, steel), thruster fuel and power, and call a strike with the remote (ALT + O). Every charged cannon over Nauvis fires; each needs a few minutes to charge again. Its targeting array is built round a beacon salvaged from Kessler-Hayashi, or a targeting core.
     - The factions send their fliers alone where little can shoot them down: artillery, radars and power behind walls and flamethrowers, and fly round your anti-air on the way.
-    - Grubstake's Killdozer revs short of your wall and charges straight through it, crushing what stands in its lane.
+    - Grubstake's Dozer revs short of your wall and charges straight through it, crushing what stands in its lane.
     - Your army charts the map round it as it goes, so far operations are not blind.
     - Grubstake's Scorcher flames any packed foe every few seconds and goes up when it dies, leaving its fuel burning; machine-gun fire slows infantry caught under it.
     - Fliers shot down tumble out and crash nearby, hurting what they land on; a tank's ammunition cooks off in its burning wreck.

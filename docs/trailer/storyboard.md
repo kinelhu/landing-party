@@ -117,7 +117,7 @@ film params `docs/trailer/reel-scenes.lua`; each tool checked in scenario `dev`)
 
 | # | Beat | What we see | Tool | Where it could go |
 |---|---|---|---|---|
-| S1 | The Killdozers | Two Killdozers ram the outpost's wall, the buggies hold, then pour through the breach | `/lp dozers 2` | after 5 (Grubstake raids), or in its place |
+| S1 | The dozers | Two dozers ram the outpost's wall, the buggies hold, then pour through the breach | `/lp dozers 2` | after 5 (Grubstake raids), or in its place |
 | S2 | From the sky | A flight of bomb drones dives into a block of troopers | `/lp bombers 6` | Grubstake's beat, after S1 |
 | S3 | The Prism | Its beam splits through a squad | `/lp prism 1` | Kessler-Hayashi's beat, beside 11 |
 | S4 | Flak | Kessler-Hayashi's scout drones come in over flak buggies and fall | `/lp flak 2` | 13 (escalation), a bar |

@@ -31,7 +31,11 @@ for corp, c in pairs(shared.CORPS) do
         p.name = shared.variant(corp, kind)
         p.localised_name = {"", {"entity-name." .. ((c.names or {})[kind] or kind)}, " (", c.name, ")"}
         -- The kind's description where it has one (the copies showed none: Grubstake's harrier, pacifier, lander).
-        p.localised_description = {"?", {"entity-description." .. kind}, ""}
+        -- (Its own name's description first where it has one: Grubstake's scrap copter on the harrier kind, whose own is
+        -- Kessler-Hayashi's strike drone, the user, 2026-11-16: "KH is not a scrap copter is it?")
+        local own = (c.names or {})[kind]
+        p.localised_description = own and {"?", {"entity-description." .. own}, {"entity-description." .. kind}, ""}
+          or {"?", {"entity-description." .. kind}, ""}
         retint(p, (c.tints and c.tints[kind]) or c.tint, {})
         if kind == "lp-lamp" and p.light then p.light.color = c.lamp end
         if kind == "lp-drill" and p.energy_source then p.energy_source.emissions_per_minute = {pollution = c.drill_pollution or 0} end
