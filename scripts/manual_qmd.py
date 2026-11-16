@@ -478,7 +478,8 @@ def write(rp):
             ("lp-technician", rp.portrait("lp-technician"), "Bought with biomass as the culture grows", None)]
          + ([("lp-runt", rp.portrait("lp-runt"), "Made for a wave's probe", breeds.get("lp-runt", {}).get("cost"))] if probe else [])),
         ("Your army", [(k, rp.portrait(k), f"Research: {player_tech.get(k, '?')}", None)
-                       for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-battle-tank")]),
+                       for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-gun-buggy", "lp-flame-trooper",
+                                 "lp-battle-tank")]),
     ]
     L = ["## Units {#sec-units}", "",
          "Numbers are from the game's prototypes, before research. Damage is one shot. A corporation's research raises its",

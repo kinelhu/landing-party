@@ -523,6 +523,51 @@ buggy.resistances = {{type = "physical", decrease = 2, percent = 15}}
 tint(buggy.run_animation, {})
 tint(buggy.attack_parameters.animation, {})
 
+-- The player's gun buggy (0.2.438; the user, 2026-11-16: "we are lacking a unit at bandwidth 2 after all. Perhaps a buggy?
+-- And instead of a mounted SMG, some kind of slightly higher caliber?"): vanilla's car in the player's colour, as the
+-- battle tank is vanilla's tank. 10 tiles a second, the army's fastest, the one to reach a defend beacon's far edge in
+-- time. Light: 380 health, a buggy's plating.
+-- Its gun an autocannon (the user, the same night: "much lower ROF and impacts with oomph"): a high-explosive round every
+-- 30 ticks to 16 (inside a gun turret's 18), 20 explosion to what it hits and a 1.25-tile blast of 6 round it, a small
+-- explosion at the hit, suppressing infantry in the blast; the heavy gunshot, lower. Explosion, not physical: a hull's
+-- flat 5 and 30% take a third of each round. Set in the arena at 4 of bandwidth: 25 physical and a 10 blast at 3 won 35
+-- of 36, Kessler-Hayashi's tank and the Aegis among them; 20 and 6 explosion at 3 won 27, the Dozer and rocket troopers
+-- among them; at 4 it wins 17, every infantry, buggy and flier, and loses to every hull, the bigger biters and Shock
+-- troopers. (A machine gun before it, the same night: 12 every 10 ticks beat the hulls at 3; 5 every 4 won 20 at 3.)
+local gun_buggy = base_unit("lp-gun-buggy")
+gun_buggy.max_health = 380
+gun_buggy.movement_speed = 0.17
+gun_buggy.distance_per_frame = 0.5
+gun_buggy.vision_distance = 30
+gun_buggy.collision_box = {{-0.7, -0.7}, {0.7, 0.7}}
+gun_buggy.selection_box = {{-0.9, -1.1}, {0.9, 1.1}}
+gun_buggy.run_animation = table.deepcopy(car.animation)
+local GB = {direct = 20, blast = 6, radius = 1.25, cooldown = 30, range = 16}
+local gba = gun(GB.direct, GB.range, GB.cooldown)
+gba.cooldown_deviation = 0.05
+gba.sound = {variations = {{filename = "__base__/sound/fight/heavy-gunshot-1.ogg", volume = 0.7},
+  {filename = "__base__/sound/fight/heavy-gunshot-2.ogg", volume = 0.7},
+  {filename = "__base__/sound/fight/heavy-gunshot-3.ogg", volume = 0.7}}, speed = 0.8, category = "weapon"}
+do
+  local d = gba.ammo_type.action.action_delivery
+  d.source_effects = {type = "create-explosion", entity_name = "explosion-gunshot"}
+  d.target_effects = {{type = "create-entity", entity_name = "explosion"},
+    {type = "damage", damage = {amount = GB.direct, type = "explosion"}},
+    {type = "nested-result", action = {type = "area", radius = GB.radius, force = "not-same",
+      action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = GB.blast, type = "explosion"}}}}}},
+    -- (Suppression on infantry alone, the lp-soft mask, as suppressing() does: hulls and biters shrug it off.)
+    {type = "nested-result", action = {type = "area", radius = GB.radius, force = "not-same", trigger_target_mask = {"lp-soft"},
+      action_delivery = {type = "instant", target_effects = {{type = "create-sticker", sticker = "lp-suppressed",
+        probability = 0.5}}}}}}
+end
+gba.animation = table.deepcopy(car.animation)
+gun_buggy.attack_parameters = gba
+gun_buggy.dying_explosion = "medium-explosion"
+gun_buggy.corpse = "car-remnants"
+gun_buggy.resistances = {{type = "physical", decrease = 2, percent = 15}, {type = "fire", decrease = 2, percent = 40}}
+tint(gun_buggy.run_animation, {}, {r = 1, g = 0.82, b = 0.55, a = 1})
+tint(gun_buggy.attack_parameters.animation, {}, {r = 1, g = 0.82, b = 0.55, a = 1})
+
 -- Tree units (docs/reviews/2026-10-14-identity-trees-consult.md; scripts/rd.lua buys them into a corporation's mix).
 -- Lance (Serenity's Optics): a heavier, slower beam that outranges the player's troopers (15): 24 laser a shot every 60
 -- ticks, range 17 (still inside a gun turret's 18), 110 health. Serenity's answer to armour (the RTS pass, 2026-10-21:
@@ -1302,5 +1347,5 @@ for u, list in pairs(UNIT_LOOT) do
   for _, m in ipairs(list) do table.insert(u.loot, {type = "item", name = m[1], independent_probability = 0.5, amount_min = m[2], amount_max = m[3]}) end
 end
 
-data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler, buggy, shotgun_hand, pellet,
+data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, gun_buggy, hauler, buggy, shotgun_hand, pellet,
   lance, slug, arc_bounce, arc_chain, shock, sapper, aegis, dozer, scavenger, laser_drone, rail_beam, railgunner})

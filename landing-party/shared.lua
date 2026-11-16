@@ -875,11 +875,11 @@ end
 -- The player's command bandwidth: what each unit takes, what a relay carries, how many relays count by
 -- research level (0: before any; then levels 1-3; level 4 and beyond add RELAYS_PER_EXTRA_LEVEL each).
 shared.POPULATION = {["lp-trooper"] = 1, ["lp-breacher"] = 1, ["lp-rocket-trooper"] = 2, ["lp-flame-trooper"] = 2,
-  ["lp-battle-tank"] = 6}
+  ["lp-battle-tank"] = 8, ["lp-gun-buggy"] = 4}
 -- What a barracks trains: each order item becomes its unit.
 shared.ORDERS = {["lp-trooper-order"] = "lp-trooper", ["lp-breacher-order"] = "lp-breacher",
   ["lp-battle-tank-order"] = "lp-battle-tank", ["lp-rocket-trooper-order"] = "lp-rocket-trooper",
-  ["lp-flame-trooper-order"] = "lp-flame-trooper"}
+  ["lp-flame-trooper-order"] = "lp-flame-trooper", ["lp-gun-buggy-order"] = "lp-gun-buggy"}
 -- A rally beacon's squad sizes (scripts/command.lua): a virtual signal a unit, its count the most of that unit the
 -- beacon's squad keeps.
 shared.SQUAD_SIGNALS = {}

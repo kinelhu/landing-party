@@ -1,6 +1,6 @@
 {
  "_comment": "Written by scripts/roster_page.py --qmd (scripts/manual_qmd.py, booklet) from the prototype dump, shared.lua, the scripts, the locale and docs/manual/words.cfg. Do not edit: run it again.",
- "edition": "For Landing Party 0.2.437",
+ "edition": "For Landing Party 0.2.438",
  "portraits": "media/portraits",
  "factions": {
   "grubstake": {
@@ -678,22 +678,21 @@
    "countered_by": "massed infantry, sappers",
    "blurb": "The rocket trooper's rockets are made for armor and fliers; against troopers they are no better than a submachine gun. It takes more of the command link than a trooper and outranges a Heavy tank's rail cannon. Keep rocket troopers behind your troopers against infantry, and in front against tanks and drones."
   },
-  "lp-battle-tank": {
-   "name": "Battle tank",
+  "lp-gun-buggy": {
+   "name": "Gun buggy",
    "faction": "player",
-   "health": 900,
-   "portrait": "lp-battle-tank",
-   "damage": 100,
-   "damage_text": "100 explosion, 240 more to buildings",
-   "range": 18,
-   "speed": 5.4,
-   "cost": "6 bandwidth",
+   "health": 380,
+   "damage": 20,
+   "damage_text": "20 explosion, 6 explosion, 2 shots/s",
+   "range": 16,
+   "speed": 10.2,
+   "cost": "4 bandwidth",
    "era": "Command bandwidth 2",
    "era_level": 2,
-   "role": "Your heavy tank, for attacking bases.",
-   "counters": "walls, turrets, camps",
-   "countered_by": "heavy tanks, slug buggies, rocket troopers",
-   "blurb": "The battle tank fires a slow, heavy shell. It takes the longest to train and the most bandwidth. Its shell is made for buildings, so it is the tool for a walled camp and a poor one against crowds. Keep troopers with it."
+   "role": "Your fastest unit, an autocannon on a car. Good against infantry, light vehicles and fliers, weak against armor.",
+   "counters": "infantry, buggies, fliers",
+   "countered_by": "tanks, shotgun hands, big biters",
+   "blurb": "The gun buggy is a car with an autocannon, and the fastest unit you have. Its explosive rounds break up infantry, buggies and drones and do little to a tank's armor. Set a defending beacon's squad with a few of them and they reach the attack first."
   },
   "lp-flame-trooper": {
    "name": "Flamethrower trooper",
@@ -711,6 +710,23 @@
    "counters": "biter swarms, bunched infantry",
    "countered_by": "armor, sappers, fliers",
    "blurb": "The flamethrower trooper has the most damage of your infantry, and only the breacher has a shorter range. It burns biter swarms and bunched squads quickly but does little to vehicles, and nearly everything outranges it. Lead with it against Synthexis and keep it at the back against Kessler-Hayashi."
+  },
+  "lp-battle-tank": {
+   "name": "Battle tank",
+   "faction": "player",
+   "health": 900,
+   "portrait": "lp-battle-tank",
+   "damage": 100,
+   "damage_text": "100 explosion, 240 more to buildings",
+   "range": 18,
+   "speed": 5.4,
+   "cost": "8 bandwidth",
+   "era": "Command bandwidth 3",
+   "era_level": 3,
+   "role": "Your heavy tank, for attacking bases.",
+   "counters": "walls, turrets, camps",
+   "countered_by": "heavy tanks, slug buggies, rocket troopers",
+   "blurb": "The battle tank fires a slow, heavy shell. It takes the longest to train and the most bandwidth. Its shell is made for buildings, so it is the tool for a walled camp and a poor one against crowds. Keep troopers with it."
   }
  },
  "trees": {
@@ -1269,12 +1285,11 @@
      "note": "2 bandwidth"
     },
     {
-     "id": "lp-battle-tank",
+     "id": "lp-gun-buggy",
      "band": "cb2",
      "column": "vehicles",
-     "label": "Battle tank",
-     "portrait": "lp-battle-tank",
-     "note": "6 bandwidth"
+     "label": "Gun buggy",
+     "note": "4 bandwidth"
     },
     {
      "id": "lp-flame-trooper",
@@ -1283,6 +1298,14 @@
      "label": "Flamethrower trooper",
      "portrait": "lp-flame-trooper",
      "note": "2 bandwidth"
+    },
+    {
+     "id": "lp-battle-tank",
+     "band": "cb3",
+     "column": "vehicles",
+     "label": "Battle tank",
+     "portrait": "lp-battle-tank",
+     "note": "8 bandwidth"
     }
    ]
   },
@@ -1539,7 +1562,7 @@
      "label": "Command bandwidth 2",
      "kind": "tech",
      "how": "science",
-     "note": "battle tanks, rocket troopers, after Command bandwidth 1"
+     "note": "gun buggys, rocket troopers, after Command bandwidth 1"
     },
     {
      "id": "lp-command-bandwidth-3",
@@ -1548,7 +1571,7 @@
      "label": "Command bandwidth 3",
      "kind": "tech",
      "how": "science",
-     "note": "flamethrower troopers",
+     "note": "battle tanks, flamethrower troopers",
      "requires": [
       "lp-command-bandwidth-2"
      ]

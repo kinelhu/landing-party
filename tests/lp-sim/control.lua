@@ -1299,8 +1299,10 @@ scenarios.caps = function()
     check("caps: a trooper is made of the engineer's kit", kit["heavy-armor"] and kit["submachine-gun"],
       serpent.line(kit))
     local rec = game.forces.player.recipes
-    check("caps: troopers and breachers at level 1, battle tanks at 2", S.gate1 == "true true false"
-      and rec["lp-battle-tank-order"].enabled, (S.gate1 or "?") .. " at level 1; tanks now " .. tostring(rec["lp-battle-tank-order"].enabled))
+    -- (The battle tank at 3 since 0.2.438, an exoskeleton in it; the gun buggy at 2.)
+    check("caps: troopers and breachers at level 1, gun buggies at 2 and battle tanks not yet", S.gate1 == "true true false"
+      and rec["lp-gun-buggy-order"].enabled and not rec["lp-battle-tank-order"].enabled, (S.gate1 or "?") .. " at level 1; buggies now "
+      .. tostring(rec["lp-gun-buggy-order"].enabled) .. ", tanks " .. tostring(rec["lp-battle-tank-order"].enabled))
   end)
   schedule(90, function()
     local rec = game.forces.player.recipes
@@ -2936,6 +2938,55 @@ scenarios.squad = function()
     check("squad: lowered to 2: two walked home and handed their orders in", S.second.units == 2 and S.second.handed == 2
       and S.second.auto == 2, serpent.line(S.second))
     check("squad: cleared: the orders waiting deployed", S.third.units == 4 and S.third.waiting == 0, serpent.line(S.third))
+  end)
+end
+
+-- The gun buggy (0.2.438): a muster point given a gun buggy order and a battle tank order, a relay, a beacon: both deploy,
+-- the buggy counting 4 against the cap and the tank 8 (shared.POPULATION), and the buggy outruns the tank to a rally
+-- point 120 tiles off.
+scenarios.gunbuggy = function()
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-30, -150, 30, 30)
+    for _, t in ipairs({"lp-command-bandwidth-1", "lp-command-bandwidth-2", "lp-command-bandwidth-3"}) do
+      game.forces.player.technologies[t].researched = true
+    end
+    S.barracks = put("lp-barracks", 0.5, 0.5)
+    local e = put("electric-energy-interface", 4, 1)
+    e.power_production, e.electric_buffer_size = 1e9, 1e9
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    put("lp-command-relay", 6.5, 6.5)   -- (two: 20 of cap for the 4 and the 8)
+    put("medium-electric-pole", 4.5, 8.5)
+    S.beacon = put("lp-rally-beacon", 10.5, -6.5)
+    -- (At a muster point: a barracks' output takes its own recipe's order only, a new one's the trooper's.)
+    S.muster = put("lp-muster-point", -6.5, 0.5)
+    S.muster.get_inventory(defines.inventory.chest).insert{name = "lp-gun-buggy-order", count = 1}
+  end)
+  schedule(60 + 5 * 60, function()
+    S.muster.get_inventory(defines.inventory.chest).insert{name = "lp-battle-tank-order", count = 1}
+  end)
+  schedule(60 + 12 * 60, function()
+    S.r = lp("army_readout")
+    S.n = {buggy = surface().count_entities_filtered{name = "lp-gun-buggy", force = "player"},
+      tank = surface().count_entities_filtered{name = "lp-battle-tank", force = "player"}}
+    -- (Both to a rally point 120 tiles north.)
+    local cb = S.beacon.get_or_create_control_behavior()
+    ;(cb.get_section(1) or cb.add_section()).set_slot(1, {value = {type = "virtual", name = "signal-Y", quality = "normal"}, min = -120})
+    S.go = game.tick
+  end)
+  schedule(60 + 12 * 60 + 15 * 60, function()
+    local function y(name) local u = surface().find_entities_filtered{name = name, force = "player"}[1]; return u and u.position.y end
+    S.by, S.ty = y("lp-gun-buggy"), y("lp-battle-tank")
+    info("gunbuggy: " .. serpent.line({S.r, S.n, S.by, S.ty}))
+    check("gunbuggy: a gun buggy and a battle tank deployed, 4 and 8 of the cap", S.n.buggy == 1 and S.n.tank == 1
+      and S.r.units == 12, serpent.line({S.n, S.r}))
+    check("gunbuggy: the buggy outruns the tank", S.by and S.ty and S.by < S.ty - 20, string.format("buggy at %s, tank at %s",
+      tostring(S.by), tostring(S.ty)))
   end)
 end
 

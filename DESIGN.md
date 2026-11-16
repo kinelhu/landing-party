@@ -218,10 +218,11 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   (the user's go for each outward step). Checklist: docs/release/checklist.md.
 
 - The army's remainder (the army consult, 2026-11-16; the defend stance, the panel and the three leaks are built,
-  0.2.436): strike forces sized to the army the player can field (their arena price at most about 1.5 times the
-  command capacity's) and the warning naming their kind; the battle tank re-priced from the arena (it beats every ground
-  unit at equal spend, the Aegis and slug built to counter it among them) after an army variant of `contact.sh`
-  (strikes broken, targets saved); squad colours in alt mode, after the user has seen the panel.
+  0.2.436; the tank re-priced and the gun buggy, 0.2.438): strike forces sized to the army the player can field (their
+  arena price at most about 1.5 times the command capacity's) and the warning naming their kind; the Aegis's slug raised
+  so it beats the battle tank at 8; an army variant of `contact.sh` (strikes broken, targets saved); squad colours in
+  alt mode, after the user has seen the panel; the gun buggy's icon from a matte film; a late infantry tier made of
+  personal equipment (modular or power armor, shields, an exoskeleton), proposed 2026-11-16.
   Circuits can't read where an attack is (W says out, not where): a position output was offered and set aside, D
   routing the squad itself.
 
@@ -1019,6 +1020,9 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     (razed 27), spotted 70 s ahead and waiting 100 s at the spot: at parity a coin flip, as armyradar's. The checks use
     24 (0.2.437): defend broke it, A razed 6 against 16, 19 of 24 home; on hold the squad stayed, A razed 22, and the
     force walked on to the squad and broke there, 13 lost.
+  - **Before and after** (the Studio, seed 12345, the quick set and the player and ops areas, 0.2.435 against 0.2.437):
+    222 runs in common, none failing on either side, 6,703 of 6,919 metrics identical and the 216 that differ all
+    ms_per_tick, one a run. Dormant as meant: every change acts only where its own scenario sets it up.
   - **Sticky answers** (0.2.437): re-chosen each pass, a landed force's moving front and the attacks at buildings
     round it took turns as nearest, nine answers and nine new orders in one fight; the answer is now kept while it
     lasts unless one of a higher rank comes.
@@ -1027,6 +1031,23 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     (0.25) of that at the edge of the radar's reach, in proportion between; the best radar's; told then, not at
     sending. `director` radarlead: 45 s at one chunk and 15 s at three of a 60 s warning, the formula to a second, seen
     failing with warn_edge 1.
+- **The gun buggy, and the tank's price (0.2.438; the user, 2026-11-16: "I think the tank def needs more cost", then "we
+  are lacking a unit at bandwidth 2 after all. Perhaps a buggy? And instead of a mounted SMG, some kind of slightly higher
+  caliber?").** The battle tank was the cheapest unit per point of bandwidth (about 165 plates against a trooper's 425)
+  and the strongest (the consult: it beat every ground kind at equal spend). Its recipe adds an exoskeleton and two
+  energy shields (the user agreed), so it moves to bandwidth 3 (exoskeleton research needs processing units); its
+  bandwidth from the arena (trials, `LP_ARENA_ONLY="battle tank"`, wins of 36 at equal spend): 6 won 31 (Kessler-Hayashi's
+  tank +0.91, the Aegis +0.83), 7 won 24, 8 won 18 (the tank +0.70, the Aegis +0.42; the slug -0.32 and the Dozer -0.35
+  beat it, and infantry in numbers), 9 won 12 (even with the tank, the Aegis and slug beating it, but losing to troopers
+  and buggies). Set at 8. The Aegis still loses to it: raising its slug is a corporation change, left in the backlog.
+  The gun buggy fills bandwidth 2 beside the rocket trooper: vanilla's car in the player's colour, as the battle tank is
+  vanilla's tank (no model of its own); 10 tiles a second, 380 health; a car, 20 piercing rounds magazines and a battery,
+  60 s. Its gun, from the arena: a machine gun first (12 a round every 10 ticks at 3 bandwidth won 24 of 36, the tank and
+  the Aegis among them; 5 every 4 won 20 and lost to every hull), then, the user: "much lower ROF and impacts with
+  oomph", an autocannon: a round every 30 ticks and a small blast round its hit. 25 physical and a 10 blast at 3 won 35
+  of 36; high explosive (a hull's flat 5 and 30% take a third), 20 and a 6 blast, won 27 at 3 and 17 at 4: every
+  infantry, buggy and flier, and it loses to every hull, the bigger biters and Shock troopers. Set at 4. Like every
+  player unit it beats the fixed turret lines. Its icon is the car's, tinted, until a matte film cuts it (tools/icons/units.py).
 - **Combined arms (built; user 2026-10-13: "rebuilding the RTS formula a la Factorio"):** the barracks has
   no fixed recipe (a new one starts on troopers). **Trooper** (5 magazines, 10 iron, 2 circuits, 30 s;
   population 1): rifles, fights units. **Breacher** (5 grenades, 10 iron, 2 circuits, 30 s; population 1):

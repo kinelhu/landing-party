@@ -30,7 +30,7 @@ local KINDS = {
   -- The player's, priced by command bandwidth (arena.PER_BANDWIDTH).
   {"trooper", "lp-trooper"}, {"breacher", "lp-breacher"}, {"rocket trooper", "lp-rocket-trooper"},
   {"flame trooper", "lp-flame-trooper"},
-  {"battle tank", "lp-battle-tank"},
+  {"battle tank", "lp-battle-tank"}, {"gun buggy", "lp-gun-buggy"},
   -- The biotech's (docs/biotech.md), at shared.BREEDS' price.
   {"bred small", "lp-bred-small-biter"}, {"bred behemoth", "lp-bred-behemoth-biter"},
   {"bred medium", "lp-bred-medium-biter"}, {"bred big", "lp-bred-big-biter"}, {"bred spitter", "lp-bred-medium-spitter"}, {"bred cinder", "lp-bred-cinder"},

@@ -225,6 +225,7 @@ desc:
   item_rocket_trooper_order: "Becomes a unit when placed in a muster point."
   item_flame_trooper_order: "Becomes a unit when placed in a muster point."
   item_battle_tank_order: "Becomes a unit when placed in a muster point."
+  item_gun_buggy_order: "Becomes a unit when placed in a muster point."
   item_pheromone_gland: "Salvaged from Grubstake pacifier antennas and Synthexis incubators."
   item_pacifier_crystal: "Salvaged from Grubstake pacifier antennas."
   item_drill_head: "Salvaged from Grubstake claim jumper rigs."
@@ -282,6 +283,6 @@ director:
   climax_times: "double"
   gentle_share: "half"
 mod:
-  version: "0.2.437"
+  version: "0.2.438"
   factorio: "2.1"
   needs: "base, space-age"

@@ -3,7 +3,8 @@
 ::: {.epigraph faction="player"}
 :::
 
-You can raise an army of your own: troopers, breachers, rocket troopers, flamethrower troopers and battle tanks. They
+You can raise an army of your own: troopers, breachers, rocket troopers, gun buggies, flamethrower troopers and battle
+tanks. They
 are trained from the equipment you already make for yourself, and how many you can field is set by your command
 bandwidth. You give them orders with rally beacons, the command tool or the circuit network.
 
@@ -22,13 +23,15 @@ would pick a recipe, and a new barracks starts on troopers. What it makes is an 
 | Trooper | Heavy armor, a submachine gun, firearm magazines | Command bandwidth 1 |
 | Breacher | Heavy armor, grenades, electronic circuits | Command bandwidth 1 |
 | Rocket trooper | Heavy armor, a rocket launcher, rockets | Command bandwidth 2 |
-| Battle tank | A tank, cannon shells, personal batteries | Command bandwidth 2 |
+| Gun buggy | A car, piercing rounds magazines, a personal battery | Command bandwidth 2 |
 | Flamethrower trooper | Heavy armor, a flamethrower, flamethrower ammo | Command bandwidth 3 |
+| Battle tank | A tank, cannon shells, personal batteries, an exoskeleton, energy shields | Command bandwidth 3 |
 
 A finished order steps out of the barracks as a unit and joins the nearest rally beacon. Troopers fight units. Breachers
 throw demolition charges that wreck walls and turrets and do little to units. Rocket troopers kill armor and fliers.
-Flamethrower troopers burn swarms of biters and bunched infantry but are outranged. Battle tanks take bases apart and
-take the longest to train. Every unit's numbers are in the [Reference](reference.qmd#sec-units). While your command
+Gun buggies are your fastest unit, an autocannon on a car that breaks up infantry, light vehicles and fliers and does
+little to armor; a defending squad of them reaches the far edge of its reach first. Flamethrower troopers burn swarms
+of biters and bunched infantry but are outranged. Battle tanks take bases apart and take the longest to train. Every unit's numbers are in the [Reference](reference.qmd#sec-units). While your command
 bandwidth is full, finished orders wait inside the barracks, and it stops once its output is full.
 
 **Field repair.** Your units within {{< var army.repair_tiles >}} tiles of a powered barracks heal. Nothing heals

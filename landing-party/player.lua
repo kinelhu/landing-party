@@ -125,8 +125,9 @@ signal("lp-scan-scout", "__landing-party__/graphics/icons/units/lp-bred-scout.pn
 -- A squad's size by unit, set on a rally beacon (scripts/command.lua): the order's icon, the army's green.
 local SQUAD_ICON = {["lp-trooper"] = "__base__/graphics/icons/firearm-magazine.png", ["lp-breacher"] = "__base__/graphics/icons/grenade.png",
   ["lp-rocket-trooper"] = "__base__/graphics/icons/rocket-launcher.png", ["lp-flame-trooper"] = "__base__/graphics/icons/flamethrower.png",
-  ["lp-battle-tank"] = "__base__/graphics/icons/tank.png"}
-local SQUAD_ORDER = {["lp-trooper"] = "a", ["lp-breacher"] = "b", ["lp-rocket-trooper"] = "c", ["lp-flame-trooper"] = "d", ["lp-battle-tank"] = "e"}
+  ["lp-battle-tank"] = "__base__/graphics/icons/tank.png", ["lp-gun-buggy"] = "__base__/graphics/icons/car.png"}
+local SQUAD_ORDER = {["lp-trooper"] = "a", ["lp-breacher"] = "b", ["lp-rocket-trooper"] = "c", ["lp-flame-trooper"] = "d", ["lp-battle-tank"] = "e",
+  ["lp-gun-buggy"] = "c2"}
 for unit, sig in pairs(shared.SQUAD_SIGNALS) do
   signal(sig, SQUAD_ICON[unit] or "__base__/graphics/icons/signal/signal_S.png", {r = 0.55, g = 1, b = 0.55, a = 1}, "s" .. (SQUAD_ORDER[unit] or "z"))
 end
@@ -279,12 +280,23 @@ data:extend({
     ingredients = {{type = "item", name = "heavy-armor", amount = 1}, {type = "item", name = "flamethrower", amount = 1},
       {type = "item", name = "flamethrower-ammo", amount = 10}},
     results = {{type = "item", name = "lp-flame-trooper-order", amount = 1}}},
+  -- Gun buggies (0.2.438): a car, piercing rounds for its heavy machine gun, a battery; with the second level.
+  {type = "item", name = "lp-gun-buggy-order", icon = "__base__/graphics/icons/car.png", hidden = true,
+    stack_size = 10, subgroup = "other"},
+  {type = "recipe", name = "lp-gun-buggy-order", categories = {"lp-training"}, enabled = false, hidden_in_factoriopedia = true,
+    icon = "__base__/graphics/icons/car.png", energy_required = 60,
+    ingredients = {{type = "item", name = "car", amount = 1}, {type = "item", name = "piercing-rounds-magazine", amount = 20},
+      {type = "item", name = "battery-equipment", amount = 1}},
+    results = {{type = "item", name = "lp-gun-buggy-order", amount = 1}}},
   {type = "item", name = "lp-battle-tank-order", icon = "__base__/graphics/icons/tank.png", hidden = true,
     stack_size = 10, subgroup = "other"},
   {type = "recipe", name = "lp-battle-tank-order", categories = {"lp-training"}, enabled = false, hidden_in_factoriopedia = true,
     icon = "__base__/graphics/icons/tank.png", energy_required = 120,
+    -- (An exoskeleton and two energy shields since 0.2.438, the user: "I think the tank def needs more cost": per point of
+    -- command bandwidth the cheapest unit, about 165 plates against a trooper's 425, and the strongest.)
     ingredients = {{type = "item", name = "tank", amount = 1}, {type = "item", name = "cannon-shell", amount = 20},
-      {type = "item", name = "battery-equipment", amount = 2}},
+      {type = "item", name = "battery-equipment", amount = 2}, {type = "item", name = "exoskeleton-equipment", amount = 1},
+      {type = "item", name = "energy-shield-equipment", amount = 2}},
     results = {{type = "item", name = "lp-battle-tank-order", amount = 1}}},
 })
 
@@ -340,11 +352,12 @@ data:extend({
     {type = "unlock-recipe", recipe = "lp-breacher-order"}, {type = "unlock-recipe", recipe = "lp-threat-scanner"},
     {type = "unlock-recipe", recipe = "lp-muster-point"},
     {type = "give-item", item = "lp-command-core", count = 1}}),
-  -- Battle tanks and rocket troopers with the second level, once the player has tanks and rocket launchers of their own.
-  tech(2, {"lp-command-bandwidth-1", "chemical-science-pack", "tank", "battery-equipment", "rocketry"}, {red, green, blue}, 200, {
-    {type = "unlock-recipe", recipe = "lp-battle-tank-order"}, {type = "unlock-recipe", recipe = "lp-rocket-trooper-order"}}),
-  -- Flamethrower troopers with the third, once the player has flamethrowers.
-  tech(3, {"lp-command-bandwidth-2", "military-3", "flamethrower"}, {red, green, blue, grey}, 300, {
+  -- Gun buggies and rocket troopers with the second level, once the player has cars, piercing rounds and rocket launchers.
+  tech(2, {"lp-command-bandwidth-1", "chemical-science-pack", "automobilism", "battery-equipment", "rocketry"}, {red, green, blue},
+    200, {{type = "unlock-recipe", recipe = "lp-gun-buggy-order"}, {type = "unlock-recipe", recipe = "lp-rocket-trooper-order"}}),
+  -- Battle tanks (since 0.2.438: an exoskeleton in each) and flamethrower troopers with the third.
+  tech(3, {"lp-command-bandwidth-2", "military-3", "flamethrower", "tank", "exoskeleton-equipment", "energy-shield-equipment"},
+    {red, green, blue, grey}, 300, {{type = "unlock-recipe", recipe = "lp-battle-tank-order"},
     {type = "unlock-recipe", recipe = "lp-flame-trooper-order"}}),
   tech(4, {"lp-command-bandwidth-3"}, {red, green, blue, grey}, nil, nil,
     {max_level = "infinite", unit = {count_formula = "150*L", time = 30, ingredients = {red, green, blue, grey}}}),

@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.438
+Date: 2026-11-16
+  Features:
+    - The gun buggy, a new unit at Command bandwidth 2: a car with an autocannon firing explosive rounds, the army's fastest unit (10 tiles a second). Good against infantry, light vehicles and fliers, weak against armor. Made from a car, 20 piercing rounds magazines and a battery. Takes 4 of your command bandwidth.
+  Changes:
+    - The battle tank needs an exoskeleton and two energy shields, and moves to Command bandwidth 3. It takes 8 of your command bandwidth, up from 6.
+  Bugfixes:
+    - The orbital cannons tip showed only its title: the circuit recipes tip had swallowed its line.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.437
 Date: 2026-11-16
   Changes:

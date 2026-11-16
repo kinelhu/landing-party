@@ -557,7 +557,7 @@ def techs_html():
     return f'<div class="techs">{"".join(cols)}</div>'
 
 
-player = "".join(unit_card(k, None, "Ordered at your barracks") for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-battle-tank"))
+player = "".join(unit_card(k, None, "Ordered at your barracks") for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-gun-buggy", "lp-flame-trooper", "lp-battle-tank"))
 shared_units = "".join(unit_card(k, None, h) for k, h in (("lp-hauler", "Fielded by both corporations"),
                                                           ("lp-railgunner", "Kessler-Hayashi only. Clears nests and never raids")))
 

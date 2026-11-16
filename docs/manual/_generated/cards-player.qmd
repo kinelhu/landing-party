@@ -12,10 +12,14 @@ The trooper is your basic soldier: heavy armor and a submachine gun, and the che
 The rocket trooper's rockets are made for armor and fliers; against troopers they are no better than a submachine gun. It takes more of the command link than a trooper and outranges a Heavy tank's rail cannon. Keep rocket troopers behind your troopers against infantry, and in front against tanks and drones.
 :::
 
-::: {.unit unit="lp-battle-tank"}
-The battle tank fires a slow, heavy shell. It takes the longest to train and the most bandwidth. Its shell is made for buildings, so it is the tool for a walled camp and a poor one against crowds. Keep troopers with it.
+::: {.unit unit="lp-gun-buggy"}
+The gun buggy is a car with an autocannon, and the fastest unit you have. Its explosive rounds break up infantry, buggies and drones and do little to a tank's armor. Set a defending beacon's squad with a few of them and they reach the attack first.
 :::
 
 ::: {.unit unit="lp-flame-trooper"}
 The flamethrower trooper has the most damage of your infantry, and only the breacher has a shorter range. It burns biter swarms and bunched squads quickly but does little to vehicles, and nearly everything outranges it. Lead with it against Synthexis and keep it at the back against Kessler-Hayashi.
+:::
+
+::: {.unit unit="lp-battle-tank"}
+The battle tank fires a slow, heavy shell. It takes the longest to train and the most bandwidth. Its shell is made for buildings, so it is the tool for a walled camp and a poor one against crowds. Keep troopers with it.
 :::

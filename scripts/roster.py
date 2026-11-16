@@ -45,6 +45,7 @@ ROLE = {
     "lp-rocket-trooper": "Fires rockets, good against armor and fliers. Slow to kill a crowd",
     "lp-flame-trooper": "A flamethrower against swarms of biters and bunched infantry. Outranged, and weak against armor",
     "lp-battle-tank": "Your heavy tank, for attacking bases",
+    "lp-gun-buggy": "Your fastest unit, an autocannon on a car. Good against infantry, light vehicles and fliers, weak against armor",
 }
 
 
@@ -76,7 +77,7 @@ cost = {k: int(c) for k, c in re.findall(r'\["(lp-[a-z-]+)"\] = \{health = \d+, 
 ground_only = set(re.findall(r'\["(lp-[a-z-]+)"\] = \{[^}]*ground_only = true', shared)) | {"lp-battle-tank", "lp-breacher"}
 # The player's units cost no parts; their bandwidth instead (shared.POPULATION).
 bandwidth = {k: int(c) for k, c in re.findall(r'\["(lp-[a-z-]+)"\] = (\d+)', re.search(r"shared.POPULATION = \{([^}]*)\}", shared).group(1))}
-for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-battle-tank"):
+for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-gun-buggy", "lp-battle-tank"):
     fielded.setdefault(k, []).append("the player (a barracks)")
 fielded.setdefault("lp-hauler", []).append("both (convoys; Grubstake's builders)")
 

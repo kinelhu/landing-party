@@ -1,6 +1,6 @@
 # The arena: who counters whom (generated)
 
-Written by `scripts/arena_report.py` from `docs/arena/results.jsonl` (4644 fights, 3 rounds; `scripts/arena.sh` fights them headless, `tests/lp-arena/batch.lua` says which). Do not edit by hand.
+Written by `scripts/arena_report.py` from `docs/arena/results.jsonl` (4884 fights, 3 rounds; `scripts/arena.sh` fights them headless, `tests/lp-arena/batch.lua` says which). Do not edit by hand.
 
 ![Counter heatmap](arena/counters.png)
 
@@ -12,54 +12,55 @@ A class is a body and a weapon: **small arms** (many light bodies, small shots),
 
 | Row against column | small arms | splash | armour | air | anti-air | bred | bred on creep |
 |---|---|---|---|---|---|---|---|
-| small arms | +0 | -51 | +0 | +70 | +29 | -18 | -48 |
-| splash | +51 | +0 | -58 | -82 | +80 | +35 | +61 |
-| armour | +0 | +58 | +0 | -36 | +82 | +4 | +3 |
-| air | -70 | +82 | +36 | +0 | -81 | +60 | +61 |
-| anti-air | -29 | -80 | -82 | +81 | +0 | -39 | -49 |
-| bred | +18 | -35 | -4 | -60 | +39 | +0 | -14 |
-| bred on creep | +48 | -61 | -3 | -61 | +49 | +14 | +0 |
+| small arms | +0 | -28 | +2 | +67 | +33 | -14 | -41 |
+| splash | +28 | +0 | -52 | -77 | +59 | +26 | +45 |
+| armour | -2 | +52 | +0 | -24 | +80 | -8 | -13 |
+| air | -67 | +77 | +24 | +0 | -74 | +52 | +53 |
+| anti-air | -33 | -59 | -80 | +74 | +0 | -38 | -47 |
+| bred | +14 | -26 | +8 | -52 | +38 | +0 | -9 |
+| bred on creep | +41 | -45 | +13 | -53 | +47 | +9 | +0 |
 
 ## Each kind's counters
 
 | Kind (price) | Beats most (its score) | Beaten most by (their score) |
 |---|---|---|
-| rocket trooper (20) | scrap drone (100), bomb drone (99), laser drone (95) | bred small (82), breacher (70), shotgun hand (61) |
-| shotgun hand (8) | scrap drone (98), bred small (97), railgunner (97) | bred behemoth (100), bred big (100), bred big (creep) (100) |
-| heavy laser trooper (14) | bomb drone (100), scrap drone (97), laser drone (96) | shock (87), bred big (creep) (73), breacher (71) |
-| slug (30) | scrap drone (100), bomb drone (96), railgunner (95) | bred big (creep) (89), shock (85), lightning tank (79) |
-| laser trooper (11) | bomb drone (100), scrap drone (97), railgunner (95) | shock (90), breacher (83), bred big (creep) (81) |
-| trooper (10) | scrap drone (98), railgunner (96), bred small (93) | bred behemoth (100), bred big (100), bred big (creep) (100) |
-| buggy (15) | scrap drone (98), railgunner (94), bomb drone (88) | laser tank (100), scorcher (100), bred behemoth (100) |
-| railgunner (22) | bred burster (100), bred small (100), bred spitter (100) | laser drone (100), scorcher (100), bred stomper (100) |
-| shock (30) | bred stomper (100), buggy (94), railgunner (93) | laser drone (100), scorcher (100), bred behemoth (100) |
-| sapper (30) | bred small (96), bred burster (94), buggy (93) | laser drone (100), scorcher (100), bred behemoth (100) |
-| flame trooper (20) | bred small (98), bred big (95), bred medium (95) | laser drone (100), laser tank (100), scorcher (100) |
-| breacher (10) | bred small (100), railgunner (98), bred medium (96) | laser drone (100), scorcher (100), bred behemoth (100) |
-| lightning tank (115) | shock (100), buggy (100), railgunner (100) | laser drone (100), scrap drone (100), dozer (100) |
-| laser tank (115) | buggy (100), bred big (100), flak buggy (100) | laser drone (100), bred stomper (100), scrap drone (100) |
-| battle tank (60) | railgunner (100), laser tank (100), flak buggy (100) | laser drone (100), scrap drone (100), shotgun hand (60) |
-| tank (65) | flak buggy (100), breacher (100), flame trooper (100) | laser drone (100), scrap drone (100), battle tank (89) |
-| walker (100) | railgunner (100), sapper (100), scorcher (100) | bred behemoth (100), bred big (92), bred big (creep) (92) |
-| scorcher (100) | shock (100), buggy (100), railgunner (100) | laser drone (100), bred behemoth (100), bred stomper (100) |
-| heavy tank (120) | shock (100), buggy (100), railgunner (100) | laser drone (100), scrap drone (100), battle tank (78) |
-| dozer (120) | buggy (100), railgunner (100), laser tank (100) | laser drone (100), bred stomper (100), scrap drone (100) |
-| laser drone (70) | shock (100), railgunner (100), sapper (100) | flak buggy (100), anti-air trooper (99), heavy laser trooper (96) |
-| scrap drone (15) | shock (100), railgunner (100), sapper (100) | slug (100), anti-air trooper (100), flak buggy (100) |
-| bomb drone (28) | bred burster (72), sapper (71), railgunner (69) | heavy laser trooper (100), laser trooper (100), anti-air trooper (100) |
-| anti-air trooper (18) | bomb drone (100), scrap drone (100), laser drone (99) | bred stomper (100), walker (96), lightning tank (94) |
-| flak buggy (20) | bomb drone (100), laser drone (100), scrap drone (100) | laser tank (100), scorcher (100), bred behemoth (100) |
-| bred spore (10) | scrap drone (86), laser drone (79), bred burster (6) | railgunner (100), laser tank (100), bred behemoth (100) |
-| bred stomper (150) | railgunner (100), laser tank (100), scorcher (100) | shock (100), laser drone (100), bred behemoth (100) |
-| bred behemoth (200) | shock (100), buggy (100), sapper (100) | laser drone (100), battle tank (87), dozer (83) |
-| bred big (28) | buggy (100), shotgun hand (100), trooper (100) | laser drone (100), laser tank (100), lightning tank (100) |
-| bred medium (7) | buggy (98), bred small (93), bred spore (91) | laser drone (100), bred stomper (100), scrap drone (100) |
-| bred spitter (9) | dozer (95), bred small (94), bred medium (67) | railgunner (100), laser drone (100), bred stomper (100) |
-| bred burster (40) | lightning tank (13), flak buggy (12), laser tank (8) | railgunner (100), laser drone (100), scrap drone (100) |
-| bred small (2) | rocket trooper (82), slug (72), bred burster (64) | railgunner (100), laser drone (100), breacher (100) |
-| bred big (creep) (28) | buggy (100), shotgun hand (100), trooper (100) | laser drone (100), lightning tank (96), flame trooper (94) |
-| bred medium (creep) (7) | buggy (98), bred small (98), flak buggy (96) | laser drone (100), bred stomper (100), flame trooper (95) |
-| bred spitter (creep) (9) | dozer (95), bred small (93), buggy (57) | railgunner (100), laser drone (100), bred stomper (100) |
+| rocket trooper (20) | scrap drone (100), laser drone (95), lightning tank (88) | bred small (81), breacher (60), shotgun hand (58) |
+| shotgun hand (8) | scrap drone (98), bred small (97), bred spore (92) | bred big (100), bred behemoth (100), bred big (creep) (100) |
+| gun buggy (40) | flame trooper (100), scrap drone (100), laser drone (93) | bred behemoth (100), battle tank (97), heavy tank (83) |
+| heavy laser trooper (14) | scrap drone (98), laser drone (81), dozer (75) | shock (73), gun buggy (68), bred medium (creep) (67) |
+| slug (30) | scrap drone (99), laser drone (92), flak buggy (87) | bred big (creep) (86), bred big (80), bred small (73) |
+| laser trooper (11) | scrap drone (97), laser drone (79), dozer (74) | bred big (creep) (83), breacher (81), gun buggy (80) |
+| trooper (10) | scrap drone (98), bred small (96), bred spore (74) | bred big (100), bred behemoth (100), bred big (creep) (100) |
+| railgunner (22) | bred small (100), bred spore (98), bred spitter (97) | walker (100), dozer (100), bred behemoth (100) |
+| buggy (15) | scrap drone (98), bred small (88), bred spore (73) | bred big (100), heavy tank (100), dozer (100) |
+| shock (30) | bred small (92), bred spore (83), railgunner (77) | laser drone (100), scorcher (100), lightning tank (100) |
+| sapper (30) | bred small (95), bred burster (90), bred spitter (creep) (81) | laser drone (100), scorcher (100), walker (100) |
+| breacher (10) | bred small (100), bred medium (94), bred spore (92) | walker (100), bred behemoth (100), bred stomper (100) |
+| lightning tank (115) | shock (100), flame trooper (100), bred spore (96) | laser drone (100), heavy tank (100), dozer (100) |
+| flame trooper (20) | bred small (89), railgunner (80), bred medium (75) | laser tank (100), laser drone (100), scorcher (100) |
+| laser tank (115) | flame trooper (100), bred small (92), bred spore (79) | laser drone (100), heavy tank (100), dozer (100) |
+| walker (100) | railgunner (100), sapper (100), flak buggy (100) | bred behemoth (100), bred big (creep) (93), bred big (90) |
+| tank (65) | flak buggy (100), flame trooper (100), breacher (97) | scrap drone (82), walker (75), dozer (67) |
+| battle tank (80) | laser tank (100), flak buggy (100), flame trooper (100) | scrap drone (84), walker (71), shotgun hand (71) |
+| dozer (120) | railgunner (100), buggy (100), laser tank (100) | bred stomper (100), bred spitter (creep) (94), bred spitter (94) |
+| heavy tank (120) | shock (100), buggy (100), laser tank (100) | laser drone (95), scrap drone (90), bred stomper (75) |
+| scorcher (100) | shock (100), sapper (100), flame trooper (100) | walker (100), heavy tank (100), bred behemoth (100) |
+| laser drone (70) | shock (100), sapper (100), laser tank (100) | flak buggy (100), anti-air trooper (97), rocket trooper (95) |
+| scrap drone (15) | bred burster (100), bred small (100), bred spitter (creep) (98) | anti-air trooper (100), flak buggy (100), walker (100) |
+| bomb drone (28) | bred burster (73), sapper (69), railgunner (67) | walker (75), slug (71), trooper (71) |
+| anti-air trooper (18) | scrap drone (100), laser drone (97), bred spitter (creep) (91) | bred stomper (100), walker (92), bred big (92) |
+| flak buggy (20) | laser drone (100), scrap drone (100), bred small (91) | walker (100), heavy tank (100), dozer (100) |
+| bred spore (10) | laser drone (81), scrap drone (79), rocket trooper (-12) | walker (100), bred behemoth (100), bred stomper (100) |
+| bred stomper (150) | railgunner (100), laser tank (100), anti-air trooper (100) | bred behemoth (100), walker (94), scrap drone (90) |
+| bred behemoth (200) | railgunner (100), shock (100), sapper (100) | laser trooper (74), heavy laser trooper (74), laser drone (69) |
+| bred big (28) | buggy (100), shotgun hand (100), trooper (100) | shock (68), laser drone (67), bred stomper (67) |
+| bred medium (7) | buggy (98), bred small (96), bred spore (89) | laser drone (100), bred stomper (100), breacher (94) |
+| bred spitter (9) | dozer (94), bred small (93), bred medium (66) | laser drone (100), bred stomper (100), railgunner (97) |
+| bred burster (40) | lightning tank (27), bred spitter (25), bred spitter (creep) (17) | laser drone (100), scrap drone (100), railgunner (93) |
+| bred small (2) | rocket trooper (81), slug (73), battle tank (66) | railgunner (100), laser drone (100), scorcher (100) |
+| bred big (creep) (28) | buggy (100), shotgun hand (100), trooper (100) | shock (64), laser drone (50), sapper (43) |
+| bred medium (creep) (7) | buggy (98), bred small (98), trooper (94) | laser drone (100), bred behemoth (100), bred stomper (100) |
+| bred spitter (creep) (9) | dozer (94), bred small (93), bred medium (63) | laser drone (100), bred stomper (100), scrap drone (98) |
 
 ## Groups found from the fights alone
 
@@ -69,13 +70,13 @@ Each kind is its row of scores (against every kind and every fixed opponent); ki
 
 | Group | Kinds (hand-made class) |
 |---|---|
-| 1 | rocket trooper (small arms), shotgun hand (small arms), heavy laser trooper (small arms), slug (small arms), laser trooper (small arms), trooper (small arms), buggy (small arms), anti-air trooper (anti-air), flak buggy (anti-air), bred spore (anti-air) |
-| 2 | shock (splash), sapper (splash), flame trooper (splash), breacher (splash), bred stomper (bred), bred big (bred), bred medium (bred), bred big (creep) (bred on creep), bred medium (creep) (bred on creep) |
-| 3 | lightning tank (splash), laser tank (splash), battle tank (armour), tank (armour), scorcher (armour), heavy tank (armour), dozer (armour), bred behemoth (bred) |
-| 4 | bred spitter (bred), bred burster (bred), bred small (bred), bred spitter (creep) (bred on creep) |
-| 5 | laser drone (air), scrap drone (air), bomb drone (air) |
-| 6 | railgunner (small arms) |
-| 7 | walker (armour) |
+| 1 | shock (splash), sapper (splash), breacher (splash), lightning tank (splash), flame trooper (splash), laser tank (splash), scorcher (armour), bred big (bred), bred medium (bred), bred spitter (bred), bred burster (bred), bred big (creep) (bred on creep), bred medium (creep) (bred on creep), bred spitter (creep) (bred on creep) |
+| 2 | rocket trooper (small arms), shotgun hand (small arms), gun buggy (small arms), heavy laser trooper (small arms), slug (small arms), laser trooper (small arms), trooper (small arms), buggy (small arms), anti-air trooper (anti-air), flak buggy (anti-air), bred spore (anti-air) |
+| 3 | walker (armour), tank (armour), battle tank (armour), dozer (armour), heavy tank (armour), bred behemoth (bred) |
+| 4 | laser drone (air), scrap drone (air), bomb drone (air) |
+| 5 | railgunner (small arms) |
+| 6 | bred stomper (bred) |
+| 7 | bred small (bred) |
 
 ## Faction against faction
 
@@ -85,25 +86,25 @@ From the unit matrix, each faction's roster (the kinds it fields from landing or
 
 | Row against column | Answer | Coverage | Exposure | Their answer | Edge |
 |---|---|---|---|---|---|
-| Kessler-Hayashi against Grubstake | +97 | 100% | 100% | +91 | +6 |
-| Kessler-Hayashi against Synthexis | +100 | 100% | 100% | +81 | +19 |
-| Kessler-Hayashi against You | +86 | 80% | 100% | +88 | -2 |
-| Grubstake against Kessler-Hayashi | +91 | 100% | 100% | +97 | -6 |
-| Grubstake against Synthexis | +86 | 82% | 100% | +92 | -6 |
-| Grubstake against You | +90 | 100% | 100% | +90 | +0 |
-| Synthexis against Kessler-Hayashi | +81 | 100% | 100% | +100 | -19 |
-| Synthexis against Grubstake | +92 | 100% | 82% | +86 | +6 |
-| Synthexis against You | +63 | 80% | 100% | +88 | -26 |
-| You against Kessler-Hayashi | +88 | 100% | 80% | +86 | +2 |
-| You against Grubstake | +90 | 100% | 100% | +90 | +0 |
-| You against Synthexis | +88 | 100% | 80% | +63 | +26 |
+| Kessler-Hayashi against Grubstake | +83 | 89% | 100% | +88 | -5 |
+| Kessler-Hayashi against Synthexis | +89 | 100% | 90% | +80 | +9 |
+| Kessler-Hayashi against You | +71 | 83% | 90% | +78 | -8 |
+| Grubstake against Kessler-Hayashi | +88 | 100% | 89% | +83 | +5 |
+| Grubstake against Synthexis | +80 | 91% | 100% | +91 | -10 |
+| Grubstake against You | +71 | 83% | 78% | +71 | +0 |
+| Synthexis against Kessler-Hayashi | +80 | 90% | 100% | +89 | -9 |
+| Synthexis against Grubstake | +91 | 100% | 91% | +80 | +10 |
+| Synthexis against You | +72 | 83% | 82% | +73 | +0 |
+| You against Kessler-Hayashi | +78 | 90% | 83% | +71 | +8 |
+| You against Grubstake | +71 | 78% | 83% | +71 | +0 |
+| You against Synthexis | +73 | 82% | 83% | +72 | +0 |
 
 | Faction | Kinds | Breadth (groups of 7) | Roster |
 |---|---|---|---|
 | Kessler-Hayashi | 10 | 5 | heavy laser trooper, laser trooper, railgunner, shock, lightning tank, laser tank, tank, heavy tank, laser drone, anti-air trooper |
-| Grubstake | 9 | 4 | shotgun hand, slug, buggy, sapper, scorcher, dozer, scrap drone, bomb drone, flak buggy |
-| Synthexis | 11 | 4 | bred spore, bred stomper, bred behemoth, bred big, bred medium, bred spitter, bred burster, bred small, bred big (creep), bred medium (creep), bred spitter (creep) |
-| You | 5 | 3 | rocket trooper, trooper, flame trooper, breacher, battle tank |
+| Grubstake | 9 | 4 | shotgun hand, slug, buggy, sapper, dozer, scorcher, scrap drone, bomb drone, flak buggy |
+| Synthexis | 11 | 5 | bred spore, bred stomper, bred behemoth, bred big, bred medium, bred spitter, bred burster, bred small, bred big (creep), bred medium (creep), bred spitter (creep) |
+| You | 6 | 3 | rocket trooper, gun buggy, trooper, breacher, flame trooper, battle tank |
 
 ## Mixed arms: does a flier soak a ground army's fire?
 
@@ -111,10 +112,10 @@ A ground army against the same spend with part of it in fliers, both ways round.
 
 | Mix | All-ground army's score | Fights |
 |---|---|---|
-| tanks / tanks + harriers | -12 | 6 |
-| dozers / dozers + harriers | +64 | 6 |
-| tanks and rifles / with harriers | +75 | 6 |
-| prisms / prisms + harriers | -36 | 6 |
+| tanks / tanks + harriers | +9 | 6 |
+| dozers / dozers + harriers | +55 | 6 |
+| tanks and rifles / with harriers | +70 | 6 |
+| prisms / prisms + harriers | -21 | 6 |
 
 ## The breach: bursters among other biters at a wall
 
@@ -122,11 +123,11 @@ The same spend sent at gun turrets behind a wall two deep (`tests/lp-arena/batch
 
 | Wave | Spend | Won | Turrets broken | Wall pieces broken | Units lost |
 |---|---|---|---|---|---|
-| 40 medium | 280 | 0 of 3 | 0 | 3 | 40 of 40 |
+| 40 medium | 280 | 0 of 3 | 0 | 3 to 4 | 40 of 40 |
 | 34 medium + 1 burster | 278 | 0 of 3 | 0 to 1 | 1 to 9 | 35 of 35 |
-| 29 medium + 2 bursters | 283 | 0 of 3 | 1 to 5 | 8 to 16 | 31 of 31 |
-| 23 medium + 3 bursters | 281 | 0 of 3 | 3 | 13 to 18 | 26 of 26 |
-| 17 medium + 4 bursters | 279 | 0 of 3 | 1 to 4 | 16 to 18 | 21 of 21 |
-| 7 bursters | 280 | 0 of 3 | 0 to 2 | 16 | 7 of 7 |
-| 10 big | 280 | 3 of 3 | 10 | 5 to 10 | 1 of 10 |
-| 6 big + 3 bursters | 288 | 3 of 3 | 10 | 14 to 18 | 3 to 4 of 9 |
+| 29 medium + 2 bursters | 283 | 0 of 3 | 3 to 5 | 14 to 15 | 31 of 31 |
+| 23 medium + 3 bursters | 281 | 0 of 3 | 1 to 3 | 8 to 16 | 26 of 26 |
+| 17 medium + 4 bursters | 279 | 0 of 3 | 1 to 3 | 9 to 16 | 21 of 21 |
+| 7 bursters | 280 | 0 of 3 | 0 to 2 | 16 to 18 | 7 of 7 |
+| 10 big | 280 | 3 of 3 | 10 | 8 to 10 | 1 of 10 |
+| 6 big + 3 bursters | 288 | 3 of 3 | 10 | 17 to 20 | 3 to 4 of 9 |

@@ -12,7 +12,7 @@ local GAP = 60                   -- the sides start this far apart
 local RECOMMAND = 5 * 60         -- idle units are sent at the other side again this often
 
 arena.FORCES = {serenity = "lp-serenity", grubstake = "lp-grubstake", player = "player", biters = "enemy"}
-arena.PLAYER_UNITS = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-battle-tank"}
+arena.PLAYER_UNITS = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-battle-tank", "lp-gun-buggy"}
 arena.LINES = {guns = "gun turrets (piercing rounds)", lasers = "laser turrets", flamers = "flamethrower turrets",
   walls = "a wall line", teslas = "tesla turrets"}
 arena.BITERS = {"small-biter", "medium-biter", "big-biter", "behemoth-biter", "small-spitter", "medium-spitter",
