@@ -10,10 +10,10 @@ manual revisited after calibration; an art direction pass before the playtest.
 - `scripts/package.sh`: the portal's zip from the committed mod, loaded in a clean profile before it is handed over.
   0.2.277: 163 MB, 701 files, loads.
 - Mod page text: docs/release/modpage.md (draft). Gallery: docs/release/gallery/ (ten frames, captions in modpage.md).
-- Trailer: media/trailer/cut-29 (2026-11-16, 0.2.431: 118 s, 59 bars, the drive score; a strike force on nw's furnace
-  rows at night as shots 9 and 10, a cannon battery fitted to the user's Deep Space Ten firing and its strike on
+- Trailer: media/trailer/cut-30 (2026-11-16, 0.2.431: 118 s, 59 bars, the drive score; a strike force on nw's furnace
+  rows at night as shots 9 and 10, twin cannons grafted on the user's Skipjack (graft D) firing and its strike on
   Kessler-Hayashi's siege as shots 34 and 35, the bomb drones' shot refilmed with a smoothed camera, the end card restored; contact sheet
-  media/trailer/cut-29-contact.png; thumbnail: media/trailer/thumbnail-split.png; title and description drafted).
+  media/trailer/cut-30-contact.png; thumbnail: media/trailer/thumbnail-split.png; title and description drafted).
 
 ## Decided (the user, 2026-11-15)
 - **Version 0.3.0** for the first upload, a public beta.

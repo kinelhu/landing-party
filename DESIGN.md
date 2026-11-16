@@ -7389,6 +7389,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Trailer cut 30: graft D, the Skipjack's forward guns** (0.2.431; the user, on cut 29: "Really not satisfied";
+  four graft designs as stills, A a stern gun in Deep Space Ten's solar tail, B broadside sponsons, C a spinal gun ahead
+  of its collectors, D the Skipjack's twin forward guns; "Okay on D"). On the nw copy the Skipjack (platform-2, in
+  transit in the save) parked over Nauvis by script (its schedule cleared, paused, space_location written), two
+  cannons facing forward on outriggers either side of its walled gun bow, swept back into its shoulders (corners cut),
+  its targeting array on a pad behind the port cannon (no 3 by 3 free on its deck). Found: parked over Nauvis it sits
+  in the asteroid field; an asteroid kept the port cannon from being placed (asteroids over the new foundation now
+  cleared first) and, fitted 1700 ticks before the shot, the port cannon was gone by it: fitted 200 before, both
+  indestructible for the film. The strike's shadow is the Skipjack's outline (cannon.silhouette). Shots 34 and 35
+  replaced, bars and score unchanged.
 - **Trailer cut 29: the battery on the user's own platform** (0.2.431; the user, on cut 28's dev deck: "looks kind of
   stupid because the underlying platform is artificial ... Can you not poach one of my actual platforms and modify
   it?"). On the nw copy, Deep Space Ten (platform-1, stopped over Nauvis; The Skipjack, platform-2, was in transit):
