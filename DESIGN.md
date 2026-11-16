@@ -7341,6 +7341,24 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The night of 2026-11-16 on 0.2.429** (the user: "All of those are due, and I agree"). The full regression: 360 of
+  361; train with LP_MIX=truce failed building its fork while train built the same fork (the profile's lock), and passed
+  alone; sim.sh now has one builder a fork and the others wait for its save (two train 777 runs from no fork, both
+  pass). The director on the user's other saves, 180 minutes, steady against off: deathworld10x seeds 1 to 3 razed
+  1,020, 1,214 and 880 against 128, 50 and 87; nwa 1,242, 1,261 and 1,683 against 0, 306 and 61; railbase_end seeds 2
+  to 5 at steady 388, 895, 674 and 915 (219 to 518 on 0.2.420, before strike forces were built for their target).
+  Strike forces razed most of it (razed_strike 744 to 1,243 of the steady visits on deathworld10x and nwa) and broke
+  less often (1 or 2 of 3 or 4); no Lua error in any. Pressure at steady is now 4 to 20 times no director on those two
+  saves: for the calibration, after the playtest. A seed-dependent stall: on nwa with seed salt 1 for 90 minutes,
+  Kessler-Hayashi's first mining crews were killed by the biters (evolution 0.99) three at each site, both sites were
+  given up, the mine it built was cut from the lander's network, and with 201 rebuilds pending it mined nothing; the
+  same visit unsalted on 0.2.429 mined 47,569 in 60 minutes, income from minute 5 as on 2026-11-14: not a regression,
+  but no fallback for a camp with no income (another patch, a cleared approach). Multiplayer with a joint strike: on
+  the belt reference save at minute 30 with both corporations landed (provoked), two joint strikes and a climax with a
+  client in, no desync; mp.sh forces no lull or unforced strike up front (a lull's truce, a power strike's hold, made
+  the joint impossible). The calibration groundwork: docs/calibration-2026-11-16.md, one seed a cell, too noisy to
+  read yet. Pages: nwa https://claude.ai/artifact/7KuAeeMcS9DyFxLiY6nh7H, deathworld10x
+  https://claude.ai/artifact/TRJ2gx4HEva5VSPC9UMTiC, railbase_end https://claude.ai/artifact/X3zAp8VppxQCsNnHyVny67.
 - **Kessler-Hayashi's hauler, an APC** (0.2.429; the user, 2026-11-16: "Perhaps we can use a tank chassis with no turret,
   like an APC"). Its hauler wore the generic first truck, rusty and open-framed, and its manual portrait read as
   Grubstake's (the user's catch). Now its tank's hull and tracks (tools/blender/kh_tank.py) with a new head, "carrier":
