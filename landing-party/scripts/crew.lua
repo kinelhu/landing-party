@@ -258,6 +258,12 @@ local function step(b, i)
     table.remove(b.crews, i)
     if given then
       b.crews_gave_up = (b.crews_gave_up or 0) + 1
+      -- A mine given up to killed crews marks its ground: the next mine keeps MINE_DANGER away (site.mining). Unmarked,
+      -- the next was laid on the same patch under the same biters (nwa seed 1, 2026-11-16: both sites, then nothing).
+      if not c.rebuild and c.module.kind == "mining" then
+        b.mine_danger = b.mine_danger or {}
+        table.insert(b.mine_danger, {c.site[1], c.site[2]})
+      end
       -- Told: a post given up is the line held (the cordon's arc never stands), anything else a site given up.
       local where = string.format("[gps=%d,%d,%s]", c.site[1], c.site[2], s.name)
       local post = not c.rebuild and c.module.kind == "post"

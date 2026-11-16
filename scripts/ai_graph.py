@@ -80,7 +80,7 @@ LAYERS = {
     "Perception and attempts (any attacker)": ["firemap", "valuemap", "costmap", "feeds", "attempt", "tactics"],
     "Knowledge and strategy (per faction)": ["know", "strategy"],
     "The director (above every faction)": ["director", "director_gui"],
-    "Corporation": ["faction", "pods", "war", "standing", "pact", "ledger", "rd", "phases", "biters"],
+    "Corporation": ["faction", "pods", "war", "standing", "pact", "ledger", "rd", "phases", "biters", "lifeline"],
     "Settlement": ["base", "construction", "planner", "layout", "wfc", "wfc_serenity", "lots_grubstake", "site", "blocks", "modules", "crew", "cordon", "perimeter",
                    "road", "prospect", "belts"],
     "Army and operations": ["army", "ops", "routing", "intel", "airraid", "cannon", "siege", "assault", "strip", "answers", "cuts", "strike", "jammer", "dome", "orbital", "scorcher", "stun", "fall", "separate", "ram", "aim",

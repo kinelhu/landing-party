@@ -52,6 +52,7 @@ local belts = require("__landing-party__.scripts.belts")
 local scorcher = require("__landing-party__.scripts.scorcher")
 local stun = require("__landing-party__.scripts.stun")
 local fall = require("__landing-party__.scripts.fall")
+local lifeline = require("__landing-party__.scripts.lifeline")
 local separate = require("__landing-party__.scripts.separate")
 local cannon = require("__landing-party__.scripts.cannon")
 local ram = require("__landing-party__.scripts.ram")
@@ -127,7 +128,7 @@ local WATCH_DEPS = {
 script.on_event(defines.events.on_tick, function(e)
   -- (First: a promotion swaps a unit before any module walks its lists this tick.)
   veterancy.tick(e.tick)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); cards.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); road.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); separate.tick(e.tick); ram.tick(e.tick); ram.charge_tick(e.tick); cannon.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick); director.tick(e.tick); director_gui.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); cards.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); road.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); separate.tick(e.tick); ram.tick(e.tick); ram.charge_tick(e.tick); cannon.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick); director.tick(e.tick); director_gui.tick(e.tick); lifeline.tick(e.tick)
   oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
 end)
@@ -1296,6 +1297,18 @@ remote.add_interface("landing-party", {
   separate_stats = function() return separate.stats() end,
   belt_stats = function(id) return storage.bases[id] and belts.stats(storage.bases[id]) end,
   debug_crew = function(id, pos, names) return storage.bases[id] and crew.debug_module(storage.bases[id], pos, names) end,
+  -- Tests only: the mine the planner would pick now with `danger` as the camp's given-up ground (site.mining), its cells
+  -- and danger left as they were.
+  debug_mine_pick = function(id, danger)
+    local b = storage.bases[id]
+    if not b then return nil end
+    local cells, d0 = {}, b.mine_danger
+    for k, v in pairs(b.cells) do cells[k] = v end
+    b.mine_danger = danger
+    local o = site.mining(game.surfaces[b.surface], b, math.huge, {n = math.huge})
+    b.cells, b.mine_danger = cells, d0
+    return o and {o[1], o[2]}
+  end,
   standing = function(corp, owner) return standing.get(corp, owner or "player") end,
   -- Tests only: a mast of `corp` raised at `pos`, as a siege raises it.
   debug_jammer = function(corp, pos) local m = jammer.raise(game.surfaces[1], pos, game.forces[shared.CORPS[corp].force]); return m and m.unit_number end,

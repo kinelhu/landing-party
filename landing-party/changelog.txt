@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.432
+Date: 2026-11-16
+  Changes:
+    - A camp that has made nothing for a long while and is out of parts gets a supply drop from its corporation, marked on your map; destroy the crate before the camp collects it and the drop is lost.
+    - If it still makes nothing 20 minutes after its drop, the camp departs. A headquarters never departs, and a camp you are fighting stays until you finish it.
+    - After a mine is given up because its crews were killed, a camp builds its next mine away from that ground.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.431
 Date: 2026-11-16
   Changes:

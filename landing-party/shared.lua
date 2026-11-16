@@ -902,7 +902,7 @@ shared.TINT = {r = 0.62, g = 0.8, b = 1, a = 1}
 -- notice before a loss the player cannot see coming. None left: the perimeter's warning guards none since enclosure no
 -- longer provokes (ops.encroached); the rig's dig is 2.5 minutes with a dust line; a prospect plants a lit stake.
 -- (Always told: the army's two stuck-player hints, once each a force, command.lua; a tutorial's, not chatter.)
-local KEEP = {["lp.fallen"] = true, ["lp.hint-no-beacon"] = true, ["lp.hint-no-relay"] = true,
+local KEEP = {["lp.fallen"] = true, ["lp.starved-out"] = true, ["lp.hint-no-beacon"] = true, ["lp.hint-no-relay"] = true,
   -- (A threat the director starts is told as it arrives, RimWorld's way, the user, 2026-11-15: its strike force as it
   -- lands, or seen coming by radar; its drop wave and supply drop. Its own pacing, sprees, surges, lulls and forecasts,
   -- is never told since 0.2.405; 0.2.393 to 0.2.404 read them all out.)
@@ -942,6 +942,15 @@ end
 -- target having lost at most `loss` of its strength, no gun covering it, sweeps on to the player's nearest building
 -- within `reach` that no gun covers, `max` times at most. Named priors.
 shared.SWEEP = {loss = 0.25, reach = 48, max = 6}
+-- A starving camp (scripts/lifeline.lua; the night of 2026-11-16: on nwa seed 1 the biters killed Kessler-Hayashi's
+-- first crews at both mining sites and its camp made nothing for 90 minutes; the user: "Ok with your takes"). A camp
+-- grace minutes past its landing that made no part for minutes and holds fewer than poor parts is starving: its
+-- corporation drops it a crate of parts by pod, out tiles from its lander toward the player, marked; wait minutes on,
+-- if the crate stands, its parts reach the camp. Having made nothing since, leave minutes after the drop a camp departs
+-- (base.depart); a headquarters never does, its next drop hq_gap minutes after the last if it is starving still.
+shared.LIFELINE = {grace = 20, minutes = 10, poor = 150, parts = 300, out = 16, wait = 3, leave = 20, hq_gap = 30}
+-- Where crews were killed until a mine was given up (crew.lua), the next mine keeps danger tiles away (site.mining).
+shared.MINE_DANGER = 48
 
 -- A director's lull holding `corp` against some force now (storage.truces, "corp|owner" to the tick it ends): its units
 -- then walk home without answering fire (ops.walk_home, the leash).

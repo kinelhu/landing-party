@@ -1,6 +1,8 @@
 local lp_threat = require("__landing-party__.scripts.threat")
 -- (Read while the file loads: require is refused at run time, and the recorder and the berth check failed on it.)
 local LP_CORPS = require("__landing-party__.shared").CORPS
+local LP_LIFELINE = require("__landing-party__.shared").LIFELINE
+local LP_MINE_DANGER = require("__landing-party__.shared").MINE_DANGER
 -- Headless simulation: lands one base near spawn, lets it grow, plays a scripted player action at
 -- params.strike minutes, snapshots the base and checks what should follow.
 -- params.lua (written by scripts/sim.sh into this mod's copy in the run's profile) gives
@@ -377,6 +379,8 @@ scenarios.cut = function()
     local st = lp("stats", storage.id)
     check("cut: rebuilt", st.rebuilt >= S.killed, st.rebuilt .. "/" .. S.killed)
     check("cut: income recovered", S.after >= 0.9 * S.before, string.format("%.0f -> %.0f/min", S.before, S.after))
+    -- (lifeline.lua is dormant in a camp that mines: none sent here.)
+    check("cut: no supply drop to a camp that mines", st.lifelines == 0, st.lifelines .. " sent")
   end)
 end
 
@@ -406,6 +410,7 @@ scenarios.raid = function()
     check("raid: not duplicated", doubled(S.spots) == 0, doubled(S.spots) .. " spots doubled, " .. st.fabs .. " fabricators")
     check("raid: parts production recovered", S.after >= 0.9 * S.before,
       string.format("%.1f -> %.1f/min", S.before, S.after))
+    check("raid: no supply drop to a camp that mines", st.lifelines == 0, st.lifelines .. " sent")
   end)
 end
 
@@ -910,6 +915,61 @@ scenarios.launches = function()
       and S.next0 - S.next1 <= 15 * 3600 and S.next0 - S.next1 > 0,
       string.format("%s -> %s", tostring(S.next0), tostring(S.next1)))
     check("launches: hastened for the late corporation", S.haste == "serenity", tostring(S.haste))
+  end)
+end
+
+-- Starve (lifeline.lua, 0.2.432): at the strike every ore tile within 400 of the camp goes, its drills with it, and its
+-- parts to 0: it can never mine again. Starving shared.LIFELINE.minutes on, its corporation drops it a crate of parts;
+-- it takes it, and having made nothing since, it departs leave minutes after. LP_MIX=starveleave: the
+-- crate is destroyed as it lands (the player's answer), the drop lost and the camp departs the same. The camp's own
+-- scenarios (cut, raid) check that a camp that mines is never sent one.
+scenarios.starve = function()
+  local L = LP_LIFELINE
+  local leave = params.mix == "starveleave"
+  -- (First, the next mine kept off a given-up mine's ground, crew.lua and site.mining: picked with that ground as
+  -- danger, it lies more than MINE_DANGER from it.)
+  schedule(STRIKE - 60, function()
+    local o1 = lp("debug_mine_pick", storage.id, nil)
+    local o2 = o1 and lp("debug_mine_pick", storage.id, {o1})
+    local again = lp("debug_mine_pick", storage.id, nil)
+    local d = o1 and o2 and math.sqrt((o1[1] - o2[1]) ^ 2 + (o1[2] - o2[2]) ^ 2)
+    check("starve: the next mine kept off given-up ground", d and d > LP_MINE_DANGER and again and again[1] == o1[1]
+      and again[2] == o1[2], string.format("%s -> %s, %s apart", serpent.line(o1), serpent.line(o2), tostring(d)))
+  end)
+  schedule(STRIKE, function()
+    local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
+    local c = lander.position
+    local n = 0
+    for _, r in pairs(surface().find_entities_filtered{type = "resource", position = c, radius = 400}) do r.destroy(); n = n + 1 end
+    for _, d in pairs(lp_entities("lp-drill")) do d.destroy() end
+    lp("debug_parts", storage.id, -counter("parts"))
+    S.center = {c.x, c.y}
+    check("starve: its ore gone", n > 0, n .. " ore entities")
+  end)
+  for t = STRIKE + 3600, END, 3600 do
+    schedule(t, function()
+      local st = lp("stats", storage.id)
+      if st.lifelines > 0 and not S.sent_at then S.sent_at = game.tick end
+      if st.departed and not S.left_at then S.left_at = game.tick end
+      if leave and S.center then
+        for _, ch in pairs(surface().find_entities_filtered{name = "iron-chest", force = FORCE, position = S.center, radius = 40}) do
+          ch.destroy(); S.crates_destroyed = (S.crates_destroyed or 0) + 1
+        end
+      end
+    end)
+  end
+  schedule(END, function()
+    local st = lp("stats", storage.id)
+    check("starve: a supply drop sent", st.lifelines >= 1, st.lifelines .. " sent")
+    if leave then
+      check("starve: its crate destroyed, the drop lost", (S.crates_destroyed or 0) >= 1 and st.lifelines_lost >= 1,
+        string.format("%d destroyed, %d lost", S.crates_destroyed or 0, st.lifelines_lost))
+    else
+      check("starve: the drop reached the camp", st.lifeline_parts >= L.parts, st.lifeline_parts .. " parts")
+    end
+    -- (Not before leave minutes after the drop: one drop, then the way out.)
+    check("starve: the camp departed after its drop", st.departed ~= nil and S.sent_at and S.left_at
+      and S.left_at - S.sent_at >= L.leave * 3600, string.format("sent %s, left %s", tostring(S.sent_at), tostring(S.left_at)))
   end)
 end
 
@@ -20497,7 +20557,7 @@ schedule(END, function()
   -- A siege may win outright by destroying the lander.
   -- (strike: the player's orbital strike on the camp; its targets follow the camp's layout, and once the colliding fliers
   -- moved its buildings it took the lander among them, 0.2.244.)
-  local MAY_FALL = {siege = true, fall = true, hq = true, uplink = true, strike = true}
+  local MAY_FALL = {siege = true, fall = true, hq = true, uplink = true, strike = true, starve = true}  -- (starve: it departs, lifting its lander out)
   -- (dome LP_MIX=dark: its generators killed, no dome and no hull: the guns may take its lander, and from 0.2.370's site
   -- they did.)
   if not MAY_FALL[params.scenario] and not (params.scenario == "dome" and params.mix == "dark") then check("lander alive", s.lander) end

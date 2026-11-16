@@ -136,10 +136,19 @@ end
 function site.mining(surface, base, reach, budget)
   local m = modules.mining
   local scored = {}
+  local danger, r2 = base.mine_danger, shared.MINE_DANGER ^ 2
   for key, o in pairs(base.ore_cells) do
     if not base.cells[key] then
       local _, d = nearest_pylon(base, o[1], o[2])
-      if d <= reach then table.insert(scored, {o = o, d = d}) end
+      -- (Ground where a mine was given up to killed crews, crew.lua: passed over, not marked bad. A camp left with no
+      -- other ore in reach plans no mine and starves: lifeline.lua. With no mine given up, nothing changes here.)
+      local near = false
+      if danger then
+        for _, p in ipairs(danger) do
+          if (o[1] - p[1]) ^ 2 + (o[2] - p[2]) ^ 2 <= r2 then near = true; break end
+        end
+      end
+      if d <= reach and not near then table.insert(scored, {o = o, d = d}) end
     end
   end
   table.sort(scored, function(a, b) if a.d ~= b.d then return a.d < b.d end
