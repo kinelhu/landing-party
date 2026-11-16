@@ -13138,6 +13138,10 @@ scenarios.visit = function()
     if salt then lp("debug_tune", {seed_salt = salt}); info("visit: seed salt " .. salt) end
     local era = tonumber(params.mix:match("era(%d)"))
     if era then lp("debug_tune", {era = era}); info("visit: era set to " .. era) end
+    -- LP_MIX=diff_<level> (easy, normal, hard, very_hard): the difficulty map setting for the visit (the calibration's
+    -- sweep, 2026-11-16; visit.sh had no way to set it). Underscores: the mix's tokens are split by hyphens.
+    local diff = params.mix:match("diff_([a-z_]+)")
+    if diff then diff = diff:gsub("_", "-"); lp("debug_setting", "lp-difficulty", diff); info("visit: difficulty " .. diff) end
     if not params.mix:find("nokh", 1, true) then
       storage.id = lp("arrive", 1, sp, S.dist, {corp = "serenity"})
       if not storage.id then error("lp-sim visit: no site for Serenity at " .. tostring(S.dist)) end

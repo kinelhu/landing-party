@@ -44,7 +44,23 @@ if [ -n "${LP_FORK:-}" ]; then
   # one's 49, 2026-11-05.)
   fork="$FORKS/$SCENARIO${LP_FORK_MIX:+-$LP_FORK_MIX}-$SEED-$STRIKE-$FORK_HASH.zip"
   # A fork that fails to build says so (its output once went to /dev/null and the run ended silently).
-  [ -f "$fork" ] || "$(dirname "$0")/fork.sh" "$SCENARIO" "$SEED" "$STRIKE" || { echo "SIM FAILED ($RUN): fork"; exit 1; }
+  # One builder a fork (mkdir is atomic): the others wait for its save. Two variants of a scenario building the same fork
+  # at once, the second's server could not take the profile's lock and its run failed (train truce, the full regression
+  # at 0.2.429, 2026-11-16).
+  if [ ! -f "$fork" ]; then
+    lock="$fork.building"
+    if mkdir "$lock" 2>/dev/null; then
+      if "$(dirname "$0")/fork.sh" "$SCENARIO" "$SEED" "$STRIKE"; then ok=0; else ok=1; fi; rmdir "$lock"
+      [ $ok -eq 0 ] || { echo "SIM FAILED ($RUN): fork"; exit 1; }
+    else
+      # (A builder killed leaves its lock: older than 30 minutes, it is taken as dead and removed.)
+      while [ -d "$lock" ] && [ ! -f "$fork" ]; do
+        [ -n "$(find "$lock" -maxdepth 0 -mmin +30 2>/dev/null)" ] && { rmdir "$lock"; exec "$0" "$@"; }
+        sleep 5
+      done
+      [ -f "$fork" ] || { echo "SIM FAILED ($RUN): fork (its builder failed)"; exit 1; }
+    fi
+  fi
   cp "$fork" "$SIM/saves/sim.zip"
   run --benchmark "$SIM/saves/sim.zip" --benchmark-ticks $(((MINUTES - STRIKE + FORK_LEAD) * 3600 + 61)) --benchmark-runs 1
 else
