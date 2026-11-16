@@ -76,7 +76,9 @@ end
 -- What a unit of the corporations costs in parts (shared.unit_cost: a Grubstake variant at Grubstake's price); nil for
 -- anything else.
 -- The player's units cost no parts; what limits an army of them is command bandwidth. In the matrix one slot of it is
--- priced as a Serenity rifleman (10 parts), so a trooper is worth one and a battle tank four.
+-- priced as a Serenity rifleman (10 parts), so a trooper is worth one and a battle tank its shared.POPULATION (8 since
+-- 0.2.438). A convention, not measured: it sets every player row against the corporations' (among the player's own units
+-- it cancels); a whole game with an army is what would check it.
 arena.PER_BANDWIDTH = 10
 
 function arena.cost(kind, name)
