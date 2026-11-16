@@ -297,8 +297,8 @@ local function mast_site(kind, owner)
       local lp = b.lander.position
       for _, e in ipairs(b.lander.surface.find_entities_filtered{type = m.type, force = owner, position = lp,
         radius = tun(m.radius)}) do
-        local d = (e.position.x - lp.x) ^ 2 + (e.position.y - lp.y) ^ 2
-        if not bd or d < bd then best, bd, near = b, d, e end
+        local d = e.name ~= "lp-command-relay" and (e.position.x - lp.x) ^ 2 + (e.position.y - lp.y) ^ 2
+        if d and (not bd or d < bd) then best, bd, near = b, d, e end
       end
     end
   end
@@ -759,10 +759,14 @@ masts_tick = function(s, tick)
       if on then
         for _, e in ipairs(j.mast.surface.find_entities_filtered{type = m.type, force = j.owner, position = j.mast.position,
           radius = tun(m.radius)}) do
+          -- (Not the command relay, a radar by prototype (player.lua): the blackout took the player's army offline with
+          -- it, no reason shown; the army consult, 2026-11-16.)
+          if e.name == "lp-command-relay" then goto next_entity end
           j.held[e.unit_number] = e
           e.disabled_by_script = true
           e.custom_status = {diode = defines.entity_status_diode.red, label = {m.status}}
           j.jammed = (j.jammed or 0) + 1
+          ::next_entity::
         end
       else
         mast_release(j)
@@ -1435,13 +1439,19 @@ local function strike(s, owner, corps, tick, mult, warn, aim, want)
   local seen = false
   if f then
     local cx, cy = math.floor(lp.x / 32), math.floor(lp.y / 32)
+    -- (A command relay reveals as a radar does, but not under a blackout mast: kept powered for the army, its cover goes.)
+    local bo = s.masts and s.masts.blackout
+    local bo_r = bo and bo.mast and bo.mast.valid and bo.owner == owner and tun(MASTS.blackout.radius)
     for _, r in ipairs(surface.find_entities_filtered{type = "radar", force = f, position = lp, radius = 32 * 8}) do
+      if bo_r and r.name == "lp-command-relay" and (r.position.x - bo.mast.position.x) ^ 2
+        + (r.position.y - bo.mast.position.y) ^ 2 <= bo_r * bo_r then goto next_radar end
       local reach = r.prototype.get_max_distance_of_nearby_sector_revealed(r.quality) or 0
       local rx, ry = math.floor(r.position.x / 32), math.floor(r.position.y / 32)
       if r.status == defines.entity_status.working and math.abs(rx - cx) <= reach and math.abs(ry - cy) <= reach then
         seen = true
         break
       end
+      ::next_radar::
     end
   end
   if f and s.intercept and not (kind == "power" or kind == "water") then

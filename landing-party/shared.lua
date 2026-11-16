@@ -778,6 +778,15 @@ function shared.corp_forces()
   return out
 end
 
+-- What the player's army fights (scripts/command.lua): the corporations' forces and the biotech's, once it exists (bred
+-- biters were outside the army's threat, its beacon's E count and the command tool's attack; the army consult,
+-- 2026-11-16). Wild biters are the game's own and the units' own targeting answers them.
+function shared.hostile_forces()
+  local out = shared.corp_forces()
+  if game and game.forces[shared.BIOTECH.force] then table.insert(out, shared.BIOTECH.force) end
+  return out
+end
+
 -- Nominal power in watts. Data sets the prototypes from these; the planner budgets with them.
 shared.power = {
   ["lp-lander"] = -2000000,      -- negative: produces

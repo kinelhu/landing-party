@@ -356,6 +356,8 @@ def write(rp):
         "army": {
             "repair_tiles": fmt(num(src("scripts/command.lua"), r"^local REPAIR_RANGE = (\d+)", "REPAIR_RANGE")),
             "offset_max": fmt(num(src("scripts/command.lua"), r"^local MAX_OFFSET = (\d+)", "MAX_OFFSET")),
+            "defend_reach": fmt(num(src("scripts/command.lua"), r"^local DEFEND_REACH = (\d+)", "DEFEND_REACH")),
+            "defend_quiet": fmt(num(src("scripts/command.lua"), r"^local DEFEND_QUIET = (\d+)", "DEFEND_QUIET")),
             **{f"relays_l{i + 1}": fmt(float(x)) for i, x in enumerate(re.findall(r"\d+", grab(shared_src, r"^shared\.RELAYS_BY_LEVEL = \{\[0\] = \d+, ([\d, ]+)\}", "RELAYS_BY_LEVEL") or ""))},
             "relays_extra": fmt(num(shared_src, r"^shared\.RELAYS_PER_EXTRA_LEVEL = (\d+)", "RELAYS_PER_EXTRA_LEVEL")),
             "cards_max": fmt(num(src("scripts/cards.lua"), r"^local CARD_MAX = (\d+)", "CARD_MAX")),

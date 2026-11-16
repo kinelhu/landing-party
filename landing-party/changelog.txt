@@ -1,4 +1,17 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.436
+Date: 2026-11-16
+  Features:
+    - Rally beacons have a defend stance, signal D: the squad holds, then goes out to an attack within 150 tiles of its rally point (a strike force your radar sees coming or that has landed, or enemies at your buildings) and walks back when it is over. The beacon outputs W while the squad is out.
+    - A squad panel beside a rally beacon's window: its stance, what it is answering, and each unit's count against its squad size, with buttons to change the sizes.
+    - Hovering over a rally beacon shows its squad; hovering over one of your units shows its beacon.
+  Changes:
+    - Above a lowered squad size, the surplus joins another rally beacon with room before it retires.
+  Bugfixes:
+    - A Grubstake blackout mast no longer switches off your command relays. Under it they stop counting as radar cover.
+    - Unit orders keep their quality when deployed and when retired.
+    - Your army fights Synthexis's bred biters as it does corporation units, and counts them in a beacon's E signal.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.435
 Date: 2026-11-16
   Locale:

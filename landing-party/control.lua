@@ -65,6 +65,7 @@ local valuemap = require("__landing-party__.scripts.valuemap")
 local director = require("__landing-party__.scripts.director")
 director.base = base  -- (its departures: base.depart; required here, not at runtime)
 local director_gui = require("__landing-party__.scripts.director_gui")
+local squadgui = require("__landing-party__.scripts.squadgui")
 local costmap = require("__landing-party__.scripts.costmap")
 local feeds = require("__landing-party__.scripts.feeds")
 -- Synthexis's scouts take the corporations' way round turrets (herd.lua; a hook, not a require: ops is the corporations').
@@ -129,6 +130,7 @@ script.on_event(defines.events.on_tick, function(e)
   -- (First: a promotion swaps a unit before any module walks its lists this tick.)
   veterancy.tick(e.tick)
   biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); cards.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); road.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); separate.tick(e.tick); ram.tick(e.tick); ram.charge_tick(e.tick); cannon.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick); director.tick(e.tick); director_gui.tick(e.tick); lifeline.tick(e.tick)
+  if e.tick % 60 == 40 then squadgui.tick() end
   oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
 end)
@@ -256,10 +258,14 @@ script.on_event(defines.events.on_gui_click, function(e)
   if e.element and e.element.valid and e.element.name == "lp_army_retire" then command.retire(e.player_index); command.gui_tick() end
   if cards.on_click(e) then command.gui_tick() end
   director_gui.on_click(e)
+  squadgui.on_click(e)
   if e.element and e.element.valid and (e.element.name == "lp_army_all" or e.element.name == "lp_army_idle") then
     cards.select_army(e.player_index, e.element.name == "lp_army_idle"); cards.refresh(e.player_index); command.gui_tick()
   end
 end)
+-- Which units are whose (scripts/squadgui.lua): hover links, and the squad panel beside a rally beacon's window.
+script.on_event(defines.events.on_selected_entity_changed, function(e) squadgui.on_selected(e) end)
+script.on_event(defines.events.on_gui_opened, function(e) squadgui.on_opened(e) end)
 -- The selection's cards and control groups (scripts/cards.lua).
 cards.on_select = function(pi) command.rings(pi) end
 for n = 1, cards.GROUPS do
@@ -984,6 +990,12 @@ remote.add_interface("landing-party", {
   end,
   debug_order = function(area, attackmove) return command.order(1, game.surfaces[1], area, attackmove) end,
   debug_retire = function() return command.retire(1) end,
+  -- Tests only: the squad panel's buttons (scripts/squadgui.lua), and what a beacon shows, in plain values.
+  debug_squad_size = function(beacon, unit, n) return squadgui.set_size(beacon, unit, n) end,
+  debug_beacon_view = function(beacon)
+    local v = command.beacon_view(beacon)
+    return {stance = v.stance, answering = v.answering, count = v.count, caps = v.caps, n = #v.units}
+  end,
   -- The selection's cards (scripts/cards.lua), headless: the model in plain numbers, the bars' shares, groups, picks.
   debug_cards = function()
     local m = cards.refresh(1)

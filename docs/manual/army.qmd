@@ -50,9 +50,11 @@ Each level of command bandwidth unlocks orders at the barracks. A unit's share o
 
 A rally beacon is a constant combinator. Each new unit joins the nearest beacon with room for it and follows it
 until that beacon is removed; then it joins the nearest one again. A unit with no beacon nearby stands where it is, so
-place a beacon before your first barracks finishes an order.
+place a beacon before your first barracks finishes an order. Hover over a beacon and lines run from it to each unit of
+its squad; hover over a unit and a line runs to its beacon.
 
-Open the beacon and set a signal to give its squad a stance. With more than one, R comes first, then A, then O.
+Open the beacon and set a signal to give its squad a stance. With more than one, R comes first, then A, then O, then D.
+A panel beside the beacon's window says what the squad is doing.
 
 - **No signal: hold.** The squad stands at the rally point and fights what comes to it.
 - **A: advance.** The squad attacks the nearest corporation turret within reach of the rally point, then the other
@@ -60,15 +62,24 @@ Open the beacon and set a signal to give its squad a stance. With more than one,
   holds if there is none.
 - **O: occupy.** The squad walks to the nearest corporation outpost and stands on it, fighting back only when hit. A
   corporation does not rebuild an outpost you occupy. The squad keeps to that outpost until you change the order or move
-  the rally point. Holding an outpost is meant to capture it, but capture does not work yet.
+  the rally point. Held for a while with no corporation unit or turret near it, a mining outpost becomes yours,
+  its drills, bin and pylon with it.
 - **R: retreat.** The squad walks back to the nearest barracks without stopping to fight, and heals there if the
   barracks has power.
+- **D: defend.** The squad holds at the rally point until an attack comes within {{< var army.defend_reach >}} tiles of
+  it, then goes out to meet it. It answers what you would know of: a strike force whose pods your radar sees coming, or
+  whose target you are told; a strike force that has landed; and corporation units or Synthexis's biters at your
+  buildings. It does not chase beyond the attack. When the strike force breaks, or no enemy has been near the place for
+  {{< var army.defend_quiet >}} seconds, the squad walks back. Its ring is green, drawn at the full reach.
 
 **Squad sizes.** Each kind of unit has a squad size signal, such as *Squad size: troopers*. Set one on a beacon and its
 squad keeps at most that many of that unit. New units join the nearest beacon that still has room for them. When every
 beacon in reach is full for a unit, its orders wait in the barracks, and a barracks whose output fills stops training.
-Lower a squad size and the surplus, those farthest from the rally point first, walk back to a barracks and hand in their
-orders, as retired units do. Raise it or clear it and the waiting orders deploy. A beacon with no squad size for a unit
+Lower a squad size and the surplus, those farthest from the rally point first, join the nearest other beacon with room
+for them; if none has room, they walk back to a barracks and hand in their orders, as retired units do. This is how you
+move units from one squad to another: lower one beacon's size and raise another's. The panel beside the beacon's
+window shows each unit's count against its size, with buttons to change it; on a wired beacon the network sets the
+sizes and the buttons are off. Raise it or clear it and the waiting orders deploy. A beacon with no squad size for a unit
 takes as many as come. Wired to a circuit, the sizes can follow the factory, for example more tanks when the threat
 scanner sees more corporation armour.
 
@@ -155,8 +166,10 @@ relays like any building, so keep them inside your defenses and on a reliable gr
 
 **Beacons.** Wire a rally beacon and it reads the signals on its wires as well as its own. A decider combinator can then
 set its stance, and a clock on X or Y walks the rally point back and forth as a patrol. The beacon reports on its own
-output: **S** the units in its squad, **E** corporation units and **T** corporation turrets within reach of its rally
-point. A decider that sends A once S reaches the size you want holds a squad until it is full, then attacks.
+output: **S** the units in its squad, **E** corporation units and Synthexis's biters and **T** corporation turrets within
+reach of its rally point, and **W** 1 while a defending squad is out. A decider that sends A once S reaches the size you
+want holds a squad until it is full, then attacks; one that reads W can shut gates or light lamps while the squad is
+away.
 
 **Barracks and muster points.** A barracks reports its contents and takes its recipe from the circuit network, as an
 assembling machine does. Send it P above zero and it keeps finished orders in its output instead of turning them into

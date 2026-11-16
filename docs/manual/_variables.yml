@@ -103,6 +103,8 @@ war:
 army:
   repair_tiles: "30"
   offset_max: "300"
+  defend_reach: "150"
+  defend_quiet: "60"
   relays_l1: "4"
   relays_l2: "8"
   relays_l3: "15"
@@ -173,7 +175,7 @@ desc:
   entity_jammer: "Destroys construction and logistic robots in range."
   entity_claim_stake: "Grubstake claims the ore here when the lamp runs out, unless the ore is being mined or the stake is destroyed."
   entity_barracks: "Trains units from orders."
-  entity_rally_beacon: "Gathers a squad and orders it by signal: A advance, O occupy, R retreat, X and Y move its rally point. Squad size signals cap each unit it keeps. Wired, it outputs S its squad, E and T enemy units and turrets near it."
+  entity_rally_beacon: "Gathers a squad and orders it by signal: A advance, O occupy, R retreat, D defend, X and Y move its rally point. Squad size signals cap each unit it keeps. It outputs S its squad, E and T enemy units and turrets near it, W while its squad is out defending."
   entity_command_relay: "Lets you command 10 more units while powered. Research raises how many relays count."
   entity_pact_breaker: "Jams Grubstake's pact with the biters for 3 minutes. Works only inside a Grubstake claim."
   entity_claim_marker: "Grubstake leaves your buildings within 40 tiles alone."
@@ -279,6 +281,6 @@ director:
   climax_times: "double"
   gentle_share: "half"
 mod:
-  version: "0.2.435"
+  version: "0.2.436"
   factorio: "2.1"
   needs: "base, space-age"

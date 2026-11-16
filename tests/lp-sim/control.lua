@@ -2939,6 +2939,77 @@ scenarios.squad = function()
   end)
 end
 
+-- Moving units between squads (command.lua enforce, squadgui.set_size; the user, 2026-11-16: a squad was whoever had
+-- deployed nearest, and lowering a size retired the surplus): two beacons, sizes set by the squad panel's own writer. A
+-- at 4 troopers, B at 0: four deploy to A, two orders wait. A lowered to 1 and B raised to 3: three walk to B, none
+-- retire. A cleared: the two waiting deploy, and an uncommon order at a muster point deploys an uncommon trooper which,
+-- retired, hands in an uncommon order (deploy and retire read orders by name alone: a rare one came back normal).
+scenarios.squadmove = function()
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  local function waiting()
+    return S.barracks.get_inventory(defines.inventory.crafter_output).get_item_count("lp-trooper-order")
+  end
+  local function view(b) return lp("debug_beacon_view", b) end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-40, -40, 40, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    S.barracks = put("lp-barracks", 0.5, 0.5)
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    S.A = put("lp-rally-beacon", 10.5, -18.5)
+    S.B = put("lp-rally-beacon", -25.5, -18.5)
+    S.set1 = lp("debug_squad_size", S.A, "lp-trooper", 4) and lp("debug_squad_size", S.B, "lp-trooper", 0)
+    local out = S.barracks.get_inventory(defines.inventory.crafter_output)
+    out.insert{name = "lp-trooper-order", count = 6}
+    -- (The uncommon one at a muster point: a barracks' output is one slot, full with the normal ones.)
+    S.muster = put("lp-muster-point", 0.5, -8.5)
+  end)
+  schedule(60 + 30 * 60, function()
+    S.first = {a = view(S.A).n, b = view(S.B).n, waiting = waiting(), caps = view(S.B).caps}
+    S.ins = S.muster.get_inventory(defines.inventory.chest).insert{name = "lp-trooper-order", count = 1, quality = "uncommon"}
+    lp("debug_squad_size", S.A, "lp-trooper", 1)
+    lp("debug_squad_size", S.B, "lp-trooper", 3)
+  end)
+  schedule(60 + 70 * 60, function()
+    local a = lp("army")
+    S.second = {a = view(S.A).n, b = view(S.B).n, moved = a.moved, auto = a.auto_retired,
+      units = surface().count_entities_filtered{name = "lp-trooper", force = "player"},
+      near_b = surface().count_entities_filtered{name = "lp-trooper", force = "player", position = {-25.5, -18.5}, radius = 14}}
+    lp("debug_squad_size", S.A, "lp-trooper", nil)
+  end)
+  schedule(60 + 100 * 60, function()
+    local up = surface().find_entities_filtered{name = "lp-trooper", force = "player", quality = "uncommon"}
+    S.third = {units = surface().count_entities_filtered{name = "lp-trooper", force = "player"}, waiting = waiting(),
+      uncommon = #up, caps = view(S.A).caps, ins = S.ins}
+    if up[1] then
+      local p = up[1].position
+      S.picked = lp("debug_select", {{p.x - 0.3, p.y - 0.3}, {p.x + 0.3, p.y + 0.3}})
+      S.sent = lp("debug_retire")
+    end
+  end)
+  schedule(60 + 160 * 60, function()
+    local orders = {}
+    for _, e in pairs(surface().find_entities_filtered{type = "item-entity", position = {0.5, 3}, radius = 10}) do
+      if e.stack.name == "lp-trooper-order" then orders[e.stack.quality.name] = (orders[e.stack.quality.name] or 0) + e.stack.count end
+    end
+    info("squadmove: " .. serpent.line({S.set1, S.first, S.second, S.third, S.picked, S.sent, orders}))
+    check("squadmove: sizes set by the panel's writer: four to A, none to B, two waiting", S.set1 and S.first.a == 4
+      and S.first.b == 0 and S.first.waiting == 2 and (S.first.caps or {})["lp-trooper"] == 0, serpent.line(S.first))
+    check("squadmove: A lowered to 1, B raised to 3: three moved to B and stand there, none retired", S.second.a == 1
+      and S.second.b == 3 and S.second.moved == 3 and S.second.auto == 0 and S.second.units == 4 and S.second.near_b == 3,
+      serpent.line(S.second))
+    check("squadmove: A cleared: the two waiting deployed, and the muster point's uncommon order as an uncommon trooper", S.third.units == 7
+      and S.third.waiting == 0 and S.third.uncommon == 1 and (S.third.caps or {})["lp-trooper"] == nil, serpent.line(S.third))
+    check("squadmove: retired, the uncommon trooper hands in an uncommon order", S.picked == 1 and (orders.uncommon or 0) == 1
+      and (orders.normal or 0) == 0, serpent.line({S.picked, orders}))
+  end)
+end
+
 -- The army's tutorial hints (command.lua hint; the user, 2026-11-10: "Yes to tutorial"): a powered barracks holding a
 -- trooper order and no command relay: the order waits and the no-relay hint is told; a relay built: the unit deploys
 -- with no rally beacon in reach, and the no-beacon hint is told; a second order deploys and neither is told again.
@@ -7762,7 +7833,12 @@ scenarios.director = function()
   -- against the squad it breaks, against none it does not.
   -- LP_MIX=armyradar: the same, its squad waiting where the pods land (the radar case: seen coming, told 2 minutes ahead
   -- with the place; the user, 2026-11-15, "the fair comparison is an army already set up at the landing site").
-  if params.mix == "armydrop" or params.mix == "armyradar" then
+  -- LP_MIX=armydefend (the defend stance, 2026-11-16; the army consult: nothing answered a strike unless the player
+  -- did): the same squad at a rally beacon set to D, 100 tiles beyond A from B, with a radar covering A's ground and
+  -- three command relays: it holds there till the strike force's pods are seen, goes out, breaks it, saves more of A than
+  -- B keeps, and walks back. LP_MIX=armyhold: the same beacon on hold: the squad stays home and the force is not broken.
+  local defend = params.mix == "armydefend" or params.mix == "armyhold"
+  if params.mix == "armydrop" or params.mix == "armyradar" or defend then
     local waiting = params.mix == "armyradar"
     schedule(120, function()
       lp("debug_tune", {director = "steady", choice_off = true, director_tune = {grace = 0, fill = 0, hurt_floor = 100,
@@ -7789,7 +7865,39 @@ scenarios.director = function()
           if q then surface().create_entity{name = name, position = q, force = "player"} end
         end
       end
-      if not waiting then S.place({S.A[1], S.A[2] - 10}) end
+      if defend then
+        local dx, dy = S.A[1] - S.B[1], S.A[2] - S.B[2]
+        local l = math.sqrt(dx * dx + dy * dy)
+        S.P = {math.floor(S.A[1] + dx / l * 100), math.floor(S.A[2] + dy / l * 100)}
+        local P = S.P
+        flatten(P[1] - 20, P[2] - 20, P[1] + 20, P[2] + 20)
+        game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+        local function put(name, x, y)
+          local e = surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+          if e and e.name == "electric-energy-interface" then e.power_production, e.electric_buffer_size = 1e9, 1e9 end
+          return e
+        end
+        put("electric-energy-interface", P[1] + 14, P[2] + 14)
+        for j = 0, 2 do
+          put("lp-command-relay", P[1] + 8 + j * 4, P[2] + 9.5)
+          put("medium-electric-pole", P[1] + 10 + j * 4, P[2] + 12.5)
+        end
+        put("medium-electric-pole", P[1] + 14, P[2] + 12.5)
+        -- (The radar halfway to A, its own power: the pods seen, the warning the squad answers.)
+        local R = {math.floor((P[1] + S.A[1]) / 2), math.floor((P[2] + S.A[2]) / 2)}
+        flatten(R[1] - 4, R[2] - 4, R[1] + 4, R[2] + 4)
+        put("radar", R[1], R[2])
+        put("electric-energy-interface", R[1] + 3, R[2])
+        put("medium-electric-pole", R[1] + 1.5, R[2] + 2.5)
+        S.beacon = put("lp-rally-beacon", P[1] + 0.5, P[2] - 6.5)
+        if params.mix == "armydefend" then
+          local cb = S.beacon.get_or_create_control_behavior()
+          ;(cb.get_section(1) or cb.add_section()).set_slot(1, {value = {type = "virtual", name = "signal-D",
+            quality = "normal"}, min = 1})
+        end
+        S.place(P)
+        S.enlisted = lp("debug_enlist", {{P[1] - 20, P[2] - 20}, {P[1] + 20, P[2] + 20}})
+      elseif not waiting then S.place({S.A[1], S.A[2] - 10}) end
     end)
     schedule(600, function()
       S.f1 = lp("director_cmd", "focus", S.A)
@@ -7800,6 +7908,19 @@ scenarios.director = function()
         if S.land then S.place(S.land) end
       end
     end)
+    if defend then
+      -- (Each 5 s: the squad's farthest from home and how many are out, to see it go and come back.)
+      for t = 660, 10 * 3600, 300 do
+        schedule(t, function()
+          local far = 0
+          for _, u in ipairs(surface().find_entities_filtered{force = "player", name = {"lp-trooper", "lp-rocket-trooper",
+            "lp-battle-tank"}}) do
+            far = math.max(far, math.sqrt((u.position.x - S.P[1]) ^ 2 + (u.position.y - S.P[2]) ^ 2))
+          end
+          S.far = math.max(S.far or 0, far)
+        end)
+      end
+    end
     schedule(10 * 3600, function()
       local d = lp("director") or {}
       S.l1 = (d.lost_strike or {}).player or 0
@@ -7815,6 +7936,26 @@ scenarios.director = function()
         tostring(S.f1), S.l1 or -1, tostring(S.rep1), tostring(S.troopers), tostring(S.f2), l2, rep2))
       -- (Not "razes less": at parity it razed the whole cluster in the 25 s before it broke, 16 against 16; the squad
       -- broke it, 11 of 12 lost for 6. Recorded, DESIGN 0.2.420: an answer that costs, not one that saves.)
+      if defend then
+        local home, alive = 0, 0
+        for _, u in ipairs(surface().find_entities_filtered{force = "player", name = {"lp-trooper", "lp-rocket-trooper",
+          "lp-battle-tank"}}) do
+          alive = alive + 1
+          if (u.position.x - S.P[1]) ^ 2 + (u.position.y - S.P[2]) ^ 2 <= 20 * 20 then home = home + 1 end
+        end
+        local a = lp("army")
+        local got = string.format("A: razed %.0f, repelled %s; B: razed %.0f, repelled %d; enlisted %s, sent %d, out as far as %.0f, %d alive, %d home",
+          S.l1 or -1, tostring(S.rep1), l2, rep2, tostring(S.enlisted), a.defend_sent, S.far or 0, alive, home)
+        if params.mix == "armyhold" then
+          check("director: armyhold, the squad 100 tiles off on hold stays home and the force is not broken",
+            (S.far or 0) < 40 and S.rep1 == 0, got)
+          return
+        end
+        check("director: armydefend, a squad at a defend beacon 100 tiles off goes out, breaks it and razes less than against none",
+          a.defend_sent >= 1 and (S.far or 0) > 60 and S.rep1 == 1 and rep2 == 0 and (S.l1 or 1e9) < l2, got)
+        check("director: armydefend, and its survivors walk back to the rally point", alive == 0 or home == alive, got)
+        return
+      end
       if waiting then
         check("director: armyradar, a squad of twelve waiting where it lands breaks it and razes less than against none",
           S.rep1 == 1 and rep2 == 0 and (S.l1 or 1e9) < l2, string.format("A: razed %.0f, repelled %s, %s of the squad left; B: razed %.0f, repelled %d",
