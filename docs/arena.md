@@ -24,15 +24,15 @@ A class is a body and a weapon: **small arms** (many light bodies, small shots),
 
 | Kind (price) | Beats most (its score) | Beaten most by (their score) |
 |---|---|---|
-| rocket trooper (20) | scrap drone (100), laser drone (95), lightning tank (88) | bred small (81), breacher (60), shotgun hand (58) |
-| shotgun hand (8) | scrap drone (98), bred small (97), bred spore (92) | bred big (100), bred behemoth (100), bred big (creep) (100) |
-| gun buggy (40) | flame trooper (100), scrap drone (100), laser drone (93) | bred behemoth (100), battle tank (97), heavy tank (83) |
-| heavy laser trooper (14) | scrap drone (98), laser drone (81), dozer (75) | shock (73), gun buggy (68), bred medium (creep) (67) |
-| slug (30) | scrap drone (99), laser drone (92), flak buggy (87) | bred big (creep) (86), bred big (80), bred small (73) |
-| laser trooper (11) | scrap drone (97), laser drone (79), dozer (74) | bred big (creep) (83), breacher (81), gun buggy (80) |
-| trooper (10) | scrap drone (98), bred small (96), bred spore (74) | bred big (100), bred behemoth (100), bred big (creep) (100) |
+| rocket trooper (20) | scrap copter (100), laser drone (95), lightning tank (88) | bred small (81), breacher (60), shotgun hand (58) |
+| shotgun hand (8) | scrap copter (98), bred small (97), bred spore (92) | bred big (100), bred behemoth (100), bred big (creep) (100) |
+| gun buggy (40) | flame trooper (100), scrap copter (100), laser drone (93) | bred behemoth (100), battle tank (97), heavy tank (83) |
+| heavy laser trooper (14) | scrap copter (98), laser drone (81), dozer (75) | shock (73), gun buggy (68), bred medium (creep) (67) |
+| slug (30) | scrap copter (99), laser drone (92), flak buggy (87) | bred big (creep) (86), bred big (80), bred small (73) |
+| laser trooper (11) | scrap copter (97), laser drone (79), dozer (74) | bred big (creep) (83), breacher (81), gun buggy (80) |
+| trooper (10) | scrap copter (98), bred small (96), bred spore (74) | bred big (100), bred behemoth (100), bred big (creep) (100) |
 | railgunner (22) | bred small (100), bred spore (98), bred spitter (97) | walker (100), dozer (100), bred behemoth (100) |
-| buggy (15) | scrap drone (98), bred small (88), bred spore (73) | bred big (100), heavy tank (100), dozer (100) |
+| buggy (15) | scrap copter (98), bred small (88), bred spore (73) | bred big (100), heavy tank (100), dozer (100) |
 | shock (30) | bred small (92), bred spore (83), railgunner (77) | laser drone (100), scorcher (100), lightning tank (100) |
 | sapper (30) | bred small (95), bred burster (90), bred spitter (creep) (81) | laser drone (100), scorcher (100), walker (100) |
 | breacher (10) | bred small (100), bred medium (94), bred spore (92) | walker (100), bred behemoth (100), bred stomper (100) |
@@ -40,27 +40,27 @@ A class is a body and a weapon: **small arms** (many light bodies, small shots),
 | flame trooper (20) | bred small (89), railgunner (80), bred medium (75) | laser tank (100), laser drone (100), scorcher (100) |
 | laser tank (115) | flame trooper (100), bred small (92), bred spore (79) | laser drone (100), heavy tank (100), dozer (100) |
 | walker (100) | railgunner (100), sapper (100), flak buggy (100) | bred behemoth (100), bred big (creep) (93), bred big (90) |
-| tank (65) | flak buggy (100), flame trooper (100), breacher (97) | scrap drone (82), walker (75), dozer (67) |
-| battle tank (80) | laser tank (100), flak buggy (100), flame trooper (100) | scrap drone (84), walker (71), shotgun hand (71) |
+| tank (65) | flak buggy (100), flame trooper (100), breacher (97) | scrap copter (82), walker (75), dozer (67) |
+| battle tank (80) | laser tank (100), flak buggy (100), flame trooper (100) | scrap copter (84), walker (71), shotgun hand (71) |
 | dozer (120) | railgunner (100), buggy (100), laser tank (100) | bred stomper (100), bred spitter (creep) (94), bred spitter (94) |
-| heavy tank (120) | shock (100), buggy (100), laser tank (100) | laser drone (95), scrap drone (90), bred stomper (75) |
+| heavy tank (120) | shock (100), buggy (100), laser tank (100) | laser drone (95), scrap copter (90), bred stomper (75) |
 | scorcher (100) | shock (100), sapper (100), flame trooper (100) | walker (100), heavy tank (100), bred behemoth (100) |
 | laser drone (70) | shock (100), sapper (100), laser tank (100) | flak buggy (100), anti-air trooper (97), rocket trooper (95) |
-| scrap drone (15) | bred burster (100), bred small (100), bred spitter (creep) (98) | anti-air trooper (100), flak buggy (100), walker (100) |
+| scrap copter (15) | bred burster (100), bred small (100), bred spitter (creep) (98) | anti-air trooper (100), flak buggy (100), walker (100) |
 | bomb drone (28) | bred burster (73), sapper (69), railgunner (67) | walker (75), slug (71), trooper (71) |
-| anti-air trooper (18) | scrap drone (100), laser drone (97), bred spitter (creep) (91) | bred stomper (100), walker (92), bred big (92) |
-| flak buggy (20) | laser drone (100), scrap drone (100), bred small (91) | walker (100), heavy tank (100), dozer (100) |
-| bred spore (10) | laser drone (81), scrap drone (79), rocket trooper (-12) | walker (100), bred behemoth (100), bred stomper (100) |
-| bred stomper (150) | railgunner (100), laser tank (100), anti-air trooper (100) | bred behemoth (100), walker (94), scrap drone (90) |
+| anti-air trooper (18) | scrap copter (100), laser drone (97), bred spitter (creep) (91) | bred stomper (100), walker (92), bred big (92) |
+| flak buggy (20) | laser drone (100), scrap copter (100), bred small (91) | walker (100), heavy tank (100), dozer (100) |
+| bred spore (10) | laser drone (81), scrap copter (79), rocket trooper (-12) | walker (100), bred behemoth (100), bred stomper (100) |
+| bred stomper (150) | railgunner (100), laser tank (100), anti-air trooper (100) | bred behemoth (100), walker (94), scrap copter (90) |
 | bred behemoth (200) | railgunner (100), shock (100), sapper (100) | laser trooper (74), heavy laser trooper (74), laser drone (69) |
 | bred big (28) | buggy (100), shotgun hand (100), trooper (100) | shock (68), laser drone (67), bred stomper (67) |
 | bred medium (7) | buggy (98), bred small (96), bred spore (89) | laser drone (100), bred stomper (100), breacher (94) |
 | bred spitter (9) | dozer (94), bred small (93), bred medium (66) | laser drone (100), bred stomper (100), railgunner (97) |
-| bred burster (40) | lightning tank (27), bred spitter (25), bred spitter (creep) (17) | laser drone (100), scrap drone (100), railgunner (93) |
+| bred burster (40) | lightning tank (27), bred spitter (25), bred spitter (creep) (17) | laser drone (100), scrap copter (100), railgunner (93) |
 | bred small (2) | rocket trooper (81), slug (73), battle tank (66) | railgunner (100), laser drone (100), scorcher (100) |
 | bred big (creep) (28) | buggy (100), shotgun hand (100), trooper (100) | shock (64), laser drone (50), sapper (43) |
 | bred medium (creep) (7) | buggy (98), bred small (98), trooper (94) | laser drone (100), bred behemoth (100), bred stomper (100) |
-| bred spitter (creep) (9) | dozer (94), bred small (93), bred medium (63) | laser drone (100), bred stomper (100), scrap drone (98) |
+| bred spitter (creep) (9) | dozer (94), bred small (93), bred medium (63) | laser drone (100), bred stomper (100), scrap copter (98) |
 
 ## Groups found from the fights alone
 
@@ -73,7 +73,7 @@ Each kind is its row of scores (against every kind and every fixed opponent); ki
 | 1 | shock (splash), sapper (splash), breacher (splash), lightning tank (splash), flame trooper (splash), laser tank (splash), scorcher (armour), bred big (bred), bred medium (bred), bred spitter (bred), bred burster (bred), bred big (creep) (bred on creep), bred medium (creep) (bred on creep), bred spitter (creep) (bred on creep) |
 | 2 | rocket trooper (small arms), shotgun hand (small arms), gun buggy (small arms), heavy laser trooper (small arms), slug (small arms), laser trooper (small arms), trooper (small arms), buggy (small arms), anti-air trooper (anti-air), flak buggy (anti-air), bred spore (anti-air) |
 | 3 | walker (armour), tank (armour), battle tank (armour), dozer (armour), heavy tank (armour), bred behemoth (bred) |
-| 4 | laser drone (air), scrap drone (air), bomb drone (air) |
+| 4 | laser drone (air), scrap copter (air), bomb drone (air) |
 | 5 | railgunner (small arms) |
 | 6 | bred stomper (bred) |
 | 7 | bred small (bred) |
@@ -102,7 +102,7 @@ From the unit matrix, each faction's roster (the kinds it fields from landing or
 | Faction | Kinds | Breadth (groups of 7) | Roster |
 |---|---|---|---|
 | Kessler-Hayashi | 10 | 5 | heavy laser trooper, laser trooper, railgunner, shock, lightning tank, laser tank, tank, heavy tank, laser drone, anti-air trooper |
-| Grubstake | 9 | 4 | shotgun hand, slug, buggy, sapper, dozer, scorcher, scrap drone, bomb drone, flak buggy |
+| Grubstake | 9 | 4 | shotgun hand, slug, buggy, sapper, dozer, scorcher, scrap copter, bomb drone, flak buggy |
 | Synthexis | 11 | 5 | bred spore, bred stomper, bred behemoth, bred big, bred medium, bred spitter, bred burster, bred small, bred big (creep), bred medium (creep), bred spitter (creep) |
 | You | 6 | 3 | rocket trooper, gun buggy, trooper, breacher, flame trooper, battle tank |
 
