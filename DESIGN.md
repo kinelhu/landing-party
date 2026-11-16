@@ -767,7 +767,9 @@ Built in `scripts/faction.lua`.
    off-world from the launch pad (a visible beam), raising the faction's tier. The pad is an objective
    worth raiding.
 
-Proposed, not built: a second ring of staggered walls before hard points; relocation when a patch runs dry.
+Proposed, partly built since: Kessler-Hayashi's curtain (one wall round a grown camp, a 14-tile killing ground before
+the compounds' walls; layout.lua) and the uplink's three rings opened on different sides; not staggered against the
+inner walls, nothing for Grubstake. Relocation when a patch runs dry: dropped (the user, 2026-11-05).
 
 ## Settlement architecture
 Built in `scripts/layout.lua`, `scripts/blocks.lua`, `scripts/rng.lua`.
@@ -3307,7 +3309,9 @@ Decisions: see "Operations" above.
   that one point of several opens. Fits tactics.lua as it stands: a method on the menu (a spread assault: the wave split
   into groups at several points of a face at once, or a loose formation with spacing), scored from its attempts by the
   same record as the others (what it sent, spent and got), its prior raised by the share of its deaths to area damage
-  (flame, burning ground, explosives) in a place's attempts. Not built. Questions: how far apart the points (one gun's
+  (flame, burning ground, explosives) in a place's attempts. Built since (0.2.212 to 0.2.221: tactics.area_share, the
+  spread assault on the menu, `/lp spread`); still open of it: the loose stance, the second pulse, and the corporations
+  reading the same signal. Its questions, kept: how far apart the points (one gun's
   reach?), whether the bursters go with each group or all at the likeliest point, and whether the corporations' assaults
   read the same signal (spread against mortars and artillery).
 - **The siege lab's next steps (the user, 2026-10-31), in order:** (1) why two walls held two trials of one seed with no wave ("none fits" against honest prices?); (2) `tech=` on the lane, damage and speed research for lasers, bullets and fire together at early, mid and late levels; (3) a second lane matrix at mid research: turret types (lasers, guns, flamethrowers, rockets, tesla), density (a laser every 3, 6, 9 tiles), shapes with layers (saw and bastion with two walls; two walls, mines and flamethrowers), a maze (`shape=maze`: layers open at alternate ends, the last closed; 3 and 5 layers; its waves' path inside against the straight line through), one and two walls at early and late research; (4) the wave cap by the colony, read off its late-research rows; (5) the lab for the corporations: Kessler-Hayashi's mortar siege against the lane (how deep guns must stand to outrange it), and a soft target beside a fort for Grubstake (it should take the outpost and leave the wall). (6, the user, 2026-10-31: think modular, Synthexis's lessons for the other factions) Shared so far: attempt.lua (one record of an attack, read from outside), tactics.lua (attempt memory, the menu's weighing and pick, the ladder, specialists up where they broke nothing), the lab for any attacker, the contract (scripts/contract.py). Next for the corporations, each measured in the lab: (a) prices learned from losses, Kessler-Hayashi's fixed turret weights (ops.weigh: a weight a turret type, scaled by the player's research; a raid 3.5 units a point plus 4, set against gun turrets) as the prior, moved by the killers its operations record, as know.learn_price moves Synthexis's; (b) walls in a raid's cost: its defence counts turrets alone, and a raid that must break a wall under fire pays far more (Synthexis's cost map prices standing at a wall); (c) its raid and assault sized on what got in near there (tactics.best_size) before its formula.
@@ -3319,8 +3323,10 @@ Decisions: see "Operations" above.
   one.
 - The uplink: whether the third landing is right, whether its fall should also wind the settlements down,
   shields on its rings, and a fortress that varies (it is one fixed template now).
-- The player's army and rally beacons; capture by holding a node.
-- Shields (`destructible = false` while powered), jammers, gates in wall openings, an anti-air turret.
+- The player's army and rally beacons; capture by holding a node. (Built: player.lua, command.lua, army.lua; capture at
+  base.lua, CAPTURE_TICKS.)
+- Shields (`destructible = false` while powered), jammers, gates in wall openings, an anti-air turret. (Built but the
+  turret: the lander's shield and the domes, jammer.lua, lp-gate; anti-air only as units, the Skyguard and flak buggy.)
 - ~~Depletion and relocation~~ dropped (the user, 2026-11-05: "Depletion should probably never occur": a grown camp mines about 45,000 ore an hour, a patch lasts hours; an exhausted camp is untested, to end quietly if it ever matters); the second wall ring.
 - Response sizing; tier and export tuning at real clocks.
 - Biter interplay: Serenity emits no pollution; Grubstake's drills do, and under its pact the waves fall on the player.
