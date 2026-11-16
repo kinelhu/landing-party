@@ -10243,7 +10243,10 @@ scenarios.quiet = function()
     for i, side in ipairs(streak and {-1, 0, 1} or {0}) do
       local c = {math.floor(o.x - ux * 120 - uy * 80 * side), math.floor(o.y - uy * 120 + ux * 80 * side)}
       flatten(c[1] - 16, c[2] - 16, c[1] + 16, c[2] + 16)
-      surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+      -- (Indestructible too since 0.2.433, every raid on it a failure: the streak depended on raids failing by chance, and
+      -- on 0.2.433 a camp whose next mine kept off a given-up one's ground grew raids that razed two of its five.)
+      local am = surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+      if streak and am then am.destructible = false end
       -- Twelve gun turrets with uranium rounds, indestructible: nothing there can be razed but the assembler they guard.
       for k = 0, 11 do
         local a = 2 * math.pi * k / 12

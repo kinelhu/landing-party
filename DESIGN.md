@@ -7474,6 +7474,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   and turrets (17 rebuilds waiting at once), its parts went to those, and it starved twice more, a drop each time, a new
   far mine ordered after the third. No retry of the given-up ground was needed (ore further out was found). Read: it
   fights on and earns in bursts; the map, not a stall, holds it down. Not tuned further before the playtest.
+- **The full regression on 0.2.433** (2026-11-16, the Studio, 363 runs): 361 passed. train failed building its fork,
+  the game crashing at map creation (signal 6, 0.3 s in, before any mod code); alone it passes. quiet LP_MIX=streak
+  failed, and the cause was 0.2.432's: the camp's first mine was given up to the guns' kills (as before), its next kept
+  off that ground, its economy grew otherwise and two of its five raids razed an assembler, so its three failures in a
+  row never came (the base code passes the same run; the new fails it twice). The behaviour is the fix working; the test
+  leaned on raids failing by chance (its comment already said so). Its assemblers are now indestructible in the streak
+  variant, every raid on them a failure: passes on both the base code and 0.2.433, and plain quiet passes.
 - **The Skyguard's description** (0.2.430): it said the trooper fires missiles at flying units; it has carried a long
   tracking laser (units.lua, lp-rail-beam) since it was built. Fixed in the locale; caught in the manual audit.
 - **The night of 2026-11-16 on 0.2.429** (the user: "All of those are due, and I agree"). The full regression: 360 of
