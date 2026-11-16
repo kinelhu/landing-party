@@ -221,7 +221,6 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 **After 0.3.0 (designed or proposed)**
 - The player's shield projector (Open questions: 45 degrees, 8-way rotation). Only Kessler-Hayashi's dome projector
   exists.
-- An anti-air turret: anti-air is units only (the Skyguard, the flak buggy).
 - Synthexis breeding from its survivors (a biter that kills and comes back seeds the next breed; "after the playtest").
   Survivors go back to the pen's stock and nothing more (herd.lua stock()).
 - Walls: the curtain's openings staggered against the inner walls; an outer wall for Grubstake's camps.
@@ -3369,8 +3368,8 @@ Decisions: see "Operations" above.
   shields on its rings, and a fortress that varies (it is one fixed template now).
 - The player's army and rally beacons; capture by holding a node. (Built: player.lua, command.lua, army.lua; capture at
   base.lua, CAPTURE_TICKS.)
-- Shields (`destructible = false` while powered), jammers, gates in wall openings, an anti-air turret. (Built but the
-  turret: the lander's shield and the domes, jammer.lua, lp-gate; anti-air only as units, the Skyguard and flak buggy.)
+- Shields (`destructible = false` while powered), jammers, gates in wall openings, an anti-air turret. (All built: the
+  lander's shield and the domes, jammer.lua, lp-gate; the player's flak turret, from the field study of Grubstake's flak.)
 - ~~Depletion and relocation~~ dropped (the user, 2026-11-05: "Depletion should probably never occur": a grown camp mines about 45,000 ore an hour, a patch lasts hours; an exhausted camp is untested, to end quietly if it ever matters); the second wall ring.
 - Response sizing; tier and export tuning at real clocks.
 - Biter interplay: Serenity emits no pollution; Grubstake's drills do, and under its pact the waves fall on the player.
