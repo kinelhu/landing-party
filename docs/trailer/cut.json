@@ -45,9 +45,14 @@
    "from": 15.0
   },
   {
-   "clip": "media/trailer/reel-pods.mp4",
+   "clip": "media/trailer/reel-strike.mp4",
+   "bars": 1,
+   "from": 0.3
+  },
+  {
+   "clip": "media/trailer/reel-strike.mp4",
    "bars": 2,
-   "from": 1.0
+   "from": 6.0
   },
   {
    "clip": "media/trailer/stage-m1-muster.mp4",
@@ -194,7 +199,7 @@
   {
    "text": "Landing Party",
    "sub": "A Factorio 2.1 + Space Age mod",
-   "bar": 53,
+   "bar": 54,
    "bars": 3
   }
  ]

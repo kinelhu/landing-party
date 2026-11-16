@@ -10,9 +10,9 @@ manual revisited after calibration; an art direction pass before the playtest.
 - `scripts/package.sh`: the portal's zip from the committed mod, loaded in a clean profile before it is handed over.
   0.2.277: 163 MB, 701 files, loads.
 - Mod page text: docs/release/modpage.md (draft). Gallery: docs/release/gallery/ (ten frames, captions in modpage.md).
-- Trailer: media/trailer/cut-26 (2026-11-16, 0.2.430: 110 s, 55 bars, the drive score; a strike force's pods added as
-  shot 9, the bomb drones' shot refilmed with a smoothed camera, the end card restored; contact sheet
-  media/trailer/cut-26-contact.png; thumbnail: media/trailer/thumbnail-split.png; title and description drafted).
+- Trailer: media/trailer/cut-27 (2026-11-16, 0.2.431: 112 s, 56 bars, the drive score; a strike force on nw's furnace
+  rows at night as shots 9 and 10, the bomb drones' shot refilmed with a smoothed camera, the end card restored;
+  contact sheet media/trailer/cut-27-contact.png; thumbnail: media/trailer/thumbnail-split.png; title and description drafted).
 
 ## Decided (the user, 2026-11-15)
 - **Version 0.3.0** for the first upload, a public beta.

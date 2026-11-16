@@ -1335,7 +1335,7 @@ local function strike(s, owner, corps, tick, mult, warn, aim, want)
   if not lead then return 0 end
   local target = at
   local surface = lead.lander.surface
-  local kind, tent = aim and (want == "joint" and "joint" or "bounty") or at and "focus" or nil, nil
+  local kind, tent = aim and (want == "joint" and "joint" or want == "aimed" and "aimed" or "bounty") or at and "focus" or nil, nil
   -- By motive (0.2.418): retaliation first, else a kind drawn, its corporation's own strike_motive_weight times another's;
   -- power and water only with a player there in person (or tracing). `want`: a kind forced (tests, the panel).
   if not target and f then
@@ -2152,8 +2152,10 @@ function director.cmd(action, arg)
   elseif action == "joint" or action == "contract" or action == "rotation" then
     return director["start_" .. action](s, owner, tick, "forced") and action or ("no " .. action .. " possible")
   elseif action == "strike" then
-    -- (A strike force alone, `arg` its kind of target or any: tests, the panel.)
-    local sent = strike(s, owner, at_war(owner), tick, nil, nil, nil, arg)
+    -- (A strike force alone, `arg` its kind of target or any: tests, the panel; or a position, its target there: films,
+    -- a strike on the building a camera waits on.)
+    local aim = type(arg) == "table" and {arg[1] or arg.x, arg[2] or arg.y} or nil
+    local sent = strike(s, owner, at_war(owner), tick, nil, nil, aim, aim and "aimed" or arg)
     return sent > 0 and ("strike: " .. tostring(s.strikes[s.strike_n].kind)) or "no target of that kind"
   elseif action == "research" then
     local id = director.start_research(s, owner, tick, "forced")

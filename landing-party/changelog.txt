@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.431
+Date: 2026-11-16
+  Changes:
+    - The director's strike command (debug panel and remote) takes a position: a strike force aimed at what stands there.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.430
 Date: 2026-11-16
   Locale:

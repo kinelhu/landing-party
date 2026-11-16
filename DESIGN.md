@@ -7341,6 +7341,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Trailer cut 27; a strike force's idle measured** (0.2.431; the user, on cut 26's pods: "kind of crappy.. could we
+  have it happen on a real base? Plus we never see the units actually going ham on the buildings (they have a few
+  seconds of idle)"). Measured headless on nw at minute 15 (the khwall visit's save, the director on, a strike aimed at
+  96,160): 40 of Kessler-Hayashi's landed at 103,162, their first damage 7 ticks after the first pod's touchdown, the
+  first of the player's buildings dead at 8, damage in every second after, 411 dead within 90 tiles in 3 minutes. Not
+  the mod's: cut 26's window ended half a second after touchdown, and on the test set the buggies drove 1.5 s to
+  the labs. On the furnace rows the lasers wear 2 to 4 s before the first furnace bursts (6 s into the clip); the cut
+  goes from the pods' fall (a bar) to the bursts (two bars), the wear left out. The director's strike command takes a
+  position (a strike aimed there, kind "aimed"; scenario director targets checks it, seen failing with the aim
+  dropped). Filmed at night (daytime 0.4): by day the troopers and their lasers were lost on the furnace rows' texture.
+  The film plugin's force point reads 0,0 until its pods land: a tracked camera on it opened at spawn (take 1); this
+  one is fixed. reel-strike.lua replaces reel-pods.lua.
 - **Trailer cut 26** (0.2.430; the user, 2026-11-16: "Let's do it now", the refilm before the playtest). Audit of
   the 35 shots against what changed since they were filmed (0.2.338 to 0.2.349, 2026-11-12): only the APC hauler
   (0.2.429) is new on screen, and no shot shows a Kessler-Hayashi hauler; Synthexis's grade (0.2.344, pens, creep and

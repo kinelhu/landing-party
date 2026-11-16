@@ -7951,6 +7951,12 @@ scenarios.director = function()
         local kk = last()
         S.later[want] = {said = said, target = kk.target}
       end
+      -- (A position: its target there, whatever stands nearest; films aim a strike at what the camera waits on, trailer
+      -- cut 27.)
+      S.aim = {S.labs[1] + 20, S.labs[2] - 15}
+      S.aimsaid = lp("director_cmd", "strike", S.aim)
+      local ka = last()
+      S.ka = {kind = ka.kind, target = ka.target}
     end)
     schedule(600 + 4 * 3600, function()
       local id = (lp("bases") or {})[1]
@@ -7981,6 +7987,9 @@ scenarios.director = function()
         serpent.line(S.k1 and S.k1.raw)))
       check("director: targets, its difficulty after the cap: hard, 1.5 times points_max", S.k1 and S.k1.sent
         == math.floor(lp("director_prior", "points_max") * 1.5), string.format("%s sent", tostring(S.k1 and S.k1.sent)))
+      check("director: targets, aimed at a position, its target there", S.aimsaid == "strike: aimed"
+        and S.ka and dist(S.ka.target, S.aim) < 0.5, string.format("%s, %s at %s", tostring(S.aimsaid),
+        tostring(S.ka and S.ka.kind), serpent.line(S.ka and S.ka.target)))
       local where = {oil = S.oil, logistics = S.robo, army = S.bar, engineer = S.eng}
       local ok, got = true, {}
       for want, p in pairs(where) do
