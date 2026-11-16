@@ -89,8 +89,10 @@ technologies in it. Your *era* is the number of tiers you have passed in a row, 
 {{< include _generated/eras.qmd >}}
 
 **Operations at once.** At any time, the corporations together have at most one more operation against you than your
-era number: raids, sieges and strip camps. Fights between corporations do not count. If none of their operations has
-come at you for {{< var arrival.floor_min >}} minutes, your buildings move up their target lists.
+era number: raids by ground or air, sieges and strip camps. Fights between corporations do not count, and attacks on
+your artillery are never held back. A surge from the headquarters raises the limit while it lasts, and their strike
+forces come on top of it. With the Director setting off, if none of their operations has come at you for
+{{< var arrival.floor_min >}} minutes, your buildings count for more when they choose a target.
 
 **Research.** Each corporation puts {{< var arrival.fund_share_pct >}}% of its exports into research and buys at most
 one item every {{< var arrival.research_every_min >}} minutes. It picks what answers whatever has been killing its units
