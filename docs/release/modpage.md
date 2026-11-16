@@ -1,7 +1,7 @@
 # Landing Party: mod portal page (draft)
 
-Drafted 2026-11-10 for the user to edit, brought up to 0.2.339 on 2026-11-12 and to 0.2.427 (released as 0.3.0) on
-2026-11-16; nothing here is published. Paste the part below the line into the portal's
+Drafted 2026-11-10 for the user to edit, brought up to 0.2.339 on 2026-11-12 and to 0.2.433 (released as 0.3.0) on
+2026-11-16; the manual's link works once the v0.3.0 GitHub release carries the PDF; nothing here is published. Paste the part below the line into the portal's
 "Information" field. Placeholders in [square brackets].
 
 Portal fields:
@@ -10,7 +10,7 @@ Portal fields:
 - **Category:** Enemies
 - **Tags:** Combat, Enemies, Planets (if offered), Big mod
 - **License:** MIT
-- **Source:** [repository link, if published]
+- **Source:** https://github.com/kinelhu/landing-party
 - **Version:** 0.3.0, a public beta
 - **Gallery:** docs/release/gallery/*.jpg, in order (captions below, under "Gallery captions")
 - **Loops in the text:** media/release/gifs/, each an MP4 (a few hundred kB; the portal plays mp4 and webm inline with
@@ -57,8 +57,8 @@ in waves with lulls between them, and you feel the pace rather than read it.
   least. Grubstake goes for your power and the pumps that feed your boilers; Kessler-Hayashi for your rocket silos,
   landing pads and labs; anyone for a train station, your roboports or your oil. A gun that keeps killing their units
   becomes a target itself, and so do your army's barracks. The force fights until it has lost too many, then walks home
-  to its camp, where its survivors join the garrison or leave on the camp's rocket. Those you catch on the way never
-  reach it.
+  to its camp, round your turrets where it can and firing back at what shoots it, and its survivors join the garrison or
+  leave on the camp's rocket. Those you catch on the way never reach it.
 - **Warning:** a strike force is told when it lands. Your radar sees its pods coming before that, where it covers the
   ground they come down on. A strike at your power is always told ahead, its target marked on the map, and the
   corporations hold their other attacks on you while it is out.
@@ -114,10 +114,12 @@ Grubstake's theft; Synthexis's most cultures, largest attack and learning.
 - Factorio 2.1 with Space Age.
 - Works on a new game or an existing one: the factions arrive by their own triggers (chemical science, the first rocket,
   the biters).
-- Multiplayer: tested headless and with a client, the factions and headquarters in play, without a desync; two clients
-  using the army and the faction panels together are not yet covered.
+- Multiplayer: tested headless and with a client, the factions and headquarters in play (sieges, strikes, a joint
+  strike of both corporations), without a desync; two clients using the army and the faction panels together are not
+  yet covered.
 - No known incompatible mods. Report clashes on the discussion page.
-- A player manual (PDF): [link].
+- A player manual (PDF): [the manual](https://github.com/kinelhu/landing-party/releases/download/v0.3.0/Landing-Party-manual.pdf).
+- Source and issues: [github.com/kinelhu/landing-party](https://github.com/kinelhu/landing-party).
 
 ## Gallery captions
 
