@@ -7455,8 +7455,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   headquarters is sent another drop hq_gap (30) minutes on instead, and a camp the player hit within leave minutes stays
   (its fall and cores the player's). Dormant otherwise: every branch starts from a camp starving or a mine given up to
   kills, which no other scenario reaches (cut and raid now check none sent). Seen failing: lifeline.tick off, starve's
-  three lifeline checks fail; MINE_DANGER at 0, the steering check fails (5 tiles apart, 463 with it). Not yet run: the
-  nwa seed 1 visit it came from.
+  three lifeline checks fail; MINE_DANGER at 0, the steering check fails (5 tiles apart, 463 with it). The nwa seed 1
+  visit it came from (90 minutes, steady, v432): mined 12,520 and made 2,495 (0 and 0 on 0.2.429), all checks pass; but
+  its headquarters camp lost three crews at each of its first two mines, its third mine ran a while, then it starved
+  with "no site fits": the 27 free ore cells in reach all lie within MINE_DANGER of the two given up, the only patch in
+  reach. As a headquarters it never departs: two drops reached it (34 minutes apart) and it could spend neither on a
+  mine. Open, for the user: what a starving camp with no safe ore in reach does (a wider search, the danger mark lifted
+  after a drop, or a headquarters that leaves too).
 - **The Skyguard's description** (0.2.430): it said the trooper fires missiles at flying units; it has carried a long
   tracking laser (units.lua, lp-rail-beam) since it was built. Fixed in the locale; caught in the manual audit.
 - **The night of 2026-11-16 on 0.2.429** (the user: "All of those are due, and I agree"). The full regression: 360 of
