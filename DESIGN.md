@@ -7341,6 +7341,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **The Skyguard's description** (0.2.430): it said the trooper fires missiles at flying units; it has carried a long
+  tracking laser (units.lua, lp-rail-beam) since it was built. Fixed in the locale; caught in the manual audit.
 - **The night of 2026-11-16 on 0.2.429** (the user: "All of those are due, and I agree"). The full regression: 360 of
   361; train with LP_MIX=truce failed building its fork while train built the same fork (the profile's lock), and passed
   alone; sim.sh now has one builder a fork and the others wait for its save (two train 777 runs from no fork, both
