@@ -187,6 +187,19 @@ count as *Biters*.
 A scanner at an outpost wired home through a decider to a rally beacon makes a response force: the squad marches out on
 A when the scanner sees a raid, and comes home when it reads clear.
 
+**Recipes.** Each of these is one decider combinator between a rally beacon and what it reads; wire its output to the
+beacon.
+
+- *Full, then attack.* S at least 12: output A. The squad holds until it has twelve units, then advances.
+- *Beaten, come home.* S below 4: output R. What is left of a squad walks back to a barracks to heal.
+- *Defend once trained.* S at least 8: output D. A squad too small to win stays home.
+- *Tell me it is out.* W above zero, wired to a programmable speaker or a lamp: an alert while a defending squad is away.
+- *A patrol.* A clock counting up and down on X walks the rally point back and forth along a wall.
+- *Armour against armour.* A threat scanner's *Corporation tanks*, through an arithmetic combinator, set on a beacon as
+  its *Squad size: battle tanks*: more tanks when more armour comes.
+- *Move units to where the threat is.* Raise the squad size on the beacon you want them at, then lower it on the one they
+  stand at. Lowered first, with no beacon in reach having room, the surplus retires instead.
+
 ## Defenses of your own
 
 Three defenses come from the factions' own designs. [Spoils](spoils.qmd#field-studies) says how to unlock them.

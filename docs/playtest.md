@@ -1,6 +1,6 @@
 # Playtest kit
 
-Mod 0.2.433, rewritten 2026-11-16 for the release playtest (0.3.0). The last kit was for 0.2.162 (2026-10-31); since,
+Mod 0.2.437 (army items 0.2.436 and 0.2.437), rewritten 2026-11-16 for the release playtest (0.3.0). The last kit was for 0.2.162 (2026-10-31); since,
 the director, the sounds and most of the factions' behaviour are new, and none of it has been seen in a game window.
 Everything below is checked headless only. Chat notices are off: the world should tell you what happens.
 
@@ -31,9 +31,12 @@ to see the beats you missed.
 
 1. **A strike force landing.** Its pods come down beside its target, where your turrets reach least, with a klaxon.
    Did you notice it in time? Did you know what it was after?
-2. **Radar's warning.** With a radar covering where the pods land, a strike is told 2 minutes ahead. With your army
-   waiting there (`/lp squad 12`, sent to the spot), it should break the force and save most of the target. Did the
-   warning give you time? Does the army feel like the answer?
+2. **Radar's warning and the defend stance.** With a radar covering where the pods land, a strike is told ahead, up to
+   2 minutes with the radar right over the spot and 30 seconds at the edge of its reach. Put a squad on a rally beacon
+   set to D (`/lp squad 12` beside it): it should go out on the warning, meet the pods and walk back. Did the warning
+   give you time? Does the army feel like the answer, or like a formality?
+   The squad panel beside the beacon's window and the hover lines between a beacon and its units: readable? Do the
+   buttons move units between beacons as you expect?
 3. **The walk home.** A broken or finished force walks back to its camp, through or round your base, and joins its
    garrison (or leaves on its rocket). Could you see it go? Did you chase it?
 4. **Power strikes.** A strike at your power or the pumps feeding your boilers is told ahead with its target marked,

@@ -18,7 +18,7 @@ document still says Serenity where it records history.
 |---|---|---|
 | Arrival on first launch, repeated landings, sites apart | built | `faction` |
 | A starving camp's way back and way out (lifeline.lua, 0.2.432): made nothing for 10 minutes and under 150 parts, its corporation drops it 300 parts by pod, marked, the player's to destroy; nothing made 20 minutes after, it departs (never a headquarters, never while the player fights it). The next mine kept 48 tiles off a mine given up to killed crews | built | `starve`, `starve` LP_MIX=starveleave; `cut` and `raid` check none sent to a camp that mines |
-| Director (a storyteller above the corporations: it paces every camp's operations on the player, sprees and lulls, then waves; budget and pacing; the user, 2026-11-13: "think rimworld storyteller") | step 1 built 0.2.372 (state, budget, readings, tempo and lull, the floor; steady and off); step 2 0.2.377 (intensity, focus, surge, focus strike, drawn beats); step 3 0.2.378 (drop wave, expeditions, the settle rule, quiet departures); step 4 in part 0.2.379 (gentle, chaotic, mix, reinforcements, supply drop; not the siege push); their calls listed for review, `docs/director.md` 9b; step 5 the user's; telling RimWorld's way (0.2.405: no pacing told, threats as they arrive); strike forces with morale (0.2.406), as one group (0.2.417), landing by their target where the fewest turrets reach and chosen by motive (0.2.418), walking home to their camp's garrison or rocket (0.2.419), retaliation by cluster, oil, roboports, barracks and the engineer, difficulty after the cap (0.2.420), units countering their target's guards (0.2.421); the launch jammer and blackout masts (0.2.407, 0.2.408), the bounty (0.2.409, 0.2.415, 0.2.416), salvage guarded and claimed (0.2.411, 0.2.413, 0.2.414) with its data core (0.2.420), the research breakthrough (0.2.412), the breakthrough sweep (0.2.410), a joint strike, an export contract, a garrison rotation (0.2.420); the director's panel | `director` (and off, hurt, cmd, wave, focus, drop, step4, supplykill, recall, recallback, recallfar, repel, climax, jammer, blackout, bounty, sweep, sweepoff, salvage, research, targets, home, homefull, beats, armydrop, armyradar, armydefend, armyhold) |
+| Director (a storyteller above the corporations: it paces every camp's operations on the player, sprees and lulls, then waves; budget and pacing; the user, 2026-11-13: "think rimworld storyteller") | step 1 built 0.2.372 (state, budget, readings, tempo and lull, the floor; steady and off); step 2 0.2.377 (intensity, focus, surge, focus strike, drawn beats); step 3 0.2.378 (drop wave, expeditions, the settle rule, quiet departures); step 4 in part 0.2.379 (gentle, chaotic, mix, reinforcements, supply drop; not the siege push); their calls listed for review, `docs/director.md` 9b; step 5 the user's; telling RimWorld's way (0.2.405: no pacing told, threats as they arrive); strike forces with morale (0.2.406), as one group (0.2.417), landing by their target where the fewest turrets reach and chosen by motive (0.2.418), walking home to their camp's garrison or rocket (0.2.419), retaliation by cluster, oil, roboports, barracks and the engineer, difficulty after the cap (0.2.420), units countering their target's guards (0.2.421); the launch jammer and blackout masts (0.2.407, 0.2.408), the bounty (0.2.409, 0.2.415, 0.2.416), salvage guarded and claimed (0.2.411, 0.2.413, 0.2.414) with its data core (0.2.420), the research breakthrough (0.2.412), the breakthrough sweep (0.2.410), a joint strike, an export contract, a garrison rotation (0.2.420); the director's panel | `director` (and off, hurt, cmd, wave, focus, drop, step4, supplykill, recall, recallback, recallfar, repel, climax, jammer, blackout, bounty, sweep, sweepoff, salvage, research, targets, home, homefull, beats, armydrop, armyradar, armydefend, armyhold, radarlead) |
 | Opening: signs (radar), survey party (oil), arrival (launch or blue science) | built | `phases` (two) |
 | Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
 | Levers (settings; the user, 2026-11-08: "expose some levers... That's how vanilla does it with biters"): a difficulty preset times every faction's strength, aggression and income; each faction's own on top; when each arrives; its most camps; the time between landings; revenge landings; Kessler-Hayashi's orbital strikes, Grubstake's theft, Synthexis's most cultures, largest wave and learning | built 0.2.223, uncalibrated (after the playtest) | `levers`, `phases` (grubprod, interval, camps), `farm` (late, smallwaves, unlearned, seedcap), `grudge` norevenge, `orbital` nostrike, `skim`/`strip` notheft |
@@ -222,6 +222,8 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   command capacity's) and the warning naming their kind; the battle tank re-priced from the arena (it beats every ground
   unit at equal spend, the Aegis and slug built to counter it among them) after an army variant of `contact.sh`
   (strikes broken, targets saved); squad colours in alt mode, after the user has seen the panel.
+  Circuits can't read where an attack is (W says out, not where): a position output was offered and set aside, D
+  routing the squad itself.
 
 **After 0.3.0 (designed or proposed)**
 - The player's shield projector (Open questions: 45 degrees, 8-way rotation). Only Kessler-Hayashi's dome projector
@@ -1012,9 +1014,19 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the
     buttons off). Hovering a beacon draws lines to its squad, a unit one to its beacon, for that player only.
   - **Measured** (`director` armydefend, armyhold, seed 12345, the armyradar setup with the squad 100 tiles beyond A at
-    a D beacon, a radar halfway): defend went 112 tiles out, broke the strike force and came back, A razed 12 against
-    B's 16 with no army; 11 of 12 lost. On hold at the same place, the force was not broken, razed 27 at A (the squad's
-    own relays and radar among them) and killed the squad too. An answer that costs, as armydrop's.
+    a D beacon, a radar halfway): with twelve (parity), defend went 112 tiles out, broke the force and came back, A
+    razed 12 against B's 16, 11 of 12 lost; rerun after 0.2.437's warning change it lost all twelve without breaking it
+    (razed 27), spotted 70 s ahead and waiting 100 s at the spot: at parity a coin flip, as armyradar's. The checks use
+    24 (0.2.437): defend broke it, A razed 6 against 16, 19 of 24 home; on hold the squad stayed, A razed 22, and the
+    force walked on to the squad and broke there, 13 lost.
+  - **Sticky answers** (0.2.437): re-chosen each pass, a landed force's moving front and the attacks at buildings
+    round it took turns as nearest, nine answers and nine new orders in one fight; the answer is now kept while it
+    lasts unless one of a higher rank comes.
+  - **The warning by radar distance** (0.2.437; the user: "2 minute is a little generous considering all this",
+    "Yes to radar distance"): a seen strike is told warn_minutes ahead with a radar over its landing chunk, warn_edge
+    (0.25) of that at the edge of the radar's reach, in proportion between; the best radar's; told then, not at
+    sending. `director` radarlead: 45 s at one chunk and 15 s at three of a 60 s warning, the formula to a second, seen
+    failing with warn_edge 1.
 - **Combined arms (built; user 2026-10-13: "rebuilding the RTS formula a la Factorio"):** the barracks has
   no fixed recipe (a new one starts on troopers). **Trooper** (5 magazines, 10 iron, 2 circuits, 30 s;
   population 1): rifles, fights units. **Breacher** (5 grenades, 10 iron, 2 circuits, 30 s; population 1):

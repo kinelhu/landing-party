@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.437
+Date: 2026-11-16
+  Changes:
+    - A strike force seen by radar is told ahead by how close the radar stands to where its pods land: 2 minutes with a radar over the spot, down to 30 seconds at the edge of its reach.
+    - A defending squad keeps to the attack it is answering until it is over, unless a landed strike force comes while it answers a warning.
+    - The command tool's attack order works on Synthexis's incubators and worms.
+  Locale:
+    - A Tips and tricks entry of circuit recipes for rally beacons. The strike and squad tips mention the defend stance.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.436
 Date: 2026-11-16
   Features:

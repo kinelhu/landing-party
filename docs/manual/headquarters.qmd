@@ -58,8 +58,9 @@ corporation's troops, and what beats the turrets and units within {{< var direct
 target.
 
 **Warning.** You are told when it lands, with an alert and a marker on the map. If your radars cover the spot where
-its pods will come down, you are told {{< var director.warn_minutes >}} minutes ahead, with the place
-({{< var director.climax_warn >}} minutes for the largest). A strike at your power or at the pumps feeding your boilers
+its pods will come down, you are told ahead, with the place: {{< var director.warn_minutes >}} minutes with a radar right
+over the spot ({{< var director.climax_warn >}} for the largest), less the further the spot lies from the nearest
+radar, down to {{< var director.warn_edge_seconds >}} seconds at the edge of its reach. A strike at your power or at the pumps feeding your boilers
 is always told ahead, with its target named and marked on the map. It comes only while you are on the planet in
 person, and while it is out no other attack on you starts, nor for {{< var director.power_hold >}} minutes after.
 

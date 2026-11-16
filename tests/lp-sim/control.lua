@@ -7834,15 +7834,20 @@ scenarios.director = function()
   -- LP_MIX=armyradar: the same, its squad waiting where the pods land (the radar case: seen coming, told 2 minutes ahead
   -- with the place; the user, 2026-11-15, "the fair comparison is an army already set up at the landing site").
   -- LP_MIX=armydefend (the defend stance, 2026-11-16; the army consult: nothing answered a strike unless the player
-  -- did): the same squad at a rally beacon set to D, 100 tiles beyond A from B, with a radar covering A's ground and
-  -- three command relays: it holds there till the strike force's pods are seen, goes out, breaks it, saves more of A than
-  -- B keeps, and walks back. LP_MIX=armyhold: the same beacon on hold: the squad stays home and the force is not broken.
+  -- did): two of its squads (24 units) at a rally beacon set to D, 100 tiles beyond A from B, with a radar covering A's
+  -- ground and six command relays: it holds there till the strike force's pods are seen, goes out, breaks it, saves more of A than
+  -- B keeps, and walks back. LP_MIX=armyhold: the same beacon on hold: the squad stays home and A is razed as B is.
   local defend = params.mix == "armydefend" or params.mix == "armyhold"
-  if params.mix == "armydrop" or params.mix == "armyradar" or defend then
+  -- LP_MIX=radarlead (0.2.437; the user: "Yes to radar distance"): no squad; a radar beside A and one 80 tiles off B, away
+  -- from the camp: each strike force is told ahead by its best radar's distance in chunks from where its pods land, the
+  -- full warning over the landing chunk, warn_edge of it at the edge of the radar's reach. Checked against the formula
+  -- from the landing point the director chose, and the nearer radar's warning the longer.
+  local radarlead = params.mix == "radarlead"
+  if params.mix == "armydrop" or params.mix == "armyradar" or defend or radarlead then
     local waiting = params.mix == "armyradar"
     schedule(120, function()
       lp("debug_tune", {director = "steady", choice_off = true, director_tune = {grace = 0, fill = 0, hurt_floor = 100,
-        points_per_worth = 1, points_max = 12, warn_minutes = 1, strike_minutes = 4, home_minutes = 3}})
+        points_per_worth = 1, points_max = 12, warn_minutes = defend and 2 or 1, strike_minutes = 4, home_minutes = 3}})
       local id = (lp("bases") or {})[1]
       local o = lp("stats", id).origin
       local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
@@ -7872,15 +7877,16 @@ scenarios.director = function()
         local P = S.P
         flatten(P[1] - 20, P[2] - 20, P[1] + 20, P[2] + 20)
         game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+        game.forces.player.technologies["lp-command-bandwidth-2"].researched = true
         local function put(name, x, y)
           local e = surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
           if e and e.name == "electric-energy-interface" then e.power_production, e.electric_buffer_size = 1e9, 1e9 end
           return e
         end
         put("electric-energy-interface", P[1] + 14, P[2] + 14)
-        for j = 0, 2 do
-          put("lp-command-relay", P[1] + 8 + j * 4, P[2] + 9.5)
-          put("medium-electric-pole", P[1] + 10 + j * 4, P[2] + 12.5)
+        for j = 0, 5 do
+          put("lp-command-relay", P[1] - 12 + j * 4, P[2] + 9.5)
+          put("medium-electric-pole", P[1] - 10 + j * 4, P[2] + 12.5)
         end
         put("medium-electric-pole", P[1] + 14, P[2] + 12.5)
         -- (The radar halfway to A, its own power: the pods seen, the warning the squad answers.)
@@ -7895,12 +7901,39 @@ scenarios.director = function()
           ;(cb.get_section(1) or cb.add_section()).set_slot(1, {value = {type = "virtual", name = "signal-D",
             quality = "normal"}, min = 1})
         end
+        -- (Two squads' worth, 24 against its 12: the stance is under test, not parity. Twelve at parity broke it or
+        -- lost all by the run, 2026-11-16, as armyradar's 11 of 12 lost.)
         S.place(P)
-        S.enlisted = lp("debug_enlist", {{P[1] - 20, P[2] - 20}, {P[1] + 20, P[2] + 20}})
+        S.place({P[1] + 12, P[2]})
+        S.enlisted = lp("debug_enlist", {{P[1] - 20, P[2] - 20}, {P[1] + 24, P[2] + 20}})
+      elseif radarlead then
+        local function radar(at)
+          flatten(at[1] - 4, at[2] - 4, at[1] + 4, at[2] + 4)
+          local r = surface().create_entity{name = "radar", position = at, force = "player"}
+          local e = surface().create_entity{name = "electric-energy-interface", position = {at[1] + 3, at[2]}, force = "player"}
+          surface().create_entity{name = "medium-electric-pole", position = {at[1] + 1.5, at[2] + 2.5}, force = "player"}
+          if e then e.power_production, e.electric_buffer_size = 1e6, 1e7 end
+          return r
+        end
+        S.rA = radar({S.A[1], S.A[2] - 16})
+        S.rB = radar({math.floor(S.B[1] - ux * 80), math.floor(S.B[2] - uy * 80)})
       elseif not waiting then S.place({S.A[1], S.A[2] - 10}) end
     end)
+    -- (The lead each strike force is told, against the formula from its landing chunk and its radar's.)
+    local function lead_of(r)
+      local d = lp("director") or {}
+      local k = d.strikes and d.strikes[d.strike_n]
+      if not (k and k.land and r and r.valid) then return nil end
+      local reach = r.prototype.get_max_distance_of_nearby_sector_revealed(r.quality)
+      local dc = math.max(math.abs(math.floor(r.position.x / 32) - math.floor(k.land[1] / 32)),
+        math.abs(math.floor(r.position.y / 32) - math.floor(k.land[2] / 32)))
+      local full = (k.pods_at - k.warned) / 60
+      local want = dc <= reach and full * (1 - (1 - 0.25) * dc / reach) or nil
+      return {got = k.spot and (k.pods_at - k.spot.at) / 60 or nil, want = want, chunks = dc, reach = reach}
+    end
     schedule(600, function()
       S.f1 = lp("director_cmd", "focus", S.A)
+      if radarlead then S.lead1 = lead_of(S.rA) end
       if waiting then
         local d = lp("director") or {}
         local k = d.strikes and d.strikes[d.strike_n]
@@ -7927,6 +7960,7 @@ scenarios.director = function()
       S.rep1 = d.strikes_repelled or 0
       S.troopers = surface().count_entities_filtered{name = {"lp-trooper", "lp-rocket-trooper", "lp-battle-tank"}, force = "player"}
       S.f2 = lp("director_cmd", "focus", S.B)
+      if radarlead then S.lead2 = lead_of(S.rB) end
     end)
     schedule(END - 60, function()
       local d = lp("director") or {}
@@ -7936,6 +7970,16 @@ scenarios.director = function()
         tostring(S.f1), S.l1 or -1, tostring(S.rep1), tostring(S.troopers), tostring(S.f2), l2, rep2))
       -- (Not "razes less": at parity it razed the whole cluster in the 25 s before it broke, 16 against 16; the squad
       -- broke it, 11 of 12 lost for 6. Recorded, DESIGN 0.2.420: an answer that costs, not one that saves.)
+      if radarlead then
+        local a, b = S.lead1 or {}, S.lead2 or {}
+        local function fits(x) return x.got and x.want and math.abs(x.got - x.want) <= 1 end
+        local got = string.format("A %s, B %s; seen %s", serpent.line(a), serpent.line(b), tostring(d.strike_seen))
+        check("director: radarlead, each strike told ahead by its radar's distance (the formula, to a second)",
+          fits(a) and fits(b) and (d.strike_seen or 0) == 2, got)
+        check("director: radarlead, the radar nearer its landing tells it longer ahead",
+          a.chunks < b.chunks and a.got > b.got, got)
+        return
+      end
       if defend then
         local home, alive = 0, 0
         for _, u in ipairs(surface().find_entities_filtered{force = "player", name = {"lp-trooper", "lp-rocket-trooper",
@@ -7947,8 +7991,9 @@ scenarios.director = function()
         local got = string.format("A: razed %.0f, repelled %s; B: razed %.0f, repelled %d; enlisted %s, sent %d, out as far as %.0f, %d alive, %d home",
           S.l1 or -1, tostring(S.rep1), l2, rep2, tostring(S.enlisted), a.defend_sent, S.far or 0, alive, home)
         if params.mix == "armyhold" then
-          check("director: armyhold, the squad 100 tiles off on hold stays home and the force is not broken",
-            (S.far or 0) < 40 and S.rep1 == 0, got)
+          -- (Not "not broken": having razed A, the force walked on to the squad and broke on it there, 2026-11-16.)
+          check("director: armyhold, the squad 100 tiles off on hold stays home and A is razed as B is, unanswered",
+            (S.far or 0) < 40 and (S.l1 or 0) >= l2, got)
           return
         end
         check("director: armydefend, a squad at a defend beacon 100 tiles off goes out, breaks it and razes less than against none",

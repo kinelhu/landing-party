@@ -30,7 +30,7 @@ digraph ai {
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="The director (above every faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "director" [label="director\n2236 lines", width=3.28, fillcolor="#f7dede"];
+    "director" [label="director\n2254 lines", width=3.30, fillcolor="#f7dede"];
     "director_gui" [label="director_gui\n130 lines", width=0.94, fillcolor="#eef2f7"];
   }
   subgraph cluster_4 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -106,7 +106,7 @@ digraph ai {
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "command" [label="command\n1158 lines", width=2.09, fillcolor="#d9f0d9"];
+    "command" [label="command\n1168 lines", width=2.10, fillcolor="#d9f0d9"];
     "squadgui" [label="squadgui\n186 lines", width=1.01, fillcolor="#eef2f7"];
     "cards" [label="cards\n406 lines", width=1.25, fillcolor="#eef2f7"];
     "scanner" [label="scanner\n98 lines", width=0.91, fillcolor="#eef2f7"];

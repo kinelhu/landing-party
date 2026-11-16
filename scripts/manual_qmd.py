@@ -230,6 +230,7 @@ def write(rp):
                "expedition_minutes", "fought_minutes")}
         out["wave_word"] = worded("count", need("wave_size"), "DIRECTOR.wave_size")
         out["strike_break_pct"] = pct("strike_break")
+        out["warn_edge_seconds"] = fmt(round(need("warn_minutes") * 60 * need("warn_edge")))
         out["joint_share_pct"] = pct("joint_share")
         out["datacore_word"] = worded("share", need("datacore_chance"), "DIRECTOR.datacore_chance")
         out["climax_times"] = worded("times", need("climax_points"), "DIRECTOR.climax_points")

@@ -584,9 +584,17 @@ local function alarms(defending)
 end
 
 -- A defending beacon's answer: of its force's alarms on its surface within DEFEND_REACH of its rally point, an active one
--- before a warning, the nearest first.
-local function answer(d, list)
+-- before a warning, the nearest first; the one it is answering kept while it lasts, unless one of a higher rank comes.
+-- (Re-chosen each pass, a landed strike force's place (its moving front) and the attacks at buildings round it took
+-- turns as the nearest: nine answers in one fight, each a new order, and the squad, stopping to re-path, lost all 12
+-- without breaking it; armydefend, 2026-11-16.)
+local function answer(d, list, was)
   local best, br, bd
+  local keep
+  for _, a in ipairs(list or {}) do
+    if was and a.key == was.key and a.surface == d.beacon.surface
+      and (a.pos.x - d.plan.pos.x) ^ 2 + (a.pos.y - d.plan.pos.y) ^ 2 <= DEFEND_REACH * DEFEND_REACH then keep = a end
+  end
   for _, a in ipairs(list or {}) do
     if a.surface == d.beacon.surface then
       local dd = (a.pos.x - d.plan.pos.x) ^ 2 + (a.pos.y - d.plan.pos.y) ^ 2
@@ -595,6 +603,7 @@ local function answer(d, list)
       end
     end
   end
+  if keep and best and best.rank <= keep.rank then return keep end
   return best
 end
 
@@ -618,10 +627,10 @@ local function lead()
   if #defending > 0 then
     local by_force = alarms(defending)
     for _, d in ipairs(defending) do
-      local a = answer(d, by_force[d.beacon.force.name])
+      local was = storage.cmd.answering[d.k]
+      local a = answer(d, by_force[d.beacon.force.name], was)
       d.plan.alarm = a
       -- (Counted once an answer: a squad sent, for the record and tests.)
-      local was = storage.cmd.answering[d.k]
       if a and not (was and was.key == a.key) then storage.cmd.defend_sent = (storage.cmd.defend_sent or 0) + 1 end
       storage.cmd.answering[d.k] = a and {key = a.key, pos = a.pos} or nil
     end
@@ -846,7 +855,8 @@ function command.order(player_index, surface, area, attackmove)
   local pos = {x = ((lt.x or lt[1]) + (rb.x or rb[1])) / 2, y = ((lt.y or lt[2]) + (rb.y or rb[2])) / 2}
   local target = surface.find_entities_filtered{area = {{pos.x - 1.5, pos.y - 1.5}, {pos.x + 1.5, pos.y + 1.5}},
     force = shared.hostile_forces(), type = {"unit", "spider-unit", "electric-turret", "ammo-turret", "artillery-turret", "container",
-      "electric-energy-interface", "radar", "assembling-machine", "mining-drill", "generator"}, limit = 1}[1]
+      "electric-energy-interface", "radar", "assembling-machine", "mining-drill", "generator", "unit-spawner", "turret"},
+    limit = 1}[1]   -- (unit-spawner and turret: Synthexis's incubators and its worms, 0.2.437)
   storage.cmd.seq = (storage.cmd.seq or 0) + 1
   local n = 0
   local units = {}

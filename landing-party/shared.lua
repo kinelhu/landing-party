@@ -589,9 +589,11 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- reach (hurt_floor of worth: 0.05 was 3,750 on nwa, never reached on railbase_end in three hours). A cycle: steady's
   -- every climax_every-th beat the climax, a focus strike costing the cap, its strike force climax_points times, then
   -- lull_max; chaotic draws it at weights_of.chaotic.climax.
+  -- warn_edge: a strike force seen by a radar at the edge of its reach is told this share of the warning ahead (0.2.437;
+  -- a named prior).
   -- (truce_max: a lull's truce on the camps at most, the rest of it the director's own quiet; hurt_floor 0.03, at 0.01
   -- a campaign's first 17 of 460 worth held it, 0.2.394.)
-  truce_max = 15, warn_minutes = 2, climax_warn = 5, forecast_minutes = 10, lull_floor = 5, lull_max = 30, climax_every = 4,
+  truce_max = 15, warn_minutes = 2, warn_edge = 0.25, climax_warn = 5, forecast_minutes = 10, lull_floor = 5, lull_max = 30, climax_every = 4,
   climax_points = 2}
 -- A landing matched to what it lands against (the user, 2026-11-14: "Is it an artifact of landing our camps naked on a
 -- late base? Should we land with a bigger budget?"): on top of its fixed escort and START_PARTS, by the strongest player

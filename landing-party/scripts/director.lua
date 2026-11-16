@@ -1436,7 +1436,10 @@ local function strike(s, owner, corps, tick, mult, warn, aim, want)
   local lp = land and {x = land[1], y = land[2]} or lead.lander.position
   -- (Seen: within a working radar's constant reveal, its prototype's nearby reach in chunks, quality's included. Not
   -- LuaForce.is_chunk_visible: headless, with no player connected, a powered radar's own chunk read unseen.)
-  local seen = false
+  -- (How far ahead, by the radar's distance (the user, 2026-11-16, "Yes to radar distance": 2 minutes was generous once
+  -- the defend stance answers at once): the full warning with a radar over the landing chunk, warn_edge of it at the
+  -- edge of its reach, between in proportion; the best radar's. Told then, not at once.)
+  local seen, frac = false, nil
   if f then
     local cx, cy = math.floor(lp.x / 32), math.floor(lp.y / 32)
     -- (A command relay reveals as a radar does, but not under a blackout mast: kept powered for the army, its cover goes.)
@@ -1447,9 +1450,11 @@ local function strike(s, owner, corps, tick, mult, warn, aim, want)
         + (r.position.y - bo.mast.position.y) ^ 2 <= bo_r * bo_r then goto next_radar end
       local reach = r.prototype.get_max_distance_of_nearby_sector_revealed(r.quality) or 0
       local rx, ry = math.floor(r.position.x / 32), math.floor(r.position.y / 32)
-      if r.status == defines.entity_status.working and math.abs(rx - cx) <= reach and math.abs(ry - cy) <= reach then
+      local d = math.max(math.abs(rx - cx), math.abs(ry - cy))
+      if r.status == defines.entity_status.working and d <= reach then
         seen = true
-        break
+        local fr = reach > 0 and d / reach or 0
+        if not frac or fr < frac then frac = fr end
       end
       ::next_radar::
     end
@@ -1471,12 +1476,9 @@ local function strike(s, owner, corps, tick, mult, warn, aim, want)
       string.format("[gps=%.0f,%.0f,%s]", tx, ty, surface.name), minutes)
   end
   if seen then
-    k.seen = true
-    s.strike_seen = (s.strike_seen or 0) + 1
-    local gps = string.format("[gps=%.0f,%.0f,%s]", lp.x, lp.y, surface.name)
-    k.tag = f.add_chart_tag(surface, {position = {lp.x, lp.y}, text = c.name .. " pods inbound",
-      icon = {type = "virtual", name = c.icon}})
-    tell(owner, "lp.director-strike-seen", c.name, n, gps, minutes)
+    local lead = minutes * (1 - (1 - tun("warn_edge")) * frac)
+    k.spot = {at = k.pods_at - math.floor(lead * 3600), x = lp.x, y = lp.y, surface = surface.index, key = key}
+    if tick >= k.spot.at then director.spot(s, k) end
   end
   shared.event("strike_warn", {key = key, corp = lead.corp, n = n, pos = {tx, ty}, minutes = minutes, base = lead.id,
     seen = seen or false, kind = k.kind, land = land, cover = cover, target = tent and tent.name or nil})
@@ -1729,6 +1731,21 @@ strike_mix = function(b, k)
   return out
 end
 
+-- A strike force's pods seen coming (k.spot, set as it is sent): told, tagged and marked seen, k.spot.at.
+function director.spot(s, k)
+  local f, c, surface = game.forces[k.owner], shared.CORPS[k.corp], game.surfaces[k.spot.surface]
+  if k.seen or not (f and c and surface) then return end
+  k.seen = true
+  s.strike_seen = (s.strike_seen or 0) + 1
+  local secs = math.max(0, math.floor((k.pods_at - game.tick) / 60 + 0.5))
+  k.seen_lead = secs
+  local gps = string.format("[gps=%.0f,%.0f,%s]", k.spot.x, k.spot.y, surface.name)
+  k.tag = f.add_chart_tag(surface, {position = {k.spot.x, k.spot.y}, text = c.name .. " pods inbound",
+    icon = {type = "virtual", name = c.icon}})
+  tell(k.owner, "lp.director-strike-seen", c.name, k.sent, gps, secs)
+  shared.event("strike_seen", {key = k.spot.key, lead = secs})
+end
+
 local function strike_over(s, key, k, why)
   local b, mine = storage.bases[k.base], {}
   local live = {}
@@ -1765,6 +1782,7 @@ local function strike_over(s, key, k, why)
 end
 function director.strikes(s, tick)
   for key, k in pairs(s.strikes or {}) do
+    if k.spot and not k.seen and tick >= k.spot.at then director.spot(s, k) end
     if not k.at then
       if tick >= k.pods_at then
         local b = storage.bases[k.base]

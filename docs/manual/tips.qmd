@@ -74,10 +74,12 @@
 
 ## Against headquarters
 
-- **Cover your base with radar.** A strike force seen coming is told {{< var director.warn_minutes >}} minutes ahead,
-  with the place its pods will land. Without radar over that spot you hear of it only when it is already down.
-- **Keep a squad ready to move.** Turrets rarely cover where the pods land. An army sent to the landing spot as soon as
-  the warning comes is waiting when the pods open.
+- **Cover your base with radar.** A strike force seen coming is told up to {{< var director.warn_minutes >}} minutes
+  ahead, with the place its pods will land; the closer a radar stands to that place, the earlier. Without radar over
+  that spot you hear of it only when it is already down.
+- **Keep a squad on defend.** Turrets rarely cover where the pods land. A rally beacon set to D sends its squad to the
+  landing spot as soon as the warning comes, and it is waiting when the pods open. Every defending beacon in reach
+  answers the same attack, so two beacons with overlapping reach put both squads on it.
 - **Hunt the survivors.** A broken strike force walks home round your turrets, turning only on what shoots at it, and
   the ones who reach their camp join its garrison. Catch them on the road.
 - **Give your power a second source.** A strike at your power is told ahead and holds every other attack while it is
@@ -92,8 +94,9 @@
 
 - **Get Bred-biter telemetry early.** Fighting Synthexis unlocks it (see [Spoils](spoils.qmd#field-studies)). Wire the
   *Synthexis scouts* signal to a speaker and to your rally beacons: a scout comes before every wave.
-- **Attack-move into a culture.** A rally beacon's advance and the command tool's attack order go only for corporation
-  targets. Send squads onto incubators and biochambers with attack-move, flamethrower troopers in front for the swarms.
+- **Attack-move into a culture.** A rally beacon's advance goes only for corporation targets. Send squads onto
+  incubators and biochambers with attack-move or the command tool's attack, flamethrower troopers in front for the
+  swarms.
 - **Defend every side.** A wave takes the way in your turrets cover least, and a way that held costs more next time.
   The next wave comes at your weakest side.
 - **Leave room behind the wall.** Bursters blow up at the wall and damage the turrets close to it. Turrets set a few

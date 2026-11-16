@@ -276,11 +276,12 @@ director:
   fought_minutes: "30"
   wave_word: "three"
   strike_break_pct: "50"
+  warn_edge_seconds: "30"
   joint_share_pct: "60"
   datacore_word: "half"
   climax_times: "double"
   gentle_share: "half"
 mod:
-  version: "0.2.436"
+  version: "0.2.437"
   factorio: "2.1"
   needs: "base, space-age"
