@@ -17,6 +17,7 @@ document still says Serenity where it records history.
 | Area | State | Tested by (headless scenario) |
 |---|---|---|
 | Arrival on first launch, repeated landings, sites apart | built | `faction` |
+| A starving camp's way back and way out (lifeline.lua, 0.2.432): made nothing for 10 minutes and under 150 parts, its corporation drops it 300 parts by pod, marked, the player's to destroy; nothing made 20 minutes after, it departs (never a headquarters, never while the player fights it). The next mine kept 48 tiles off a mine given up to killed crews | built | `starve`, `starve` LP_MIX=starveleave; `cut` and `raid` check none sent to a camp that mines |
 | Director (a storyteller above the corporations: it paces every camp's operations on the player, sprees and lulls, then waves; budget and pacing; the user, 2026-11-13: "think rimworld storyteller") | step 1 built 0.2.372 (state, budget, readings, tempo and lull, the floor; steady and off); step 2 0.2.377 (intensity, focus, surge, focus strike, drawn beats); step 3 0.2.378 (drop wave, expeditions, the settle rule, quiet departures); step 4 in part 0.2.379 (gentle, chaotic, mix, reinforcements, supply drop; not the siege push); their calls listed for review, `docs/director.md` 9b; step 5 the user's; telling RimWorld's way (0.2.405: no pacing told, threats as they arrive); strike forces with morale (0.2.406), as one group (0.2.417), landing by their target where the fewest turrets reach and chosen by motive (0.2.418), walking home to their camp's garrison or rocket (0.2.419), retaliation by cluster, oil, roboports, barracks and the engineer, difficulty after the cap (0.2.420), units countering their target's guards (0.2.421); the launch jammer and blackout masts (0.2.407, 0.2.408), the bounty (0.2.409, 0.2.415, 0.2.416), salvage guarded and claimed (0.2.411, 0.2.413, 0.2.414) with its data core (0.2.420), the research breakthrough (0.2.412), the breakthrough sweep (0.2.410), a joint strike, an export contract, a garrison rotation (0.2.420); the director's panel | `director` (and off, hurt, cmd, wave, focus, drop, step4, supplykill, recall, recallback, recallfar, repel, climax, jammer, blackout, bounty, sweep, sweepoff, salvage, research, targets, home, homefull, beats, armydrop, armyradar) |
 | Opening: signs (radar), survey party (oil), arrival (launch or blue science) | built | `phases` (two) |
 | Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
@@ -208,9 +209,6 @@ written when it was true; several went stale (the orbital cannon and veterancy, 
 above in the same commit; when one is dropped, move it to Dropped below with the user's words.
 
 **Before 0.3.0**
-- A camp with no income has no fallback: on nwa seed 1 the biters killed Kessler-Hayashi's first crews at both mining
-  sites, both were given up, and it mined nothing (the night of 2026-11-16). Not depletion (dropped, below): its crews
-  die, the ore is still there.
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
@@ -7391,6 +7389,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Trailer cut 29: the battery on the user's own platform** (0.2.431; the user, on cut 28's dev deck: "looks kind of
+  stupid because the underlying platform is artificial ... Can you not poach one of my actual platforms and modify
+  it?"). On the nw copy, Deep Space Ten (platform-1, stopped over Nauvis; The Skipjack, platform-2, was in transit):
+  21 by 38 tiles, its hub, seven asteroid collectors, crushers, assemblers, belts round its edge, a solar tail; a cannon
+  is 12 by 18, so none fits on the deck as built. A foundation wing along its starboard side (x 11 to 28, y -13 to 30;
+  its own tiles and buildings untouched), three cannons on it facing east, charged, and a targeting array, fitted by
+  the film's params (reel-cannon.lua's each) two minutes before the shot; checked headless on the Studio first (one
+  charge spent a cannon on the fire). The strike's shadow is the firing platform's own (cannon.silhouette: its
+  foundation tiles and its barrels), so Deep Space Ten's with its wing; no new shadow drawn.
 - **Trailer cut 28: the player's cannons answer** (0.2.431; the user: "can we get a shot of an orbital cannon battery
   firing in the trailer?"). scene-cannon.lua (0.2.275's first look, the scenes save, five cannons on the dev deck) was
   never in a cut; filmed again on 0.2.431 it still works (the barrels' flash, the ring, the platform's shadow, the
@@ -7425,6 +7432,21 @@ Bugs and surprises the headless runs caught, each kept as a check:
   its big salvo comes 1 s later (8.8 s against 7.8), so the drop's shot starts at 8.0. Found: the end card's title had
   been missing since cut 25 (its bar 71 in a 53-bar cut); now the cut's last 3 bars. A named point's camera takes
   `off` from `to` alone, eased from 0 (the pods shot opened on the drop point until given fixed coordinates).
+- **A starving camp** (0.2.432; the user, 2026-11-16: "Ok with your takes. Be extra careful that you don't mess with
+  functioning systems"). nwa seed 1's stall read in the code: site.mining took the ore cell nearest the network, blind to
+  where crews had died, so each mine given up was followed by one on the same patch under the same biters; and with its
+  parts spent on crews and its last mine cut from the lander, the 201 rebuilds waited on parts only ore could make (the
+  rebuild order was not it: economy rebuilds already go first, construction.lua). Now (1) a mine given up to killed
+  crews marks its ground (b.mine_danger) and site.mining passes over cells within MINE_DANGER (48) of it; (2) lifeline.lua,
+  once a minute: a camp past grace (20 minutes from landing) that made no part for minutes (10) and holds under poor
+  (150) is sent parts (300) by pod, out (16) tiles from its lander toward the player, tagged; wait (3) minutes on, if the
+  crate stands, the parts are the camp's (into b.parts, not an armed camp's siege fund); made nothing leave (20) minutes
+  after the drop, it departs by base.depart (the director's tested way: no fall, no ruins), told always (KEEP); a
+  headquarters is sent another drop hq_gap (30) minutes on instead, and a camp the player hit within leave minutes stays
+  (its fall and cores the player's). Dormant otherwise: every branch starts from a camp starving or a mine given up to
+  kills, which no other scenario reaches (cut and raid now check none sent). Seen failing: lifeline.tick off, starve's
+  three lifeline checks fail; MINE_DANGER at 0, the steering check fails (5 tiles apart, 463 with it). Not yet run: the
+  nwa seed 1 visit it came from.
 - **The Skyguard's description** (0.2.430): it said the trooper fires missiles at flying units; it has carried a long
   tracking laser (units.lua, lp-rail-beam) since it was built. Fixed in the locale; caught in the manual audit.
 - **The night of 2026-11-16 on 0.2.429** (the user: "All of those are due, and I agree"). The full regression: 360 of
