@@ -7391,6 +7391,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Trailer cut 28: the player's cannons answer** (0.2.431; the user: "can we get a shot of an orbital cannon battery
+  firing in the trailer?"). scene-cannon.lua (0.2.275's first look, the scenes save, five cannons on the dev deck) was
+  never in a cut; filmed again on 0.2.431 it still works (the barrels' flash, the ring, the platform's shadow, the
+  shells). The trailer's shots are reel-cannon.lua: on nw at minute 15 the dev deck built (/lp cannon 5) and fired on
+  Kessler-Hayashi's siege outside the south wall once its guns stand (deploy 12099400, bombard 12101200 on 0.2.431,
+  from a one-still rehearsal); the deck's shot (a bar), then its strike on the siege under the bastion (two bars),
+  after the herd's breach and before the war finale, act finale; 118 s, 59 bars, the score re-rendered. Found: the dev
+  deck is platform-3 on nw (the user's own platforms are 1 and 2: the first take filmed theirs); the film plugin's
+  dev calls run at fixed ticks only; a dome catches artillery-turret and artillery-wagon shells only. The culture shot
+  is a cannon salvo too (/lp cannon salvo 9, no platform and so no shadow) and stays.
 - **Trailer cut 27; a strike force's idle measured** (0.2.431; the user, on cut 26's pods: "kind of crappy.. could we
   have it happen on a real base? Plus we never see the units actually going ham on the buildings (they have a few
   seconds of idle)"). Measured headless on nw at minute 15 (the khwall visit's save, the director on, a strike aimed at

@@ -170,6 +170,16 @@
    "from": 9.0
   },
   {
+   "clip": "media/trailer/reel-cannon-fire.mp4",
+   "bars": 1,
+   "from": 0.8
+  },
+  {
+   "clip": "media/trailer/reel-cannon-strike.mp4",
+   "bars": 2,
+   "from": 5.8
+  },
+  {
    "clip": "media/trailer/reel-warfinale.mp4",
    "bars": 2,
    "from": 1.0
@@ -199,7 +209,7 @@
   {
    "text": "Landing Party",
    "sub": "A Factorio 2.1 + Space Age mod",
-   "bar": 54,
+   "bar": 57,
    "bars": 3
   }
  ]
