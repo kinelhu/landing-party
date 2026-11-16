@@ -15,6 +15,9 @@
 -- 30 big, 20 cinders and 6 big bursters: 41 wall pieces, no gun, 3 home.)
 -- No LP_FILM_SIM: nothing of the harness acts after the save (the wave was sent at minute 12).
 --   scripts/film.sh nwa-nwwallheavy-saveat13 t13.zip docs/trailer/reel-nwwall.lua
+-- (t13.zip re-saved headless on 0.2.429, 2026-11-16, auto_pause, its tick kept at 30881788: the 11-05 save held the
+-- film at the migrated-content dialog; the original is kept as t13-pre-resave.zip. Refilmed on it: the breach as before,
+-- the wave in Synthexis's graded colours; gallery still 03 is frame w2-breach 270.)
 return {name = "reel-nwwall", base = 1, waves = true, resolution = {1920, 1080}, anti_alias = true, speed = 8,
   fast_until = "wave:march", moves = {
   -- The herd crossing open ground, tracked, the camera leading it south till the wall comes into the bottom of the frame.
