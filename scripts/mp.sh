@@ -55,7 +55,11 @@ HEAVY="${LP_HEAVY:-90}"
 # The director's beats forced first (2026-11-15, 0.2.422), so heavy mode saves and reloads their state: strike forces
 # by kind, a joint strike, a contract, a rotation, salvage with its data core, a bounty, the masts, a lull and a climax.
 # (Two runs before the director had no beat of its own in either.)
-director_beats="strike strike|research strike|power strike|logistics joint contract rotation salvage|core bounty jammer blackout lull climax"
+# (strike|power last and only with LP_POWER=1: a power strike holds every other strike force till it is over, so the
+# joint after it was "no joint possible", 2026-11-16; its heavy-mode passes are the runs of 2026-11-15.)
+# (No lull and no unforced strike unless LP_HOLDS=1: a lull's truce leaves no corporation at war for its length, the
+# whole test, and an unforced strike may be a power strike; the joint and the climax were then impossible.)
+director_beats="strike|research strike|logistics joint contract rotation salvage|core bounty jammer blackout climax${LP_HOLDS:+ strike lull}${LP_POWER:+ strike|power}"
 rcon "/sc remote.call('landing-party', 'director_cmd', 'on')" > /dev/null
 for b in $director_beats; do
   a="${b%%|*}"; arg="${b#*|}"; [ "$arg" = "$b" ] && arg=""
@@ -79,7 +83,9 @@ for l in $landers; do
       events+=("raid|${near%,*}|${near#*,}" "strip|${near%,*}|${near#*,}");;
   esac
 done
-events+=("wave|0|0" "land serenity 400|0|0" "raid|0|0" "director strike|0|0" "director joint|0|0")
+# (provoke first: a joint strike wants two corporations at war, and Grubstake landed unprovoked on the belt reference
+# save, so the joint was "no joint possible", 2026-11-16.)
+events+=("provoke|0|0" "director joint|0|0" "wave|0|0" "land serenity 400|0|0" "raid|0|0" "director joint|0|0")
 
 # (The game at LP_SPEED, default 0.5, while the client plays: on nw at minute 45 with the director's strikes out, the
 # client was dropped for not keeping up at full speed, 2026-11-15. A desync is the same at any speed.)
@@ -99,7 +105,7 @@ if [ -z "${LP_NOCLIENT:-}" ]; then
     verb="${e%%|*}"; rest="${e#*|}"; x="${rest%%|*}"; y="${rest#*|}"
     args=$(printf '"%s",' $verb); args="{${args%,}}"
     case "$verb" in
-      director\ *) rcon "/sc remote.call('landing-party', 'director_cmd', '${verb#director }')" > /dev/null;;
+      director\ *) echo "    -> $(rcon "/sc rcon.print(tostring(remote.call('landing-party', 'director_cmd', '${verb#director }')))" | tail -1)";;
       *) rcon "/sc remote.call('landing-party', 'dev', $args, {$x, $y}, 1)" > /dev/null;;
     esac
     echo "  $(tick): $verb at $x,$y"

@@ -7,7 +7,9 @@ set -euo pipefail
 source "$(dirname "$0")/env.sh"
 SAVE="${1:?usage: scripts/visit_saves.sh <save.zip>}"
 NAME="$(basename "$SAVE" .zip)"
-V="$HOME/Library/Application Support/factorio-lp-visit/$NAME${LP_MIX:+-$LP_MIX}"
+# (The same profile name as visit.sh's, LP_OFF, LP_DIRECTOR and LP_TUNETAG included: it read LP_MIX alone and found no
+# visit prepared with a director, 2026-11-16.)
+V="$HOME/Library/Application Support/factorio-lp-visit/$NAME${LP_MIX:+-$LP_MIX}${LP_OFF:+-no-${LP_OFF//,/-}}${LP_DIRECTOR:+-dir-$LP_DIRECTOR}${LP_TUNETAG:+-$LP_TUNETAG}"
 [ -f "$V/saves/visit.zip" ] || { echo "no prepared visit at $V (run scripts/visit.sh first)"; exit 1; }
 LAST=$(echo "${LP_MIX:-}" | grep -oE "saveat[0-9]+" | grep -oE "[0-9]+" | sort -n | tail -1)
 [ -n "$LAST" ] || { echo "LP_MIX has no saveatN"; exit 1; }
