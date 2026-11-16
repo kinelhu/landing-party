@@ -12,10 +12,10 @@ user's. Placeholders in [square brackets].
 
 ## Description
 
-Factorio, but you are not alone anymore. Three rival factions come to Nauvis: Grubstake, a prospecting outfit that
+Three rival factions come to Nauvis: Grubstake, a prospecting outfit that
 raids and steals; Kessler-Hayashi, an armed contractor that besieges from orbit; and Synthexis, which takes over the
-biter nests and breeds them for war. They land, mine real ore, build walled settlements and field armies of their own,
-and a headquarters above them paces the war.
+biter nests and breeds its own biters. They land, mine real ore, build walled settlements and field armies of their own,
+and a headquarters above each corporation paces their attacks.
 
 Landing Party is a mod for Factorio 2.1 with Space Age.
 

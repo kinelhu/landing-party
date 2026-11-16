@@ -7,8 +7,8 @@ Drafted 2026-11-10 for the user to edit, brought up to 0.2.339 on 2026-11-12 and
 Portal fields:
 - **Title:** Landing Party
 - **Summary (one line):** Three rival factions land on Nauvis and build settlements, armies and biter farms of their own.
-- **Category:** Enemies
-- **Tags:** Combat, Enemies, Planets (if offered), Big mod
+- **Category:** Content (the portal's categories: content, overhaul, tweaks, utilities...; scripts/portal.py sets it)
+- **Tags:** Combat, Enemies (the portal's own tag list has no planets or size tags)
 - **License:** MIT
 - **Source:** https://github.com/kinelhu/landing-party
 - **Version:** 0.3.0, a public beta
@@ -19,7 +19,7 @@ Portal fields:
 
 ---
 
-**Factorio, but you are not alone anymore.** Three rival factions come to Nauvis, each with its own reasons. They land,
+Three rival factions come to Nauvis. They land,
 mine real ore, build walled settlements with power, roads and defences, and field armies that are the output of their
 own economies. They fight you, each other and the biters.
 
@@ -29,41 +29,41 @@ own economies. They fight you, each other and the biters.
 
 **Grubstake** arrives once you make chemical science. A prospecting outfit that follows every rush in the system, it
 raids what you leave unguarded, skims your belts, strips your ore and drives Killdozers through your walls. It steals
-more than it destroys, and what it takes sits in its yard until you come for it.
+more than it destroys, and keeps what it takes in its yard until you destroy the yard.
 
 [gif: flak]
 
 **Kessler-Hayashi** arrives after your first rocket. An armed contractor that lives in orbit, it pushes a line of posts
 toward you, cuts your outposts off, besieges your walls with mortars dropped from orbit and calls orbital strikes on
-them. Its laser lines, shield domes, lightning tanks and blue arc flamers are the hardest defences on the planet, and
+them. Its camps are the best defended, with laser turret lines, shield domes and arc flamers, and
 it clears the biter nests round its camps with railgunners, more of them as the biters evolve.
 
 [gif: arcflamer] [gif: tesla]
 
-**Synthexis** takes over the biter nests. It breeds its own strains in farms of captured spawners and sends waves with
-intent: it scouts your walls, finds the weak face, and learns from what kills its waves.
+**Synthexis** takes over the biter nests. It breeds its own strains in farms of captured spawners. Its scouts circle
+your walls before a wave, and it remembers where its attacks failed and changes how it attacks there.
 
-Each faction researches, fields its own units with their own look and sound, and answers what you do to it. They choose
-between raids, sieges, thefts and air strikes by what your defences can and cannot stop.
+Each faction researches and fields its own units, with their own models and sounds. They choose between raids, sieges,
+thefts and air strikes by what your defences are weakest against.
 
 [gif: prism] [gif: bombers]
 
 ## Headquarters
 
-Above the camps, Grubstake's and Kessler-Hayashi's headquarters run the war. They announce nothing: their attacks come
-in waves with lulls between them, and you feel the pace rather than read it.
+Above the camps, Grubstake's and Kessler-Hayashi's headquarters run the war. Their attacks come in waves with lulls
+between them, and neither is announced.
 
-- **Strike forces:** headquarters drops a force by pod beside something it wants, at the point your turrets reach
+- **Strike forces:** a headquarters drops a force by pod beside something it wants, at the point your turrets reach
   least. Grubstake goes for your power and the pumps that feed your boilers; Kessler-Hayashi for your rocket silos,
   landing pads and labs; anyone for a train station, your roboports or your oil. A gun that keeps killing their units
   becomes a target itself, and so do your army's barracks. The force fights until it has lost too many, then walks home
   to its camp, round your turrets where it can and firing back at what shoots it, and its survivors join the garrison or
-  leave on the camp's rocket. Those you catch on the way never reach it.
-- **Warning:** a strike force is told when it lands. Your radar sees its pods coming before that, where it covers the
-  ground they come down on. A strike at your power is always told ahead, its target marked on the map, and the
+  leave on the camp's rocket.
+- **Warning:** a strike force is announced when it lands. Your radar sees its pods coming before that, where it covers the
+  ground they come down on. A strike at your power is always announced ahead, its target marked on the map, and the
   corporations hold their other attacks on you while it is out.
 - **Units chosen for the target:** a strike force brings what counters the guns and troops guarding what it came for.
-  Your army, waiting where its pods come down, is the answer to it.
+  Your army can meet it where its pods come down.
 - **And more:** a launch jammer mast that keeps pausing your rocket silo; a blackout mast that shuts down your radars; a
   bounty on one of your buildings, every camp's first target for a while; a crashed shuttle with salvage and a piece of
   gear inside, guarded by its crew, claimed by its corporation if you leave it; export contracts, garrison rotations,
@@ -71,7 +71,7 @@ in waves with lulls between them, and you feel the pace rather than read it.
 
 [gif: pods] [gif: strike-fight] [gif: walk-home]
 
-The Director setting picks its temper: Steady, Gentle, Chaotic, or Off for the factions acting alone.
+The Director setting chooses their pace: Steady, Gentle or Chaotic, or Off, which leaves each faction to act alone.
 
 ## Your side
 
@@ -81,9 +81,9 @@ The Director setting picks its temper: Steady, Gentle, Chaotic, or Off for the f
 - **Selection cards and control groups:** the units you select wear health bars, and a panel above the quickbar shows a
   card for each, with its health and rank. Click a card to narrow the selection, SHIFT + click to drop it, right-click
   to follow it. CONTROL + 1 to 9 keeps a selection as a group, ALT + 1 to 9 calls it back.
-- **Veterancy:** units that kill earn ranks (Veteran, Elite, Heroic), promoted on the spot in the middle of a fight,
-  with more health and harder hits and gold chevrons to show for it. The rivals' units rank too, and a raid pulls back
-  sooner to save its elites. Synthexis never ranks: the hive learns as a whole.
+- **Veterancy:** units that kill earn ranks (Veteran, Elite, Heroic) during the fight. Each rank adds health and damage
+  and shows as gold chevrons. The rivals' units rank too, and a raid pulls back sooner to save its elites. Synthexis's
+  biters do not rank.
 - **Eyes and roads:** a threat scanner reports enemy units by type to the circuit network; concrete roads speed your
   army; a muster point deploys troops carried by train.
 - **Orbital cannons:** after artillery, space platforms, the foundry and the electromagnetic plant, build cannons on a
@@ -128,7 +128,7 @@ Grubstake's theft; Synthexis's most cultures, largest attack and learning.
 3. A Synthexis swarm against a flamethrower wall.
 4. A Kessler-Hayashi orbital strike opening a wall.
 5. A Kessler-Hayashi shield dome over its camp, catching your artillery's shells.
-6. A Synthexis culture: captured nests bred for war.
+6. A Synthexis culture: captured spawners breeding its biters.
 7. Grubstake bomb drones diving on a squad of troopers.
 8. A Grubstake Killdozer charging through a wall.
 9. Twin orbital cannons on your platform, the Skipjack, firing over Nauvis.

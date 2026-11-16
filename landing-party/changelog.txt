@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.434
+Date: 2026-11-16
+  Locale:
+    - The cinder biter's blast hurts units too, as its description now says; the uplink's description says destroying it brings its headquarters down.
+    - Two tips reworded (squad sizes on the circuit network, deploying from a muster point).
+---------------------------------------------------------------------------------------------------
 Version: 0.2.433
 Date: 2026-11-16
   Changes:

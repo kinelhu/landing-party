@@ -1,19 +1,21 @@
 # Landing Party
 
-A Factorio 2.1 + Space Age mod, in development: rival corporations answer your rocket programme. They land, mine,
-build settlements of walled hubs, roads and outposts, and fight you with an army that is the output of their economy.
-Not a reskin of biters: each corporation is an adversary with intent and a character the player learns.
+A Factorio 2.1 + Space Age mod, in beta: three rival factions come to Nauvis. They land, mine, build settlements of
+walled hubs, roads and outposts, and fight you with an army that is the output of their economy. Each faction has its
+own aims and ways of fighting, which the player learns.
 
-- **Grubstake Inc.** (arrives at chemical science): a thief. It steals what you leave exposed, mostly by
-  night: trucks skim your belts, raids take your machines apart and carry them off (their ghosts left), heists empty
-  your chests, taps drain your power, claims take your ore. It answers when hurt, and its stolen goods sit in its yard
-  until you take them back.
-- **Kessler-Hayashi** (arrives at the first rocket launch): a wall, at war from landing. Its line of posts
-  advances on you, strangles your outposts, cuts belts and power, and besieges what stands in its way. It bills you for
-  the biter waves your pollution sends through its ground; paying buys the only quiet it gives.
+- **Grubstake** (arrives at chemical science) steals what you leave exposed, mostly by night: trucks skim your belts,
+  raids take your machines apart and carry them off (their ghosts left), heists empty your chests, taps drain your
+  power, claims take your ore. It strikes back when hurt, and its stolen goods sit in its yard until you take them back.
+- **Kessler-Hayashi** (arrives at the first rocket launch) is at war with you from its landing. Its line of posts
+  advances on you, cuts off your outposts, their belts and power, and besieges what stands in its way. It bills you for
+  the biter attacks your pollution draws onto its ground, and raids to collect an unpaid bill.
+- **Synthexis** (arrives once the biters have evolved far enough) takes over biter spawners and breeds its
+  own biters in them. It scouts your defences before a wave and changes how it attacks where its attacks failed.
 
-Status: both corporations play headless end to end (about 180 scenarios, visits of real saves); not yet balanced in a
-played game. See `DESIGN.md` (decisions, findings, status table) and `docs/` (the AI's structure, the arc, reviews).
+Status: every mechanic has a headless scenario (`scripts/regress.sh` runs them), and the factions have been run against
+copies of real saves; they are not yet balanced in played games. See `DESIGN.md` (decisions, findings, status table)
+and `docs/` (the AI's structure, the arc, reviews).
 
 ## Layout
 - `landing-party/`: the mod.
