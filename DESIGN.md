@@ -199,6 +199,49 @@ document still says Serenity where it records history.
 | Legibility: every mechanic told in the world (audit below) | audited 2026-10-20; gaps open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
 
+
+## Not built: the backlog (verified against the code, 2026-11-16)
+**The one list of what is not built.** Every "not built", "proposed" or "idea" note elsewhere in this file is history,
+written when it was true; several went stale (the orbital cannon and veterancy, both built in 0.2.390, were still
+"not built" in Open questions). Before saying a feature is missing, check this list and then the code
+(`grep` the mod and the changelog), never an old note. When a backlog item is built, move it to the status table
+above in the same commit; when one is dropped, move it to Dropped below with the user's words.
+
+**Before 0.3.0**
+- A camp with no income has no fallback: on nwa seed 1 the biters killed Kessler-Hayashi's first crews at both mining
+  sites, both were given up, and it mined nothing (the night of 2026-11-16). Not depletion (dropped, below): its crews
+  die, the ore is still there.
+- Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
+  at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
+  factories).
+- Multiplayer: two clients using the army and the faction GUIs (scripts/mp.sh covers one client and the director).
+- Release: the 0.3.0 bump, the full regression, package.sh, the music credit, the GitHub release, the portal upload
+  (the user's go for each outward step). Checklist: docs/release/checklist.md.
+
+**After 0.3.0 (designed or proposed)**
+- The player's shield projector (Open questions: 45 degrees, 8-way rotation). Only Kessler-Hayashi's dome projector
+  exists.
+- An anti-air turret: anti-air is units only (the Skyguard, the flak buggy).
+- Synthexis breeding from its survivors (a biter that kills and comes back seeds the next breed; "after the playtest").
+  Survivors go back to the pen's stock and nothing more (herd.lua stock()).
+- Walls: the curtain's openings staggered against the inner walls; an outer wall for Grubstake's camps.
+- Adaptive tactics' remainder (the spread assault is built, 0.2.212): the loose stance, the second pulse, the
+  corporations reading the same area-damage signal.
+- The director (docs/director.md):
+  - a corporation quietly pulling a camp out in a lull (the quiet reward left; the shuttle and the bounty are built);
+  - the siege push (`besieged` made a count first);
+  - several camps of one corporation in one operation (9e; the two-corporation joint strike is built);
+  - the sweep (built, 0.2.410): a remembered breach as its trigger, the breach marked, strike forces joining it, a
+    Grubstake looting spree (9f);
+  - no spree while a Synthexis wave is out or due (farm.wave_soon unread by the director).
+- The uplink fortress that varies (one fixed template).
+- A new corporation landing after both are gone (`withdrawing` is never cleared); the rivals' war on each other.
+
+**Cut or dropped**
+- Depletion and relocation (the user, 2026-11-05: "Depletion should probably never occur").
+- Truces (0.2.325: "Maybe we just drop the idea of a truce?").
+- The light mech walker, for 0.3.0 (the user, 2026-11-15).
+
 ## Legibility audit (2026-10-20)
 The user: "There is starting to be a big gap between mechanics and what's communicated to the players." The mod grew
 mechanic first, and much of its state lives in `storage` only. The rule from here: a mechanic that changes what the
@@ -3275,6 +3318,7 @@ event. The loop needs the settlement readable in game. Park the uplink fight and
 Decisions: see "Operations" above.
 
 ## Open questions and next
+(History: what is still open is in "Not built: the backlog" above; several notes here describe things built since.)
 - **A player's shield projector, late in the tree (the user, 2026-11-04, after seeing the dome's hit):** a projector the
   player places and rotates, a half-dome facing one way, that takes the enemy's fire on the defences behind it, draining
   power, breaking and recharging; against the corporations' arms, spitters and worms. Engine notes, not yet tested:

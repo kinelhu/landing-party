@@ -244,7 +244,8 @@ Step 4 (0.2.379), part of it:
   `supply_wait` 3 minutes, if it stands, its `supply_parts` 300 reach the camp; destroyed or mined first, nothing does.
   It holds 150 iron plates, the player's to take. Told: "__1__ is dropping supplies at [gps]." and the outcome.
 - **Not built:** the siege push (it needs `besieged`, one siege of a player at a time, made a count first), quiet events
-  with rewards, the bounty and the intercepted transmission.
+  with rewards, the bounty and the intercepted transmission. (Since built: the bounty 0.2.409, the lull's salvage 0.2.411, the data core
+  0.2.420. Still open: DESIGN.md's backlog.)
 - Open: a drop wave or a supply drop now come in any long game the director runs in (30 minutes after the opening's
   arrival); the regression is the first look at what they do to scenarios that never expected them.
 

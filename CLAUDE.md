@@ -87,6 +87,10 @@ at milestones, asked for.
 - **Keep `DESIGN.md` current**: it is what design reviews read. Update the status table and the section
   concerned with every mechanic built, every decision, and every finding (bugs caught go in the findings
   log). Mark what is assumed, not tested.
+- **What is not built lives in one place: DESIGN.md's "Not built: the backlog".** Older "not built" notes in
+  that file are history and go stale. Asked what is left, read the backlog, then confirm in the code and the changelog;
+  never list a feature as missing from an old note. Building or dropping an item moves it out of the backlog in the
+  same commit.
 - Determinism: per-settlement randomness comes from `scripts/rng.lua`, seeded and kept in `storage`; never
   `math.random`, never randomness in the data stage.
 - Numbers shared by data and control live in `landing-party/shared.lua`; never type one twice.
