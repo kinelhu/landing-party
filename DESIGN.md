@@ -7341,6 +7341,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Kessler-Hayashi's hauler, an APC** (0.2.429; the user, 2026-11-16: "Perhaps we can use a tank chassis with no turret,
+  like an APC"). Its hauler wore the generic first truck, rusty and open-framed, and its manual portrait read as
+  Grubstake's (the user's catch). Now its tank's hull and tracks (tools/blender/kh_tank.py) with a new head, "carrier":
+  four clay candidates in eight directions (LP_CLAY=1, new: every surface one grey but the lamps), A kept: a sealed
+  casemate over the rear deck, its sides sloped in as the hull's facets, ribbed, two roof hatches, a teal convoy beacon
+  (its own material, kbeacon: the running lights' cyan burnt out white at strength 3 and the one saturated element read
+  as a white dot). B (a cupola and a crate cage) too busy at game scale, C (two canisters) read as a fuel tanker, D a
+  plain box. Its tone measured against its family and vanilla's tank (mean, spread, 95th percentile of luminance): APC
+  51.5, 39.2, 106.7; Kessler-Hayashi's tank 50.3, 40.3, 120.3; vanilla's 68.5, 56.1, 178.5: with its family, darker
+  than vanilla as that family is. Its own wreck (wreck-carrier, four directions), the tank's selection box, its
+  collision kept (convoys pathed at that size). Grubstake's hauler keeps its truck. Scenarios convoy and siegetier
+  convoy pass. Not seen in a game window but the manual's portrait film.
 - **The orbital strikes' builds** (0.2.427; the Sound Sheet's round six, the whole sequence: the user kept F for
   Kessler-Hayashi's strike and the cannon's 5 s card, each "good if you just remove the downwards boop that comes in right
   before the boom at the end (don't replace it with anything)"). The falling rush of the paint's last half second taken

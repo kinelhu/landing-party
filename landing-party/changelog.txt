@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.429
+Date: 2026-11-16
+  Graphics:
+    - Kessler-Hayashi's hauler is now an armoured carrier on its tank's hull, with roof hatches and a teal convoy beacon, and its own wreck.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.428
 Date: 2026-11-16
   Changes:

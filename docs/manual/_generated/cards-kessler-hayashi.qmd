@@ -41,5 +41,5 @@ The Lightning tank carries a tesla turret's emitter. Its lightning jumps along y
 :::
 
 ::: {.unit unit="lp-hauler"}
-The Hauler is a lightly armed, armored truck that carries supplies between Kessler-Hayashi's camps. It is slow and does not fight well. A squad posted on the road between camps will catch them.
+The Hauler is an armored carrier on Kessler-Hayashi's tank hull, without a turret, that carries supplies between its camps. It is slow and does not fight well. A squad posted on the road between camps will catch them.
 :::

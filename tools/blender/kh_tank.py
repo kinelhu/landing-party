@@ -430,12 +430,117 @@ def aegis():
     rod((-0.42, TY - 0.82, TZ + 0.42), (0.42, TY - 0.82, TZ + 0.42), 0.01, M["steel"])
     box(0.6, 0.1, 0.08, 0, TY - 0.86, TZ + 0.32, M["canvas"], bevel=0.02)
 
+def beacon(x, y, z, mast=0.0):
+    """The convoy beacon (the hauler's one saturated element, Kessler-Hayashi's teal): a lamp in a cage on a short mast."""
+    if mast:
+        rod((x, y, z), (x, y, z + mast), 0.012, M["steel"])
+    z += mast
+    box(0.1, 0.1, 0.03, x, y, z, M["kdark"], bevel=0.006)
+    # (Its own teal at a low strength: the running lights' cyan at 3 burnt out white, and the one saturated element read
+    # as a white dot.)
+    if "kbeacon" not in M:
+        M["kbeacon"] = __import__("lpkit").mat("kbeacon", (0.05, 0.75, 0.7), emit=(0.05, 0.8, 0.72), strength=1.1, grime=0.0)
+        V.GLOW_NAMES.add("kbeacon")
+    cyl(0.04, 0.07, x, y, z + 0.05, M["kbeacon"])
+    for k in range(4):
+        a = k * math.pi / 2 + math.pi / 4
+        rod((x + math.cos(a) * 0.05, y + math.sin(a) * 0.05, z + 0.015), (x + math.cos(a) * 0.05, y + math.sin(a) * 0.05, z + 0.1),
+            0.006, M["steel"])
+
+def hatch(x, y, z, w=0.22, d=0.22):
+    box(w, d, 0.03, x, y, z, M["kgraph"], bevel=0.01)
+    box(w * 0.6, 0.02, 0.025, x, y + d * 0.35, z + 0.03, M["steel"], bevel=0.004)
+
+# The hauler (the user, 2026-11-16: "a tank chassis with no turret, like an APC"): Kessler-Hayashi's convoy truck on its
+# tank's hull, candidates A to D (clay first, LP_CLAY=1), the one kept named "carrier".
+def carrier_a():
+    """A: a sealed armoured cargo box over the rear two thirds of the deck, its sides sloped in, ribbed; two roof
+    hatches; the beacon at its front top."""
+    import bmesh
+    Z0, Z1, YA, YB = ZD + 0.03, ZD + 0.42, -1.0, 0.28
+    me = bpy.data.meshes.new("box"); bm = bmesh.new()
+    lo = [bm.verts.new(v) for v in ((-0.6, YA, Z0), (0.6, YA, Z0), (0.6, YB, Z0), (-0.6, YB, Z0))]
+    hi = [bm.verts.new(v) for v in ((-0.5, YA + 0.06, Z1), (0.5, YA + 0.06, Z1), (0.5, YB - 0.1, Z1), (-0.5, YB - 0.1, Z1))]
+    bm.faces.new(lo[::-1]); bm.faces.new(hi)
+    for k in range(4): bm.faces.new((lo[k], lo[(k + 1) % 4], hi[(k + 1) % 4], hi[k]))
+    bm.to_mesh(me); bm.free()
+    o = bpy.data.objects.new("box", me); V.scene.collection.objects.link(o); me.materials.append(M["kpaint2"])
+    md = o.modifiers.new("b", "BEVEL"); md.width = 0.015; md.segments = 2
+    for k in range(5):
+        y = YA + 0.15 + k * 0.24
+        for sx in (-1, 1):
+            rod((sx * 0.59, y, Z0 + 0.02), (sx * 0.5, y, Z1 - 0.02), 0.012, M["kgraph"])
+    hatch(-0.22, -0.55, Z1); hatch(0.22, -0.2, Z1)
+    box(0.5, 0.006, 0.08, 0, YA - 0.005, Z1 - 0.12, M["kwhite"], bevel=0.0)
+    box(0.6, 0.006, 0.05, 0, YA - 0.006, Z0 + 0.06, M["khazard"], bevel=0.0)
+    beacon(0.3, YB - 0.2, Z1)
+
+def carrier_b():
+    """B: a low commander's cupola forward, a cargo cage over the rear deck with strapped crates; the beacon on a mast."""
+    cyl(0.22, 0.14, 0, 0.35, ZD + 0.1, M["kpaint"], bevel=0.02)
+    cyl(0.16, 0.04, 0, 0.35, ZD + 0.19, M["kgraph"], bevel=0.01)
+    box(0.12, 0.05, 0.05, 0, 0.55, ZD + 0.15, M["glass"], bevel=0.004)
+    Z0, YA, YB = ZD + 0.03, -1.0, 0.05
+    for (x, y, w, d, h, m) in ((-0.3, -0.75, 0.42, 0.38, 0.26, M["kgraph"]), (0.22, -0.72, 0.4, 0.42, 0.22, M["kpaint3"]),
+                               (-0.25, -0.3, 0.4, 0.36, 0.2, M["kpaint3"]), (0.25, -0.28, 0.36, 0.34, 0.28, M["kgraph"])):
+        box(w, d, h, x, y, Z0 + h / 2, m, bevel=0.02)
+        rod((x - w / 2, y, Z0 + h + 0.005), (x + w / 2, y, Z0 + h + 0.005), 0.01, M["khazard"])
+    for sx in (-1, 1):
+        for y in (YA, (YA + YB) / 2, YB):
+            rod((sx * 0.58, y, Z0), (sx * 0.58, y, Z0 + 0.36), 0.014, M["steel"])
+        rod((sx * 0.58, YA, Z0 + 0.36), (sx * 0.58, YB, Z0 + 0.36), 0.014, M["steel"])
+    for y in (YA, YB):
+        rod((-0.58, y, Z0 + 0.36), (0.58, y, Z0 + 0.36), 0.014, M["steel"])
+    beacon(-0.45, 0.2, ZD + 0.04, mast=0.25)
+
+def carrier_c():
+    """C: two long sealed export canisters lengthwise in cradles, a small remote gun cupola forward; the beacon between."""
+    for sx in (-1, 1):
+        bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.2, depth=1.2, location=(sx * 0.27, -0.42, ZD + 0.25),
+                                            rotation=(math.pi / 2, 0, 0))
+        V.obj().data.materials.append(M["kpaint3"])
+        for y in (-0.95, 0.11):
+            bpy.ops.mesh.primitive_uv_sphere_add(radius=0.2, location=(sx * 0.27, y + (0.05 if y > 0 else -0.05), ZD + 0.25))
+            o = V.obj(); o.scale = (1, 0.35, 1); o.data.materials.append(M["kpaint3"])
+        for y in (-0.8, -0.42, -0.04):
+            box(0.46, 0.06, 0.2, sx * 0.27, y, ZD + 0.12, M["kgraph"], bevel=0.01)
+            rod((sx * 0.27 - 0.2, y, ZD + 0.26), (sx * 0.27 + 0.2, y, ZD + 0.26), 0.012, M["khazard"])
+    box(0.22, 0.24, 0.12, 0, 0.45, ZD + 0.1, M["kpaint"], bevel=0.02)
+    rod((0, 0.5, ZD + 0.16), (0, 0.8, ZD + 0.16), 0.02, M["kdark"])
+    beacon(0, -0.42, ZD + 0.46)
+
+def carrier_d():
+    """D: a tall troop and cargo compartment along the hull, square-sided, a rear ramp, roof hatches and a light bar."""
+    Z0, Z1, YA, YB = ZD + 0.03, ZD + 0.5, -1.1, 0.55
+    box(1.18, YB - YA, Z1 - Z0, 0, (YA + YB) / 2, (Z0 + Z1) / 2, M["kpaint"], bevel=0.03)
+    box(1.0, 0.06, 0.38, 0, YA - 0.04, Z0 + 0.2, M["kpaint2"], bevel=0.015)            # the ramp
+    for sx in (-1, 1):
+        box(0.02, YB - YA - 0.2, 0.08, sx * 0.6, (YA + YB) / 2, Z0 + 0.3, M["kgraph"], bevel=0.004)
+    for y in (-0.7, -0.25):
+        hatch(-0.25, y, Z1); hatch(0.25, y, Z1)
+    box(0.6, 0.006, 0.08, 0, YB + 0.005, Z1 - 0.12, M["kwhite"], bevel=0.0)
+    box(0.5, 0.08, 0.04, 0, YB - 0.1, Z1 + 0.02, M["kdark"], bevel=0.008)
+    for x in (-0.18, 0.0, 0.18):
+        cyl(0.03, 0.04, x, YB - 0.1, Z1 + 0.05, M["kglow"])
+
 base = V.group(hull)
 anim, pose = V.tracks(TX, TW, IDL, SPR, frames=4)
-MODULES = {"cannon": cannon, "prism": prism, "tesla": tesla, "aegis": aegis}
+# The hauler's head, A of the four clay candidates (2026-11-16, picked: an APC's casemate continuing the hull's sloped
+# facets; B's crate cage too busy at game scale, C's canisters a fuel tanker, D a plain box). The candidates kept, by name.
+MODULES = {"cannon": cannon, "prism": prism, "tesla": tesla, "aegis": aegis, "carrier": carrier_a}
+CANDIDATES = {"carrier-a": carrier_a, "carrier-b": carrier_b, "carrier-c": carrier_c, "carrier-d": carrier_d}
 which = os.environ.get("LP_MODULES", ",".join(MODULES)).split(",")
+MODULES.update(CANDIDATES)
 modules = {n: V.group(MODULES[n]) for n in which if n}
 V.finish(grime=0.6, mud=0.5, mud_top=0.4)             # maintained: less grime than Grubstake's; mud on the tracks
+# LP_CLAY=1: every surface one grey clay (lamps kept lit), to judge a new module's silhouette before its materials.
+if os.environ.get("LP_CLAY"):
+    clay = __import__("lpkit").mat("clay", (0.42, 0.42, 0.4), rough=0.7, grime=0.0)
+    for o in V.scene.objects:
+        if o.type == "MESH":
+            for sl in o.material_slots:
+                if not (sl.material and sl.material.name in V.GLOW_NAMES):
+                    sl.material = clay
 # LP_WRECK=<module>: that head's wreck on the hull (4 directions, its shadow in the picture; the left track thrown), then
 # stop (the user, 2026-11-08: "We didn't do KH wrecks also").
 if os.environ.get("LP_WRECK"):

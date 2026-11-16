@@ -1209,6 +1209,17 @@ do
     {selection_box = {{-0.85, -1.45}, {0.85, 1.55}}, corpse = wreck("lp-hauler-wreck", "grubstake/hauler/wreck")})
   headlights(p, 16)
 end
+-- Kessler-Hayashi's hauler (the user, 2026-11-16: "a tank chassis with no turret, like an APC"): its tank's hull and
+-- tracks, a sealed armoured casemate on the deck with roof hatches, a teal convoy beacon (tools/blender/kh_tank.py's
+-- carrier, A of four clay candidates). The generic first truck until now, its manual portrait read as Grubstake's.
+-- Grubstake's keeps its own (above, through its props).
+if SHEETS["serenity/tank/carrier"] then
+  layered(hauler, "serenity/tank", {{"carrier", {"shadow"}}, {"base", {"body", "glow"}}, {"anim", {"body"}}, {"carrier", {"body", "glow"}}})
+  headlights(hauler)
+  -- (Selected as the hull it now wears, the tank's; its collision kept, its convoys formed and pathed at that size.)
+  hauler.selection_box = table.deepcopy(tank.selection_box)
+  if SHEETS["serenity/tank/wreck-carrier"] then hauler.corpse = wreck("lp-kh-hauler-wreck", "serenity/tank/wreck-carrier") end
+end
 -- The howitzer truck (Grubstake's alone; tools/blender/hauler.py LP_LOAD=howitzer): the hauler's chassis carrying the
 -- deployed howitzer's own housing and barrel (kh_guns.py's, read from there), its barrel down in a travel lock over the
 -- cab, so the truck and the gun it becomes in a siege (siege.lua) are one machine (the user: "careful that it coheres
