@@ -3299,7 +3299,8 @@ Decisions: see "Operations" above.
   scorches, nearest the beacon first, a pair every 20 ticks. With the cannon on a platform (the user, the same day:
   "give the shadow of the platform they built holding the cannon that is firing"), its shadow could be drawn from that
   platform's own tiles (its surface's tile outline, as one sprite rendered at load or polygons) instead of
-  Kessler-Hayashi's silhouette. Not built.
+  Kessler-Hayashi's silhouette. Built since: the orbital cannon on a platform over Nauvis (0.2.390, scripts/cannon.lua;
+  the remote, ALT + O), its build sound 0.2.427.
 - **Tactics that adapt to what kills it (idea, the user, 2026-11-05, watching nwa's flamethrowers burn a wave of 200):**
   beyond the breed it orders against a place's killers, the way it attacks: "if deaths to flamers accumulate, biters could
   spread out on their attacks", which spends the flamers' fuel and their splash on fewer at a time and raises the chance
