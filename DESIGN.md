@@ -8218,3 +8218,9 @@ Bugs and surprises the headless runs caught, each kept as a check:
   normal unit and came back normal (`squadmove` checks an uncommon one both ways, seen failing with either half
   removed). Synthexis's bred biters were outside the army's threat, the beacon's E and the command tool's attack
   (`shared.hostile_forces`). The manual's "capture does not work yet" was stale: capture by holding works.
+- The counter table regenerated whole moves every cell (2026-11-16, 0.2.438): three rounds a pair is noisy, so a full
+  arena run for two new rows changed the strike forces' and camps' choices everywhere; against 0.2.437, 35 of 226 runs
+  played otherwise and two checks failed (`director` repel razed a building after its break; repelgap's force, its way
+  home out of the guns' reach, had none to answer). counters.lua now keeps the old cells and takes only the changed
+  units' rows and columns (its header says so); both pass. A regenerated table needs more rounds or a merge by default.
+
