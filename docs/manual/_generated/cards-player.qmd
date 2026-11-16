@@ -9,7 +9,7 @@ The trooper is your basic soldier: heavy armor and a submachine gun, and the che
 :::
 
 ::: {.unit unit="lp-rocket-trooper"}
-The rocket trooper's rockets are made for armor and fliers; against troopers they are no better than a rifle. It takes more of the command link than a trooper and outranges a Heavy tank's rail cannon. Keep rocket troopers behind your troopers against infantry, and in front against tanks and drones.
+The rocket trooper's rockets are made for armor and fliers; against troopers they are no better than a submachine gun. It takes more of the command link than a trooper and outranges a Heavy tank's rail cannon. Keep rocket troopers behind your troopers against infantry, and in front against tanks and drones.
 :::
 
 ::: {.unit unit="lp-battle-tank"}
@@ -17,5 +17,5 @@ The battle tank fires a slow, heavy shell. It takes the longest to train and the
 :::
 
 ::: {.unit unit="lp-flame-trooper"}
-The flamethrower trooper has the most damage of your infantry and nearly the shortest range, only the breacher's being shorter. It burns biter swarms and bunched squads quickly but does little to vehicles, and nearly everything outranges it. Lead with it against Synthexis and keep it at the back against Kessler-Hayashi.
+The flamethrower trooper has the most damage of your infantry, and only the breacher has a shorter range. It burns biter swarms and bunched squads quickly but does little to vehicles, and nearly everything outranges it. Lead with it against Synthexis and keep it at the back against Kessler-Hayashi.
 :::

@@ -25,7 +25,7 @@ units.
 **Kessler-Hayashi.** It waits for your first rocket launch, then lands within {{< var arrival.late_min >}} minutes. It
 picks a site with a clear way to your base.
 
-**Synthexis.** It follows the biters, not your research. When the wild biters' evolution on a surface reaches
+**Synthexis.** Its arrival depends on the biters alone. When the wild biters' evolution on a surface reaches
 {{< var synthexis.arrive_evo >}}, a pod comes down on a spawner field with none of your buildings within
 {{< var synthexis.clear_tiles >}} tiles and some within {{< var synthexis.far_tiles >}} (out to
 {{< var synthexis.farthest_tiles >}} if there is no such field). It prefers fields with many spawners and heavy

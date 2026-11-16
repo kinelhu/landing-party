@@ -9,7 +9,7 @@ or turns it off (see [Settings](#sec-director-settings)).
 
 No company runs a war from the ground. Kessler-Hayashi keeps its staff on a command platform in high orbit, among the
 freighters it escorts, and sends its camps their orders by beam. Grubstake has no fixed office. Its partners meet on
-whichever hauler is nearest the latest rush and settle their accounts there.
+whichever of its ships is nearest the latest rush and settle their accounts there.
 
 Both keep reserves in orbit for the work a camp cannot do alone: troops for a raid in force, crates of parts for a
 camp in trouble, masts and survey gear. Both keep books on the engineer's factory as well, and they price its
@@ -24,7 +24,7 @@ Pressure on you comes and goes. For a while one corporation attacks more often t
 hard stretch, the corporations that caused it hold their attacks for up to {{< var director.lull_minutes >}} minutes,
 and their units out in the field walk home without fighting.
 
-None of this is announced: you see it only in the attacks themselves.
+None of this is announced. You see it only in the attacks themselves.
 
 When every corporation steps up at once, a raid that gets into your base without meeting resistance does not stop at its target. It moves on
 to the next undefended building nearby, and the next.
@@ -76,7 +76,7 @@ survivors join the garrison if the camp has room, and the rest leave on the camp
 camp stronger. Units still on the road after {{< var director.home_minutes >}} minutes join the camp where they stand.
 
 **Beating one.** Turrets alone rarely save the target, since the pods land where they reach least. An army waiting
-where the pods come down does. Radar gives it the time to get there. A squad that arrives after the pods have opened
+where the pods come down can save it, and radar warns you in time to send it there. A squad that arrives after the pods have opened
 can still break the force and hunt it down on its way home, but by then the target is usually gone.
 
 ## Masts
@@ -134,7 +134,7 @@ next strike force is marked on your map as soon as it is chosen.
   leave alone through it is paid at the end, so attacking one in that time keeps it weaker.
 - **Garrison rotation.** A camp sends up to {{< var director.rotation_max >}} of its units off on its rocket and gets
   as many back by pod {{< var director.rotation_minutes >}} minutes later. The camp is marked on your map as rotating,
-  and until the pods come it has only a few guards left.
+  and until the pods come back it has fewer units than before.
 
 ## What you are told
 

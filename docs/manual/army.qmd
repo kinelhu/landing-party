@@ -129,8 +129,7 @@ three gold chevrons, and its new rank's name shows over it when it is promoted. 
 unit, so a veteran brought home lives to fight again.
 
 Kessler-Hayashi's and Grubstake's units earn ranks the same way, and a raid with an Elite or a Heroic unit in it turns
-home sooner to keep it alive. Synthexis's units, and any biter bred by Synthexis, never earn ranks: the hive learns as
-a whole.
+home sooner to keep it alive. Synthexis's units, and any biter bred by Synthexis, never earn ranks.
 
 ## Command bandwidth
 
@@ -183,7 +182,7 @@ Three defenses come from the factions' own designs. [Spoils](spoils.qmd#field-st
 shells your enemies fire into its radius, including shells passing over it to something behind; your own artillery
 fires out through it. Its strength scales with the guns that can reach it, so more guns do not break it sooner. It
 recovers slowly while up. Once broken, it stays down for some minutes and comes back at full strength. Tank shells and
-orbital strikes pass through. A dome buys time; your army still has to destroy the guns. You research it with
+orbital strikes pass through. A dome does not harm the guns, so your army still has to destroy them. You research it with
 science packs after Energy shield MK2 and Military 4.
 
 **Flak turret.** {{< var desc.technology_flak_turret >}} It shoots down Grubstake's scrap copters and bomb drones and
@@ -198,7 +197,7 @@ Late in the game you can strike from orbit. The **Orbital cannon** technology co
 Tungsten carbide, the Foundry and the Electromagnetic plant, so after landings on Vulcanus and Fulgora. It unlocks the
 orbital cannon, the orbital shell, its fuse and the targeting array.
 
-**The cannons.** An orbital cannon is a rail gun 12 tiles wide and 18 deep, built at the edge of a space platform with
+**The cannons.** An orbital cannon is a rail gun {{< var cannon.width >}} tiles wide and {{< var cannon.depth >}} deep, built at the edge of a space platform with
 its barrel out over the void. It can only stand where the void lies ahead of its muzzle for
 {{< var cannon.reach >}} tiles, so build it facing out from the deck's edge and turn it before you place it. A cannon
 works like an assembling machine with one fixed recipe: it takes an orbital shell, {{< var cannon.fuel >}} thruster
@@ -208,11 +207,11 @@ barrel and lightning leaps between its capacitor towers.
 
 Orbital shells are cast on the ground, in a foundry, from molten iron, tungsten carbide and explosives round an
 orbital fuse. The fuse comes from an electromagnetic plant, built round a supercapacitor. A shell weighs
-{{< var cannon.shell_kg >}} kg, so a rocket carries {{< var cannon.shells_a_rocket >}}, and your silos become the
-cannons' supply line. The fuel and the oxidizer are made in orbit from asteroids, and reach a cannon by pipe as they
-reach the platform's thrusters. The fuel goes in on the left of its back, the oxidizer on the right. Every charge comes
-out of what the platform would burn to fly. A charge made with the basic recipes takes about ten asteroid chunks, and
-the field over Nauvis is thin, so a platform with several cannons needs many collectors, or ice and calcite shipped up.
+{{< var cannon.shell_kg >}} kg, so a rocket carries {{< var cannon.shells_a_rocket >}}, and your rocket silos supply
+the cannons. The fuel and the oxidizer are made in orbit from asteroids, and reach a cannon by pipe as they
+reach the platform's thrusters. The fuel goes in on the left of its back, the oxidizer on the right. Every charge uses fuel
+and oxidizer the platform would otherwise burn to fly. The asteroid field over Nauvis is thin, so a platform with
+several cannons needs many collectors, or ice and calcite shipped up.
 
 **The targeting array.** {{< var desc.entity_targeting_array >}} One array serves every cannon on its platform. It is
 built round an orbital beacon salvaged from a Kessler-Hayashi lander or uplink. In a game without Kessler-Hayashi, build

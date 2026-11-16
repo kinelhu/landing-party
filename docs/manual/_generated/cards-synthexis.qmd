@@ -5,7 +5,7 @@ The small biter is the first and cheapest breed, raised from the wild stock and 
 :::
 
 ::: {.unit unit="lp-bred-medium-biter"}
-The medium biter is the small biter with armor added, bred once the culture's evolution has risen. A culture that has lost its clinic falls back to mediums and smalls, so a wave of them means the culture has lost something. Keep your gun turrets well supplied, or add lasers.
+The medium biter is the small biter with armor added, bred once the culture's evolution has risen. A culture that has lost its clinic falls back to mediums and smalls. Keep your gun turrets well supplied, or add lasers.
 :::
 
 ::: {.unit unit="lp-bred-spore"}
@@ -25,7 +25,7 @@ The big biter is the bulk of a grown culture's waves. Big biters run past turret
 :::
 
 ::: {.unit unit="lp-bred-stomper"}
-The stomper is a pentapod from the Gleba pens, small enough to ship and tall enough to step over a wall. Bullets do little to it. It steps over your wall and goes for whatever the wave came for. Rocket troopers and battle tanks bring it down; keep rockets near the wall.
+The stomper is a pentapod brought from Gleba, tall enough to step over a wall. Bullets do little to it. It crosses your wall and goes for whatever the wave came for. Rocket troopers and battle tanks bring it down; keep rockets near the wall.
 :::
 
 ::: {.unit unit="lp-bred-behemoth-biter"}

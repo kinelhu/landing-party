@@ -13,7 +13,7 @@ The Scrap copter is a small helicopter built from salvage, with a light gun. Alo
 :::
 
 ::: {.unit unit="lp-grubstake-slug"}
-The Slug buggy trades the buggy's machine gun for a heavy slug gun and adds armor at the front. It fires slowly, which is fine against tanks, whose armor the slug pierces, and poor against infantry. Send troopers at it and keep your tanks away.
+The Slug buggy trades the buggy's machine gun for a heavy slug gun and adds armor at the front. Its slug pierces a tank's armor, but it fires slowly and does poorly against infantry. Send troopers at it and keep your tanks away.
 :::
 
 ::: {.unit unit="lp-grubstake-sapper"}

@@ -16,9 +16,9 @@ Nauvis has untouched ore fields, and a factory full of machines in the middle of
 ore nobody is mining. For the factory, Pell points to the Salvage Convention: a machine left unattended is abandoned,
 and abandoned property belongs to whoever takes it.
 
-Grubstake does not want a war. Nadia Szabo files its claims on Nauvis, and Marit Holm sends its crews out at night to
-take what nobody is guarding. Its camps sit among the biter nests with barely a fence, and the swarm leaves them alone;
-Dr. H. Ness, the company's biologist, has not said why. It cannot be bought off.
+Grubstake does not want a war, and it cannot be bought off. Nadia Szabo files its claims on Nauvis, and Marit Holm
+sends its crews out at night to take what nobody is guarding. Its camps sit among the biter nests with barely a fence,
+and the swarm leaves them alone. Dr. H. Ness, the company's biologist, has not said why.
 
 ::: {.pullquote cite="A. Pell, Managing Partner"}
 If you wanted it, you would have guarded it.

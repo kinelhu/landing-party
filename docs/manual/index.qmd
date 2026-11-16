@@ -37,8 +37,8 @@ orbital cannons on a platform over Nauvis. [Spoils](spoils.qmd) lists what drops
 
 - Landing Party needs Factorio {{< var mod.factorio >}} with Space Age. This manual describes version
   {{< var mod.version >}}.
-- Chat notices are off by default. A faction's first landing, a destroyed faction base and a strike force landing on
-  you are always announced. Turn on **Chat notices** in the map settings to hear about everything else. See [Mod settings](reference.qmd#sec-settings).
+- Chat notices are off by default. A faction's first landing, a destroyed faction base, and headquarters' strike
+  forces, drop waves and supply drops are always announced. Turn on **Chat notices** in the map settings to hear about everything else. See [Mod settings](reference.qmd#sec-settings).
 - The map settings have a difficulty for all three factions, and settings for each faction under it. A faction can be
   turned off or made to arrive at another point. Its aggression and income range from ×{{< var settings.very_low >}}
   to ×{{< var settings.very_high >}}, as does each corporation's strength. See

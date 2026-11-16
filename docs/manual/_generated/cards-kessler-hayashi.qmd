@@ -5,7 +5,7 @@ The Laser trooper is Kessler-Hayashi's standard soldier: mech armor and a short-
 :::
 
 ::: {.unit unit="lp-tank"}
-The Tank is Kessler-Hayashi's siege vehicle, and its shell is made for walls and buildings. Tanks make up most of a siege escort: they wait out of range while the mortars work, then drive in through the breach. Rocket troopers and battle tanks beat it; rifles do little.
+The Tank is Kessler-Hayashi's siege vehicle, and its shell is made for walls and buildings. Tanks make up most of a siege escort: they wait out of range while the mortars work, then drive in through the breach. Rocket troopers and battle tanks beat it; bullets do little.
 :::
 
 ::: {.unit unit="lp-railgunner"}
@@ -41,5 +41,5 @@ The Lightning tank carries a tesla turret's emitter. Its lightning jumps along y
 :::
 
 ::: {.unit unit="lp-hauler"}
-The Hauler is an armored carrier on Kessler-Hayashi's tank hull, without a turret, that carries supplies between its camps. It is slow and does not fight well. A squad posted on the road between camps will catch them.
+The Hauler is an armored carrier on Kessler-Hayashi's tank hull, without a turret, that carries a camp's exports by convoy to the camp with its uplink. It is slow and does not fight well. A squad posted on the road between camps will catch them.
 :::

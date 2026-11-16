@@ -50,12 +50,11 @@ spawners round its camp. Full numbers are in the [Reference](reference.qmd#sec-u
 down in cargo pods, with a howitzer where worms outrange the mortars, and its railgunners go in once the shelling is
 done. The further the biters have evolved, the more railgunners it sends. The site digs in the moment it lands: a ring
 of wall, pillboxes facing the nests, and, once the biters are well evolved, a flamethrower turret in the middle. Late
-in the game its gun turrets load uranium rounds, as yours would.
+in the game its gun turrets load uranium rounds.
 
 It raids whatever your turrets do not cover, and it cuts your power: it looks for a pole that feeds the turrets facing
 it and has no second feed, and destroys it from where no turret reaches. Sieges are its main weapon (see
-[Sieges](#sec-kh-sieges)). If you build on its ground or put a turret near its camp, it answers with a siege. Nothing
-you can pay stops it.
+[Sieges](#sec-kh-sieges)). If you build on its ground or put a turret near its camp, it answers with a siege.
 
 **Air raids.** Where little of yours can shoot up at a target, such as artillery, a radar or power behind walls and
 flamethrowers, it sends its laser drones alone, straight at the target. Where your defenses have few guns that shoot up,

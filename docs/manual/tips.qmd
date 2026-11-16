@@ -21,7 +21,7 @@
 - **Put a threat scanner at each outpost.** Wired to a programmable speaker or a lamp, it tells you a raid has come
   before the turrets start firing.
 - **Turn on Chat notices** in the map settings if you want to hear about raids and sieges as they start. Without it,
-  only first landings, destroyed bases and strike forces are announced.
+  only first landings, destroyed bases, strike forces, drop waves and supply drops are announced.
 
 ## Against Grubstake
 
@@ -77,7 +77,7 @@
 - **Cover your base with radar.** A strike force seen coming is told {{< var director.warn_minutes >}} minutes ahead,
   with the place its pods will land. Without radar over that spot you hear of it only when it is already down.
 - **Keep a squad ready to move.** Turrets rarely cover where the pods land. An army sent to the landing spot as soon as
-  the warning comes is waiting when the pods open, and that is what saves the target.
+  the warning comes is waiting when the pods open.
 - **Hunt the survivors.** A broken strike force walks home round your turrets, turning only on what shoots at it, and
   the ones who reach their camp join its garrison. Catch them on the road.
 - **Give your power a second source.** A strike at your power is told ahead and holds every other attack while it is
@@ -95,7 +95,7 @@
 - **Attack-move into a culture.** A rally beacon's advance and the command tool's attack order go only for corporation
   targets. Send squads onto incubators and biochambers with attack-move, flamethrower troopers in front for the swarms.
 - **Defend every side.** A wave takes the way in your turrets cover least, and a way that held costs more next time.
-  A weak side is where the next wave comes.
+  The next wave comes at your weakest side.
 - **Leave room behind the wall.** Bursters blow up at the wall and damage the turrets close to it. Turrets set a few
   tiles back take less.
 - **Kill bursters before they arrive.** A burster that has stopped and started to swell always bursts. Turrets that
@@ -105,7 +105,7 @@
 - **Build walls in depth.** Each wall behind the first costs a siege another rank of big bursters, and the rest of its
   wave waits until all of them are open.
 - **Mix fire with lasers.** Where flamethrowers and mines do most of its killing, it spreads its big bursters over
-  points no one flamethrower covers two of. Lasers along the whole face cover every point.
+  several points, so that no flamethrower covers two of them. Lasers along the whole face cover every point.
 - **Bury the power and the ammo feed.** A wave past your wall heads for your power and the inserters that load your gun
   turrets. Keep both well inside, behind a second line of turrets.
 - **Defoliate an incubator.** Kill the tumors near it, then throw a defoliant on it. Off the creep, it starves and goes

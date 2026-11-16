@@ -195,6 +195,10 @@ def write(rp):
         missed.append("biotech.lua: the incubator's glands")
     climb = num(farm_src, r"^local CLIMB = ([\d.]+)", "farm CLIMB")
 
+    cannon_box = ((d.get("assembling-machine") or {}).get("lp-orbital-cannon") or {}).get("selection_box")
+    if not cannon_box:
+        missed.append("the orbital cannon's selection box (lp-orbital-cannon)")
+
     def cannon_v(key):
         return num(shared_src, rf"^shared\.CANNON = \{{[^}}]*\b{key} = ([\d.]+)", f"shared.CANNON {key}")
     # A corporation's capabilities by level (shared.CORPS caps): the level that brings each, for the prose's "from its
@@ -388,6 +392,9 @@ def write(rp):
             "shells_word": worded("count", cannon_v("SHELLS"), "CANNON.SHELLS"),
             "realign_s": fmt(product(shared_src, r"^shared\.CANNON = \{[^}]*COOLDOWN = ([\d\s\*]+?)[,}]", "CANNON.COOLDOWN") / 60),
             "paint_s": fmt(product(orbital_src, r"^local CANNON_PAINT = ([\d\s\*]+?)\s*(?:--|$)", "orbital CANNON_PAINT") / 60),
+            # (Its footprint, from the prototype's selection box: typed in the army chapter until the 2026-11-16 copy-edit.)
+            "width": fmt(cannon_box[1][0] - cannon_box[0][0]) if cannon_box else "?",
+            "depth": fmt(cannon_box[1][1] - cannon_box[0][1]) if cannon_box else "?",
         },
         # The locale's descriptions, for prose that quotes what a thing does rather than retyping its numbers.
         "desc": {f"{sec.split('-')[0]}_{k[3:].replace('-', '_')}": v.replace('"', "'").replace("\\n", " ")

@@ -21,7 +21,7 @@ Dr. Anouk Verhaegen runs the program, with Ilya Rask as her senior technician. S
 test for the stock, and writes up every wave that fails.
 
 ::: {.pullquote cite="A. Verhaegen, field report"}
-Batch lost at the southern wall. The wall held. Next batch to be bred for the wall.
+We lost the batch at the southern wall, and the wall held. The next batch will be bred to break it.
 :::
 :::
 
@@ -54,7 +54,7 @@ A culture is a group of incubators and everything that keeps them breeding.
 - **Synthexis tumor.** Spreads Synthexis creep. Nothing can be built on creep. An incubator cut off from the creep
   starves and goes back to the wild after {{< var synthexis.starve_min >}} minutes, taking its biters with it.
 - **Synthexis clinic.** Makes its breeds stronger over time (see [What it breeds](#sec-breeds)).
-- **Synthexis heating tower** and **Synthexis lamp.** Part of the culture's look; they play no part in its waves.
+- **Synthexis heating tower** and **Synthexis lamp.** They are for show and play no part in its waves.
 
 ::: {.callouts plan="media/plans/synthexis-culture.json" faction="synthexis" crop="420,120,1500,960" drop="5"}
 A young culture by a lake, shortly after landing.
@@ -145,8 +145,8 @@ for them.
 **Stock:** mixed, from the lakeside incubators, bursters added\
 **Target:** the engineer's southern wall, by the approach the scout found thinnest
 
-Previous batch at this approach lost in full; the wall held. Bursters have been bred into this batch to open it.
-Released for dispatch.
+The previous batch was lost in full at this approach, and the wall held. This batch carries bursters to open it. It
+is released for dispatch.
 
 *A. Verhaegen, Principal Investigator*
 :::
