@@ -65,7 +65,7 @@ person, and while it is out no other attack on you starts, nor for {{< var direc
 
 **In the field.** It fights for {{< var director.strike_minutes >}} minutes, going from its target to whatever of
 yours is nearest. Once it has lost {{< var director.strike_break_pct >}}% of the units that landed, it breaks and
-walks home without fighting.
+walks home. It goes round your turrets where it can, and turns only on what is shooting at it.
 
 ![A Grubstake strike force among the labs it came for. One lab is already wrecked.](media/stills/strike-fight.jpg)
 

@@ -17,5 +17,5 @@ The battle tank fires a slow, heavy shell. It takes the longest to train and the
 :::
 
 ::: {.unit unit="lp-flame-trooper"}
-The flamethrower trooper has the shortest range and the most damage of your infantry. It burns biter swarms and bunched squads quickly but does little to vehicles, and nearly everything outranges it. Lead with it against Synthexis and keep it at the back against Kessler-Hayashi.
+The flamethrower trooper has the most damage of your infantry and nearly the shortest range, only the breacher's being shorter. It burns biter swarms and bunched squads quickly but does little to vehicles, and nearly everything outranges it. Lead with it against Synthexis and keep it at the back against Kessler-Hayashi.
 :::

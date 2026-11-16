@@ -78,13 +78,13 @@
   with the place its pods will land. Without radar over that spot you hear of it only when it is already down.
 - **Keep a squad ready to move.** Turrets rarely cover where the pods land. An army sent to the landing spot as soon as
   the warning comes is waiting when the pods open, and that is what saves the target.
-- **Hunt the survivors.** A broken strike force walks home without fighting, and the ones who reach their camp join its
-  garrison. Catch them on the road.
+- **Hunt the survivors.** A broken strike force walks home round your turrets, turning only on what shoots at it, and
+  the ones who reach their camp join its garrison. Catch them on the road.
 - **Give your power a second source.** A strike at your power is told ahead and holds every other attack while it is
   out. A few accumulators or a second plant keep your turrets firing if it gets through.
 - **Destroy masts early.** A launch jammer or a blackout mast works only while it stands.
 - **Hit a camp during its contract or rotation.** A camp on an export contract is not paid if you attack it, and a
-  camp rotating its garrison has only a few guards left until the pods come back.
+  camp rotating its garrison is short of up to {{< var director.rotation_max >}} units until the pods come back.
 - **Empty crashed shuttles.** Take the wreck before its guards' corporation claims it: the equipment inside may be of
   high quality, and a data core shows you where the next strike force is headed.
 

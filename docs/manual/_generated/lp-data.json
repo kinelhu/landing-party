@@ -656,7 +656,7 @@
    "cost": "1 bandwidth",
    "era": "Command bandwidth 1",
    "era_level": 1,
-   "role": "Your basic soldier, with a rifle.",
+   "role": "Your basic soldier, with a submachine gun.",
    "counters": "raiders, scouts, shotgun hands",
    "countered_by": "heavy laser troopers, shock troopers, laser tanks",
    "blurb": "The trooper is your basic soldier: heavy armor and a submachine gun, and the cheapest unit on the command link. Troopers beat raiders, scouts and Shotgun hands and lose to long-range lasers, so send them in numbers. Only a powered barracks heals them."
@@ -710,7 +710,7 @@
    "role": "A flamethrower against swarms of biters and bunched infantry. Outranged, and weak against armor.",
    "counters": "biter swarms, bunched infantry",
    "countered_by": "armor, sappers, fliers",
-   "blurb": "The flamethrower trooper has the shortest range and the most damage of your infantry. It burns biter swarms and bunched squads quickly but does little to vehicles, and nearly everything outranges it. Lead with it against Synthexis and keep it at the back against Kessler-Hayashi."
+   "blurb": "The flamethrower trooper has the most damage of your infantry and nearly the shortest range, only the breacher's being shorter. It burns biter swarms and bunched squads quickly but does little to vehicles, and nearly everything outranges it. Lead with it against Synthexis and keep it at the back against Kessler-Hayashi."
   }
  },
  "trees": {
