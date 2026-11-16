@@ -141,19 +141,16 @@ a wall held its last wave, the next wave there brings bursters, {{< var synthexi
 and waits up to {{< var synthexis.order_wait_min >}} minutes for them. Where mines lie on its way in, it breeds sweepers
 for them.
 
-::: {.document head="Synthexis · Program NV · Report to the agent"}
-**From:** A. Verhaegen, Principal Investigator, Nauvis\
-**To:** the agent, Gleba
+::: {.document head="Synthexis · Bench notebook · I. Rask"}
+Lakeside pens. Two clutches hatched in the night. Weighed six. Every one heavier than the Gleba average, and heavier
+than last week's.
 
-The stock bred here is larger and harder than anything from the Gleba lots, and each generation is larger than the
-last. The engineer's factory is the reason. Its smoke reaches every nest field we hold.
+Lost no. 3 incubator to the engineer's patrol before noon. Second this month. Asked Dr. V for spares off *Cold Chain*.
+Next supply run, she says.
 
-I ask for a second incubator deck on *Cold Chain*. Technician Rask has lost two incubators to the engineer's troops this
-season, and the field cannot replace them.
+Some of the bursters came out soft-shelled again. Dr. V wants them sent anyway.
 
-The Nauvis stock should not yet be offered to buyers on Gleba. It is not stable enough to sell.
-
-*A. Verhaegen, Principal Investigator*
+Smoke from the factory over the pens all afternoon.
 :::
 
 **Sieges.** Where a wall stands in its way, a wave may come as a siege. A screen of its cheapest biters goes at the
