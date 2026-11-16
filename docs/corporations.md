@@ -2,6 +2,10 @@
 
 > Renamed 2026-10-21: Serenity Perimeter Group is shown as **Kessler-Hayashi**, Grubstake Mineral Recovery as **Grubstake Inc.** (internal ids unchanged).
 
+> (2026-11-16: a proposal of 2026-10-13, partly built. Kessler-Hayashi and Grubstake are built (DESIGN.md is the record);
+> the other corporations here are not. Kessler-Hayashi fields no walkers (out of its mix until a new walker model, cut
+> for 0.3.0); its hauler is a carrier on its tank hull since 0.2.429.)
+
 A design pass before building the corporations (user: "factions should have architectural identity beyond
 just color ... you need a design pass before building them"). Each corporation must be recognisable at a
 glance from the ground and from the map, and must fight differently (`docs/campaign.md` section 4 has their
@@ -95,7 +99,8 @@ by all parties."
 - **As built (2026-10-19)**: at war from landing. A line of cordon posts that steps toward the player, strangles
   outposts, claims the next ore, cuts belts on its edge where its guns stand; sieges sized to win (mortars, the
   howitzer, a robot jammer), the power strike, clearances of the nests that hit it, and an invoice for the waves the
-  player's pollution draws, paid off for a truce or disputed by killing the nest it names. Its camp and posts stand on
+  player's pollution draws, paid off for a truce or disputed by killing the nest it names (2026-11-16: no truce since
+  0.2.325; an unpaid bill is collected by a raid on the polluter's ground). Its camp and posts stand on
   space-platform plating; its line is lit and painted post to post; grown, its camp spreads in walled compounds with rooms (laid out by wave function collapse) toward its line, and closes a curtain wall round itself. Its railgunners clear nests and never raid. A howitzer killed leaves it
   without one for 30 minutes. Its raids regroup when their leader falls. Being at war, it answers
   trespass only (a siege); its losses in the field are fair war. Its research stands in its camp (2026-10-21): a lab per branch of its tree (Optics, Line,

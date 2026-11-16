@@ -8,11 +8,11 @@ turns from a flier to a ground target it can hurt (`landing-party/scripts/aim.lu
 
 ## aegis
 
-A heavy tank with a rail cannon. Its slug ignores armour; used against your battle tanks.
+A heavy tank with a rail cannon. Its slug ignores armor; used against your battle tanks.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1100 | 5.4 tiles/s | 38 lp-rail | 16 | 1/s | physical -5 30%, explosion -5 40%, laser -5, electric -5, lp-bite 60% | no | 95 parts |
+| 1100 | 5.4 tiles/s | 38 lp-rail | 16 | 1/s | physical -5 30%, explosion -5 40%, laser -5, electric -5, fire -2 60%, lp-bite 60% | no | 120 parts |
 
 Fielded by: Kessler-Hayashi, research: line branch, era 2, after warden, 2000 fund.
 
@@ -22,7 +22,7 @@ Your heavy tank, for attacking bases.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 900 | 5.4 tiles/s | 50 explosion; 120 explosion over 1.5 tiles to buildings | 18 | 0.67/s | physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5, lp-bite 60% | no | 6 bandwidth |
+| 900 | 5.4 tiles/s | 100 explosion; 240 explosion over 1.5 tiles to buildings | 18 | 0.33/s | physical -3 20%, fire -2 60%, explosion -5 30%, laser -5, electric -5, lp-bite 60% | no | 6 bandwidth |
 
 Fielded by: the player (a barracks).
 
@@ -53,6 +53,26 @@ Fielded by: -.
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 375 | 13.8 tiles/s | 30 lp-bite | 1.5 | 1.7/s | physical -8 10%, explosion 10% | yes | - |
+
+Fielded by: -.
+
+## bred-big-burster
+
+
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 3000 | 18.0 tiles/s | 90 lp-bite | 1.5 | 1.2/s | laser 50%, fire 50% | yes | - |
+
+Fielded by: -.
+
+## bred-carrier
+
+
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 600 | 7.2 tiles/s | 30 lp-bite | 1.5 | 1.7/s | physical -8 10%, explosion 10% | yes | - |
 
 Fielded by: -.
 
@@ -88,7 +108,7 @@ Fielded by: -.
 
 ## bred-scout
 
-Synthexis's scout: circles your defence before a wave and picks the weakest side. Fast and frail.
+Synthexis's scout: circles your defenses before a wave and picks the weakest side. Fast and frail.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -126,13 +146,23 @@ A fast buggy with a machine gun. Grubstake's raider and escort.
 
 Fielded by: Grubstake (from landing).
 
+## constructor
+
+
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 80 | 15.0 tiles/s | 6 physical | 12 | 3/s | fire 100% | yes | - |
+
+Fielded by: -.
+
 ## dozer
 
 Rams walls open for the shotgun hands behind it.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1800 | 4.2 tiles/s | 60 physical | 2 | 1/s | physical -5 40%, fire 50%, explosion -5 20%, laser -5, electric -5, lp-bite 60% | no | 100 parts |
+| 1800 | 4.2 tiles/s | 60 physical | 2 | 1/s | physical -5 40%, fire 50%, explosion -5 20%, laser -5, electric -5, lp-bite 60% | no | 120 parts |
 
 Fielded by: Grubstake, research: wheels branch, era 3, after slug, 2500 fund.
 
@@ -148,7 +178,7 @@ Fielded by: Grubstake, research: wheels branch, era 1, 900 fund.
 
 ## flame-trooper
 
-A flamethrower against swarms of biters and bunched infantry. Outranged, and weak against armour.
+A flamethrower against swarms of biters and bunched infantry. Outranged, and weak against armor.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -168,7 +198,7 @@ Fielded by: Grubstake (from landing).
 
 ## hauler
 
-A lightly armed truck. Carries convoys and Grubstake's building crews.
+A lightly armed carrier. Kessler-Hayashi's rides its tank hull and takes exports by convoy; Grubstake's is a truck that builds, carries and skims.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -192,7 +222,7 @@ Kessler-Hayashi's basic soldier, armed with a laser rifle. Most of its raiding f
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 120 | 7.2 tiles/s | 7 laser | 15 | 2.4/s | physical -2 10%, laser 20% | yes | 10 parts |
+| 120 | 7.2 tiles/s | 18.48 laser | 15 | 0.91/s | physical -2 10%, laser 20% | yes | 11 parts |
 
 Fielded by: Grubstake (from landing); Kessler-Hayashi (from landing).
 
@@ -202,13 +232,13 @@ A laser trooper with a heavier beam that outranges your troopers.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 110 | 7.2 tiles/s | 24 laser | 17 | 1/s | physical -2 10%, laser 20% | yes | 16 parts |
+| 110 | 7.2 tiles/s | 24 laser | 17 | 1/s | physical -2 10%, laser 20% | yes | 14 parts |
 
 Fielded by: Kessler-Hayashi, research: optics branch, era 1, 900 fund.
 
 ## laser-drone
 
-An armoured flier with a laser. Expensive, so there are few of them.
+An armored flier with a laser. Expensive, so there are few of them.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -222,13 +252,13 @@ A tank whose laser splits from its target to the units around it. Used against g
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 700 | 5.4 tiles/s | (arcs to the next targets); 10 laser; 14 laser | 16 | 1.2/s | physical -3 20%, laser -5, electric -5, explosion 10%, lp-bite 60% | no | 100 parts |
+| 700 | 5.4 tiles/s | (arcs to the next targets); 10 laser; 14 laser | 16 | 1.2/s | physical -3 20%, laser -5, electric -5, explosion 10%, fire -2 60%, lp-bite 60% | no | 115 parts |
 
 Fielded by: Kessler-Hayashi, research: optics branch, era 2, after lance, 1800 fund.
 
 ## railgunner
 
-Clears biter nests. Its slug pierces a few biters and stops: 250 to spawners, worms, incubators and tumors, 40 to biters on their feet, 10 to anything else; Kessler-Hayashi's railguns research raises both (+60% a level).
+Clears biter spawners. Its slug pierces a few biters and stops: 250 to spawners, worms, incubators and tumors, 40 to biters on their feet, 10 to anything else; Kessler-Hayashi's railguns research raises both (+60% a level).
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -238,7 +268,7 @@ Fielded by: Kessler-Hayashi (from landing).
 
 ## rocket-trooper
 
-Fires rockets, good against armour and fliers. Slow to kill a crowd.
+Fires rockets, good against armor and fliers. Slow to kill a crowd.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -272,7 +302,7 @@ Flies at your artillery, mortars and radars and explodes on them.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 60 | 18.0 tiles/s | 150 explosion; 150 explosion over 2.5 tiles | 1.5 | 2/s | fire 100% | yes | 35 parts |
+| 60 | 18.0 tiles/s | 150 explosion; 150 explosion over 2.5 tiles | 1.5 | 2/s | fire 100% | yes | 28 parts |
 
 Fielded by: Grubstake, research: wheels branch, era 2, 1800 fund.
 
@@ -282,7 +312,7 @@ An old tank hull with a machine gun and a flamethrower that fires three bursts, 
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1100 | 5.4 tiles/s | 6 physical | 13 | 6/s | physical -3 25%, fire 100%, explosion -5 30%, laser -5, electric -5, lp-bite 60% | no | 70 parts |
+| 700 | 5.4 tiles/s | 6 physical | 13 | 6/s | physical -3 25%, fire 100%, explosion -5 30%, laser -5, electric -5, lp-bite 60% | no | 100 parts |
 
 Fielded by: Grubstake, research: scrap-arms branch, era 2, 2000 fund.
 
@@ -326,13 +356,23 @@ A buggy with a slug gun, used against your vehicles.
 
 Fielded by: Grubstake, research: scrap-arms branch, era 1, 900 fund.
 
-## tank
+## sweeper
 
-An armoured tank. Its cannon does three times as much damage to buildings as to units.
+
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 900 | 5.4 tiles/s | 40 explosion; 80 explosion over 1.5 tiles to buildings | 15 | 0.67/s | physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5, lp-bite 60% | no | 60 parts |
+| 2000 | 18.0 tiles/s | 30 lp-bite | 1.5 | 1.7/s | physical -8 10%, explosion 10% | yes | - |
+
+Fielded by: -.
+
+## tank
+
+An armored tank. Its cannon does three times as much damage to buildings as to units.
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 900 | 5.4 tiles/s | 40 explosion; 80 explosion over 1.5 tiles to buildings | 15 | 0.67/s | physical -3 20%, fire -2 60%, explosion -5 30%, laser -5, electric -5, lp-bite 60% | no | 65 parts |
 
 Fielded by: Kessler-Hayashi (from landing).
 
@@ -352,13 +392,13 @@ A tank whose lightning jumps along a turret line and drains the turrets it hits.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 800 | 5.4 tiles/s | (arcs to the next targets); 10 electric; 20 electric | 14 | 0.8/s | physical -3 20%, electric -5 80%, explosion 10%, laser -5, lp-bite 60% | no | 100 parts |
+| 800 | 5.4 tiles/s | (arcs to the next targets); 10 electric; 20 electric | 14 | 0.8/s | physical -3 20%, electric -5 80%, explosion 10%, laser -5, fire -2 60%, lp-bite 60% | no | 115 parts |
 
 Fielded by: Kessler-Hayashi, research: siege branch, era 3, 2500 fund.
 
 ## trooper
 
-Your basic soldier, with a rifle.
+Your basic soldier, with a submachine gun.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -384,4 +424,4 @@ A spider-legged machine that walks over walls and fires rockets.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1600 | walks | 18 physical | 15 | 2.4/s | physical -3 20%, fire 60%, explosion -10 30%, acid 50%, laser -5, electric -5, lp-bite 40% | yes | 100 parts |
 
-Fielded by: Kessler-Hayashi (from landing).
+Fielded by: -.

@@ -5,6 +5,13 @@ here, with none of the storyboarding upfront." This page maps what exists (from 
 point, checked against the code where it matters), names where the pieces disagree, and proposes the layer new
 behaviour plugs into. DESIGN.md keeps the history of each mechanic; this page is the shape.
 
+> (2026-11-16: out of date in two ways; DESIGN.md is the record. Since 0.2.325 there are no truces: Grubstake's trade
+> post, Kessler-Hayashi's border stake and the invoice post's truce were removed, and an unpaid bill is collected by a
+> raid on the polluter's ground; every row below about truces, tribute and the trade post is history. Since 0.2.372 a
+> director paces every corporation's operations against the player, a layer above this page's (scripts/director.lua,
+> docs/director.md): its tempo, lulls and strike forces from headquarters, which land by their target, have motives
+> and walk home to their camp. This map does not show it.)
+
 **At a glance:** `docs/ai-graph.md` (generated from the code by `scripts/ai_graph.py`, checked by `check.sh`): the layers
 and every module with their requires and plug-ins, each corporation's answers and what each standing allows, which
 module reads which rung of the ladder, and what each lever drives.
@@ -57,7 +64,7 @@ What each corporation should feel like, by stance, is the design the code should
 | Stance | Grubstake (the thief) | Serenity (the wall) |
 |---|---|---|
 | **Rival** (Grubstake's default) | Steals where you are not, by night (thieves' hours): soft raids that dismantle machines, skimming trucks, strips, taps, prospects, flares at rung 1 | No longer: at war from landing (2026-10-19, the user: "No grace") |
-| **Truce** (Grubstake: tribute at the trade post; Serenity: its invoice paid off) | No raids, flares or rigs; does it still tap, strip and prospect? (today: yes) | No raid, siege or cut; its line holds; a border stake is accepted then and holds after |
+| **Truce** (removed 0.2.325; was: Grubstake's tribute at the trade post, Serenity's invoice paid off) | No raids, flares or rigs; does it still tap, strip and prospect? (today: yes) | No raid, siege or cut; its line holds; a border stake is accepted then and holds after |
 | **Enemy** (Grubstake: you hurt it; Serenity: always) | Answers at once, then raids in force (half its field), heists escalate | Its campaign from landing: line, strangling, cuts, sieges; provocations drive its answers |
 | **Escalating** (no raze in 10/20/30 min) | Rungs relax the soft temper, then cost no object | Same ladder: player targets weigh more, then sieges up a tier |
 | **Standing down** (nothing razed in 60 min) | Quiet, forgives, a new landing elsewhere | Quiet; does not forgive |
@@ -69,7 +76,7 @@ followed or ambushed, and something lit while what was bought holds. No payment 
 
 | Payment | Paid at | Collected by | Buys | Tell |
 |---|---|---|---|---|
-| Tribute (built) | the trade post | a Grubstake truck | a truce with Grubstake: no raids, flares, rigs, taps or strips | the truck; a lamp on the post while it holds (to do) |
+| Tribute (built, removed 0.2.325) | the trade post | a Grubstake truck | a truce with Grubstake: no raids, flares, rigs, taps or strips | the truck; a lamp on the post while it holds (to do) |
 | Levy (to build) | the player's border stake, made a small chest (the line moves; the stake does not) | a Serenity drone | as a rival: the line holds still for a while. As an enemy: a cease-fire for a while, never forgiveness | the drone; the stake's lamp |
 | Contract (to build, late) | a rocket to a corporation's headquarters | its uplink | something large: a long truce with all its camps, or its withdrawal from a region | the launch; its camps going quiet |
 

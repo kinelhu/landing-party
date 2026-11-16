@@ -23,7 +23,8 @@ ROLE = {
     "lp-harrier": "A cheap, weak flier with a gun, sent in numbers. Flies over walls, cliffs and water",
     "lp-laser-drone": "An armored flier with a laser. Expensive, so there are few of them",
     "lp-railgunner": "Clears biter spawners. Its slug pierces a few biters and stops: 250 to spawners, worms, incubators and tumors, 40 to biters on their feet, 10 to anything else; Kessler-Hayashi's railguns research raises both (+60% a level)",
-    "lp-hauler": "A lightly armed truck. Carries convoys and Grubstake's building crews",
+    # (Each corporation's its own since 0.2.429: Kessler-Hayashi's a carrier on its tank hull, Grubstake's a truck.)
+    "lp-hauler": "A lightly armed carrier. Kessler-Hayashi's rides its tank hull and takes exports by convoy; Grubstake's is a truck that builds, carries and skims",
     "lp-buggy": "A fast buggy with a machine gun. Grubstake's raider and escort",
     "lp-shotgun-hand": "Grubstake's soldier, with a shotgun. Deadly up close, useless against a turret line",
     "lp-lance": "A laser trooper with a heavier beam that outranges your troopers",
@@ -39,7 +40,7 @@ ROLE = {
     "lp-skyguard": "Its long laser tracks fliers. Weak against ground targets",
     "lp-flak-buggy": "A buggy with a flak gun against fliers. Weak against ground targets",
     "lp-bred-scout": "Synthexis's scout: circles your defenses before a wave and picks the weakest side. Fast and frail",
-    "lp-trooper": "Your basic soldier, with a rifle",
+    "lp-trooper": "Your basic soldier, with a submachine gun",
     "lp-breacher": "Carries demolition charges for walls. Does little to units",
     "lp-rocket-trooper": "Fires rockets, good against armor and fliers. Slow to kill a crowd",
     "lp-flame-trooper": "A flamethrower against swarms of biters and bunched infantry. Outranged, and weak against armor",

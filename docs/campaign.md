@@ -2,6 +2,10 @@
 
 > Renamed 2026-10-21: Serenity Perimeter Group is shown as **Kessler-Hayashi**, Grubstake Mineral Recovery as **Grubstake Inc.** (internal ids unchanged).
 
+> (2026-11-16: a design of 2026-10-13. Built since and not described here: the director above the corporations
+> (docs/director.md: tempo, lulls, strike forces from headquarters, off-map beats), no truces since 0.2.325, two
+> corporations and Synthexis rather than four. DESIGN.md is the record of what exists.)
+
 The frame above DESIGN.md. DESIGN describes the parts as built; this describes the game they serve. Written
 after the user judged the first frame too small ("3 bases, uplink, boss seems extremely small scale") and
 asked for a mid-game revealed, endgame-compatible threat with scaling, rival factions and interesting
@@ -121,6 +125,7 @@ Two clocks, so the threat follows the player and not the wall clock.
 - **A corporation's development**: from its own economy (ore extracted and exported) and its wins and losses.
   Each level buys a capability, never a hidden damage bonus (the +15% damage per tier goes, **adapt**):
   level 1 harriers and sieges; 2 walkers and pickets that see; 3 headquarters, jammers, bombardment;
+  (2026-11-16: walkers are out of every mix, cut for 0.3.0; the levels as built are in DESIGN.md.)
   4+ orbital strikes (Space Age), a second headquarters region.
 - **A threat budget** caps how much pressure all corporations together put on the player at once (operations
   in flight against the player, scaled by the player's era and a difficulty setting), so four corporations do
