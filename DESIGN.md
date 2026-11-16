@@ -7341,6 +7341,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   flier's way goes in legs of AIR_LEG (48) tiles at most (shared.air_legs): a crew drone's, and each leg of an air raid's
   way from its muster to its target. Cordon passes (it had failed on the stuck drone since 0.2.370's site); the air raids
   as before. The prowl's buggy, a ground unit, is not this.
+- **Trailer cut 26** (0.2.430; the user, 2026-11-16: "Let's do it now", the refilm before the playtest). Audit of
+  the 35 shots against what changed since they were filmed (0.2.338 to 0.2.349, 2026-11-12): only the APC hauler
+  (0.2.429) is new on screen, and no shot shows a Kessler-Hayashi hauler; Synthexis's grade (0.2.344, pens, creep and
+  tumors) shows only in shot 4, growth and culture, all filmed after it; the arc flamer (0.2.342) guards against biters
+  and stands in none of the stagings. So nothing was stale by its look. Added: a strike force's pods coming down on
+  the player's labs (docs/trailer/reel-pods.lua, the manual's director film set), 2 bars after the Kessler-Hayashi
+  wall, act kh. Refilmed: the bomb drones on the column (the user, on cut-26-drive: "could use camera track
+  smoothing"), track_smooth 1 s: measured by phase correlation of consecutive frames, its camera shook 12.7 px rms a
+  frame (1080p), now 0.27; every other followed shot was under 0.5 (scripts/jitter.py). On today's code
+  its big salvo comes 1 s later (8.8 s against 7.8), so the drop's shot starts at 8.0. Found: the end card's title had
+  been missing since cut 25 (its bar 71 in a 53-bar cut); now the cut's last 3 bars. A named point's camera takes
+  `off` from `to` alone, eased from 0 (the pods shot opened on the drop point until given fixed coordinates).
 - **The Skyguard's description** (0.2.430): it said the trooper fires missiles at flying units; it has carried a long
   tracking laser (units.lua, lp-rail-beam) since it was built. Fixed in the locale; caught in the manual audit.
 - **The night of 2026-11-16 on 0.2.429** (the user: "All of those are due, and I agree"). The full regression: 360 of

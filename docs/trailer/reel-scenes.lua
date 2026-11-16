@@ -9,8 +9,9 @@ local T = 11160            -- the save's first tick plus a beat (showcase.sh sav
 -- Each shot follows the plugin's point "fight" (fight = true: the eased middle of the units near it with an enemy in
 -- reach, from the call's aim), from 10 ticks after its call (the user, on the third takes: "the camera is not centered
 -- on the fight", "missing almost all of the action": framed by guess, each shot had missed).
-local function shot(name, call, frames, z0, z1, daytime)
-  return {name = name, tick = call + 10, frames = frames, every = 1, track = true,
+-- smooth: track_smooth in seconds (the camera eases toward the point instead of jumping to each frame's reading).
+local function shot(name, call, frames, z0, z1, daytime, smooth)
+  return {name = name, tick = call + 10, frames = frames, every = 1, track = true, track_smooth = smooth,
     from = {pos = "fight", zoom = z0, daytime = daytime or 0.2}, to = {zoom = z1, daytime = daytime or 0.2}}
 end
 -- A fixed framing, pushed in slowly, for a fight that stays where it is (the Prism's and the flak's: their fight points
@@ -36,7 +37,10 @@ return {name = "reel-scenes", resolution = {1920, 1080}, anti_alias = true, spee
     -- (At dusk and closer, cut 24: at 0.36 and 1.15 the scene read dark and small, the user: "underwhelming".)
     shot("sc1-dozers", T + 30, 1860, 1.3, 1.5, 0.3),
     -- The squad marches by the stream; the bomb drones dive in from all round.
-    shot("sc2-bombers", T + 1930, 660, 1.4, 1.6),
+    -- (Smoothed 1 s, cut 26 (the user, on cut-26-drive: "the bomb drone attack on the marching trooper column could use
+    -- camera track smoothing"): its fight point jumped as drones dove and died, 12.7 px rms shake a frame against under
+    -- 0.5 for every other followed shot.)
+    shot("sc2-bombers", T + 1930, 660, 1.4, 1.6, nil, 1.0),
     -- Two Prisms, two tanks and a Tesla against the squad, its battle tanks and rocket troopers.
     -- (Placed from the stage at 72,118, it was 7 tiles west of the fight: the rehearsal's fight point, 77.5,117.5 to 84,115.5.)
     fixed("sc3-prism", T + 2630, 720, {77.5, 117.5}, 1.3, 1.42, {84, 115.5}),
