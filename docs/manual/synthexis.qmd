@@ -141,12 +141,17 @@ a wall held its last wave, the next wave there brings bursters, {{< var synthexi
 and waits up to {{< var synthexis.order_wait_min >}} minutes for them. Where mines lie on its way in, it breeds sweepers
 for them.
 
-::: {.document head="Synthexis · Trial NV/1 · Batch release"}
-**Stock:** mixed, from the lakeside incubators, bursters added\
-**Target:** the engineer's southern wall, by the approach the scout found thinnest
+::: {.document head="Synthexis · Program NV · Report to the agent"}
+**From:** A. Verhaegen, Principal Investigator, Nauvis\
+**To:** the agent, Gleba
 
-The previous batch was lost in full at this approach, and the wall held. This batch carries bursters to open it. It
-is released for dispatch.
+The stock bred here is larger and harder than anything from the Gleba lots, and each generation is larger than the
+last. The engineer's factory is the reason. Its smoke reaches every nest field we hold.
+
+I ask for a second incubator deck on *Cold Chain*. Technician Rask has lost two incubators to the engineer's troops this
+season, and the field cannot replace them.
+
+The Nauvis stock should not yet be offered to buyers on Gleba. It is not stable enough to sell.
 
 *A. Verhaegen, Principal Investigator*
 :::
