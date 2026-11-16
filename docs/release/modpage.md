@@ -127,13 +127,13 @@ Grubstake's theft; Synthexis's most cultures, largest attack and learning.
 2. Your army attacking a Grubstake camp.
 3. A Synthexis swarm against a flamethrower wall.
 4. A Kessler-Hayashi orbital strike opening a wall.
-5. A Kessler-Hayashi shield dome over its siege.
+5. A Kessler-Hayashi shield dome over its camp, catching your artillery's shells.
 6. A Synthexis culture: captured nests bred for war.
 7. Grubstake bomb drones diving on a squad of troopers.
 8. A Grubstake Killdozer charging through a wall.
-9. Your orbital cannons on a platform over Nauvis.
+9. Twin orbital cannons on your platform, the Skipjack, firing over Nauvis.
 10. An orbital strike from your cannons on a Synthexis culture.
-11. A Kessler-Hayashi strike force's pods coming down beside a factory's labs.
+11. A Kessler-Hayashi strike force's pods coming down beside a factory's furnaces.
 
 Loops (media/release/gifs, docs/release/gifs.sh; manifest.json has each one's caption, length and sizes): pods,
 strike-fight and walk-home (the director's film set, docs/release/strike-film.lua, 2026-11-16); tesla, bombers, prism,
