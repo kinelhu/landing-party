@@ -1014,6 +1014,8 @@ end
 scenarios.starve = function()
   local L = LP_LIFELINE
   local leave = params.mix == "starveleave"
+  -- LP_MIX=starvefall: the camp destroyed while its crate waits: the drop's tag goes with it.
+  local fall = params.mix == "starvefall"
   -- (First, the next mine kept off a given-up mine's ground, crew.lua and site.mining: picked with that ground as
   -- danger, it lies more than MINE_DANGER from it.)
   schedule(STRIKE - 60, function()
@@ -1051,6 +1053,16 @@ scenarios.starve = function()
         end
       end
       if st.departed and not S.left_at then S.left_at = game.tick end
+      if fall and S.fell_at and not S.fell_after then S.fell_after = named_tags("Supply drop") end
+      if fall and not S.fell_at and S.center and #surface().find_entities_filtered{name = "iron-chest", force = FORCE,
+        position = S.center, radius = 40} > 0 then
+        S.fell_tags = named_tags("Supply drop")
+        -- (Its hull indestructible as built: as the fall scenario, made so to fall.)
+        local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
+        lander.destructible = true
+        lander.die("player")
+        S.fell_at = game.tick
+      end
       if leave and S.center then
         for _, ch in pairs(surface().find_entities_filtered{name = "iron-chest", force = FORCE, position = S.center, radius = 40}) do
           ch.destroy(); S.crates_destroyed = (S.crates_destroyed or 0) + 1
@@ -1061,6 +1073,11 @@ scenarios.starve = function()
   schedule(END, function()
     local st = lp("stats", storage.id)
     check("starve: a supply drop sent", st.lifelines >= 1, st.lifelines .. " sent")
+    if fall then
+      check("starve: its camp destroyed, the drop's tag down", (S.fell_tags or 0) >= 1 and S.fell_after == 0,
+        string.format("%s then %s", tostring(S.fell_tags), tostring(S.fell_after)))
+      return
+    end
     if leave then
       check("starve: its crate destroyed, the drop lost", (S.crates_destroyed or 0) >= 1 and st.lifelines_lost >= 1,
         string.format("%d destroyed, %d lost", S.crates_destroyed or 0, st.lifelines_lost))
@@ -5653,14 +5670,37 @@ end
 
 -- Strip: Grubstake strips the player's ore. A patch of iron near it, two of the player's drills on one side, no
 -- turrets: a camp must go up beside them, mine the real patch (its ore less), and the ore must reach home.
+-- The player's map tags whose text begins so, anywhere on the surface (a corporation's passing marks: the strip camp's,
+-- a supply drop's, a claim's each stood on for good once it was gone, 0.2.444).
+function named_tags(prefix)
+  local n = 0
+  for _, t in pairs(game.forces.player.find_chart_tags(surface())) do
+    if t.text:sub(1, #prefix) == prefix then n = n + 1 end
+  end
+  return n
+end
+
 scenarios.strip = function()
   -- Serenity at war from landing raided the player's drill this scenario watches: a truce with it (Grubstake is the
   -- subject).
   -- LP_MIX=notheft: Grubstake's theft off (lp-grubstake-theft): no strip.
+  -- LP_MIX=register: the player holds the claims register (its strip camps tagged on the map): the tag up while the camp
+  -- stands, down once it has packed.
   schedule(30, function()
     lp("debug_tune", {strip_fast = true}); lp("debug_truce", "serenity", "player", params.minutes + 5)
     if params.mix == "notheft" then lp("debug_setting", "lp-grubstake-theft", false) end
+    if params.mix == "register" then game.forces.player.technologies["lp-claims-register"].researched = true end
   end)
+  if params.mix == "register" then
+    for t = 3 * 3600, END - 120, 1800 do
+      schedule(t, function()
+        local n = named_tags("Grubstake strip camp")
+        S.camp_tags = math.max(S.camp_tags or 0, n)
+        local op = (lp("stats", S.g).ops or {}).op
+        if n > 0 and not (op and op:sub(1, 5) == "strip") then S.camp_tag_stale = (S.camp_tag_stale or 0) + 1 end
+      end)
+    end
+  end
   schedule(120, function()
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     if S.g then lp("debug_depot", S.g, 3000) end
@@ -5708,6 +5748,11 @@ scenarios.strip = function()
     check("strip: Grubstake mounted a strip-mining operation", st.ops.strips > 0, st.ops.strips .. " strips")
     check("strip: it mined the player's patch", sum < S.ore0, S.ore0 - sum .. " ore taken")
     check("strip: and brought it home", st.ops.stripped > 0, st.ops.stripped .. " ore delivered")
+    if params.mix == "register" then
+      check("strip: its camp tagged while it stood, the tag down once it left", (S.camp_tags or 0) >= 1
+        and (S.camp_tag_stale or 0) == 0, string.format("%s up at most, %s times with no camp", tostring(S.camp_tags),
+        tostring(S.camp_tag_stale)))
+    end
     -- LP_MIX=claim (a longer run, nobody answers): the second camp on the patch stays as an outpost.
     if params.mix == "claim" then
       local kept = surface().count_entities_filtered{position = S.patch, radius = 60, force = "lp-grubstake",
@@ -11726,6 +11771,12 @@ end
 scenarios.prospect = function()
   -- LP_MIX=truck: the stake truck destroyed on its way (the buggy nearest the tagged patch): the claim is off.
   local stake, pulled, truck = params.mix == "stake", params.mix == "pulled", params.mix == "truck"
+  -- LP_MIX=razed: the first claim built, its works razed: its map tag up while they stood, down after (0.2.444: it
+  -- stood on for good).
+  local razed = params.mix == "razed"
+  local function near_tags(c)
+    return #game.forces.player.find_chart_tags(surface(), {{c[1] - 12, c[2] - 12}, {c[1] + 12, c[2] + 12}})
+  end
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true, raids_off = true, prospect_window = 2 * 3600, prospect_pace = 3600,
       prospect_uncharted = true})
@@ -11769,6 +11820,22 @@ scenarios.prospect = function()
   for t = 2 * 3600 + 300, END - 120, 300 do
     schedule(t, function()
       local ps = lp("prospect_stats", S.g)
+      if razed and S.razed_k and not S.razed_after and game.tick - S.razed_at >= 1200 then
+        S.razed_after = near_tags(S.patches[S.razed_k])
+      end
+      if razed and not S.razed_k then
+        for k = 2, 3 do
+          local c = S.patches[k]
+          for _, l in ipairs(lp("debug_modules", S.g, c, 12)) do
+            if l:find("built=true", 1, true) and not S.razed_k then
+              S.razed_k, S.razed_at, S.razed_up = k, game.tick, near_tags(c)
+              for _, e in pairs(surface().find_entities_filtered{position = c, radius = 16, force = "lp-grubstake"}) do
+                if e.type ~= "unit" and e.type ~= "car" then e.die("player") end
+              end
+            end
+          end
+        end
+      end
       if ps.stake then S.stake_seen = (S.stake_seen or 0) + 1 end
       if ps.phase == "staking" then S.staking_seen = true end
       if truck and ps.phase == "staking" and not S.truck_killed and ps.at then
@@ -11807,6 +11874,12 @@ scenarios.prospect = function()
     info(string.format("prospect: %s; Grubstake drills on the patches %s; charted %s", serpent.line(ps), serpent.line(drills),
       serpent.line(charted)))
     check("prospect: the drilled patch was left alone", drills[1] == 0, tostring(drills[1]))
+    if razed then
+      check("prospect: a built claim's tag up while its works stood, down once razed", S.razed_k and (S.razed_up or 0) >= 1
+        and S.razed_after == 0, string.format("patch %s, %s then %s", tostring(S.razed_k), tostring(S.razed_up),
+        tostring(S.razed_after)))
+      return
+    end
     if truck then
       check("prospect: the stake truck killed, the claim off", S.truck_killed and ps.trucks_lost >= 1,
         string.format("killed %s, %s", tostring(S.truck_killed), serpent.line(ps)))

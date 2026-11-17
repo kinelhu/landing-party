@@ -377,11 +377,27 @@ end
 
 -- A camp leaves (a director's expedition withdrawn, or the camp it replaced): its units and buildings lifted out,
 -- quietly, no fall (no cascade, no ruins, no command cores: the lander destroyed, not killed). Marked fallen and
+-- Its passing marks on the player's map (a strip camp's, a supply drop's, a claim's) taken down as it falls or departs:
+-- each stood on for good once its camp was gone (the user, playtest, 0.2.444). Its own settlement tag says "(destroyed)".
+function base.drop_tags(b)
+  local lists = {}
+  if b.op then lists[#lists + 1] = b.op.tags; b.op.tags = nil end
+  if b.lifeline then lists[#lists + 1] = b.lifeline.tags; b.lifeline.tags = nil end
+  if b.prospect then lists[#lists + 1] = b.prospect.tags; b.prospect.tags = nil end
+  for _, m in ipairs(b.modules or {}) do
+    if m.tags then lists[#lists + 1] = m.tags; m.tags = nil end
+  end
+  for _, l in pairs(lists) do
+    for _, t in pairs(l) do if t.valid then t.destroy() end end
+  end
+end
+
 -- departed, so every loop over camps passes it by.
 function base.depart(b, why)
   if b.fallen then return false end
   b.fallen, b.departed = game.tick, game.tick
   b.queue, b.rebuild, b.cascade = {}, {}, nil
+  base.drop_tags(b)
   local function gone(u) if u and u.valid then u.destroy() end end
   for _, u in ipairs(b.garrison or {}) do gone(u) end
   -- (Every unit it owns, the roster: its patrols, escorts and pickets are in no other list; three stood on after it.)
@@ -747,6 +763,7 @@ function base.fall(lander)
       for _, t in pairs(b.tags or {}) do
         if t.valid then t.text = names.of(b) .. " (destroyed)" end
       end
+      base.drop_tags(b)
       base.claim_map(b)
       if base.on_fall then base.on_fall(b) end
       return b

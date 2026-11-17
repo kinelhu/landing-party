@@ -339,6 +339,8 @@ local function step(b)
       return
     end
     if p.module.built then
+      -- Its tag stays while its works stand (prospect.tick): it stood on for good once they were razed or taken (0.2.444).
+      p.module.tags, p.tags = p.tags, nil
       base.trace(b, string.format("prospect: the claim at %.0f,%.0f stands", p.x, p.y))
       b.prospect = nil
       b.next_prospect = game.tick + (storage.prospect_pace or PACE)
@@ -376,6 +378,19 @@ function prospect.tick(tick)
   for _, b in pairs(storage.bases or {}) do
     if b.prospect then step(b)
     elseif tick % 3600 == 29 + 60 * 17 then consider(b) end
+    -- A built claim's tag: down once nothing of its works stands for its camp (razed, or captured).
+    if tick % 600 == 29 then
+      for _, m in ipairs(b.modules or {}) do
+        if m.tags then
+          local left = 0
+          for _, e in ipairs(m.entities) do if e.valid and e.force.name == b.force then left = left + 1 end end
+          if left == 0 or m.captured then
+            for _, t in pairs(m.tags) do if t.valid then t.destroy() end end
+            m.tags = nil
+          end
+        end
+      end
+    end
   end
 end
 

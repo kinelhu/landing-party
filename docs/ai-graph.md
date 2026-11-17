@@ -17,7 +17,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
 | `herd` | 4502 | attempt, burstfx, costmap, feeds, firemap, ground, herd_learn, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
-| `ops` | 2528 | airraid, answers, assault, attempt, cuts, ground, intel, jammer, know, perimeter, pool, power, ram, rd, routing, siege, stance, strip, tactics, threat, tune, veterancy | army, base, control, cordon, crew, dev, director, dome, faction, jumper, ledger, prospect, prowl, skim, standing, tap, war | base.claim_map, cordon.cordon_check, cordon.cordon_step, war.corridor | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
+| `ops` | 2530 | airraid, answers, assault, attempt, cuts, ground, intel, jammer, know, perimeter, pool, power, ram, rd, routing, siege, stance, strip, tactics, threat, tune, veterancy | army, base, control, cordon, crew, dev, director, dome, faction, jumper, ledger, prospect, prowl, skim, standing, tap, war | base.claim_map, cordon.cordon_check, cordon.cordon_step, war.corridor | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `farm` | 2521 | achievements, cell, costmap, creep, feeds, firemap, herd, know, pods, rng, tactics, threat, tune, valuemap | control, dev, director |  | 60, 600, 3600, 36000 |  | biotech_time_parts, carrying, farms |
 | `director` | 2254 | army, faction, farm, jammer, ops, pods, pool, rd, rng, stance, valuemap, war | control, director_gui |  | 60, 300, 3600 |  | director, director_force, ev_minute, truces |
 | `siege` | 2146 | achievements, assault, attempt, costmap, firemap, know, orbital, pods, tactics, threat, valuemap | ops |  |  |  | threat_last, unit_owner, ways_dumped |
@@ -26,7 +26,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `command` | 1281 | paving | control, dev, squadgui |  | 10, 30, 60, 120 |  | cmd |
 | `faction` | 1207 | army, base, costmap, firemap, landfx, layout, names, ops, pact, pods, rd, site, threat, valuemap, war | control, dev, director, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |
 | `army` | 1078 | airraid, know, ops, pool, rd, rng, tune | base, control, dev, director, faction, war |  | 60, 300, 600 |  | engine_grouped, engine_ungrouped, rails_ungrouped |
-| `base` | 997 | army, blocks, chart, construction, landfx, layout, lights, modules, names, ops, planner, rng, site, tune | control, cordon, crew, dev, dome, faction, jumper, ledger, lifeline, pact, prospect, prowl, road, skim, tap, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, ops.siege_goal, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
+| `base` | 1014 | army, blocks, chart, construction, landfx, layout, lights, modules, names, ops, planner, rng, site, tune | control, cordon, crew, dev, dome, faction, jumper, ledger, lifeline, pact, prospect, prowl, road, skim, tap, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, ops.siege_goal, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
 | `war` | 701 | army, base, lights, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, director, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `costmap` | 620 | firemap, threat | airraid, control, creep, faction, farm, herd, siege |  |  |  |  |
 | `creep` | 614 | costmap, tune | control, farm, studies |  |  |  | creep |
@@ -39,10 +39,10 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `routing` | 431 | threat | ops |  |  |  | corridors |
 | `skim` | 422 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `orbital` | 413 | achievements, threat, tune | cannon, control, dev, siege, strike |  | 10, 30 |  | cannon_impacts, cannon_shocks, kh_shadows, kh_strikes, orbital_build_off, orbital_builds, orbital_builds_stopped |
+| `prospect` | 408 | base, chart, ops, pool, standing, studies | control, cordon |  | 60, 600, 3600 |  | prospect_failed |
 | `veterancy` | 408 | threat | airraid, cards, control, dev, ops |  |  |  | merit, promoted, vet_due, vet_stats |
 | `cards` | 406 | veterancy | control, dev |  |  |  | cards, cmd |
 | `rd` | 396 | know | army, control, director, faction, ops, planner, war | ops.era |  |  | corps |
-| `prospect` | 393 | base, chart, ops, pool, standing, studies | control, cordon |  | 60, 3600 |  | prospect_failed |
 | `planner` | 391 | rd | base |  |  |  |  |
 | `cordon` | 388 | base, ops, prospect | control |  |  |  |  |
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |
@@ -61,8 +61,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `lots_grubstake` | 266 | (leaf) |  |  |  |  |  |
 | `herd_learn` | 253 | attempt, firemap, know, tactics, threat | herd |  |  |  |  |
 | `landfx` | 241 | rng | base, control, faction | layout.locate | 4, 7 |  | landfx, landfx_descents |
+| `strip` | 241 | studies | ops |  |  |  | threat_last |
 | `know` | 239 | (leaf) | airraid, army, control, farm, herd, herd_learn, intel, ops, rd, siege, strategy, tactics |  | 3600 |  | know |
-| `strip` | 238 | studies | ops |  |  |  | threat_last |
 | `valuemap` | 233 | firemap | control, director, faction, farm, herd, oplog, siege |  |  |  |  |
 | `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |
 | `scorcher` | 224 | (leaf) | control |  | 3600 |  | scorch, scorch_bursts, scorch_by, tesla_aim, tesla_aims, tesla_drains, tesla_held, tesla_holds, tesla_seen |
@@ -71,7 +71,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `squadgui` | 186 | command | control |  |  |  | squad_links |
 | `site` | 180 | modules | base, control, faction, layout |  |  |  |  |
 | `power` | 175 | threat | feeds, ops |  |  |  |  |
-| `lifeline` | 154 | base, pods, threat | control |  | 3600 |  | orbitals |
+| `lifeline` | 155 | base, pods, threat | control |  | 3600 |  | orbitals |
 | `stun` | 145 | rng | control, dev |  | 3600 |  | stun, stun_arc_rng, stun_by, stun_first, stun_gap, stun_rng, stunned, stuns |
 | `road` | 143 | base, standing | control |  | 60 |  |  |
 | `assault` | 142 | attempt, tactics, threat | ops, siege |  |  |  |  |

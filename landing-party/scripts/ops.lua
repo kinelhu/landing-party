@@ -870,6 +870,8 @@ end
 
 local function finish(b, outcome, trace, army)
   local op = b.op
+  for _, t in ipairs(op.tags or {}) do if t.valid then t.destroy() end end
+  op.tags = nil
   local h = home(b)
   -- Home on its wheels: the howitzer packs into its truck, which drives home as the hauler.
   if op.truck and not (op.hauler and op.hauler.valid) then

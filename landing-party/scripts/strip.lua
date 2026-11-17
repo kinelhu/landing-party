@@ -173,10 +173,13 @@ local function strip_step(b, trace, army)
       end
       op.camp = {}
       -- Its strip camp on the map of a player with its claims register (a field study, studies.lua).
+      -- (Kept, op.tags: taken down when the operation ends, ops' finish, or its camp falls; they stood on the map for
+      -- good, 0.2.444.)
+      op.tags = {}
       for _, pf in pairs(game.forces) do
         if shared.is_player_force(pf) and studies.has(pf, "lp-claims-register") then
-          pf.add_chart_tag(s, {position = {op.site[1], op.site[2]}, icon = {type = "item", name = "electric-mining-drill"},
-            text = "Grubstake strip camp"})
+          op.tags[#op.tags + 1] = pf.add_chart_tag(s, {position = {op.site[1], op.site[2]},
+            icon = {type = "item", name = "electric-mining-drill"}, text = "Grubstake strip camp"})
         end
       end
       local pylon = put("lp-pylon", 0, 0)

@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.444
+Date: 2026-11-17
+  Bugfixes:
+    - A Grubstake strip camp's map tag stayed after the camp had packed up or settled. It is now removed when the operation ends.
+    - A supply drop's map tag stayed if its camp was destroyed or departed before collecting it.
+    - A Grubstake claim's map tag stayed after the claim's buildings were destroyed or captured.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.443
 Date: 2026-11-17
   Bugfixes:

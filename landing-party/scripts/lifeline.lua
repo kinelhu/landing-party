@@ -42,7 +42,8 @@ local function crate(b, surface, pos)
   c.insert{name = "iron-plate", count = math.max(1, math.floor(L.parts / 2))}
   d.crate, d.at, d.pos = c, game.tick, {p.x, p.y}
   d.tags = {}
-  for _, f in ipairs(players()) do
+  -- (To every player force, those with nobody on just now too, as the survey party's tag: 0.2.444.)
+  for _, f in ipairs(shared.player_forces()) do
     d.tags[#d.tags + 1] = f.add_chart_tag(surface, {position = p, text = "Supply drop", icon = {type = "item", name = "iron-chest"}})
   end
 end

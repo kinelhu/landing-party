@@ -8296,3 +8296,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   and a headless run has none; it now goes to every player force, and `phases` charts the map first. Checks: `phases`,
   the tag up while it stands and gone once destroyed; `after`, a corporation landed and then the party destroyed (seen,
   its tag gone). Both seen failing on 0.2.442.
+- **2026-11-17, passing map tags (0.2.444).** Asked whether the mod's other tags behave after the survey party's
+  (0.2.443), every `add_chart_tag` was read against its way down. Most go with what they mark (masts, contracts,
+  rotations, bounties, strikes, salvage, supply drops from the director, cultures, settlements, which read "(destroyed)"
+  once fallen). Three stood on for good: a strip camp's (never kept, so never taken down: now `op.tags`, down in ops'
+  `finish`), a camp's own supply drop when the camp fell or departed before collecting it (`lifeline.collect` skips a
+  fallen camp), and a built claim's (`b.prospect` dropped at building, its tags with no owner: now `m.tags` on the claim's
+  works, down once none of them stands for its camp or they are captured). `base.drop_tags` takes the passing ones down
+  as a camp falls or departs. The supply drop's tag now goes to every player force (it went to forces with players
+  alone, so the sims never saw it). Checks: `strip register`, `starve starvefall`, `prospect razed`.

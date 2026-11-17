@@ -43,10 +43,10 @@ digraph ai {
     "rd" [label="rd\n396 lines", width=1.24, fillcolor="#eef2f7"];
     "phases" [label="phases\n292 lines", width=1.12, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
-    "lifeline" [label="lifeline\n154 lines", width=0.97, fillcolor="#eef2f7"];
+    "lifeline" [label="lifeline\n155 lines", width=0.97, fillcolor="#eef2f7"];
   }
   subgraph cluster_5 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n997 lines", width=1.91, fillcolor="#eef2f7"];
+    "base" [label="base\n1014 lines", width=1.93, fillcolor="#f7dede"];
     "construction" [label="construction\n446 lines", width=1.30, fillcolor="#d9f0d9"];
     "planner" [label="planner\n391 lines", width=1.23, fillcolor="#eef2f7"];
     "layout" [label="layout\n1747 lines", width=2.74, fillcolor="#f7dede"];
@@ -60,19 +60,19 @@ digraph ai {
     "cordon" [label="cordon\n388 lines", width=1.23, fillcolor="#eef2f7"];
     "perimeter" [label="perimeter\n331 lines", width=1.17, fillcolor="#eef2f7"];
     "road" [label="road\n143 lines", width=0.96, fillcolor="#eef2f7"];
-    "prospect" [label="prospect\n393 lines", width=1.24, fillcolor="#eef2f7"];
+    "prospect" [label="prospect\n408 lines", width=1.25, fillcolor="#eef2f7"];
     "belts" [label="belts\n86 lines", width=0.90, fillcolor="#d9f0d9"];
   }
   subgraph cluster_6 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n1078 lines", width=2.00, fillcolor="#f7dede"];
-    "ops" [label="ops\n2528 lines", width=3.61, fillcolor="#f7dede"];
+    "ops" [label="ops\n2530 lines", width=3.61, fillcolor="#f7dede"];
     "routing" [label="routing\n431 lines", width=1.28, fillcolor="#eef2f7"];
     "intel" [label="intel\n295 lines", width=1.13, fillcolor="#eef2f7"];
     "airraid" [label="airraid\n127 lines", width=0.94, fillcolor="#eef2f7"];
     "cannon" [label="cannon\n373 lines", width=1.21, fillcolor="#eef2f7"];
     "siege" [label="siege\n2146 lines", width=3.18, fillcolor="#f7dede"];
     "assault" [label="assault\n142 lines", width=0.96, fillcolor="#eef2f7"];
-    "strip" [label="strip\n238 lines", width=1.06, fillcolor="#eef2f7"];
+    "strip" [label="strip\n241 lines", width=1.07, fillcolor="#eef2f7"];
     "answers" [label="answers\n138 lines", width=0.95, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
     "strike" [label="strike\n68 lines", width=0.88, fillcolor="#eef2f7"];
