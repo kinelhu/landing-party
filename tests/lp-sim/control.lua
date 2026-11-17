@@ -15962,7 +15962,7 @@ scenarios.herd = function()
       end)
     end
   end
-  -- The trail: there 15 minutes after the mark, gone 21 minutes after.
+  -- The trail: none 15 minutes after the mark (none laid since 0.2.442); the run ends 21 minutes after.
   for t = 3 * 3600, END - 120, 600 do
     schedule(t, function()
       local w = S.wave1 and entry(S.wave1)
@@ -16334,10 +16334,9 @@ scenarios.herd = function()
         tostring(w.t_breach and w.t_mark and (w.t_breach - w.t_mark) / 60))
       check("herd: tell, 3 minutes from the scout to the breach", w.t_breach and w.t_breach - w.t_launch >= 180 * 60,
         tostring(w.t_breach and (w.t_breach - w.t_launch) / 60))
-      check("herd: the trail on the ground 15 minutes on", (S.mud15 or 0) >= 20, tostring(S.mud15))
-      -- (A deep strike's trail runs on inside: its tell.)
-      check("herd: no trail inside the wall", S.mud_in == 0 or w.deep ~= nil, tostring(S.mud_in))
-      check("herd: the trail gone after 20 minutes", S.mud21 == 0, tostring(S.mud21))
+      -- (No trail since 0.2.442: its mud along its whole way had appeared as it set out, the user: "vanilla biters don't
+      -- put mud anywhere". The map's own mud is taken off this ground first.)
+      check("herd: no trail on the ground", S.mud15 == 0 and S.mud_in == 0, tostring(S.mud15) .. " on its way, " .. tostring(S.mud_in) .. " inside")
     elseif mix == "keep" or mix == "second" then
       -- (second: not asked since 2026-10-27, open. A wave now breaks all it can take inside, and on this small base both
       -- sources stood in its reach; whether a second feed still counters it is a question for a base where it stands

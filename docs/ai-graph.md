@@ -16,7 +16,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
-| `herd` | 4543 | attempt, burstfx, costmap, feeds, firemap, ground, herd_learn, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
+| `herd` | 4502 | attempt, burstfx, costmap, feeds, firemap, ground, herd_learn, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
 | `ops` | 2528 | airraid, answers, assault, attempt, cuts, ground, intel, jammer, know, perimeter, pool, power, ram, rd, routing, siege, stance, strip, tactics, threat, tune, veterancy | army, base, control, cordon, crew, dev, director, dome, faction, jumper, ledger, prospect, prowl, skim, standing, tap, war | base.claim_map, cordon.cordon_check, cordon.cordon_step, war.corridor | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `farm` | 2521 | achievements, cell, costmap, creep, feeds, firemap, herd, know, pods, rng, tactics, threat, tune, valuemap | control, dev, director |  | 60, 600, 3600, 36000 |  | biotech_time_parts, carrying, farms |
 | `director` | 2254 | army, faction, farm, jammer, ops, pods, pool, rd, rng, stance, valuemap, war | control, director_gui |  | 60, 300, 3600 |  | director, director_force, ev_minute, truces |

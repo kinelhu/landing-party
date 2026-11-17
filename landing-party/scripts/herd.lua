@@ -384,47 +384,11 @@ local function clear_marks(w)
   w.marks = {}
 end
 
--- The trail: mud every two tiles (not on anyone's floor, not in water) for TRAIL_TICKS (herd.tick takes the mud up),
--- the whole way home; on the map only its last MAP_TRAIL tiles, thin and faint: where a wave came in from, not a line to
--- the culture (the user, 2026-10-23: "Not a fan of the big green line on the map pointing to Synthexis"). Finding home
--- is following the mud.
-local MAP_TRAIL = 120
-local function lay_trail(s, points)
-  local decs, mud = {}, {}
-  -- Each segment's distance from the trail's end, so the map line keeps the last MAP_TRAIL tiles only.
-  local to_end, run = {}, 0
-  for i = #points - 1, 1, -1 do
-    to_end[i] = run
-    run = run + math.sqrt(d2(points[i], points[i + 1]))
-  end
-  for i = 1, #points - 1 do
-    local a, b = points[i], points[i + 1]
-    local len = math.sqrt(d2(a, b))
-    if to_end[i] < MAP_TRAIL then
-      local from = a
-      if to_end[i] + len > MAP_TRAIL then
-        local f = 1 - (MAP_TRAIL - to_end[i]) / len
-        from = {x = a.x + (b.x - a.x) * f, y = a.y + (b.y - a.y) * f}
-      end
-      rendering.draw_line{surface = s, from = from, to = b, color = {r = B.color.r, g = B.color.g, b = B.color.b, a = 0.45},
-        width = 1, dash_length = 2, gap_length = 2, render_mode = "chart", time_to_live = TRAIL_TICKS}
-    end
-    for k = 0, math.floor(len / 2) do
-      local f = k * 2 / math.max(len, 1)
-      local side = (k % 2 == 0) and 0.6 or -0.6
-      local p = {x = a.x + (b.x - a.x) * f + side * (b.y - a.y) / math.max(len, 1),
-        y = a.y + (b.y - a.y) * f - side * (b.x - a.x) / math.max(len, 1)}
-      local tile = s.get_tile(p.x, p.y)
-      if tile.valid and not tile.prototype.mineable_properties.minable and not tile.collides_with("water_tile") then
-        table.insert(decs, {name = k % 3 == 0 and "dark-mud-decal" or "light-mud-decal", position = p, amount = 1})
-        table.insert(mud, {p.x, p.y})
-      end
-    end
-  end
-  if #decs > 0 then s.create_decoratives{check_collision = false, decoratives = decs} end
-  table.insert(st().trails, {surface = s.index, mud = mud, expires = game.tick + TRAIL_TICKS})
-end
-
+-- No trail: its waves leave nothing on the ground or the map. (Mud along its whole planned way when it set out, with the
+-- way's last 120 tiles on the map, until 0.2.442: the user, 2026-11-17, playtest: "Not sure I'm a fan of the acid spit
+-- appearing when they plan their raid (+ the big green line on the map...)", "vanilla biters don't put mud anywhere";
+-- 2026-10-23: "Not a fan of the big green line on the map pointing to Synthexis".) Its tells are its scout's loop, its
+-- gathering and its leader's mark. The mud saves still hold is taken up when it expires (lift_trails).
 local function lift_trails(tick)
   local keep = {}
   for _, t in ipairs(st().trails) do
@@ -1456,7 +1420,6 @@ local function mark(w)
     for _, q in ipairs(arc(w, j)) do table.insert(trail, q) end
   end
   w.trail = trail
-  lay_trail(game.surfaces[w.surface], trail)
   if storage.march_trace then
     helpers.write_file(string.format("landing-party/costmaps/wave%d-trail.json", w.id),
       helpers.table_to_json({wave = w.id, trail = xy_list(trail), mark = {w.mark.x, w.mark.y}, size = #herd_units(w)}))
@@ -1749,7 +1712,6 @@ local function choose_plan(w)
   local trail = {w.breach}
   for _, q in ipairs(p.way or {}) do trail[#trail + 1] = q end
   trail[#trail + 1] = p.at
-  lay_trail(game.surfaces[w.surface], trail)
   local lead = herd_units(w)[1]
   if lead and lead.valid then
     table.insert(w.marks, rendering.draw_sprite{sprite = "utility/warning_icon", surface = lead.surface,
@@ -2199,7 +2161,6 @@ local function breach(w)
       w.group.set_command(compound(cmds))
     end
     w.stage, w.t, w.t_breach = "breach", game.tick, game.tick
-    lay_trail(s, rest)
     log(w, string.format("breach at %.0f,%.0f: punches through to its target at %.0f,%.0f, %d legs round the fire%s", h.x, h.y,
       pl.target[1], pl.target[2], #cmds, (led > 0 or swept > 0) and string.format(", behind its %s",
       led > 0 and swept > 0 and "sweep and its big bursters" or led > 0 and "big bursters" or "sweep") or ""))
@@ -3888,7 +3849,6 @@ local function step(w, tick)
           for i = REPLAN_STRIDE, #path, REPLAN_STRIDE do trail[#trail + 1] = path[i] end
           trail[#trail + 1] = {x = w.mark.x, y = w.mark.y}
           w.trail, w.leg = trail, from + 1
-          lay_trail(game.surfaces[w.surface], trail)
           log(w, string.format("off its leg %d (%.0f,%.0f to %.0f,%.0f) at %.0f,%.0f: no way through there, remembered; a new way to its mark from here (%d legs, costing %.0f), %d of %d",
             w.leg - 1, a.x, a.y, b.x, b.y, at.x, at.y, #trail - from, cost, w.replans, REPLANS))
           return march(w)
@@ -3990,7 +3950,6 @@ local function step(w, tick)
         for k = REPLAN_STRIDE, #path, REPLAN_STRIDE do trail[#trail + 1] = path[k] end
         trail[#trail + 1] = {x = w.mark.x, y = w.mark.y}
         w.trail, w.leg = trail, from + 1
-        lay_trail(game.surfaces[w.surface], trail)
         return march(w)
       end
       if mine then

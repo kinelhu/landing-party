@@ -2169,7 +2169,7 @@ nests, is at peace with the wild biters and sends waves with intent; Grubstake's
 - Direction from the consult (`docs/reviews/2026-10-22-wave-intelligence-consult.md`): a pack, not the others' moves (the
   trial's breach-to-power was Grubstake's sneak plus Kessler-Hayashi's blackout). **First slice built 0.1.51**
   (`biotech.lua`, `scripts/herd.lua`): the scout's loop round the turrets' box and its mark at the face it saw fewest,
-  the trail (mud and a map line, 20 minutes), the herd's march and withdrawal fighting nothing, a two-piece breach, what
+  the trail (mud and a map line, 20 minutes; removed 0.2.442: the user, "vanilla biters don't put mud anywhere"), the herd's march and withdrawal fighting nothing, a two-piece breach, what
   feeds the guns (power, gun turrets' inserters, flamethrowers' pipes) passing over any target under three turrets, home
   after. A loop not whole is a blind wave and a wider loop next time; turrets cannot catch the scout (it loops round them),
   troopers outside the wall can. `shared.is_corp` is now exact (the two corporations' forces) and `shared.is_biters`
@@ -8283,3 +8283,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   259 in the pocket). Before and after (the Studio, seed 12345, the quick set and the biotech area, 118 runs): none
   failing but `cliffgap` on the old map; 7 runs differ beyond timing (bombard, farm bigpens, fed, siege, siegestall,
   quiet streak, strangle), all passing, their plans on generated ground with cliffs.
+- **No trail (0.2.442; the user, 2026-11-17: "Not sure I'm a fan of the acid spit appearing when they plan their raid (+
+  the big green line on the map...)", then "vanilla biters don't put mud anywhere").** A wave laid mud decals every two
+  tiles along its whole planned way when it set out, and the way's last 120 tiles on the map: what it meant to do, shown
+  before any of it had walked there. Nothing read the mud (its way home is its own list of points). Removed; mud in saves
+  is still taken up when it expires. `herd`: no mud on its way or inside the wall (192 and 36 on 0.2.441).
