@@ -419,6 +419,14 @@ end
 
 local function order(t, cmd, key)
   local u = t.unit
+  -- (Fighting: not given the same order again while it is distracted. Given again every REISSUE_TICKS, a unit in a fight on
+  -- an attack-move broke off and walked on, deaf to the enemy for its distraction cooldown (5 s): the user, playtest:
+  -- "Units often walk to their doom without firing a shot". Its order resumes when the fight is over. An attack-move's
+  -- alone: a squad on hold is kept home by its order given again, and held so it chased its fight 190 tiles out, armyhold.)
+  if t.key == key and t.manual and t.manual.kind == "attackmove" and u.commandable.distraction_command then
+    storage.cmd.kept_fighting = (storage.cmd.kept_fighting or 0) + 1
+    return
+  end
   if t.key == key and u.commandable.has_command and game.tick - (t.at or 0) < REISSUE_TICKS then return end
   -- (Walking a route: not given its order again from where it stands, which would search again or walk back, unless it
   -- is still at it three times as long.)
@@ -468,7 +476,10 @@ local function routes_tick()
       t.route = nil
     elseif r then
       t.route = nil
-      if r.path then t.unit.commandable.set_command(routed(w.cmd, r.path, r.from)); t.routed = true end
+      -- (Not while it fights: the route set then broke the fight off, as above, and walked it back to where it searched.)
+      if r.path and t.unit.commandable.distraction_command then
+        storage.cmd.kept_fighting = (storage.cmd.kept_fighting or 0) + 1
+      elseif r.path then t.unit.commandable.set_command(routed(w.cmd, r.path, r.from)); t.routed = true end
     end
   end
 end
@@ -1002,26 +1013,47 @@ end
 -- allow far ops"; they do not, read in a game with /lp chartcheck): every CHART_EVERY ticks, the chunks the player's units
 -- stand in, and SIGHT chunks round each, charted for their force, but for those a radar already shows. One chart call a
 -- chunk the army stands in, not a unit.
-local CHART_EVERY = 180
+local CHART_EVERY = 60
 local SIGHT = 1
+-- A chunk charted by script stays in sight 600 ticks after the chart lands (measured in a game window, 2026-11-17), so
+-- the army's chunks are charted again before that, each on its own. Charted only when its unit's own chunk was out of
+-- sight, a ring stood unrefreshed while its unit walked into a chunk a neighbour's chart still lit, and went dark round a
+-- fight in patches (the user, playtest: "lots of blind fighting interrupting visible fighting").
+local CHART_REFRESH = 360
 local function chart_army()
-  local seen = {}
+  local want, stood = {}, {}
   for _, t in pairs(storage.cmd.troopers) do
     local u = t.unit
-    if u.valid then
-      local s, p = u.surface, u.position
-      local cx, cy = math.floor(p.x / 32), math.floor(p.y / 32)
-      local key = s.index .. ":" .. cx .. ":" .. cy
-      if not seen[key] then
-        seen[key] = true
-        local f = u.force
-        if not f.is_chunk_visible(s, {cx, cy}) then
-          f.chart(s, {{(cx - SIGHT) * 32, (cy - SIGHT) * 32}, {(cx + SIGHT + 1) * 32, (cy + SIGHT + 1) * 32}})
-          storage.cmd.charted = (storage.cmd.charted or 0) + 1
+    local s, p = u.valid and u.surface, u.valid and u.position
+    local cx, cy = p and math.floor(p.x / 32), p and math.floor(p.y / 32)
+    local here = p and (u.force.index .. ":" .. s.index .. ":" .. cx .. ":" .. cy)
+    if here and not stood[here] then
+      stood[here] = true
+      for dx = -SIGHT, SIGHT do
+        for dy = -SIGHT, SIGHT do
+          local key = u.force.index .. ":" .. s.index .. ":" .. (cx + dx) .. ":" .. (cy + dy)
+          if not want[key] then want[key] = {s = s, f = u.force, x = cx + dx, y = cy + dy} end
         end
       end
     end
   end
+  local tick = game.tick
+  local at = storage.cmd.chart_at or {}
+  local keep = {}
+  for key, c in pairs(want) do
+    local last = at[key]
+    if not c.f.is_chunk_visible(c.s, {c.x, c.y}) or (last and tick - last >= CHART_REFRESH) then
+      c.f.chart(c.s, {{c.x * 32, c.y * 32}, {c.x * 32 + 32, c.y * 32 + 32}})
+      storage.cmd.charted = (storage.cmd.charted or 0) + 1
+      last = tick
+    end
+    keep[key] = last
+  end
+  -- (A chunk left behind keeps its record while it may still be in sight: wanted again then, it is refreshed in time.)
+  for key, last in pairs(at) do
+    if not keep[key] and tick - last < 600 then keep[key] = last end
+  end
+  storage.cmd.chart_at = keep
 end
 
 -- Retiring (the user, 2026-11-10: "How do you retire units?", there was no way): the selection walks to the nearest
@@ -1218,7 +1250,7 @@ function command.tick(tick)
   if tick % 60 == 0 then train(); repair() end
   if tick % 120 == 30 then lead() end
   if tick % 10 == 5 then routes_tick() end
-  if tick % CHART_EVERY == 75 then chart_army() end
+  if tick % CHART_EVERY == 45 then chart_army() end
 end
 
 -- For the squad panel and the hover links (scripts/squadgui.lua): a beacon's stance, what it answers, its units by name
@@ -1263,7 +1295,7 @@ function command.stats()
   for k, t in pairs(storage.cmd.hints or {}) do hints[k] = t end
   return {trained = storage.cmd.trained or 0, retired = storage.cmd.retired or 0, auto_retired = storage.cmd.auto_retired or 0,
     moved = storage.cmd.moved or 0, defend_sent = storage.cmd.defend_sent or 0,
-    route_searches = storage.cmd.route_searches or 0, routes_taken = storage.cmd.routes_taken or 0, hints = hints, alive = alive, offline = offline, capacity = command.capacity(f),
+    route_searches = storage.cmd.route_searches or 0, kept_fighting = storage.cmd.kept_fighting or 0, routes_taken = storage.cmd.routes_taken or 0, hints = hints, alive = alive, offline = offline, capacity = command.capacity(f),
     level = research_level(f), orders = orders, locks = storage.cmd.locks, charted = storage.cmd.charted or 0}
 end
 

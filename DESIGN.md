@@ -8310,3 +8310,22 @@ Bugs and surprises the headless runs caught, each kept as a check:
   headless: the tag stood and no wreck for 60 s, then both right). `phases.on_died` runs it as the radar dies. Check:
   `phases`, 10 ticks after the kill its tag gone and its core down (seen failing on 0.2.444: 1 tag, 0 items); the seven
   other phases variants identical.
+- **2026-11-17, bandwidth in numbers (0.2.446).** The user: "a little unclear in game how much max pop a level of
+  bandwidth gives". Each command bandwidth research now names its relays that count and the units they carry (4 and 40,
+  8 and 80, 15 and 150; the endless level 2 and 20 more), from `shared.RELAYS_BY_LEVEL` and `RELAY_CAPACITY`, and the
+  army panel's tooltip the most units the research allows. Read in the prototype dump.
+- **2026-11-18, the army's map kept lit, and attack-move fights through (0.2.447).** Two playtest reports. "The cells
+  revealed by units walking into them don't stay revealed long enough. You get lots of blind fighting interrupting
+  visible fighting": measured in a game window (a headless server charts nothing either), a chunk charted by script stays
+  in sight 600 ticks after the chart lands. `chart_army` charted a unit's chunk and its ring only when the unit's own
+  chunk was out of sight, so a unit that walked into a chunk a neighbour's chart still lit had no ring of its own until
+  that went dark. Now each wanted chunk on its own, again 360 ticks after its last chart, every second (was every 3 s).
+  In a window, four troopers walking 500 tiles, sampled every 10 ticks for a minute: a unit's own chunk dark in 43 of 300
+  samples before, 0 after; a chunk of a ring dark in 112, then 25 (the chunks ahead of a column still unlit for up to a
+  second, freshly generated). "Units often walk to their doom without firing a shot": `order` gave a unit its order
+  again every REISSUE_TICKS (10 s) though it was fighting, and a route search landing did the same; it broke off, walked
+  on, and was deaf to the enemy for its distraction cooldown (5 s). Neither now while it has a distraction (the order
+  resumes once the fight is over); the order held on an attack-move alone (held for every order, a squad on hold chased
+  its fight 190 tiles from home, `director armyhold`: its order given again is its leash). Scenario `attackmove`: eight troopers sent fighting past two laser turrets; of the
+  samples a trooper stood in a turret's reach, walking and not fighting 167 of 728 before, 3 of 589 after (check: at most
+  5%).

@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.447
+Date: 2026-11-18
+  Bugfixes:
+    - Ground around your units no longer goes dark in patches while they fight: it is revealed again before it fades, every second.
+    - Units on an attack-move no longer break off a fight to walk on. They finish the fight, then carry on to where they were sent.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.446
 Date: 2026-11-17
   Changes:

@@ -2537,6 +2537,66 @@ scenarios.control = function()
   end)
 end
 
+-- Attack-move (the user, playtest: "Units often walk to their doom without firing a shot"): eight troopers sent fighting
+-- past two faction laser turrets, out of their way at 110. A unit's order was given again every 10 s (REISSUE_TICKS),
+-- in a fight too: it broke off and walked on, deaf to the enemy for its distraction cooldown. Checks: the turrets fall,
+-- and no unit's fight was broken off by its own order (kept_fighting: an order held while its unit fought).
+scenarios.attackmove = function()
+  local function put(name, x, y, force)
+    return surface().create_entity{name = name, position = {x, y}, force = force or "player", raise_built = true}
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-30, -60, 130, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    S.barracks = put("lp-barracks", 0.5, 0.5)
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    S.beacon = put("lp-rally-beacon", 10.5, -15.5)
+    S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 8}
+    S.turrets = {put("lp-turret", 60.5, -16.5, FORCE), put("lp-turret", 60.5, -8.5, FORCE)}
+    put("electric-energy-interface", 64, -12, FORCE)
+    put("medium-electric-pole", 62.5, -12.5, FORCE)
+  end)
+  schedule(60 + 30 * 60, function()
+    S.picked = lp("debug_select", {{-10, -40}, {30, 10}})
+    S.k0 = lp("army").kept_fighting
+    lp("debug_order", {{110, -13}, {111, -12}}, true)
+    S.am_go = true
+  end)
+  -- Sampled every 10 ticks: troopers inside a live turret's reach (24) and not fighting (no distraction): walking under fire.
+  S.deaf, S.under = 0, 0
+  local function sample()
+    if not S.am_go then return end
+    for _, u in ipairs(surface().find_entities_filtered{name = "lp-trooper", force = "player"}) do
+      for _, t in ipairs(S.turrets) do
+        if t.valid and (u.position.x - t.position.x) ^ 2 + (u.position.y - t.position.y) ^ 2 <= 24 * 24 then
+          S.under = S.under + 1
+          if not u.commandable.distraction_command then S.deaf = S.deaf + 1 end
+          break
+        end
+      end
+    end
+  end
+  for t = 60 + 30 * 60 + 10, 60 + 240 * 60 - 10, 10 do schedule(t, sample) end
+  schedule(60 + 240 * 60, function()
+    local up, hp = 0, 0
+    for _, t in ipairs(S.turrets) do if t.valid then up = up + 1; hp = hp + t.health end end
+    local alive = surface().count_entities_filtered{name = "lp-trooper", force = "player"}
+    local a = lp("army")
+    info("attackmove: " .. serpent.line({picked = S.picked, turrets_up = up, hp = hp, alive = alive, kept = (a.kept_fighting or 0) - (S.k0 or 0),
+      orders = a.orders, under = S.under, deaf = S.deaf}))
+    check("attackmove: eight sent fighting", S.picked == 8, tostring(S.picked))
+    check("attackmove: they fought on the way: both turrets down", up == 0,
+      string.format("%d up (%.0f hp), %d of 8 troopers alive", up, hp, alive))
+    -- (Caught: 167 of 728 samples under fire walking deaf, its order given again mid-fight; 3 of 589 held.)
+    check("attackmove: under the turrets' fire they fought, not walked on", S.under > 0 and S.deaf <= 0.05 * S.under,
+      string.format("%d of %d samples in reach walking, not fighting", S.deaf, S.under))
+  end)
+end
+
 -- Cannon (the player's orbital cannons, DESIGN.md "Orbital cannons"): a platform over Nauvis (made by script, the starter
 -- pack applied), a targeting array and two cannons on it, powered, each given four shells and thruster fuel. At 10
 -- minutes each holds its store of two charges and has stopped (a silo's rhythm). Six spawners 200 tiles from spawn:
@@ -3294,7 +3354,7 @@ scenarios.pavedsquad = function()
   end)
   for t = 60 + 6 * 60 + 10, 60 * 60, 10 do
     schedule(t, function()
-      if not S.go then return end
+      if not S.am_go then return end
       for lane, bx in pairs(LANES) do
         if not S.t[lane] then
           local n = surface().count_entities_filtered{area = {{bx - 14, -LEN - 12}, {bx + 14, -LEN + 12}}, name = "lp-trooper"}
