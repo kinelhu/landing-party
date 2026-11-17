@@ -1199,7 +1199,7 @@ function command.gui_tick()
       end
       local units = frame.lp_army_units
       units.caption = r.offline > 0 and {"lp.army-units-offline", r.units, r.cap, r.offline} or {"lp.army-units", r.units, r.cap}
-      units.tooltip = {"lp.army-tooltip", r.working, r.allowed, r.waiting}
+      units.tooltip = {"lp.army-tooltip", r.working, r.allowed, r.allowed * shared.RELAY_CAPACITY, r.waiting}
       local sel = 0
       for k in pairs((storage.cmd.selected or {})[p.index] or {}) do if storage.cmd.troopers[k] then sel = sel + 1 end end
       local b = frame.lp_army_retire

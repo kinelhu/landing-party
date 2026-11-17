@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.446
+Date: 2026-11-17
+  Changes:
+    - Each command bandwidth research now says how many command relays count and how many units they let you command (40, 80 and 150, then 20 more a level).
+    - The army panel's tooltip shows the most units your research allows.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.445
 Date: 2026-11-17
   Changes:

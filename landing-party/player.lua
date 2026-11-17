@@ -340,6 +340,15 @@ local function tech(level, prereq, packs, count, effects, extra)
   local t = {type = "technology", name = "lp-command-bandwidth-" .. level, icon = "__base__/graphics/technology/radar.png",
     icon_size = 256, prerequisites = prereq, effects = effects or {},
     unit = {count = count, time = 30, ingredients = packs}, upgrade = level > 1}
+  -- What a level gives, in numbers (the user, playtest: "a little unclear in game how much max pop a level of bandwidth
+  -- gives"): its relays that count and the units they carry; the endless level, what each level adds.
+  if level <= 3 then
+    local n = shared.RELAYS_BY_LEVEL[level]
+    t.localised_description = {"technology-description.lp-command-bandwidth-level", tostring(n), tostring(n * shared.RELAY_CAPACITY)}
+  else
+    local n = shared.RELAYS_PER_EXTRA_LEVEL
+    t.localised_description = {"technology-description.lp-command-bandwidth-more", tostring(n), tostring(n * shared.RELAY_CAPACITY)}
+  end
   for k, v in pairs(extra or {}) do t[k] = v end
   return t
 end
