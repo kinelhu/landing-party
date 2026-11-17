@@ -4836,6 +4836,12 @@ scenarios.phases = function()
       if radar then radar.die("player") end
     end
   end)
+  -- (At once, not at its next minute: the user looked within it and saw "No loot", "Tag still there", 0.2.445.)
+  schedule(6 * 3600 + 10, function()
+    local p = lp("phases")
+    S.soon_tags = survey_tags(p)
+    S.soon_core = p.survey and select(2, dropped(p.survey.pos, 8)) or 0
+  end)
   schedule(9 * 3600, function()
     local p = lp("phases")
     S.destroyed = p.survey and p.survey.done
@@ -4923,6 +4929,8 @@ scenarios.phases = function()
       tostring(S.destroyed) .. ", " .. tostring(S.core) .. " items on the ground")
     check("phases: its map tag up while it stood, gone once destroyed", (S.tags_up or 0) >= 1 and S.tags_after == 0,
       tostring(S.tags_up) .. " then " .. tostring(S.tags_after))
+    check("phases: its core and its tag's going at once, not at the next minute", S.soon_tags == 0 and (S.soon_core or 0) > 0,
+      string.format("10 ticks after: %s tags, %s items", tostring(S.soon_tags), tostring(S.soon_core)))
     check("phases: the arrival waited out the delay", S.early == 0, S.early .. " settlements 12 minutes after the trigger")
     check("phases: then it came", (S.late or 0) > 0, tostring(S.late) .. " settlements 24 minutes after")
     check("phases: Grubstake came first", S.first_corp == "grubstake", tostring(S.first_corp))

@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.445
+Date: 2026-11-17
+  Changes:
+    - A destroyed survey party leaves its wreck and loses its map tag at once, instead of up to a minute later.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.444
 Date: 2026-11-17
   Bugfixes:

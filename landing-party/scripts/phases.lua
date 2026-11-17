@@ -158,7 +158,7 @@ local function survey_step(s)
     if not sv.untagged and surface then untag(sv, surface) end
     return
   end
-  if not sv.radar.valid then
+  if not sv.radar.valid or sv.dying then
     sv.done = "destroyed"
     s.delay = DELAY
     shared.wreck(surface, sv.pos, {{name = "lp-command-core", count = 1}})
@@ -176,6 +176,17 @@ local function survey_step(s)
     tell("lp.survey-left", gps(surface, sv.pos))
     untag(sv, surface)
   end
+end
+
+-- Its radar destroyed: the party's wreck and its tag at once (the user, playtest: "No loot", "Tag still there", looked
+-- at within the minute survey_step waits for; 0.2.445).
+function phases.on_died(ent)
+  local s = state()
+  local sv = s.survey
+  if not (sv and not sv.done and sv.radar and sv.radar.valid and sv.radar.unit_number == ent.unit_number) then return end
+  sv.dying = true
+  survey_step(s)
+  sv.dying = nil
 end
 
 -- The early corporation's trigger: its arrival lever's (the first chemical science pack by default).

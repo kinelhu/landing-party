@@ -8305,3 +8305,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   works, down once none of them stands for its camp or they are captured). `base.drop_tags` takes the passing ones down
   as a camp falls or departs. The supply drop's tag now goes to every player force (it went to forces with players
   alone, so the sims never saw it). Checks: `strip register`, `starve starvefall`, `prospect razed`.
+- **2026-11-17, the survey party's wreck at once (0.2.445).** After 0.2.443 the user killed the party again and saw "No
+  loot", "Tag still there": `survey_step` runs once a minute, and they looked within it (a copy of the save, killed
+  headless: the tag stood and no wreck for 60 s, then both right). `phases.on_died` runs it as the radar dies. Check:
+  `phases`, 10 ticks after the kill its tag gone and its core down (seen failing on 0.2.444: 1 tag, 0 items); the seven
+  other phases variants identical.

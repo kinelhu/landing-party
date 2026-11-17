@@ -365,6 +365,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     if #keep > 0 then shared.wreck(ent.surface, ent.position, keep) end
   end
   if kind == "lp-uplink" then faction.uplink_lost(ent); achievements.uplink(ent, e.force) end
+  if kind == "lp-radar" then phases.on_died(ent) end
   if kind == "lp-pacifier" then pact.lost(ent) end
   -- Command cores from the wreckage: a depot gives one, a lander three (captured outposts: base.lua).
   if kind == "lp-depot" then command.drop_cores(ent.surface, ent.position, 1) end
