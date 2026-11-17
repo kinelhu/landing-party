@@ -55,9 +55,9 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `burstfx` | 305 | rng | control, dev, herd |  |  |  | burstfx, burstfx_stats |
 | `threat` | 297 | unit_prior | airraid, assault, attempt, cannon, control, costmap, dome, faction, farm, feeds, firemap, herd, herd_learn, intel, jumper, lifeline, ops, orbital, power, prowl, routing, siege, strike, veterancy, war |  |  |  |  |
 | `intel` | 295 | know, threat | ops |  |  |  |  |
+| `phases` | 292 | faction | control |  | 360, 3600 |  | phases |
 | `tactics` | 291 | know, rng | assault, control, farm, herd, herd_learn, ops, siege |  |  |  |  |
 | `paving` | 272 | (leaf) | command, control |  |  |  | paving |
-| `phases` | 269 | faction | control |  | 360, 3600 |  | phases |
 | `lots_grubstake` | 266 | (leaf) |  |  |  |  |  |
 | `herd_learn` | 253 | attempt, firemap, know, tactics, threat | herd |  |  |  |  |
 | `landfx` | 241 | rng | base, control, faction | layout.locate | 4, 7 |  | landfx, landfx_descents |

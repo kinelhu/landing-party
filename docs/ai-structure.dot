@@ -41,7 +41,7 @@ digraph ai {
     "pact" [label="pact\n112 lines", width=0.92, fillcolor="#eef2f7"];
     "ledger" [label="ledger\n317 lines", width=1.15, fillcolor="#eef2f7"];
     "rd" [label="rd\n396 lines", width=1.24, fillcolor="#eef2f7"];
-    "phases" [label="phases\n269 lines", width=1.10, fillcolor="#eef2f7"];
+    "phases" [label="phases\n292 lines", width=1.12, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
     "lifeline" [label="lifeline\n154 lines", width=0.97, fillcolor="#eef2f7"];
   }

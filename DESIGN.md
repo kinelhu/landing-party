@@ -8288,3 +8288,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   tiles along its whole planned way when it set out, and the way's last 120 tiles on the map: what it meant to do, shown
   before any of it had walked there. Nothing read the mud (its way home is its own list of points). Removed; mud in saves
   is still taken up when it expires. `herd`: no mud on its way or inside the wall (192 and 36 on 0.2.441).
+- **The survey party's map tag (0.2.443; the user, 2026-11-17, playtest: "I destroyed Grubstake's survey party but the
+  map tag stays").** Its tag went up when it landed and nothing took it down. Now kept and taken down once it is
+  destroyed or has left (`phases.lua` untag; a save's tags from before are found by their text where it stood). And the
+  survey party was watched only until a corporation landed (`phases.tick` returned first): destroyed after that, it was
+  never seen to be, and dropped no command core. The sims had never seen the tag: it went to forces with players alone,
+  and a headless run has none; it now goes to every player force, and `phases` charts the map first. Checks: `phases`,
+  the tag up while it stands and gone once destroyed; `after`, a corporation landed and then the party destroyed (seen,
+  its tag gone). Both seen failing on 0.2.442.

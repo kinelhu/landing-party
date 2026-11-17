@@ -4737,8 +4737,47 @@ local function phases_left()
   end)
 end
 
+-- Its map tags where the survey party stands (phases.lua untag: they stayed for good once it was gone; the user,
+-- 2026-11-17, playtest: "I destroyed Grubstake's survey party but the map tag stays").
+local function survey_tags(p)
+  if not (p and p.survey) then return -1 end
+  local q = p.survey.pos
+  local n = 0
+  for _, t in pairs(game.forces.player.find_chart_tags(surface(), {{q[1] - 4, q[2] - 4}, {q[1] + 4, q[2] + 4}})) do
+    if t.text == "Survey party" then n = n + 1 end
+  end
+  return n
+end
+-- Phases, destroyed after an arrival (LP_MIX=after): a corporation lands while its survey party stands, and the party
+-- destroyed then is seen to be (until 0.2.443 nothing watched it once one had landed: no core, its tag for good).
+local function phases_after()
+  schedule(30, function() game.forces.player.chart(surface(), {{-700, -700}, {700, 700}}) end)
+  schedule(60, function() game.forces.player.technologies["oil-processing"].researched = true end)
+  schedule(4 * 3600, function()
+    local p = lp("phases")
+    S.tags_up = survey_tags(p)
+    S.id = lp("arrive", surface().index, {x = 0, y = 0}, 250, {corp = "grubstake"})
+    storage.id = S.id
+  end)
+  schedule(6 * 3600, function()
+    local p = lp("phases")
+    if p.survey then
+      local radar = surface().find_entities_filtered{position = p.survey.pos, radius = 3, type = "radar"}[1]
+      if radar then radar.die("player") end
+    end
+  end)
+  schedule(9 * 3600, function()
+    local p = lp("phases")
+    check("phases: after an arrival, its survey party seen destroyed", S.id ~= nil and p.survey and p.survey.done == "destroyed",
+      tostring(p.survey and p.survey.done) .. ", landed " .. tostring(S.id))
+    check("phases: its map tag up while it stood, gone after", (S.tags_up or 0) >= 1 and survey_tags(p) == 0,
+      tostring(S.tags_up) .. " then " .. tostring(survey_tags(p)))
+  end)
+end
+
 scenarios.phases = function()
   if params.mix == "left" then return phases_left() end
+  if params.mix == "after" then return phases_after() end
   local pf = game and nil
   -- LP_MIX=nogrubstake / noserenity: that corporation switched off (its setting, shared.enabled) from the start.
   local off = ({nogrubstake = "grubstake", noserenity = "serenity"})[params.mix or ""]
@@ -4753,6 +4792,8 @@ scenarios.phases = function()
     if mix == "camps" then lp("debug_setting", "lp-grubstake-camps", 1) end
     flatten(-10, -10, 10, 10)
     surface().create_entity{name = "radar", position = {0, 0}, force = "player"}
+    -- (Charted, so its survey party's tag can stand: a tag is refused on ground not charted.)
+    game.forces.player.chart(surface(), {{-700, -700}, {700, 700}})
   end)
   schedule(3 * 3600, function()
     local p = lp("phases")
@@ -4772,6 +4813,7 @@ scenarios.phases = function()
       S.survey_drills = S.survey_drills + 1
       if surface().count_entities_filtered{type = "resource", area = d.bounding_box} > 0 then S.survey_on_ore = S.survey_on_ore + 1 end
     end
+    S.tags_up = survey_tags(p)
     if p.survey then
       local radar = surface().find_entities_filtered{position = p.survey.pos, radius = 3, type = "radar"}[1]
       if radar then radar.die("player") end
@@ -4780,6 +4822,7 @@ scenarios.phases = function()
   schedule(9 * 3600, function()
     local p = lp("phases")
     S.destroyed = p.survey and p.survey.done
+    S.tags_after = survey_tags(p)
     S.core = p.survey and select(2, dropped(p.survey.pos, 8)) or 0
     game.forces.player.get_item_production_statistics(surface()).on_flow("chemical-science-pack", 1)
     S.trigger_at = game.tick
@@ -4861,6 +4904,8 @@ scenarios.phases = function()
       tostring(S.survey_entities) .. " entities at the survey site")
     check("phases: destroyed, it dropped a command core", S.destroyed == "destroyed" and S.core > 0,
       tostring(S.destroyed) .. ", " .. tostring(S.core) .. " items on the ground")
+    check("phases: its map tag up while it stood, gone once destroyed", (S.tags_up or 0) >= 1 and S.tags_after == 0,
+      tostring(S.tags_up) .. " then " .. tostring(S.tags_after))
     check("phases: the arrival waited out the delay", S.early == 0, S.early .. " settlements 12 minutes after the trigger")
     check("phases: then it came", (S.late or 0) > 0, tostring(S.late) .. " settlements 24 minutes after")
     check("phases: Grubstake came first", S.first_corp == "grubstake", tostring(S.first_corp))

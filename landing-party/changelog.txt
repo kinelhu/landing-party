@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.443
+Date: 2026-11-17
+  Bugfixes:
+    - The survey party's map tag stayed after the party was destroyed or had left. It is now removed, in existing saves too.
+    - A survey party destroyed after a corporation had landed dropped no command core and was not announced.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.442
 Date: 2026-11-17
   Changes:

@@ -22,6 +22,7 @@ local function state()
   return storage.phases
 end
 
+local SURVEY_TAG = "Survey party"   -- its map tag
 local function players()
   return shared.player_forces()
 end
@@ -126,24 +127,43 @@ local function survey(f, surface, from)
   end
   s.survey = {tick = game.tick, radar = radar, party = party, pos = {radar.position.x, radar.position.y},
     surface = surface.index, corp = corp}
+  -- (Each player force's, whether or not anyone plays it yet: the tags are what survey_step takes up.)
+  s.survey.tags = {}
   for _, pf in ipairs(players()) do
-    if #pf.players > 0 then
-      pf.add_chart_tag(surface, {position = radar.position, icon = {type = "virtual", name = shared.CORPS[corp].icon},
-        text = "Survey party"})
-    end
+    local tag = pf.add_chart_tag(surface, {position = radar.position, icon = {type = "virtual", name = shared.CORPS[corp].icon},
+      text = SURVEY_TAG})
+    if tag then table.insert(s.survey.tags, tag) end
   end
   tell("lp.survey", gps(surface, radar.position))
 end
 
+-- Its map tag taken up once it is gone (destroyed or left). (It stayed on the map for good: the user, 2026-11-17, playtest:
+-- "I destroyed Grubstake's survey party but the map tag stays".) Saves from before kept no tags: those are found by text
+-- where it stood.
+local function untag(sv, surface)
+  for _, tag in ipairs(sv.tags or {}) do if tag.valid then tag.destroy() end end
+  local p = sv.pos
+  for _, pf in ipairs(players()) do
+    for _, tag in pairs(pf.find_chart_tags(surface, {{p[1] - 4, p[2] - 4}, {p[1] + 4, p[2] + 4}})) do
+      if tag.text == SURVEY_TAG then tag.destroy() end
+    end
+  end
+  sv.untagged = true
+end
+
 local function survey_step(s)
   local sv = s.survey
-  if sv.done then return end
   local surface = game.surfaces[sv.surface]
+  if sv.done then
+    if not sv.untagged and surface then untag(sv, surface) end
+    return
+  end
   if not sv.radar.valid then
     sv.done = "destroyed"
     s.delay = DELAY
     shared.wreck(surface, sv.pos, {{name = "lp-command-core", count = 1}})
     tell("lp.survey-destroyed", gps(surface, sv.pos))
+    untag(sv, surface)
   elseif game.tick - sv.tick >= (storage.phases_fast and 3 * 3600 or SURVEY_TICKS) then
     sv.done = "left"
     for _, e in ipairs(sv.party) do
@@ -154,6 +174,7 @@ local function survey_step(s)
     end
     s.early = game.tick + (storage.phases_fast and 3 * 3600 or EARLY)
     tell("lp.survey-left", gps(surface, sv.pos))
+    untag(sv, surface)
   end
 end
 
@@ -226,6 +247,9 @@ function phases.tick(tick)
       if not st.late and reached(f, what) then phases.late(game.surfaces[1], f.get_spawn_position(game.surfaces[1])) end
     end
   end
+  -- (Its survey party watched after an arrival too: destroyed once a corporation had landed, it was never seen to be, and
+  -- its tag and its core never came; the user, 2026-11-17.)
+  if st.survey then survey_step(st) end
   if arrived() then return end
   local s = state()
   for _, f in ipairs(players()) do
@@ -244,7 +268,6 @@ function phases.tick(tick)
     end
 
   end
-  if s.survey then survey_step(s) end
   local due
   if s.triggered then due = s.triggered.tick + (s.delay or 0) end
   if s.early and (not due or s.early < due) then due = s.early end
