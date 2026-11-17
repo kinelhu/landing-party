@@ -29,7 +29,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `base` | 997 | army, blocks, chart, construction, landfx, layout, lights, modules, names, ops, planner, rng, site, tune | control, cordon, crew, dev, dome, faction, jumper, ledger, lifeline, pact, prospect, prowl, road, skim, tap, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, ops.siege_goal, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
 | `war` | 701 | army, base, lights, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, director, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `creep` | 614 | costmap, tune | control, farm, studies |  |  |  | creep |
-| `dev` | 611 | army, base, burstfx, cannon, cards, command, director_gui, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap, veterancy | control |  |  |  | chartcheck, cordon_off, dev_cannon, dev_platform, era_override, hq_fast, merit, ram_trace, trace |
+| `dev` | 613 | army, base, burstfx, cannon, cards, command, director_gui, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap, veterancy | control |  |  |  | chartcheck, cordon_off, dev_cannon, dev_platform, era_override, hq_fast, merit, ram_trace, trace |
 | `costmap` | 559 | firemap, threat | airraid, control, creep, faction, farm, herd, siege |  |  |  |  |
 | `crew` | 549 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `ram` | 454 | (leaf) | control, dev, ops |  | 3, 6 |  | ram_breaches, ram_charges, ram_crushed, ram_early, ram_followers, ram_moved, rams |

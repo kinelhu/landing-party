@@ -245,11 +245,13 @@ function dev.run(player, args)
     end
     player.print(string.format("%d units cleared within %d", n, r))
   elseif what == "squad" then
-    -- /lp squad [n]: n of your units (default 12; troopers, rocket and flame troopers, breachers, battle tanks in turn)
+    -- /lp squad [n]: n of your units (default 12; troopers, rocket and flame troopers, breachers, gun buggies, battle
+    -- tanks in turn)
     -- in rows east of you, enlisted as trained ones are and selected: every third hurt (to a third, half or most of its
     -- health), every fifth earning a rank. The selection's cards and bars to look at (scripts/cards.lua); past 24, a
     -- card a kind.
-    local KINDS = {"lp-trooper", "lp-trooper", "lp-rocket-trooper", "lp-flame-trooper", "lp-breacher", "lp-battle-tank"}
+    local KINDS = {"lp-trooper", "lp-trooper", "lp-rocket-trooper", "lp-flame-trooper", "lp-breacher", "lp-gun-buggy",
+      "lp-battle-tank"}
     local n = math.max(1, math.min(200, tonumber(args[2]) or 12))
     local s, made = player.surface, {}
     for i = 1, n do

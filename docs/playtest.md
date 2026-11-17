@@ -1,6 +1,6 @@
 # Playtest kit
 
-Mod 0.2.437 (army items 0.2.436 and 0.2.437), rewritten 2026-11-16 for the release playtest (0.3.0). The last kit was for 0.2.162 (2026-10-31); since,
+Mod 0.2.439 (army items 0.2.436 to 0.2.439), rewritten 2026-11-16 for the release playtest (0.3.0). The last kit was for 0.2.162 (2026-10-31); since,
 the director, the sounds and most of the factions' behaviour are new, and none of it has been seen in a game window.
 Everything below is checked headless only. Chat notices are off: the world should tell you what happens.
 
@@ -33,10 +33,18 @@ to see the beats you missed.
    Did you notice it in time? Did you know what it was after?
 2. **Radar's warning and the defend stance.** With a radar covering where the pods land, a strike is told ahead, up to
    2 minutes with the radar right over the spot and 30 seconds at the edge of its reach. Put a squad on a rally beacon
-   set to D (`/lp squad 12` beside it): it should go out on the warning, meet the pods and walk back. Did the warning
+   set to D (`/lp squad 14` beside it): it should go out on the warning, meet the pods and walk back.
+   Your units need powered relays and research, or they stand offline. Once, in the console:
+
+       /c for l = 1, 3 do game.player.force.technologies["lp-command-bandwidth-" .. l].researched = true end
+       /c game.player.insert{name = "lp-command-relay", count = 4} game.player.insert{name = "lp-rally-beacon", count = 3}
+
+   Four relays on your power grid carry 40 of bandwidth; `/lp squad 14` takes 38 (four troopers, two of each other kind). Did the warning
    give you time? Does the army feel like the answer, or like a formality?
    The squad panel beside the beacon's window and the hover lines between a beacon and its units: readable? Do the
    buttons move units between beacons as you expect?
+   The gun buggy (new): slow heavy shots that burst, the fastest unit you have. Does it read as its own unit beside
+   the tank, and is a hit felt? The battle tank now costs an exoskeleton and two energy shields: too dear?
 3. **The walk home.** A broken or finished force walks back to its camp, through or round your base, and joins its
    garrison (or leaves on its rocket). Could you see it go? Did you chase it?
 4. **Power strikes.** A strike at your power or the pumps feeding your boilers is told ahead with its target marked,

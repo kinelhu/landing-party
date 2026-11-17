@@ -4885,7 +4885,7 @@ scenarios.cards = function()
     lp("debug_select_army", false)
     lp("debug_order", {{0, 1240}, {2, 1242}}, false)
     S.idle = lp("debug_select_army", true)
-    -- The look's verb, /lp squad: 30 units east, enlisted and selected, grouped by kind (5 kinds).
+    -- The look's verb, /lp squad: 30 units east, enlisted and selected, grouped by kind (6 kinds).
     flatten(-12, 1290, 100, 1320)
     lp("dev", {"squad", "30"}, {0, 1300})
     local q = lp("debug_cards")
@@ -4942,7 +4942,7 @@ scenarios.cards = function()
   schedule(430, function()
     check("cards: All selects the army, Idle leaves out what has orders", S.all == 37 and S.idle0 == 37 and S.idle == 0,
       S.all .. " all, " .. S.idle0 .. " idle, " .. S.idle .. " idle after an order to all")
-    check("cards: /lp squad selects its units, a card a kind", S.squad.n == 30 and S.squad.grouped and S.squad.cards == 5
+    check("cards: /lp squad selects its units, a card a kind", S.squad.n == 30 and S.squad.grouped and S.squad.cards == 6
       and S.squad.bars == 30, serpent.line(S.squad))
   end)
 end
