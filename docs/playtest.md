@@ -1,6 +1,6 @@
 # Playtest kit
 
-Mod 0.2.439 (army items 0.2.436 to 0.2.439), rewritten 2026-11-16 for the release playtest (0.3.0). The last kit was for 0.2.162 (2026-10-31); since,
+Mod 0.2.440 (army items 0.2.436 to 0.2.440), rewritten 2026-11-16 for the release playtest (0.3.0). The last kit was for 0.2.162 (2026-10-31); since,
 the director, the sounds and most of the factions' behaviour are new, and none of it has been seen in a game window.
 Everything below is checked headless only. Chat notices are off: the world should tell you what happens.
 
@@ -45,6 +45,8 @@ to see the beats you missed.
    buttons move units between beacons as you expect?
    The gun buggy (new): slow heavy shots that burst, the fastest unit you have. Does it read as its own unit beside
    the tank, and is a hit felt? The battle tank now costs an exoskeleton and two energy shields: too dear?
+   Roads (0.2.440): lay a concrete road from a beacon toward where attacks come, off the straight line. Does a squad
+   sent out take it? Does it look like a choice the squad made, or like it wandered?
 3. **The walk home.** A broken or finished force walks back to its camp, through or round your base, and joins its
    garrison (or leaves on its rocket). Could you see it go? Did you chase it?
 4. **Power strikes.** A strike at your power or the pumps feeding your boilers is told ahead with its target marked,

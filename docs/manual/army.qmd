@@ -92,6 +92,12 @@ for hold, red for advance, yellow for occupy and blue for retreat, with a dashed
 sees a corporation unit nearby attacks it before any building, but only inside the ring: your squads do not chase a
 garrison back into its turrets.
 
+**Roads.** Your units walk faster on paved ground, as you do: stone path, concrete and refined concrete. On a walk of
+{{< var army.road_min >}} tiles or more, to a rally point, out to an attack or to a point you ordered, a squad
+leaves the straight line for a road when the road gets it there sooner. A road from the barracks to each beacon, and
+out to where the attacks come, is worth laying; paving everything round it adds nothing. Corporation units do not
+gain from your paving.
+
 ## The command tool {#sec-command-tool}
 
 The command tool gives orders by hand. Take it from the shortcut bar or press ALT + C, once you have Command

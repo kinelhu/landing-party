@@ -363,7 +363,7 @@ end
 army.on_deliver = function(b, cargo) if base.on_export then base.on_export(b, cargo) end end
 
 -- A faction building under fire: the depot answers (throttled in army.alarm).
-function base.on_damaged(e)
+function base.on_damaged(e, cause)
   local own = storage.owner[e.unit_number]
   local b = own and storage.bases[own.base]
   -- A fallen settlement raises no alarm (damage in the tick its lander died crashed the intel, which read the
@@ -371,7 +371,7 @@ function base.on_damaged(e)
   if b and not b.fallen and b.lander.valid then
     -- (When a player last hurt it: an expedition takes the place only of a camp left alone, director.lua.)
     if e.force and shared.is_player_force(e.force) then b.player_hit_at = game.tick end
-    army.alarm(b, e.position, trace)
+    army.alarm(b, e.position, trace, cause)
   end
 end
 
@@ -958,7 +958,7 @@ function base.stats(b)
     returning_at = (function() local o = {} for _, u in ipairs(b.returning or {}) do if u.valid then o[#o + 1] = {u.position.x, u.position.y} end end return o end)(),
     roster = table_size(b.roster or {}), units_built = b.units_built,
     units_lost = b.units_lost, howitzer_down = b.howitzer_down, parked = b.parked and b.parked.valid or false,
-    parked_ghost = b.parked_ghost and b.parked_ghost.valid or false, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0,
+    parked_ghost = b.parked_ghost and b.parked_ghost.valid or false, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0, silent = b.silent or {},
     mature = b.mature ~= nil, exported = b.exported or 0, lamps = #b.lamps, mines = #b.mines,
     labs = (function() local t = {} prune(b.labs or {}) for _, e in ipairs(b.labs or {}) do
       local k = shared.kind_of(e.name) t[k] = (t[k] or 0) + 1 end return t end)(),

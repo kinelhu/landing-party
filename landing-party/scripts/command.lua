@@ -13,6 +13,7 @@
 -- It reports on its own output: S its squad, E faction units and T faction turrets within reach of the
 -- rally point, W 1 while a defending squad is out.
 local shared = require("__landing-party__.shared")
+local paving = require("__landing-party__.scripts.paving")
 
 local command = {}
 
@@ -27,6 +28,18 @@ local REISSUE_TICKS = 600          -- an idle trooper is given its orders again 
 -- did). A unit plans its path when ordered and takes a shut gate for wall, so an order opens its force's gates within
 -- GATE_PLAN for its reissue time, and each pass of lead holds open those within GATE_NEAR of a trooper.
 local GATE_PLAN = 40
+-- Paved ways (scripts/paving.lua; the user, 2026-11-17): the engine's pathfinder ignores a tile's speed, so an order's
+-- walk of ROUTE_MIN tiles or more, with paving in its area, is searched by the road router; the unit sets off straight
+-- and takes the route when it comes, if it costs at most ROUTE_GAIN of the straight walk. A squad's units given the
+-- same order within ROUTE_NEAR tiles of the first share its search. Waypoints within ROUTE_RADIUS (2 let a trooper
+-- arrive a tile off-centre and walk a 4-wide road's edge, off the concrete: slower than the grass, scenario paved),
+-- one every ROUTE_STEP tiles.
+local ROUTE_MIN = 40
+local ROUTE_GAIN = 0.97
+local ROUTE_NEAR = 16
+local ROUTE_RADIUS = 1
+local ROUTE_STEP = 8
+local ROUTE_KEEP = 60 * 60       -- a search's result is shared this long
 local GATE_NEAR = 6
 -- Every corporation's prototypes of these kinds.
 local MILITARY = shared.variants({"lp-turret", "lp-mortar", "lp-depot", "lp-radar", "lp-lander", "lp-uplink", "lp-launchpad",
@@ -352,14 +365,112 @@ local function stay(pos, radius, distraction)
   }}
 end
 
+-- An order's first leg: its go_to_location, alone or first of a compound.
+local function first_leg(cmd)
+  if cmd.type == defines.command.go_to_location then return cmd, nil end
+  if cmd.type == defines.command.compound and cmd.commands[1] and cmd.commands[1].type == defines.command.go_to_location then
+    return cmd.commands[1], cmd
+  end
+end
+
+-- The order with its first leg walked along a route: the route's turns, then the leg's own destination (a formation's
+-- slot is each unit's own) and whatever followed it.
+-- (A point every ROUTE_STEP tiles along each stretch: between two far points the engine walks its own way, straight
+-- then diagonal, and three troopers of six walked the grass 10 tiles beside the road they had been routed down.)
+local function routed(cmd, path, from)
+  local leg, comp = first_leg(cmd)
+  local cmds = {}
+  local a = from
+  for n = 1, #path - 1 do
+    local b = path[n]
+    local dx, dy = b.x - a.x, b.y - a.y
+    local k = math.max(1, math.ceil(math.sqrt(dx * dx + dy * dy) / ROUTE_STEP))
+    for m = 1, k do
+      cmds[#cmds + 1] = {type = defines.command.go_to_location, destination = {x = a.x + dx * m / k, y = a.y + dy * m / k},
+        radius = ROUTE_RADIUS, distraction = leg.distraction}
+    end
+    a = b
+  end
+  cmds[#cmds + 1] = leg
+  for n = 2, comp and #comp.commands or 1 do cmds[#cmds + 1] = comp.commands[n] end
+  return {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = cmds}
+end
+
+-- A route for this unit's order: shared from a squad mate's search begun near it, else a new search (nil: none wanted).
+-- storage.cmd.routes[key] is the order's searches, each {id, from, surface, at, path (nil: searching; false: none)}.
+local function route_for(t, cmd, key)
+  local u = t.unit
+  local leg = first_leg(cmd)
+  if not leg then return nil end
+  local to = {x = leg.destination.x or leg.destination[1], y = leg.destination.y or leg.destination[2]}
+  if not paving.wanted(u.surface, u.position, to, ROUTE_MIN) then return nil end
+  storage.cmd.routes = storage.cmd.routes or {}
+  local list = storage.cmd.routes[key]
+  if not list then list = {}; storage.cmd.routes[key] = list end
+  local p = u.position
+  for _, r in ipairs(list) do
+    if r.surface == u.surface.index and (r.from.x - p.x) ^ 2 + (r.from.y - p.y) ^ 2 <= ROUTE_NEAR * ROUTE_NEAR then return r end
+  end
+  local r = {id = paving.request(u.surface, p, to), from = {x = p.x, y = p.y}, surface = u.surface.index, at = game.tick}
+  list[#list + 1] = r
+  storage.cmd.route_searches = (storage.cmd.route_searches or 0) + 1
+  return r
+end
+
 local function order(t, cmd, key)
   local u = t.unit
   if t.key == key and u.commandable.has_command and game.tick - (t.at or 0) < REISSUE_TICKS then return end
+  -- (Walking a route: not given its order again from where it stands, which would search again or walk back, unless it
+  -- is still at it three times as long.)
+  if t.key == key and t.routed and u.commandable.has_command and game.tick - (t.at or 0) < 3 * REISSUE_TICKS then return end
   for _, g in pairs(u.surface.find_entities_filtered{type = "gate", force = u.force, position = u.position, radius = GATE_PLAN}) do
     g.request_to_open(u.force, REISSUE_TICKS)
   end
-  u.commandable.set_command(cmd)
+  t.routed, t.route = nil, nil
+  local r = route_for(t, cmd, key)
+  if r and r.path then
+    u.commandable.set_command(routed(cmd, r.path, r.from))
+    t.routed = true
+  else
+    u.commandable.set_command(cmd)
+    if r and r.path == nil then t.route = {key = key, id = r.id, cmd = cmd} end
+  end
   t.key, t.at = key, game.tick
+end
+
+-- Searches come in: each unit still waiting on one, its order still the same, takes its route.
+local function routes_tick()
+  local routes = storage.cmd.routes
+  if not routes then return end
+  local landed = {}
+  for key, list in pairs(routes) do
+    for n = #list, 1, -1 do
+      local r = list[n]
+      if r.path == nil then
+        local res = paving.result(r.id)
+        if res then
+          r.path = (not res.failed and res.path and #res.path > 1
+            and (not res.straight or res.cost <= res.straight * ROUTE_GAIN)) and res.path or false
+          landed[r.id] = r
+          if r.path then storage.cmd.routes_taken = (storage.cmd.routes_taken or 0) + 1 end
+        end
+      elseif game.tick - r.at > ROUTE_KEEP then
+        table.remove(list, n)
+      end
+    end
+    if #list == 0 then routes[key] = nil end
+  end
+  if not next(landed) then return end
+  for _, t in pairs(storage.cmd.troopers) do
+    local w = t.route
+    local r = w and landed[w.id]
+    if w and not (t.unit.valid and t.key == w.key) then
+      t.route = nil
+    elseif r then
+      t.route = nil
+      if r.path then t.unit.commandable.set_command(routed(w.cmd, r.path, r.from)); t.routed = true end
+    end
+  end
 end
 
 -- Units beyond capacity (a relay lost or unpowered) go offline, newest first, until bandwidth returns:
@@ -1106,6 +1217,7 @@ function command.tick(tick)
   if tick % 60 == 20 then command.gui_tick() end
   if tick % 60 == 0 then train(); repair() end
   if tick % 120 == 30 then lead() end
+  if tick % 10 == 5 then routes_tick() end
   if tick % CHART_EVERY == 75 then chart_army() end
 end
 
@@ -1150,7 +1262,8 @@ function command.stats()
   local hints = {}
   for k, t in pairs(storage.cmd.hints or {}) do hints[k] = t end
   return {trained = storage.cmd.trained or 0, retired = storage.cmd.retired or 0, auto_retired = storage.cmd.auto_retired or 0,
-    moved = storage.cmd.moved or 0, defend_sent = storage.cmd.defend_sent or 0, hints = hints, alive = alive, offline = offline, capacity = command.capacity(f),
+    moved = storage.cmd.moved or 0, defend_sent = storage.cmd.defend_sent or 0,
+    route_searches = storage.cmd.route_searches or 0, routes_taken = storage.cmd.routes_taken or 0, hints = hints, alive = alive, offline = offline, capacity = command.capacity(f),
     level = research_level(f), orders = orders, locks = storage.cmd.locks, charted = storage.cmd.charted or 0}
 end
 

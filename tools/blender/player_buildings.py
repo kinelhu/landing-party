@@ -378,12 +378,11 @@ for name, (fn, dirs) in MODELS.items():
             pts = {}
             for col, p in tips.items():
                 wp = rig.matrix_world @ p
-                c = world_to_camera_view(scene, scene.camera, wp)
-                x, y = (c.x - 0.5) * span, -(c.y - 0.5) * span * math.sqrt(2)
+                # (Directly, as faction_works.py's pylon: x right, y + z up the stretched sheet. Through the camera's
+                # frame, 8 wide and 6 tall here, the heights came out a third too high, 2026-11-17.)
                 gp = wp + light * (wp.z / max(1e-3, -light.z))
-                g = world_to_camera_view(scene, scene.camera, gp)
-                pts[col] = {"wire": [round(x, 3), round(y, 3)],
-                            "shadow": [round((g.x - 0.5) * span, 3), round(-(g.y - 0.5) * span * math.sqrt(2), 3)]}
+                pts[col] = {"wire": [round(wp.x, 3), round(-(wp.y + wp.z), 3)],
+                            "shadow": [round(gp.x, 3), round(-(gp.y + gp.z), 3)]}
             meta[d] = pts
         print("rendered", name, d)
     if meta:

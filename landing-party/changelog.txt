@@ -1,4 +1,16 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.440
+Date: 2026-11-17
+  Features:
+    - Your units walk faster on stone path, concrete and refined concrete, as you do. Corporation units do not.
+    - Roads: on a long walk, a squad takes a paved road when the road gets it there sooner.
+  Bugfixes:
+    - The corporations' pylons drew their wires well above the pylon's tip; the rally beacon's and the threat scanner's circuit wires sat a little high.
+    - A camp sends a squad at a unit, vehicle or character firing on it from beyond 30 tiles (a rocket launcher, a tank's cannon), where it had read the attack as turrets alone and sent none.
+    - Every corporation building raises its camp's alarm when hit: gates, mortars, flamers, Teslas, the uplink, howitzers, belts, mines and lamps had raised none.
+  Info:
+    - A tip on roads.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.439
 Date: 2026-11-17
   Changes:

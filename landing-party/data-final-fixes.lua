@@ -591,3 +591,16 @@ end
 
 -- The mod's own icons, last (icons.lua).
 require("icons")
+
+-- The player's army on paved ground (the user, 2026-11-17: "how army might change the face of the players factory
+-- besides beacons"): their units take the tiles' walking speed (stone path 1.3, concrete 1.4, refined 1.5; shallow water
+-- and mud slower), as the character does. Their own only: the corporations' raiders keep the engine's default (off),
+-- so a paved base does not speed the ones who break into it. (The cars among them too: as units they never read a
+-- tile's vehicle friction.)
+do
+  local shared = require("__landing-party__.shared")
+  for name in pairs(shared.POPULATION) do
+    local u = data.raw.unit[name]
+    if u then u.affected_by_tiles = true end
+  end
+end

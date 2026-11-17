@@ -66,6 +66,7 @@ local director = require("__landing-party__.scripts.director")
 director.base = base  -- (its departures: base.depart; required here, not at runtime)
 local director_gui = require("__landing-party__.scripts.director_gui")
 local squadgui = require("__landing-party__.scripts.squadgui")
+local paving = require("__landing-party__.scripts.paving")
 local costmap = require("__landing-party__.scripts.costmap")
 local feeds = require("__landing-party__.scripts.feeds")
 -- Synthexis's scouts take the corporations' way round turrets (herd.lua; a hook, not a require: ops is the corporations').
@@ -131,9 +132,15 @@ script.on_event(defines.events.on_tick, function(e)
   veterancy.tick(e.tick)
   biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); cards.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); road.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); separate.tick(e.tick); ram.tick(e.tick); ram.charge_tick(e.tick); cannon.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick); director.tick(e.tick); director_gui.tick(e.tick); lifeline.tick(e.tick)
   if e.tick % 60 == 40 then squadgui.tick() end
+  paving.tick()
   oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
 end)
+
+-- A tile laid or taken up: the road router reads that chunk again (scripts/paving.lua).
+script.on_event({defines.events.on_player_built_tile, defines.events.on_robot_built_tile,
+  defines.events.on_player_mined_tile, defines.events.on_robot_mined_tile, defines.events.script_raised_set_tiles,
+  defines.events.on_space_platform_built_tile, defines.events.on_space_platform_mined_tile}, paving.forget)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
   {filter = "name", name = "lp-command-relay"}, {filter = "name", name = "lp-muster-point"},
@@ -173,6 +180,20 @@ for _, n in ipairs(shared.variants({"lp-lander", "lp-generator", "lp-pylon", "lp
   "lp-turret", "lp-wall", "lp-radar", "lp-depot", "lp-launchpad", "lp-lamp", "lp-scrap-cannon", "lp-optics-lab", "lp-line-lab",
   "lp-siege-lab"})) do
   table.insert(BUILDINGS, {filter = "name", name = n})
+end
+-- Every other building of the corporations' (read from the prototypes: the list above, typed early, missed the gates,
+-- mortars, flamers, Teslas, the uplink, howitzers, belts, mines and lamps added after it, and a hit on one raised no
+-- alarm; the user, 2026-11-17). Named lp-, with an owner, not a unit or a vehicle; the player's own pass the handler's
+-- corporation check and return.
+do
+  local listed, mobile = {}, {unit = true, ["spider-unit"] = true, car = true, ["spider-vehicle"] = true, character = true,
+    ["combat-robot"] = true, ["construction-robot"] = true, ["logistic-robot"] = true, ["spider-leg"] = true}
+  for _, f in ipairs(BUILDINGS) do if f.name then listed[f.name] = true end end
+  for name, p in pairs(prototypes.entity) do
+    if name:sub(1, 3) == "lp-" and not listed[name] and p.is_entity_with_owner and not mobile[p.type] then
+      table.insert(BUILDINGS, {filter = "name", name = name})
+    end
+  end
 end
 -- The biotech's pens: one attacked calls its farm's wave home (farm.lua).
 table.insert(BUILDINGS, {filter = "name", name = "lp-pen"})
@@ -223,7 +244,7 @@ script.on_event(defines.events.on_entity_damaged, function(e)
     if not (own and own.module and own.module.kind == "post") and not errand then
       ops.provoke(e.entity.force.name, e.force.name, e.cause and e.cause.valid and e.cause or e.entity)
     end
-    base.on_damaged(e.entity)
+    base.on_damaged(e.entity, e.cause)
   end
 end, BUILDINGS)
 
@@ -992,6 +1013,21 @@ remote.add_interface("landing-party", {
   debug_retire = function() return command.retire(1) end,
   -- Tests only: the squad panel's buttons (scripts/squadgui.lua), and what a beacon shows, in plain values.
   debug_squad_size = function(beacon, unit, n) return squadgui.set_size(beacon, unit, n) end,
+  -- Tests only: the road router (scripts/paving.lua): a search, its result, and per-tick timings to script-output.
+  debug_paving_request = function(from, to) return paving.request(game.surfaces[1], from, to) end,
+  debug_paving_result = function(id) return paving.result(id) end,
+  debug_routes = function()
+    local out = {}
+    for key, list in pairs(storage.cmd.routes or {}) do
+      for _, r in ipairs(list) do
+        local pts = {}
+        for _, q in ipairs(r.path or {}) do pts[#pts + 1] = string.format("%.0f,%.0f", q.x, q.y) end
+        out[#out + 1] = {key = key, from = string.format("%.0f,%.0f", r.from.x, r.from.y), path = r.path == false and "none" or table.concat(pts, " ")}
+      end
+    end
+    return out
+  end,
+  debug_paving_prof = function(on) storage.paving_prof = on; return paving.stats() end,
   debug_beacon_view = function(beacon)
     local v = command.beacon_view(beacon)
     return {stance = v.stance, answering = v.answering, count = v.count, caps = v.caps, n = #v.units}

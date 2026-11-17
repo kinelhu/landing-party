@@ -2077,12 +2077,14 @@ if WHAT == "pylon":
     span = scene.camera.data.ortho_scale
     light = sun.matrix_world.to_quaternion() @ _mu.Vector((0, 0, -1))
     pts = {"wire": {}, "shadow": {}}
+    # (Projected directly: the camera looks north, down at 45 degrees, so a point (x, y, z) is x tiles right and y + z
+    # tiles up the sheet once stretched by sqrt(2). Read through the camera's frame, the heights came out by the frame's
+    # width over its height too high, once stage() made the frame wider than tall: the pylons' wires hung 2.8 tiles
+    # above their tips, 2026-11-17.)
+    def screen(v): return [round(v.x, 3), round(-(v.y + v.z), 3)]
     for col, wp in tips.items():
-        c = world_to_camera_view(scene, scene.camera, wp)
-        pts["wire"][col] = [round((c.x - 0.5) * span, 3), round(-(c.y - 0.5) * span * math.sqrt(2), 3)]
-        gp = wp + light * (wp.z / max(1e-3, -light.z))
-        g = world_to_camera_view(scene, scene.camera, gp)
-        pts["shadow"][col] = [round((g.x - 0.5) * span, 3), round(-(g.y - 0.5) * span * math.sqrt(2), 3)]
+        pts["wire"][col] = screen(wp)
+        pts["shadow"][col] = screen(wp + light * (wp.z / max(1e-3, -light.z)))
     json.dump(pts, open(f"{out}/posts.json", "w"), indent=1)
     print("rendered", WHAT, F, out, pts)
     sys.exit(0)

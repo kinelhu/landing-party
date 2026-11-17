@@ -256,15 +256,28 @@ local RESPONSE_COOLDOWN = 60 * 60
 local BITER_RESPONSE = 3
 local BITER_GUNS, BITER_COVER = 2, 20
 
-function army.alarm(b, pos, trace)
+-- Why an alarm sent no squad, counted on the camp (stats `silent`; the user, 2026-11-17, Kessler-Hayashi units loose on a
+-- Grubstake mining field while the camp's army stood by at another of its clusters).
+local function silent(b, why) b.silent = b.silent or {}; b.silent[why] = (b.silent[why] or 0) + 1 end
+
+local MOBILE_TYPE = {}
+for _, t in ipairs(MOBILE) do MOBILE_TYPE[t] = true end
+
+-- cause: what did the damage, when known. A unit, vehicle or character firing is an attack to answer wherever it
+-- stands: counted only within THREAT_RADIUS of the building hit, one firing from further (a rocket launcher's 36, a
+-- tank's cannon) read as turrets alone and got no squad (the user, 2026-11-17, playtest). Beyond that radius the squad
+-- goes to it, not to the building.
+function army.alarm(b, pos, trace, cause)
   if not storage.ops_off then ops.sense_at(b, pos, 40) end
-  if storage.army_off or game.tick < (b.next_response or 0) then return end
+  if storage.army_off then return end
+  if game.tick < (b.next_response or 0) then return silent(b, "cooldown") end
   -- Static threats (turret creep) get no piecemeal answer: fed one squad at a time into three turrets, the
   -- garrison bled out (defend). They become a priority target for a raid sized to them (scripts/ops.lua).
   local d0 = b.depots[1]
-  if d0 and d0.valid and not storage.ops_off and threat_count(d0.surface, pos, d0.force, MOBILE) == 0 then
+  local mover = cause and cause.valid and MOBILE_TYPE[cause.type] and cause.force.name ~= b.force and cause
+  if d0 and d0.valid and not storage.ops_off and not mover and threat_count(d0.surface, pos, d0.force, MOBILE) == 0 then
     ops.threatened(b, pos)
-    return
+    return silent(b, "static")
   end
   prune(b.garrison)
   local home, hd
@@ -280,11 +293,12 @@ function army.alarm(b, pos, trace)
     local dist = math.sqrt((b.lander.position.x - pos.x) ^ 2 + (b.lander.position.y - pos.y) ^ 2)
     if dist <= RESPONSE_RANGE then home = b.lander end
   end
-  if not home or #b.garrison <= HOME_GUARD then return end
+  if not home then return silent(b, "no_home") end
+  if #b.garrison <= HOME_GUARD then return silent(b, "home_guard") end
   b.next_response = game.tick + RESPONSE_COOLDOWN
   local size = math.max(RESPONSE_MIN, RESPONSE_PER_THREAT * threat_count(home.surface, pos, home.force))
   -- Biters alone get a small answer (sized to every biter, responses bled garrisons on nests nobody chose).
-  local biters_only = threat_count(home.surface, pos, home.force, nil, true) == 0
+  local biters_only = threat_count(home.surface, pos, home.force, nil, true) == 0 and not (mover and mover.force.name ~= "enemy")
   if biters_only then
     -- None where its turrets reach: three at a time into a nest field's attacks on its wall bled a camp of 266 units
     -- in three hours (visit deathworld). There its turrets answer; an outpost they do not reach still gets a squad.
@@ -292,12 +306,15 @@ function army.alarm(b, pos, trace)
     for _, t in ipairs(b.turrets or {}) do
       if t.valid and (t.position.x - pos.x) ^ 2 + (t.position.y - pos.y) ^ 2 <= BITER_COVER ^ 2 then guns = guns + 1 end
     end
-    if guns >= BITER_GUNS then b.next_response = 0; return end
+    if guns >= BITER_GUNS then b.next_response = 0; return silent(b, "turrets_cover") end
     size = BITER_RESPONSE
   end
   local group = home.surface.create_unit_group{position = home.position, force = home.force}
   local members = {}
   local dest = {pos.x, pos.y}
+  if mover and (mover.position.x - pos.x) ^ 2 + (mover.position.y - pos.y) ^ 2 > THREAT_RADIUS ^ 2 then
+    dest = {mover.position.x, mover.position.y}
+  end
   local cmd = {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = {
     {type = defines.command.go_to_location, destination = dest, radius = 16, distraction = defines.distraction.by_enemy},
     {type = defines.command.attack_area, destination = dest, radius = 30, distraction = defines.distraction.by_anything},

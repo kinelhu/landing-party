@@ -37,6 +37,7 @@ document still says Serenity where it records history.
 | Siege: a hauler carries a mortar beyond the player's turrets; deploy, shell, pack up | built (first pass) | `bombard`, `mortar` |
 | Response forces | built (first pass) | `defend` |
 | The player's army answers without the player (0.2.436; the army consult, `docs/reviews/2026-11-16-army-consult.md`): a rally beacon's D (defend) holds, then sends its squad to a strike force whose pods the player's radar sees or whose target the player is told, to a strike force landed, or to enemy units at the player's buildings, within 150 tiles of its rally point; W on its output while out; back when it is over. Squads by hand: surplus over a lowered size joins another beacon with room before it retires; a squad panel beside the beacon's window (stance, what it answers, units against sizes, buttons that write the size signals); hover links between a beacon and its units | built 0.2.436; the panel and the links unseen in a game window | `director` armydefend, armyhold; `squadmove` |
+| The player's units on roads (0.2.440): faster on paved ground (theirs only), and a squad's long walks searched by a road router that takes a paved road when it gets there sooner; 300 cells a tick, shared by a squad | built 0.2.440; unseen in a game window | `paved` (plain, route, load, squad) |
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
 | Ground-only weapons (no anti-air) and armour classes (flat laser and electric on hulls): the RTS pass | built 0.1.48 | arena |
 | Fliers by corporation (the user, 2026-10-23: "give Kessler the actual high tech fliers, whereas Grubstake is a more scrappy opponent ... kamikaze drones"): Grubstake's scrap drone (id lp-harrier: weak, cheap, two in its mix of nine) and bomb drone (id lp-scavenger, its Wheels node: bursts on what it dives on and dies), Kessler-Hayashi's laser drone (armoured, a beam; in its mix from level 2) | built 0.2.1 | arena |
@@ -1023,6 +1024,47 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
   - **Before and after** (the Studio, seed 12345, the quick set and the player and ops areas, 0.2.435 against 0.2.437):
     222 runs in common, none failing on either side, 6,703 of 6,919 metrics identical and the 216 that differ all
     ms_per_tick, one a run. Dormant as meant: every change acts only where its own scenario sets it up.
+  - **Roads** (0.2.440; the user, 2026-11-17: "how army might change the face of the players factory besides beacons",
+    "how do we incentivize not covering the factory in concrete?"). The player's six units take the tiles' walking speed
+    (`affected_by_tiles`, data-final-fixes; the engine's default for units is off): 1.42 for the trooper and 1.39 for
+    the battle tank on concrete (scenario `paved`, 21.3 s against 15.0 s and 28.0 against 20.2 over 150 tiles; with the
+    switch off, the same on both, the check seen failing). The corporations' units keep the default: a paved base does
+    not speed the raiders inside it. **The engine's pathfinder ignores tile speed**: a trooper sent past a concrete road
+    bending 20 tiles off the straight line walked the grass (21.2 s against 21.3). So paving alone rewards a carpet. The
+    road router (`scripts/paving.lua`) makes a road the thing that pays: an order's walk of 40 tiles or more with paving
+    in its area is searched on 2-tile cells, each costing its length over its tiles' mean speed (read from the tile
+    prototypes), water shut; A* with 300 cells a tick across all searches; the path pulled tight to its turns; taken if
+    it costs at most 0.97 of the straight walk. The unit sets off straight and takes the route when it lands; a squad's
+    mates within 16 tiles share one search. Each chunk's tiles are read once and forgotten when a tile in it changes
+    (a memo of the map, outside storage); the searches live in storage (a client joining mid-search). Waypoints every
+    8 tiles within 1: with far waypoints the engine walked its own way between them (straight, then diagonal) and three
+    troopers of six walked the grass beside the road; with a radius of 2 a trooper arrived a tile off-centre and walked
+    the road's edge, off the concrete, slower than the grass.
+    Measured: 5 us a cell searched; eleven searches at once on a 400-tile grid of roads every 50 tiles, one into a lake
+    (its whole box, 7,000 cells): median 1.4 ms a tick, worst 3.4, all eleven done in 1.6 s (at 1,500 cells a tick:
+    7 to 9.5 ms every tick). Gains on that grid 0 to 18% by how the grid meets the trip. A squad of six to a rally
+    point 150 tiles north past the bend: 19.5 s against 24.0 on the plain lane, two searches, none for the plain lane
+    (`paved` squad). Not yet: the tank gains less on a bend than the trooper (26.5 against 28.0); an order through a
+    built-up block routes over the buildings' cells (the engine walks round them between waypoints).
+- **Camp alarms, two gaps (0.2.440; the user, 2026-11-17, playtest: "camp militaries sometimes don't answer an
+  agression to the camp when it doesn't happen right under their nose").** (1) The static-threat rule (no squad, a raid
+  later) asked whether anything mobile stood within 30 tiles of the building hit: a character's rocket launcher (36), a
+  tank's cannon or a rival firing from further read as turrets alone. It now asks who fired: a unit, vehicle or
+  character is answered wherever it stands, and from beyond 30 the squad goes to it. (2) The damage filter's building
+  list was typed early (landers to labs) and never grew: gates, mortars, flamers, Teslas, the uplink, howitzers, belts,
+  mines and lamps raised no alarm. It is now read from the prototypes (every lp- entity with an owner that is not a unit
+  or vehicle). The alarm counts why it sent no squad (`silent`: cooldown, static, no_home, home_guard, turrets_cover).
+  Scenario `rivalhit`: ten rival infantry at a camp's farthest turret are answered in three minutes both ways (KH by a
+  Grubstake outpost 56 tiles out; Grubstake's 175 out, 31 from a depot: one squad, 19 and 44 alarms in its cooldown),
+  so the user's case was not reproduced as it stood: garrison only answers (patrols, cordon guards, raids forming and
+  escorts never do), one answer a minute, never the last two at home. `far` (a rival 40 tiles out) and `gate` (a hit on
+  an unlisted kind) are the gaps' checks.
+  Before and after (the Studio, seed 12345, quick set and the player and ops areas): roads against 0.2.438, 227 runs, none
+  failing, one differing (`factory engage`: the player's army strikes Grubstake's paved camp, its streets now fast for
+  the army and routed by it; the user: keep it). The alarm fixes against that, 230 runs, none failing, nine differing,
+  all camps under attack (fortress grubstake, leader haul, mended provoked, prowl and prowl off, skim guarded and night,
+  standing, strip): responses as many or more (prowl 3 to 5, 6 to 7), the first sooner where a belt, lamp or gate hit
+  raised it; losses both ways.
   - **Sticky answers** (0.2.437): re-chosen each pass, a landed force's moving front and the attacks at buildings
     round it took turns as nearest, nine answers and nine new orders in one fight; the answer is now kept while it
     lasts unless one of a higher rank comes.

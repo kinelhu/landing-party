@@ -814,6 +814,94 @@ end
 -- farthest from the lander, inside both sides' range. Only military targets draw fire (production does
 -- not), so the creep trades with the outpost's turrets. It must do damage, the depot must answer and
 -- destroy it, and the outpost must stand again. A depot and parts are granted at the start.
+-- A rival's units loose at a camp's outpost (the user, 2026-11-17, playtest: Kessler-Hayashi units spawned on a
+-- Grubstake mining field fought its turrets there while the camp's army at another of its clusters did nothing). At the
+-- strike, ten of the other corporation's infantry by the camp's outpost farthest from its lander; within three minutes
+-- the camp answers. army.alarm counts why it sent none (stats `silent`). LP_MIX=grubstake: a Grubstake camp, Kessler-
+-- Hayashi's infantry (the user's case); default: the reverse.
+-- LP_MIX=far: one rival unit 40 tiles from the outpost's turret hurts it (by script, the unit its cause): before
+-- 0.2.440 nothing mobile within 30 read as turrets alone, no squad. LP_MIX=gate: one rival unit by it hurts a
+-- building the alarm's typed list left out (a gate, flamer, mortar, belt or lamp): no alarm at all before.
+scenarios.rivalhit = function()
+  local far_mix, gate_mix = params.mix == "far", params.mix == "gate"
+  local g = params.mix == "grubstake"
+  local force = g and "lp-grubstake" or FORCE
+  local foe = g and FORCE or "lp-grubstake"
+  local foe_unit = g and "lp-infantry" or "lp-grubstake-infantry"
+  local function vname(kind) return g and ("lp-grubstake-" .. kind:sub(4)) or kind end
+  schedule(60, function()
+    if g then S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"}) end
+  end)
+  local function id() return g and S.g or storage.id end
+  schedule(STRIKE, function()
+    local lander = surface().find_entities_filtered{name = vname("lp-lander"), force = force}[1]
+    if not lander then info("rivalhit: no lander"); return end
+    local far, fd
+    -- (Its turret farthest from the lander: an outpost's, or its edge.)
+    local turrets = surface().find_entities_filtered{force = force, type = {"ammo-turret", "electric-turret", "fluid-turret"}}
+    for _, t in pairs(turrets) do
+      local d = (t.position.x - lander.position.x) ^ 2 + (t.position.y - lander.position.y) ^ 2
+      if not fd or d > fd then far, fd = t, d end
+    end
+    if not far then info("rivalhit: no turreted outpost, " .. #turrets .. " turrets"); return end
+    local A, B = game.forces[force], game.forces[foe]
+    A.set_cease_fire(B, false); B.set_cease_fire(A, false); A.set_friend(B, false); B.set_friend(A, false)
+    S.at = far.position
+    S.far = math.sqrt(fd)
+    S.depot = nil
+    for _, d in pairs(surface().find_entities_filtered{force = force, type = "container", name = {vname("lp-depot")}}) do
+      local dd = math.sqrt((d.position.x - S.at.x) ^ 2 + (d.position.y - S.at.y) ^ 2)
+      if not S.depot or dd < S.depot then S.depot = dd end
+    end
+    S.made = 0
+    if far_mix or gate_mix then
+      local hit = far
+      if gate_mix then
+        hit = nil
+        for _, n in ipairs({"lp-gate", "lp-flamer", "lp-mortar", "lp-post-lamp", "lp-belt"}) do
+          hit = hit or surface().find_entities_filtered{force = force, name = vname(n), limit = 1}[1]
+        end
+        if not hit then info("rivalhit: none of the unlisted kinds"); return end
+        S.hit_name = hit.name
+      end
+      local off = far_mix and 40 or 6
+      local q = surface().find_non_colliding_position(foe_unit, {hit.position.x + off, hit.position.y}, 4, 0.5)
+      local u = q and surface().create_entity{name = foe_unit, position = q, force = foe}
+      if not u then info("rivalhit: no room for the shooter"); return end
+      u.commandable.set_command{type = defines.command.stop, ticks_to_wait = 10 * 3600, distraction = defines.distraction.none}
+      S.shooter, S.made = u, 1
+      S.st0 = lp("stats", id())
+      for k = 1, 3 do hit.damage(5, foe, "physical", nil, u) end
+      S.at = hit.position
+      return
+    end
+    for k = 0, 9 do
+      local q = surface().find_non_colliding_position(foe_unit, {S.at.x + 10 + (k % 5) * 1.5, S.at.y + math.floor(k / 5) * 1.5}, 6, 0.5)
+      if q and surface().create_entity{name = foe_unit, position = q, force = foe} then S.made = S.made + 1 end
+    end
+    S.st0 = lp("stats", id())
+  end)
+  schedule(STRIKE + 3 * 3600, function()
+    if not S.st0 then return end
+    local st = lp("stats", id())
+    S.resp = st.responses - S.st0.responses
+    S.silent = {}
+    for k, v in pairs(st.silent or {}) do
+      local d = v - ((S.st0.silent or {})[k] or 0)
+      if d > 0 then S.silent[k] = d end
+    end
+    S.garrison0, S.garrison = S.st0.garrison, st.garrison
+    S.foes_left = surface().count_entities_filtered{force = foe, name = foe_unit, position = S.at, radius = 50}
+  end)
+  schedule(END - 60, function()
+    info("rivalhit: " .. serpent.line({hit = S.hit_name, far = S.far, depot = S.depot, made = S.made, responses = S.resp, silent = S.silent,
+      garrison = {S.garrison0, S.garrison}, foes_left = S.foes_left}))
+    check("rivalhit: the camp answered the rival at its outpost within three minutes", (S.resp or 0) > 0,
+      string.format("%s responses, silent %s, outpost %.0f from the lander, %.0f from a depot, garrison %s", tostring(S.resp),
+        serpent.line(S.silent), S.far or -1, S.depot or -1, tostring(S.garrison0)))
+  end)
+end
+
 scenarios.defend = function()
   if params.mix == "noops" then schedule(STRIKE - 30, function() lp("debug_tune", {ops_off = true}) end) end
   schedule(200, function() lp("debug_depot", storage.id, 3000) end)
@@ -2987,6 +3075,246 @@ scenarios.gunbuggy = function()
       and S.r.units == 12, serpent.line({S.n, S.r}))
     check("gunbuggy: the buggy outruns the tank", S.by and S.ty and S.by < S.ty - 20, string.format("buggy at %s, tank at %s",
       tostring(S.by), tostring(S.ty)))
+  end)
+end
+
+-- Paved ground and the player's army (the user, 2026-11-17: "How does concrete flooring interact with army move speed?";
+-- data-final-fixes sets affected_by_tiles on the player's units). Three lanes, each a trooper and a battle tank sent
+-- 150 tiles north: plain ground, a straight concrete road, and a concrete road that bends 20 tiles off the straight line
+-- (190 tiles, 136 tiles' time at 1.4 against 150 off it). Times to arrive, and how far east each went on the bend: does
+-- the pathfinder take a longer but faster road? (2026-11-17: no. It takes the straight line, 21.2 s against 21.3 s plain.)
+scenarios.paved = function()
+  if params.mix == "load" then return scenarios.pavedload() end
+  if params.mix == "squad" then return scenarios.pavedsquad() end
+  local routed = params.mix == "route"
+  local LANES = {plain = -360, straight = -260, bend = -160}
+  local KINDS = {trooper = 0, tank = 50}
+  local LEN, OFF = 150, 20
+  S.t, S.east = {}, {}
+  local function pave(tiles, x0, y0, x1, y1)
+    for x = math.min(x0, x1) - 2, math.max(x0, x1) + 1 do for y = math.min(y0, y1) - 2, math.max(y0, y1) + 1 do
+      tiles[#tiles + 1] = {name = "concrete", position = {x, y}}
+    end end
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-400, -200, -60, 30)
+    local tiles = {}
+    for lane, x0 in pairs(LANES) do for _, dx in pairs(KINDS) do
+      local x = x0 + dx
+      if lane == "straight" then pave(tiles, x, 0, x, -LEN)
+      elseif lane == "bend" then pave(tiles, x, 0, x + OFF, 0); pave(tiles, x + OFF, 0, x + OFF, -LEN); pave(tiles, x + OFF, -LEN, x, -LEN) end
+    end end
+    surface().set_tiles(tiles, true, false, true, false)
+    S.affected = prototypes.entity["lp-trooper"].affected_by_tiles
+    S.units = {}
+    for lane, x0 in pairs(LANES) do for kind, dx in pairs(KINDS) do
+      local x = x0 + dx
+      local u = surface().create_entity{name = kind == "tank" and "lp-battle-tank" or "lp-trooper", position = {x, 0}, force = "player"}
+      u.commandable.set_command{type = defines.command.go_to_location, destination = {x, -LEN}, radius = 2,
+        distraction = defines.distraction.none}
+      local r = {u = u, key = lane .. ":" .. kind, x = x}
+      -- (LP_MIX=route: the bend's units follow the road router's path, set off straight while it searches.)
+      if routed and lane == "bend" then r.search = lp("debug_paving_request", {x = x, y = 0}, {x = x, y = -LEN}) end
+      S.units[#S.units + 1] = r
+      S.east[lane .. ":" .. kind] = 0
+    end end
+    S.go = game.tick
+  end)
+  for t = 70, 60 * 60, 10 do
+    schedule(t, function()
+      for _, r in ipairs(S.units or {}) do
+        if r.search then
+          local res = lp("debug_paving_result", r.search)
+          if res then
+            r.search, S.route = nil, S.route or {}
+            S.path = S.path or {}
+            S.path[r.key] = {}
+            for _, q in ipairs(res.path or {}) do table.insert(S.path[r.key], string.format("%.0f,%.0f", q.x - r.x, q.y)) end
+            S.route[r.key] = {n = res.path and #res.path, cost = res.cost, straight = res.straight, opened = res.opened,
+              failed = res.failed, after = (game.tick - S.go) / 60}
+            if res.path then
+              local cmds = {}
+              for _, p in ipairs(res.path) do
+                cmds[#cmds + 1] = {type = defines.command.go_to_location, destination = p, radius = 0.5,
+                  distraction = defines.distraction.none}
+              end
+              r.u.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+                commands = cmds}
+            end
+          end
+        end
+        if r.u.valid and not S.t[r.key] then
+          local p = r.u.position
+          S.east[r.key] = math.max(S.east[r.key], p.x - r.x)
+          if r.key == "bend:trooper" and game.tick % 30 == 0 then
+            S.trace = S.trace or {}
+            S.trace[#S.trace + 1] = string.format("%.1f:%.1f,%.0f:%s", (game.tick - S.go) / 60, p.x - r.x, p.y, surface().get_tile(p.x, p.y).name:sub(1, 4))
+          end
+          if p.y < -LEN + 3 then S.t[r.key] = (game.tick - S.go) / 60 end
+        end
+      end
+    end)
+  end
+  settle_when(function() local n = 0; for _ in pairs(S.t) do n = n + 1 end; return n == 6 end)
+  schedule(END - 60, function()
+    info("paved: " .. serpent.line({affected = S.affected, t = S.t, east = S.east, route = S.route}))
+    if S.trace then info("paved trace: " .. table.concat(S.trace, " ") .. " path " .. serpent.line(S.path)) end
+    if routed then
+      for _, k in ipairs({"trooper", "tank"}) do
+        local p, b = S.t["plain:" .. k], S.t["bend:" .. k]
+        check("paved: route, the " .. k .. " took the bent road, and sooner than straight over the grass",
+          p and b and b < p * 0.95 and S.east["bend:" .. k] > 15,
+          string.format("%s s against %s s plain, %.1f east", tostring(b), tostring(p), S.east["bend:" .. k] or 0))
+      end
+    end
+    local t = S.t
+    for _, k in ipairs({"trooper", "tank"}) do
+      local p, st, b = t["plain:" .. k], t["straight:" .. k], t["bend:" .. k]
+      check("paved: every " .. k .. " arrived", p and st and b, serpent.line(t))
+      if p and st and b then
+        metric("paved_" .. k .. "_gain", string.format("%.2f", p / st))
+        -- (Seen failing with the switch off: 21.3 s on both.)
+        check("paved: the " .. k .. " is faster on concrete, about 1.4", p / st > 1.3 and p / st < 1.5,
+          string.format("%.1f s against %.1f s, affected_by_tiles %s", st, p, tostring(S.affected)))
+        info(string.format("paved: %s plain %.1f s, straight road %.1f s, bend %.1f s, went %.1f east on the bend", k, p, st, b, S.east["bend:" .. k]))
+      end
+    end
+  end)
+end
+
+-- Squads on paved ways (command.lua's orders through the road router): two rally beacons, six troopers each, both
+-- rally points moved 150 tiles north at once. One lane plain, one with a concrete road bending 20 tiles east (190 tiles
+-- on concrete). The bend's squad searches once (its mates share it), takes the road and is there first; the plain
+-- lane's, with no paving in its area, never searches.
+scenarios.pavedsquad = function()
+  local LANES = {plain = -360, bend = -160}
+  local LEN, OFF = 150, 20
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  S.t = {}
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-400, -200, -100, 40)
+    local tiles = {}
+    local function pave(x0, y0, x1, y1)
+      for x = math.min(x0, x1) - 2, math.max(x0, x1) + 1 do for y = math.min(y0, y1) - 2, math.max(y0, y1) + 1 do
+        tiles[#tiles + 1] = {name = "concrete", position = {x, y}}
+      end end
+    end
+    local x = LANES.bend
+    pave(x, 0, x + OFF, 0); pave(x + OFF, 0, x + OFF, -LEN); pave(x + OFF, -LEN, x, -LEN)
+    surface().set_tiles(tiles, true, false, true, false)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    local e = put("electric-energy-interface", -250, 20)
+    e.power_production, e.electric_buffer_size = 1e9, 1e9
+    put("medium-electric-pole", -252.5, 20.5)
+    put("lp-command-relay", -255.5, 20.5)
+    put("medium-electric-pole", -258.5, 20.5)
+    put("lp-command-relay", -261.5, 20.5)
+    S.beacons = {}
+    for lane, bx in pairs(LANES) do
+      S.beacons[lane] = put("lp-rally-beacon", bx + 0.5, 0.5)
+      for k = 0, 5 do
+        surface().create_entity{name = "lp-trooper", position = {bx - 3 + k, 3}, force = "player"}
+      end
+      lp("debug_enlist", {{bx - 6, 1}, {bx + 6, 6}})
+    end
+  end)
+  schedule(60 + 6 * 60, function()
+    S.before = lp("army")
+    for _, b in pairs(S.beacons) do
+      local cb = b.get_or_create_control_behavior()
+      ;(cb.get_section(1) or cb.add_section()).set_slot(1, {value = {type = "virtual", name = "signal-Y", quality = "normal"}, min = -LEN})
+    end
+    S.go = game.tick
+  end)
+  for t = 60 + 6 * 60 + 10, 60 * 60, 10 do
+    schedule(t, function()
+      if not S.go then return end
+      for lane, bx in pairs(LANES) do
+        if not S.t[lane] then
+          local n = surface().count_entities_filtered{area = {{bx - 14, -LEN - 12}, {bx + 14, -LEN + 12}}, name = "lp-trooper"}
+          if n >= 6 then S.t[lane] = (game.tick - S.go) / 60 end
+          if (game.tick - S.go) == 120 then S.routes = lp("debug_routes") end
+          if lane == "bend" and (game.tick - S.go) % 60 == 0 then
+            S.trace = S.trace or {}
+            local xs = {}
+            for _, u in pairs(surface().find_entities_filtered{area = {{bx - 30, -LEN - 20}, {bx + 40, 10}}, name = "lp-trooper"}) do
+              xs[#xs + 1] = string.format("%.0f,%.0f", u.position.x - bx, u.position.y)
+            end
+            S.trace[#S.trace + 1] = math.floor((game.tick - S.go) / 60) .. "[" .. table.concat(xs, " ") .. "]"
+          end
+        end
+      end
+    end)
+  end
+  settle_when(function() return S.t.plain and S.t.bend end)
+  schedule(END - 60, function()
+    local st = lp("army")
+    S.searches, S.taken = st.route_searches - S.before.route_searches, st.routes_taken - S.before.routes_taken
+    info("paved squad: " .. serpent.line({t = S.t, searches = S.searches, taken = S.taken}))
+    info("paved squad trace: " .. table.concat(S.trace or {}, " "))
+    info("paved squad routes: " .. serpent.line(S.routes))
+    check("paved: squad, both squads at their rally points", S.t.plain and S.t.bend, serpent.line(S.t))
+    check("paved: squad, the bend's squad took the road and came first", S.t.plain and S.t.bend and S.t.bend < S.t.plain * 0.97
+      and S.taken >= 1, string.format("%s s against %s s, %d routes taken", tostring(S.t.bend), tostring(S.t.plain), S.taken))
+    check("paved: squad, one search shared by the squad, none for the plain lane", S.searches >= 1 and S.searches <= 2,
+      S.searches .. " searches")
+  end)
+end
+
+-- The road router under load (paving.lua; the user, 2026-11-17: "How big would the performance cost be?"): a concrete
+-- grid of 4-wide roads every 50 tiles over 400 by 400 tiles, a 60-tile carpet and a lake; eleven searches at once, ten
+-- 150 tiles long in different directions and one into the lake (no way: its whole box opened, the worst case). Each
+-- tick's search time goes to script-output/landing-party/paving-prof.txt (the profiler cannot be read in Lua).
+scenarios.pavedload = function()
+  local X0, Y0 = -800, -200
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(X0, Y0, X0 + 400, Y0 + 400)
+    local tiles = {}
+    local function put(x, y, name) tiles[#tiles + 1] = {name = name, position = {x, y}} end
+    for x = X0, X0 + 399 do for y = Y0, Y0 + 399 do
+      local rx, ry = (x - X0) % 50, (y - Y0) % 50
+      if rx < 4 or ry < 4 then put(x, y, "concrete")
+      elseif x >= X0 + 120 and x < X0 + 180 and y >= Y0 + 220 and y < Y0 + 280 then put(x, y, "refined-concrete") end
+      if x >= X0 + 300 and x < X0 + 340 and y >= Y0 + 300 and y < Y0 + 340 then put(x, y, "water") end
+    end end
+    surface().set_tiles(tiles, true, true, true, false)
+    lp("debug_paving_prof", true)
+    local c = {x = X0 + 200, y = Y0 + 200}
+    S.ids = {}
+    for k = 0, 9 do
+      local a = k * math.pi / 5 + 0.3
+      local from = {x = c.x - math.cos(a) * 75, y = c.y - math.sin(a) * 75}
+      local to = {x = c.x + math.cos(a) * 75, y = c.y + math.sin(a) * 75}
+      S.ids[#S.ids + 1] = lp("debug_paving_request", from, to)
+    end
+    S.ids[#S.ids + 1] = lp("debug_paving_request", {x = X0 + 230, y = Y0 + 230}, {x = X0 + 320, y = Y0 + 320})
+    S.t0 = game.tick
+    S.res = {}
+  end)
+  for t = 62, 1800, 2 do
+    schedule(t, function()
+      for n, id in ipairs(S.ids or {}) do
+        if not S.res[n] then
+          local r = lp("debug_paving_result", id)
+          if r then S.res[n] = {ticks = game.tick - S.t0, opened = r.opened, failed = r.failed, pts = r.path and #r.path,
+            gain = r.cost and r.straight and string.format("%.2f", r.straight / r.cost)} end
+        end
+      end
+    end)
+  end
+  settle_when(function() return S.res and #S.res == 11 end)
+  schedule(END - 60, function()
+    S.stats = lp("debug_paving_prof", false)
+    info("pavedload: " .. serpent.line({res = S.res, stats = S.stats}))
+    check("paved: load, all eleven searches done, the lake's failed", S.res[11] and S.res[11].failed, serpent.line(S.res))
+    local ok = true
+    for n = 1, 10 do ok = ok and S.res[n] and S.res[n].pts ~= nil end
+    check("paved: load, the ten roads found", ok, serpent.line(S.res))
   end)
 end
 

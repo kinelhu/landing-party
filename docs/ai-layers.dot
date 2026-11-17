@@ -8,11 +8,11 @@ digraph layers {
   "The director (above every faction)" [label="The director (above every faction)\n2 modules, 2384 lines\ndirector 2254", fillcolor="#f7dede"];
   "Corporation" [label="Corporation\n10 modules, 3370 lines\nfaction 1207", fillcolor="#f7dede"];
   "Settlement" [label="Settlement\n16 modules, 6526 lines\nlayout 1747", fillcolor="#f7dede"];
-  "Army and operations" [label="Army and operations\n22 modules, 9871 lines\narmy 1061, ops 2528, siege 2146", fillcolor="#f7dede"];
+  "Army and operations" [label="Army and operations\n22 modules, 9888 lines\narmy 1078, ops 2528, siege 2146", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1607 lines", fillcolor="#eef2f7"];
   "The biotech" [label="The biotech\n5 modules, 8369 lines\nherd 4543, farm 2521", fillcolor="#f7dede"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
-  "The player's army" [label="The player's army\n7 modules, 1998 lines\ncommand 1168", fillcolor="#f7dede"];
+  "The player's army" [label="The player's army\n8 modules, 2383 lines\ncommand 1281", fillcolor="#f7dede"];
   "Army and operations" -> "Corporation" [label="3", penwidth=1.8];
   "Army and operations" -> "Knowledge and strategy (per faction)" [label="5", penwidth=2.2];
   "Army and operations" -> "Perception and attempts (any attacker)" [label="12", penwidth=4.0];
