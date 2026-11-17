@@ -8223,4 +8223,7 @@ Bugs and surprises the headless runs caught, each kept as a check:
   played otherwise and two checks failed (`director` repel razed a building after its break; repelgap's force, its way
   home out of the guns' reach, had none to answer). counters.lua now keeps the old cells and takes only the changed
   units' rows and columns (its header says so); both pass. A regenerated table needs more rounds or a merge by default.
+  Against 0.2.437 then (the Studio, 226 runs in common): none failing; 6,791 game metrics identical, 28 differing, in
+  four runs that all field battle tanks (breach arty, siege 20-10-10, director armydrop, factory engage): at 8 of
+  bandwidth fewer fit (siege's army 82 to 70 units), and the corporations counter them by their new cells.
 
