@@ -36,7 +36,7 @@
 <title>Perception and attempts (any attacker)</title>
 <path fill="#eef2f7" stroke="black" d="M733,-131.75C733,-131.75 555,-131.75 555,-131.75 549,-131.75 543,-125.75 543,-119.75 543,-119.75 543,-107.75 543,-107.75 543,-101.75 549,-95.75 555,-95.75 555,-95.75 733,-95.75 733,-95.75 739,-95.75 745,-101.75 745,-107.75 745,-107.75 745,-119.75 745,-119.75 745,-125.75 739,-131.75 733,-131.75"/>
 <text xml:space="preserve" text-anchor="middle" x="644" y="-115.3" font-family="Helvetica,sans-Serif" font-size="11.00">Perception and attempts (any attacker)</text>
-<text xml:space="preserve" text-anchor="middle" x="644" y="-103.3" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1607 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="644" y="-103.3" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1668 lines</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Seams (leaves) -->
 <g id="edge18" class="edge">

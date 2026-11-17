@@ -840,6 +840,10 @@ remote.add_interface("landing-party", {
   -- beside its siege's as its menu weighs them (farm.lua spread_op).
   debug_area_share = function(faction, foe, pos, methods) return tactics.area_share(faction, foe, pos, methods, nil, nil) end,
   debug_spread_op = function(sg) return farm.debug_spread_op(sg) end,
+  -- Tests only: its plan from `from` at `target` for a wave of n (herd.plan), nil where it reads no way.
+  debug_plan = function(surface_index, from, target, n)
+    return herd.plan(game.surfaces[surface_index], from, target, {"player"}, n or shared.WAVE_MIN)
+  end,
   -- Tests only: a spread's points (herd.spread_points), at most `most`, on the maps of a plan of its farm's kind from `from`
   -- at `target`, its breach and start those given (the test's wall, not where the plan would go round it).
   debug_spread_points = function(surface_index, from, target, most, breach, start)

@@ -3,7 +3,7 @@ digraph layers {
   node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#eef2f7"];
   edge [color="#8899aa", fontname="Helvetica", fontsize=9];
   "Seams (leaves)" [label="Seams (leaves)\n13 modules, 1834 lines", fillcolor="#d9f0d9"];
-  "Perception and attempts (any attacker)" [label="Perception and attempts (any attacker)\n6 modules, 1607 lines", fillcolor="#eef2f7"];
+  "Perception and attempts (any attacker)" [label="Perception and attempts (any attacker)\n6 modules, 1668 lines", fillcolor="#eef2f7"];
   "Knowledge and strategy (per faction)" [label="Knowledge and strategy (per faction)\n2 modules, 316 lines", fillcolor="#eef2f7"];
   "The director (above every faction)" [label="The director (above every faction)\n2 modules, 2384 lines\ndirector 2254", fillcolor="#f7dede"];
   "Corporation" [label="Corporation\n10 modules, 3370 lines\nfaction 1207", fillcolor="#f7dede"];

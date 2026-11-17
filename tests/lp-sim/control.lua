@@ -3078,6 +3078,51 @@ scenarios.gunbuggy = function()
   end)
 end
 
+-- A cliff's end by a lake (the playtest, 0.2.440, 2026-11-17: Synthexis broke through the user's walled base to reach an
+-- outpost whose one way in ran between a lake and a cliff's end; the cost map closed every cell with a cliff piece, and
+-- the engine's pathfinder walked round the cliff's end). A lake west of x = -20, a cliff line along y = 0 from x = -14 east
+-- past the plan's box: its plan from the south to the north must go through the 6-tile gap. LP_MIX=shut: the cliff
+-- carried on to the lake's shore, and it must read no way (a line across a cell still closes it).
+scenarios.cliffgap = function()
+  local shut = params.mix == "shut"
+  local OY = -1500   -- (far from the settlement: flattened, the ground took its drills)
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-440, OY - 140, 440, OY + 140)
+    local tiles = {}
+    for x = -440, -21 do for y = OY - 40, OY + 39 do tiles[#tiles + 1] = {name = "water", position = {x, y}} end end
+    surface().set_tiles(tiles, true, false, true, false)
+    local made = 0
+    for x = shut and -18 or -12, 440, 4 do
+      if surface().create_entity{name = "cliff", position = {x, OY}, cliff_orientation = "west-to-east"} then made = made + 1 end
+    end
+    local first = surface().find_entities_filtered{type = "cliff", area = {{-40, OY - 10}, {0, OY + 10}}}
+    local west = math.huge
+    for _, c in ipairs(first) do west = math.min(west, c.bounding_box.left_top.x) end
+    S.made, S.west = made, west
+    S.plan = lp("debug_plan", surface().index, {0, OY + 120}, {0, OY - 120}, 24)
+  end)
+  schedule(120, function()
+    local pl = S.plan
+    -- Where its way crosses the cliff's line.
+    local cross
+    if pl then
+      for k = 2, #pl.path do
+        local a, b = pl.path[k - 1], pl.path[k]
+        if (a[2] - OY) * (b[2] - OY) <= 0 and a[2] ~= b[2] then cross = a[1] + (b[1] - a[1]) * (OY - a[2]) / (b[2] - a[2]); break end
+      end
+    end
+    local detail = string.format("%d cliff pieces, the line from x %.1f; plan %s, crossing the line at x %s", S.made, S.west,
+      pl and string.format("cost %.1f, %d points", pl.cost, #pl.path) or "none", cross and string.format("%.0f", cross) or "-")
+    if shut then
+      check("cliffgap: with the cliff carried to the lake, its plan reads no way across", pl == nil or cross == nil, detail)
+    else
+      check("cliffgap: its plan goes through the gap between the lake and the cliff's end", pl ~= nil and cross ~= nil
+        and cross >= -32 and cross <= 0, detail)
+    end
+  end)
+end
+
 -- Paved ground and the player's army (the user, 2026-11-17: "How does concrete flooring interact with army move speed?";
 -- data-final-fixes sets affected_by_tiles on the player's units). Three lanes, each a trooper and a battle tank sent
 -- 150 tiles north: plain ground, a straight concrete road, and a concrete road that bends 20 tiles off the straight line

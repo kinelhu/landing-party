@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.441
+Date: 2026-11-17
+  Bugfixes:
+    - Synthexis read any ground with a cliff on it as impassable. Where the only way to an outpost passed a cliff's end, its waves broke through the walled base beside it instead.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.440
 Date: 2026-11-17
   Features:

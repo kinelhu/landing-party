@@ -31,6 +31,11 @@ costmap.FOREST_DEAR = 4
 -- in each, read as open: a plan ran along it 500 tiles from the user's fort, and its herd's legs failed one after another
 -- until it scattered; the siege lab, 2026-10-30. A cliff's end closes a cell it need not: the safe side.)
 costmap.CLIFFS = 1
+-- Read at this grain (tiles) inside a cell with cliffs: open if one stretch clear of cliffs and water reaches all four of
+-- its sides. (Closed by any piece, a cliff's end closed the one gap into the user's outpost pocket between the cliff and a
+-- lake, and every plan there broke through their walled base instead; the engine's pathfinder walked round the cliff's end;
+-- the playtest, 0.2.440, 2026-11-17.) A line crossing the cell leaves no stretch touching all four: still closed.
+costmap.CLIFF_GRAIN = 2
 -- Its foe's mines, seen (the user, 2026-10-28: "let it see the mines"): each in a cell costs it MINE of its own to cross, a
 -- runt of its sweep and the time (herd.lua sweep): a mined way is dearer than an open one, and a field it can go round it
 -- goes round.
@@ -124,6 +129,63 @@ local function near(map, kind, i, j)
   return false
 end
 
+-- Whether the cliffs in a cell (its middle cx, cy) leave no way across it (costmap.CLIFF_GRAIN): its sub-cells touched by a
+-- cliff's box or a water tile are shut, and it is open if the open ones joined side to side (not corner to corner) reach
+-- all four of its sides as one stretch.
+function costmap.cliffs_close(s, cx, cy, size, dry)
+  local l, t = cx - size / 2, cy - size / 2
+  local area = {{l, t}, {l + size, t + size}}
+  local cliffs = s.find_entities_filtered{area = area, type = "cliff"}
+  if #cliffs < costmap.CLIFFS then return false end
+  local g = costmap.CLIFF_GRAIN
+  local n = math.floor(size / g)
+  local shut = {}
+  local function mark(x1, y1, x2, y2)
+    for a = math.max(0, math.floor((x1 - l) / g)), math.min(n - 1, math.ceil((x2 - l) / g) - 1) do
+      for b = math.max(0, math.floor((y1 - t) / g)), math.min(n - 1, math.ceil((y2 - t) / g) - 1) do shut[a * n + b] = true end
+    end
+  end
+  for _, e in ipairs(cliffs) do
+    local bb = e.bounding_box
+    local x1, y1, x2, y2 = bb.left_top.x, bb.left_top.y, bb.right_bottom.x, bb.right_bottom.y
+    if bb.orientation and bb.orientation ~= 0 then
+      -- (Turned: the box round its turned corners.)
+      local mx, my, hx, hy = (x1 + x2) / 2, (y1 + y2) / 2, (x2 - x1) / 2, (y2 - y1) / 2
+      local a = bb.orientation * 2 * math.pi
+      local ex = math.abs(hx * math.cos(a)) + math.abs(hy * math.sin(a))
+      local ey = math.abs(hx * math.sin(a)) + math.abs(hy * math.cos(a))
+      x1, y1, x2, y2 = mx - ex, my - ey, mx + ex, my + ey
+    end
+    mark(x1, y1, x2, y2)
+  end
+  if not dry then
+    for _, w in ipairs(s.find_tiles_filtered{area = area, collision_mask = "water_tile"}) do
+      mark(w.position.x, w.position.y, w.position.x + 1, w.position.y + 1)
+    end
+  end
+  -- (The stretches by a search from each open sub-cell not yet reached, a stack of indices.)
+  local seen, todo = {}, {}
+  for k0 = 0, n * n - 1 do
+    if not shut[k0] and not seen[k0] then
+      seen[k0] = true
+      todo[1] = k0
+      local top = 1
+      local N, S, W, E = false, false, false, false
+      while top > 0 do
+        local k = todo[top]
+        top = top - 1
+        local a, b = math.floor(k / n), k % n
+        if a == 0 then W = true elseif not shut[k - n] and not seen[k - n] then seen[k - n] = true; top = top + 1; todo[top] = k - n end
+        if a == n - 1 then E = true elseif not shut[k + n] and not seen[k + n] then seen[k + n] = true; top = top + 1; todo[top] = k + n end
+        if b == 0 then N = true elseif not shut[k - 1] and not seen[k - 1] then seen[k - 1] = true; top = top + 1; todo[top] = k - 1 end
+        if b == n - 1 then S = true elseif not shut[k + 1] and not seen[k + 1] then seen[k + 1] = true; top = top + 1; todo[top] = k + 1 end
+      end
+      if N and S and W and E then return false end
+    end
+  end
+  return true
+end
+
 local cell_cost_
 local function cell_cost(map, i, j)
   local k = i * map.h + j
@@ -165,8 +227,7 @@ cell_cost_ = function(map, i, j, k)
   -- A cliff line across it (CLIFFS or more cliff pieces): no way, as the engine's pathfinder has none. (Blind to them, its
   -- plans ran straight across a cliff south-east of the user's fort; every herd was walked round the cliff's end by the
   -- engine, past the fort's mined corner, and lost 23 to 27 to the mines on its march; the siege lab, 2026-10-30.)
-  elseif near(map, "cliff", i, j) and s.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}}, type = "cliff"}
-    >= costmap.CLIFFS then
+  elseif near(map, "cliff", i, j) and costmap.cliffs_close(s, cx, cy, size, not wet(map, i, j)) then
     c = costmap.WATER
   else
     local fire = 0
