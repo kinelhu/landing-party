@@ -12,6 +12,15 @@ Close your own game first (Steam allows one copy). Then one of:
     cd ~/Dev/landing-party && scripts/play-visit.sh playtest
     cd ~/Dev/landing-party && LP_WATCH=army.zip scripts/play-visit.sh playtest
 
+    cd ~/Dev/landing-party && LP_WATCH=director.zip scripts/play-visit.sh playtest
+
+The director save (items 5 to 9) is the army save run 13 minutes on headless: Grubstake and Kessler-Hayashi landed 350
+and 450 tiles from you (2,000 parts each), the director on from the start, laser turrets and weapon shooting speed 2
+researched (chemical science with them), four lasers at the base's edge toward each camp. Its first spree and strike
+force come about two minutes after loading: set a beacon to D first. Left alone in the same run, that strike took all 64
+labs in under a minute at minute 17, and about 1,250 belts, 290 inserters and 250 poles on its way (Kessler-Hayashi
+arriving at a base without chemical science, which it never meets in play: a note for the calibration).
+
 The first opens a fresh copy of deathworld10x (never the real file) with Landing Party as a player would meet it, no
 test mod. The second is the same save with an army set up: command bandwidth 1 researched, three barracks fed by
 infinity chests, three relays on their own power, a rally beacon and 16 troopers and breachers, about 30 tiles west of
@@ -78,3 +87,38 @@ end to see the beats you missed.
 
 Notes into this file under a dated heading, or just tell me. The calibration (difficulty and the levers) comes next,
 from what you felt here.
+
+## Notes, 2026-11-17 and 2026-11-18
+
+Sessions on deathworld10x (evolution 0.49 by then), from 0.2.440 to 0.2.453. Items 1 to 3 played; 4 to 10 not reached
+(the director takes over 30 minutes after the first landing, and every launch started from a fresh copy).
+
+**1. Synthexis's waves.** Synthexis aimed at the walled cube base, not the undefended mining outpost north of it: the
+cost map closed every cell with a cliff piece, and the outpost's one way in passed a cliff's end. Fixed (0.2.441: cliffs
+read at 2 tiles, a cell open where one stretch reaches its four sides). The acid spit and the green line laid while a
+wave plans its raid "not appropriate ... vanilla biters don't put mud anywhere": removed (0.2.442).
+
+**2. Grubstake.** The survey party's map tag stayed after it was destroyed (0.2.443), and so did a strip camp's, a fallen
+camp's supply drop's and a razed claim's (0.2.444). Killing the party showed "no loot" and the tag stayed: both came up to
+a minute late; now at once (0.2.445).
+
+**3. Your army.** Played with the army save (`LP_WATCH=army.zip`: three barracks on infinity chests, relays on their own
+power, 16 troopers and breachers).
+- Bandwidth: "unclear in game how much max pop a level gives". Each level now says its relays and units (0.2.446).
+- "Lots of blind fighting interrupting visible fighting": the ground round units went dark in patches; kept in sight now
+  (0.2.447, measured in a game window).
+- "Units often walk to their doom without firing a shot": an attack-move broke off fights every 10 s; it fights through
+  now (0.2.447).
+- Muster points let a player stockpile orders and replace a lost army at once; retiring walked units home and handed
+  orders back. Muster points removed, retiring loses the units, two presses (0.2.448).
+- "My 40 unit army could not clear a 3 nest vanilla biter base": research already scales the army (unsaid; +10% bullet
+  damage researched here); infantry now take heavy armour's acid resistance, and each unit names its research (0.2.449).
+- Units ignored landers and economic buildings: by design (outposts captured whole; a lander held by its generators).
+  Attack-move razes, military then economy then walls; right-click attacks any building; a held lander points to its
+  generators on hover (0.2.450). The hull's 160-tile ring "looks weird": removed (0.2.451).
+- Capture "feels a little forced": capture and the occupy stance removed; a fallen camp's outposts are ruins (0.2.452).
+- Answered: how gates work (your units open your own), how muster points worked, how to deselect (drag over empty
+  ground), how to assign idle units to a beacon (automatic within 200 tiles; release hand-ordered ones).
+
+Not yet seen in game: the lander's hover lines (0.2.450). Open: a squad sent from far off plans its path before your
+gates near it open and may stop at your own wall; `paved squad` fails on every version.
