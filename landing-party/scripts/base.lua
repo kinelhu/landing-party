@@ -795,14 +795,10 @@ local function hull(b)
   -- three guns and its lander with them, 16 minutes after landing, two seeds of three (the visits at 0.2.364; the dome:
   -- "the guns buy no shortcut, troops do").
   if not held and not b.lander.destructible and b.dome and (b.dome.down_till or 0) > game.tick then return end
-  -- Its hull told (the user, playtest: units "don't seem to target landers"; held, nothing can hurt it and nothing aims at
-  -- it): a faint ring on the ground round the lander at HULL_RADIUS while it holds, the generators inside it its hull.
-  local ring = b.hull_ring
-  if held and not (ring and ring.valid) then
-    b.hull_ring = rendering.draw_circle{color = {0.45, 0.75, 1, 0.35}, radius = HULL_RADIUS, width = 3, filled = false,
-      target = b.lander, surface = b.lander.surface, draw_on_ground = true}
-  elseif not held and ring then
-    if ring.valid then ring.destroy() end
+  -- (A ring at HULL_RADIUS round a held lander, 0.2.450, gone in 0.2.451: 160 tiles across, the user: "What's the huge
+  -- blue ring around the camp? looks weird". Its hull is told by hovering the lander, squadgui.)
+  if b.hull_ring then
+    if b.hull_ring.valid then b.hull_ring.destroy() end
     b.hull_ring = nil
   end
   if b.lander.destructible == held then

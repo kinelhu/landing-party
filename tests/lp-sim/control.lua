@@ -3677,8 +3677,8 @@ end
 -- corporation outpost 60 tiles east (three generators, two pylons, two bins, a laser turret on its own power, four walls),
 -- eight troopers sent at its middle on an attack-move: the turret, then every building falls (on 0.2.449, 4 of the 7 stood:
 -- only what the engine's by_anything met on the way fell, walls among them, as they still do). LP_MIX=move:
--- no turret, a plain move: it stands whole (a move captures, it does not raze). And the settlement's lander: its hull
--- drawn as a ring while it holds, gone with the ring once the generators within it are destroyed.
+-- no turret, a plain move: it stands whole (a move captures, it does not raze). And the settlement's lander: hovered, it
+-- points to its hull's generators while it holds, to none once they are destroyed.
 -- LP_MIX=click: no turret, a right-click on one of its pylons (a building the attack order's list of types once left out:
 -- the user, "Can't we right click buildings also?"): the pylon falls, the rest stands.
 scenarios.raze = function()
@@ -3724,7 +3724,8 @@ scenarios.raze = function()
   local function lander() return surface().find_entities_filtered{name = "lp-lander", limit = 1}[1] end
   local function ring_of(l)
     for _, o in ipairs(rendering.get_all_objects("landing-party")) do
-      if o.valid and o.type == "circle" and o.target and o.target.entity == l then return o end
+      -- (The hull's own ring: at shared.HULL_RADIUS, 80; the dome's, drawn at its reach, is another.)
+      if o.valid and o.type == "circle" and o.target and o.target.entity == l and o.radius == 80 then return o end
     end
   end
   schedule(60 + 60 * 60, function()
@@ -3758,8 +3759,9 @@ scenarios.raze = function()
     else
       check("raze: an attack-move razes it, turret, buildings and walls", econ == 0 and not S.turret.valid and walls == 0,
         string.format("%d of %d buildings standing, turret %s, %d of 4 walls", econ, S.econ_n, tostring(S.turret.valid), walls))
-      check("raze: its hull drawn while it holds (its hover pointing to its generators), gone as it falls", S.held
-        and S.held.ring and not S.held.destructible and S.held.pointed >= 2 and S.down and not S.down.ring
+      -- (No ring since 0.2.451: 160 tiles across, "looks weird". None drawn now, held or not.)
+      check("raze: its hover points to its hull's generators while it holds, to none once it falls, and no ring", S.held
+        and not S.held.ring and not S.held.destructible and S.held.pointed >= 2 and S.down and not S.down.ring
         and S.down.destructible and S.down.pointed == 0, serpent.line({S.held, S.down}))
     end
   end)

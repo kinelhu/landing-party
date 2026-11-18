@@ -47,7 +47,7 @@ function gui.on_selected(e)
   end
   -- A corporation's lander while its hull holds (the user: "Could the lander perhaps point to the generators when
   -- hovered over? like a beacon points to its units?"): a line to each generator within shared.HULL_RADIUS, the ones
-  -- its hull stands on (base.lua hull), in its ring's blue, and how many over it.
+  -- its hull stands on (base.lua hull), in blue, and how many over it.
   if sel.force ~= p.force then
     local gens = gui.hull_gens(sel)
     if #gens > 0 then

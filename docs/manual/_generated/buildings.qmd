@@ -9,7 +9,7 @@ second turret it builds is a scrap cannon.
 
 | Building | Health (Kessler-Hayashi) | Health (Grubstake) | What it does |
 |:--|--:|--:|:--|
-| Lander | 12,000 | 12,000 | The center of a faction base. Destroying it destroys the base. It cannot be harmed while half the generators in its ring stand. |
+| Lander | 12,000 | 12,000 | The center of a faction base. Destroying it destroys the base. Unharmed while half the generators near it stand: hover to see them. |
 | Uplink | 6,000 | 6,000 | The center of a faction's headquarters. Destroying it destroys the headquarters, and the faction withdraws. |
 | Generator | 400 | 400 |  |
 | Pylon | 100 | 100 |  |

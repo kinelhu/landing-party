@@ -80,8 +80,8 @@ flamethrowers need no fuel. Each fires an electric arc that jumps from one targe
 fire. They turn all the way round, so a gate cannot be rushed from the side, and their fire spares Kessler-Hayashi's
 own units.
 
-- **Lander.** It cannot be destroyed while at least {{< var kh.hull_share >}} of the generators around it stand; a faint ring on the
-  ground shows which generators count, and goes once the lander can be hurt. Generators are not military
+- **Lander.** It cannot be destroyed while at least {{< var kh.hull_share >}} of the generators around it stand; hover over the lander
+  to see lines to the generators that count. Generators are not military
   targets, so your turrets and units do not fire on them by themselves. Its crews rebuild lost generators first.
 - **Dome projector.** {{< var desc.entity_dome_projector >}}
 - **Parked howitzer.** It stands next to the lander. If it is gone, a siege is using it.

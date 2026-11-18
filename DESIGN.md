@@ -8373,3 +8373,6 @@ Bugs and surprises the headless runs caught, each kept as a check:
   lander ringed while held and not once its generators are gone. Hovered while held, a lander points to the generators
   its hull stands on (squadgui, as a beacon to its units: "Could the lander perhaps point to the generators when hovered
   over?"), with their count over it; the lines are not seen headless, their list is (raze: 2 while held, 0 after).
+- **2026-11-18, the hull's ring taken off (0.2.451).** The user: "What's the huge blue ring around the camp? looks weird".
+  It was drawn at HULL_RADIUS, 80 tiles: 160 across, read as the camp's, not the lander's. Gone, and any a save holds
+  taken off; the hover's lines tell the hull. Check `raze`: no ring, held or not.

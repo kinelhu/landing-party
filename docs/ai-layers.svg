@@ -21,8 +21,8 @@
 <title>Settlement</title>
 <path fill="#f7dede" stroke="black" d="M950.88,-650.5C950.88,-650.5 847.12,-650.5 847.12,-650.5 841.12,-650.5 835.12,-644.5 835.12,-638.5 835.12,-638.5 835.12,-618.5 835.12,-618.5 835.12,-612.5 841.12,-606.5 847.12,-606.5 847.12,-606.5 950.88,-606.5 950.88,-606.5 956.88,-606.5 962.88,-612.5 962.88,-618.5 962.88,-618.5 962.88,-638.5 962.88,-638.5 962.88,-644.5 956.88,-650.5 950.88,-650.5"/>
 <text xml:space="preserve" text-anchor="middle" x="899" y="-636.05" font-family="Helvetica,sans-Serif" font-size="11.00">Settlement</text>
-<text xml:space="preserve" text-anchor="middle" x="899" y="-624.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 6568 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="899" y="-612.05" font-family="Helvetica,sans-Serif" font-size="11.00">base 1024, layout 1747</text>
+<text xml:space="preserve" text-anchor="middle" x="899" y="-624.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 6564 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="899" y="-612.05" font-family="Helvetica,sans-Serif" font-size="11.00">base 1020, layout 1747</text>
 </g>
 <!-- Seams (leaves)&#45;&gt;Settlement -->
 <g id="edge39" class="edge">
