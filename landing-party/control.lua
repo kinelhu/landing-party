@@ -1028,6 +1028,12 @@ remote.add_interface("landing-party", {
   debug_retire = function(now) return command.retire(1, now) end,
   -- Tests only: the migration a save from before 0.2.448 gets on loading (muster points off the map).
   debug_drop_musters = function() return command.drop_musters() end,
+  -- Tests only: which settlement an entity belongs to, and where it stands.
+  debug_owner = function(e)
+    local o = e.valid and e.unit_number and storage.owner[e.unit_number]
+    local b = o and storage.bases[o.base]
+    return o and {base = o.base, fallen = b and b.fallen ~= nil, origin = b and b.origin, module = o.module} or nil
+  end,
   -- Tests only: how many generators a lander's hover points to (squadgui.hull_gens).
   debug_hull_gens = function(lander) return #squadgui.hull_gens(lander) end,
   -- Tests only: the squad panel's buttons (scripts/squadgui.lua), and what a beacon shows, in plain values.

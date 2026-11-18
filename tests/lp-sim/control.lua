@@ -1985,7 +1985,7 @@ end
 
 -- Fall: two settlements with garrisons; at the strike the first one's lander is destroyed. Its generators
 -- must fail, its turrets go dark (none of the faction's left there), its units evacuate to the second, its
--- ruins yield salvage, an outpost be taken by holding it, and nothing be rebuilt.
+-- ruins yield salvage, its mining outposts among them, and nothing be rebuilt.
 scenarios.fall = function()
   schedule(60, function()
     lp("debug_tune", {raids_off = true})
@@ -2021,7 +2021,16 @@ scenarios.fall = function()
       name = {"lp-turret", "lp-fabricator", "lp-pylon", "lp-wall"}}
     check("fall: the settlement fell", st.fallen ~= nil, tostring(st.fallen))
     check("fall: its generators failed", st.gens == 0, st.gens .. " of " .. S.before.gens .. " left")
-    check("fall: no live turret is left there", live == 0, live .. " of the faction's within 150")
+    -- The fallen settlement's own (its turrets ruined, no owner) or none's: the other settlement's posts count not (it
+    -- grew two turret posts 120 tiles from the fallen lander, toward it, and this check, counting the force's within
+    -- 150, failed on seed 12345 from 0.2.451 at least: four turrets, all of the standing settlement).
+    local others = 0
+    for _, t in pairs(surface().find_entities_filtered{name = "lp-turret", force = FORCE, position = S.lander_at, radius = 150}) do
+      local o = lp("debug_owner", t)
+      if o and o.base ~= storage.id and not o.fallen then others = others + 1 end
+    end
+    live = live - others
+    check("fall: no live turret of its own is left there", live == 0, string.format("%d of its own within 150 (and %d of the other settlement's)", live, others))
     check("fall: what stood is ruins", ruins > 0 and (st.ruins or 0) > 0, ruins .. " neutral, " .. tostring(st.ruins) .. " ruined")
     local other = S.other and lp("stats", S.other)
     check("fall: its units evacuated", (st.evacuated or 0) > 0 and other and other.garrison > S.other_before,

@@ -8387,3 +8387,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   scenario `occupy`'s mechanic. The fall's notice says "Its buildings are ruins now, to mine for salvage." Checks:
   `army` (held by a rally point moved onto it, not captured), `fall` (its drills and bins neutral; none on 0.2.451),
   `siege` (holds on the outpost instead of occupying).
+- **2026-11-18, fall's live-turret check (0.2.453).** It failed on seed 12345 on 0.2.451 and since: four turrets of the
+  corporation within 150 tiles of the fallen lander. All four were the standing settlement's (two turret posts it grew
+  120 tiles off, toward the fallen camp); the fallen camp's own were all ruins. The check counted the force's turrets;
+  now the fallen settlement's own (a test hook, `debug_owner`, names an entity's settlement). Seen failing with ruin()
+  made to skip turrets: 19 of its own.
