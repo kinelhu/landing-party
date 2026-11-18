@@ -8359,3 +8359,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   tip and the manual. With that research, standing of 40 on four seeds: 10, 0 (two nests up), 8, 19 before; 12, 16,
   21, 22 after (check: `nestclear tech`, nests down and 12 standing). The arena's counters (counters.lua) not
   regenerated: no corporation deals acid, and Synthexis's columns against the player's infantry move a little.
+- **2026-11-18, the lander's hull shown, and attack-move razes (0.2.450).** The user: units "don't seem to target
+  landers or other economic buildings in enemy camps". By design a corporation's production, power and storage are no
+  military target (an outpost captured whole), and a lander held by its hull (half its generators within
+  HULL_RADIUS) cannot be hurt, so nothing aims at it; neither was told. Now a faint ring at HULL_RADIUS round a held
+  lander (base.lua hull), gone as the hull falls, and the lander's description says the rule. And an attack-move razes:
+  arrived within 12 of its point and not fighting, a unit attacks the nearest corporation building within 30 that can be
+  hurt, in tiers (the user: "give walls a third priority tier behind military and economy"): military, the rest, then
+  walls and gates; a move or occupy leaves an outpost whole. A right-click attacks any building of a hostile force that
+  can be hurt, the nearest to the click ("Can't we right click buildings also?": a list of types left out pylons,
+  walls, gates and labs; LP_MIX=click, a pylon clicked stood on 0.2.449). Scenario `raze`: eight troopers at an outpost of seven buildings and a laser
+  turret: on 0.2.449 4 of the 7 stood (only what its way met fell), now none; LP_MIX=move, all stand; the settlement's
+  lander ringed while held and not once its generators are gone. Hovered while held, a lander points to the generators
+  its hull stands on (squadgui, as a beacon to its units: "Could the lander perhaps point to the generators when hovered
+  over?"), with their count over it; the lines are not seen headless, their list is (raze: 2 while held, 0 after).

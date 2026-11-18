@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.450
+Date: 2026-11-18
+  Changes:
+    - Units on an attack-move now destroy the corporation buildings around the spot they were sent to: defenses first, then the rest, then walls and gates. A plain move still leaves an outpost whole for capture.
+    - A right-click with the command tool attacks any corporation building, walls, gates and pylons included.
+    - A faint ring around a corporation's lander shows the generators that keep it from being damaged, and goes once it can be. Its description says so.
+    - Hovering over such a lander draws a line to each of those generators and shows how many hold it.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.449
 Date: 2026-11-18
   Changes:

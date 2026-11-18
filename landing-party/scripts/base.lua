@@ -795,6 +795,16 @@ local function hull(b)
   -- three guns and its lander with them, 16 minutes after landing, two seeds of three (the visits at 0.2.364; the dome:
   -- "the guns buy no shortcut, troops do").
   if not held and not b.lander.destructible and b.dome and (b.dome.down_till or 0) > game.tick then return end
+  -- Its hull told (the user, playtest: units "don't seem to target landers"; held, nothing can hurt it and nothing aims at
+  -- it): a faint ring on the ground round the lander at HULL_RADIUS while it holds, the generators inside it its hull.
+  local ring = b.hull_ring
+  if held and not (ring and ring.valid) then
+    b.hull_ring = rendering.draw_circle{color = {0.45, 0.75, 1, 0.35}, radius = HULL_RADIUS, width = 3, filled = false,
+      target = b.lander, surface = b.lander.surface, draw_on_ground = true}
+  elseif not held and ring then
+    if ring.valid then ring.destroy() end
+    b.hull_ring = nil
+  end
   if b.lander.destructible == held then
     b.lander.destructible = not held
     b.hull_down = (b.hull_down or 0) + (held and 0 or 1)

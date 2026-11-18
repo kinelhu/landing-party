@@ -28,15 +28,35 @@ local function clear_links(pi)
   storage.squad_links[pi] = nil
 end
 
+-- The generators a held lander's hull stands on (none once it can be hurt).
+function gui.hull_gens(lander)
+  if not (lander.valid and shared.kind_of(lander.name) == "lp-lander" and not lander.destructible) then return {} end
+  return lander.surface.find_entities_filtered{position = lander.position, radius = shared.HULL_RADIUS, force = lander.force,
+    name = shared.variants("lp-generator")}
+end
+
 function gui.on_selected(e)
   local p = game.get_player(e.player_index)
   clear_links(e.player_index)
   local sel = p and p.selected
-  if not (sel and sel.valid and sel.force == p.force) then return end
+  if not (sel and sel.valid) then return end
   local out = {}
   local function line(from, to, color, w)
     out[#out + 1] = rendering.draw_line{color = color, width = w or 1.5, from = from, to = to, surface = from.surface,
       players = {e.player_index}, draw_on_ground = true}
+  end
+  -- A corporation's lander while its hull holds (the user: "Could the lander perhaps point to the generators when
+  -- hovered over? like a beacon points to its units?"): a line to each generator within shared.HULL_RADIUS, the ones
+  -- its hull stands on (base.lua hull), in its ring's blue, and how many over it.
+  if sel.force ~= p.force then
+    local gens = gui.hull_gens(sel)
+    if #gens > 0 then
+      for _, g in ipairs(gens) do line(sel, g, {0.45, 0.75, 1, 0.7}, 2) end
+      out[#out + 1] = rendering.draw_text{text = {"lp.hull-hover", #gens}, surface = sel.surface, target = {entity = sel,
+        offset = {0, -4}}, color = {0.6, 0.85, 1}, scale = 1.2, alignment = "center", players = {e.player_index}}
+      storage.squad_links[e.player_index] = out
+    end
+    return
   end
   if sel.name == BEACON then
     local v = command.beacon_view(sel)

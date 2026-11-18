@@ -21,8 +21,8 @@
 <title>Settlement</title>
 <path fill="#f7dede" stroke="black" d="M950.88,-650.5C950.88,-650.5 847.12,-650.5 847.12,-650.5 841.12,-650.5 835.12,-644.5 835.12,-638.5 835.12,-638.5 835.12,-618.5 835.12,-618.5 835.12,-612.5 841.12,-606.5 847.12,-606.5 847.12,-606.5 950.88,-606.5 950.88,-606.5 956.88,-606.5 962.88,-612.5 962.88,-618.5 962.88,-618.5 962.88,-638.5 962.88,-638.5 962.88,-644.5 956.88,-650.5 950.88,-650.5"/>
 <text xml:space="preserve" text-anchor="middle" x="899" y="-636.05" font-family="Helvetica,sans-Serif" font-size="11.00">Settlement</text>
-<text xml:space="preserve" text-anchor="middle" x="899" y="-624.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 6558 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="899" y="-612.05" font-family="Helvetica,sans-Serif" font-size="11.00">base 1014, layout 1747</text>
+<text xml:space="preserve" text-anchor="middle" x="899" y="-624.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 6568 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="899" y="-612.05" font-family="Helvetica,sans-Serif" font-size="11.00">base 1024, layout 1747</text>
 </g>
 <!-- Seams (leaves)&#45;&gt;Settlement -->
 <g id="edge39" class="edge">
@@ -208,8 +208,8 @@
 <title>The player&#39;s army</title>
 <path fill="#f7dede" stroke="black" d="M462.12,-546.75C462.12,-546.75 365.88,-546.75 365.88,-546.75 359.88,-546.75 353.88,-540.75 353.88,-534.75 353.88,-534.75 353.88,-514.75 353.88,-514.75 353.88,-508.75 359.88,-502.75 365.88,-502.75 365.88,-502.75 462.12,-502.75 462.12,-502.75 468.12,-502.75 474.12,-508.75 474.12,-514.75 474.12,-514.75 474.12,-534.75 474.12,-534.75 474.12,-540.75 468.12,-546.75 462.12,-546.75"/>
 <text xml:space="preserve" text-anchor="middle" x="414" y="-532.3" font-family="Helvetica,sans-Serif" font-size="11.00">The player&#39;s army</text>
-<text xml:space="preserve" text-anchor="middle" x="414" y="-520.3" font-family="Helvetica,sans-Serif" font-size="11.00">8 modules, 2397 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="414" y="-508.3" font-family="Helvetica,sans-Serif" font-size="11.00">command 1295</text>
+<text xml:space="preserve" text-anchor="middle" x="414" y="-520.3" font-family="Helvetica,sans-Serif" font-size="11.00">8 modules, 2468 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="414" y="-508.3" font-family="Helvetica,sans-Serif" font-size="11.00">command 1346</text>
 </g>
 <!-- Settlement&#45;&gt;The player&#39;s army -->
 <g id="edge22" class="edge">

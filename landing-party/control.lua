@@ -1029,6 +1029,8 @@ remote.add_interface("landing-party", {
   debug_retire = function(now) return command.retire(1, now) end,
   -- Tests only: the migration a save from before 0.2.448 gets on loading (muster points off the map).
   debug_drop_musters = function() return command.drop_musters() end,
+  -- Tests only: how many generators a lander's hover points to (squadgui.hull_gens).
+  debug_hull_gens = function(lander) return #squadgui.hull_gens(lander) end,
   -- Tests only: the squad panel's buttons (scripts/squadgui.lua), and what a beacon shows, in plain values.
   debug_squad_size = function(beacon, unit, n) return squadgui.set_size(beacon, unit, n) end,
   -- Tests only: the road router (scripts/paving.lua): a search, its result, and per-tick timings to script-output.

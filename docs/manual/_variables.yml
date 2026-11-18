@@ -189,7 +189,7 @@ desc:
   entity_power_tap: "Draws power from your electric network."
   entity_power_receiver: "Draws power from your electric network."
   entity_uplink: "The center of a faction's headquarters. Destroying it destroys the headquarters, and the faction withdraws."
-  entity_lander: "The center of a faction base. Destroying it destroys the base."
+  entity_lander: "The center of a faction base. Destroying it destroys the base. It cannot be harmed while half the generators in its ring stand."
   technology_orbital_cannon: "Cannons on a platform over Nauvis. A strike fires one platform: within 16 tiles for one cannon, out to 48 with more."
   technology_study_claims: "Study the cargo of Grubstake's raiders and haulers to learn where it prospects."
   technology_study_strip: "Study the drills Grubstake uses to strip-mine ore."
@@ -286,6 +286,6 @@ director:
   climax_times: "double"
   gentle_share: "half"
 mod:
-  version: "0.2.449"
+  version: "0.2.450"
   factorio: "2.1"
   needs: "base, space-age"

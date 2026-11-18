@@ -3673,6 +3673,98 @@ scenarios.techprobe = function()
   end)
 end
 
+-- Razing (the user, playtest: units "don't seem to target landers or other economic buildings in enemy camps"): a
+-- corporation outpost 60 tiles east (three generators, two pylons, two bins, a laser turret on its own power, four walls),
+-- eight troopers sent at its middle on an attack-move: the turret, then every building falls (on 0.2.449, 4 of the 7 stood:
+-- only what the engine's by_anything met on the way fell, walls among them, as they still do). LP_MIX=move:
+-- no turret, a plain move: it stands whole (a move captures, it does not raze). And the settlement's lander: its hull
+-- drawn as a ring while it holds, gone with the ring once the generators within it are destroyed.
+-- LP_MIX=click: no turret, a right-click on one of its pylons (a building the attack order's list of types once left out:
+-- the user, "Can't we right click buildings also?"): the pylon falls, the rest stands.
+scenarios.raze = function()
+  local move = params.mix == "move" or params.mix == "click"
+  local click = params.mix == "click"
+  local function put(name, x, y, force)
+    return surface().create_entity{name = name, position = {x, y}, force = force or "player", raise_built = true}
+  end
+  local OX, OY = 60, -40
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-30, -70, 100, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    S.barracks = put("lp-barracks", 0.5, 0.5)
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 8}
+    S.econ = {put("lp-generator", OX - 6, OY, FORCE), put("lp-generator", OX + 6, OY, FORCE), put("lp-generator", OX, OY + 6, FORCE),
+      put("lp-pylon", OX - 3, OY - 4, FORCE), put("lp-pylon", OX + 3, OY - 4, FORCE), put("lp-bin", OX - 2, OY + 2, FORCE),
+      put("lp-bin", OX + 2, OY + 2, FORCE)}
+    S.walls = {}
+    for k = 0, 3 do S.walls[#S.walls + 1] = put("lp-wall", OX - 2 + k, OY + 12, FORCE) end
+    if not move then
+      S.turret = put("lp-turret", OX, OY - 8, FORCE)
+      put("electric-energy-interface", OX + 4, OY - 10, FORCE)
+      put("medium-electric-pole", OX + 2, OY - 9, FORCE)
+    end
+    S.econ_n = 0
+    for _, e in ipairs(S.econ) do if e and e.valid then S.econ_n = S.econ_n + 1 end end
+  end)
+  schedule(60 + 20 * 60, function()
+    S.picked = lp("debug_select", {{-20, -20}, {20, 20}})
+    if click then
+      local p = S.econ[4].position
+      lp("debug_order", {{p.x, p.y}, {p.x, p.y}}, false)
+    else
+      lp("debug_order", {{OX, OY}, {OX, OY}}, not move)
+    end
+  end)
+  -- The settlement's lander and its hull's ring.
+  local function lander() return surface().find_entities_filtered{name = "lp-lander", limit = 1}[1] end
+  local function ring_of(l)
+    for _, o in ipairs(rendering.get_all_objects("landing-party")) do
+      if o.valid and o.type == "circle" and o.target and o.target.entity == l then return o end
+    end
+  end
+  schedule(60 + 60 * 60, function()
+    local l = lander()
+    S.held = l and {destructible = l.destructible, ring = ring_of(l) ~= nil, pointed = lp("debug_hull_gens", l)}
+    if l then
+      -- The generators of its hull taken out (within shared.HULL_RADIUS: 40 at most, as base.lua reads it).
+      for _, g in ipairs(surface().find_entities_filtered{position = l.position, radius = 60, force = FORCE, name = "lp-generator"}) do
+        if g ~= S.econ[1] and g ~= S.econ[2] and g ~= S.econ[3] then g.destroy() end
+      end
+    end
+  end)
+  schedule(60 + 70 * 60, function()
+    local l = lander()
+    S.down = l and {destructible = l.destructible, ring = ring_of(l) ~= nil, pointed = lp("debug_hull_gens", l)}
+  end)
+  schedule(60 + 200 * 60, function()
+    local econ, walls = 0, 0
+    for _, e in ipairs(S.econ) do if e.valid then econ = econ + 1 end end
+    for _, e in ipairs(S.walls) do if e.valid then walls = walls + 1 end end
+    local a = lp("army")
+    info("raze: " .. serpent.line({picked = S.picked, econ = econ, of = S.econ_n, walls = walls, turret = S.turret and S.turret.valid,
+      razing = a.razing, held = S.held, down = S.down}))
+    check("raze: eight sent", S.picked == 8, tostring(S.picked))
+    if click then
+      check("raze: a right-click on a pylon: it falls, the rest stands", not S.econ[4].valid and econ == S.econ_n - 1
+        and walls == 4, string.format("pylon %s, %d of %d buildings, %d of 4 walls", tostring(S.econ[4].valid), econ, S.econ_n, walls))
+    elseif move then
+      check("raze: a plain move leaves the outpost whole", econ == S.econ_n and walls == 4,
+        string.format("%d of %d buildings, %d of 4 walls", econ, S.econ_n, walls))
+    else
+      check("raze: an attack-move razes it, turret, buildings and walls", econ == 0 and not S.turret.valid and walls == 0,
+        string.format("%d of %d buildings standing, turret %s, %d of 4 walls", econ, S.econ_n, tostring(S.turret.valid), walls))
+      check("raze: its hull drawn while it holds (its hover pointing to its generators), gone as it falls", S.held
+        and S.held.ring and not S.held.destructible and S.held.pointed >= 2 and S.down and not S.down.ring
+        and S.down.destructible and S.down.pointed == 0, serpent.line({S.held, S.down}))
+    end
+  end)
+end
+
 -- The army's tutorial hints (command.lua hint; the user, 2026-11-10: "Yes to tutorial"): a powered barracks holding a
 -- trooper order and no command relay: the order waits and the no-relay hint is told; a relay built: the unit deploys
 -- with no rally beacon in reach, and the no-beacon hint is told; a second order deploys and neither is told again.

@@ -547,6 +547,40 @@ local function report(beacon, p, squad)
   }
 end
 
+-- Razing (the user, playtest: units "don't seem to target landers or other economic buildings in enemy camps"; "Both"):
+-- a corporation's production, power and storage are no military target, so no unit fires at them by itself and an
+-- outpost can be captured whole. An attack-move razes: arrived within RAZE_NEAR of its point, a unit not fighting
+-- attacks the nearest corporation building within RAZE_REACH of the point that can be hurt, by tiers (the user: "give
+-- walls a third priority tier behind military and economy"): military ones, then the rest, then walls and gates. A move,
+-- or a beacon's occupy, leaves an outpost whole.
+local RAZE_NEAR, RAZE_REACH = 12, 30
+local RAZE_SKIP = {unit = true, ["spider-unit"] = true, car = true, ["spider-vehicle"] = true, character = true}
+local RAZE_LAST = {wall = true, gate = true}
+local raze_seen = {}   -- (per tick: an order's candidates read once for the whole selection)
+local function raze_target(u, m)
+  local key = m.seq .. ":" .. game.tick
+  local list = raze_seen[key]
+  if not list then
+    raze_seen = {}
+    list = {}
+    for _, e in pairs(u.surface.find_entities_filtered{position = m.pos, radius = RAZE_REACH, force = shared.corp_forces()}) do
+      if not RAZE_SKIP[e.type] and e.destructible and e.health and e.prototype.is_building then
+        list[#list + 1] = {e = e, tier = e.is_military_target and 1 or (RAZE_LAST[e.type] and 3 or 2)}
+      end
+    end
+    raze_seen[key] = list
+  end
+  local best, bd, bt
+  for _, c in ipairs(list) do
+    local e = c.e
+    if e.valid then
+      local d = (e.position.x - u.position.x) ^ 2 + (e.position.y - u.position.y) ^ 2
+      if not best or c.tier < bt or (c.tier == bt and d < bd) then best, bd, bt = e, d, c.tier end
+    end
+  end
+  return best
+end
+
 -- Hand orders (the command tool). A unit picked by hand obeys its order over its beacon until released.
 --   move        go there ignoring fire, then hold there
 --   attackmove  go there fighting anything on the way, then hold
@@ -575,6 +609,16 @@ local function manual(t)
       {type = defines.command.go_to_location, destination = m.pos, radius = r, distraction = defines.distraction.none},
       {type = defines.command.wander, radius = w, distraction = defines.distraction.by_enemy}}}, key)
   elseif m.kind == "attackmove" then
+    local u = t.unit
+    if u.commandable.distraction_command then return end
+    if (u.position.x - m.pos.x) ^ 2 + (u.position.y - m.pos.y) ^ 2 <= RAZE_NEAR * RAZE_NEAR then
+      local e = raze_target(u, m)
+      if e then
+        storage.cmd.razing = (storage.cmd.razing or 0) + (t.key == key .. "r" .. e.unit_number and 0 or 1)
+        return order(t, {type = defines.command.attack, target = e, distraction = defines.distraction.by_enemy},
+          key .. "r" .. e.unit_number)
+      end
+    end
     order(t, {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = {
       {type = defines.command.go_to_location, destination = m.pos, radius = r, distraction = defines.distraction.by_anything},
       {type = defines.command.wander, radius = m.slotted and 2 or 6, distraction = defines.distraction.by_enemy}}}, key)
@@ -951,10 +995,17 @@ function command.order(player_index, surface, area, attackmove)
   local sel = storage.cmd.selected[player_index] or {}
   local lt, rb = area.left_top or area[1], area.right_bottom or area[2]
   local pos = {x = ((lt.x or lt[1]) + (rb.x or rb[1])) / 2, y = ((lt.y or lt[2]) + (rb.y or rb[2])) / 2}
-  local target = surface.find_entities_filtered{area = {{pos.x - 1.5, pos.y - 1.5}, {pos.x + 1.5, pos.y + 1.5}},
-    force = shared.hostile_forces(), type = {"unit", "spider-unit", "electric-turret", "ammo-turret", "artillery-turret", "container",
-      "electric-energy-interface", "radar", "assembling-machine", "mining-drill", "generator", "unit-spawner", "turret"},
-    limit = 1}[1]   -- (unit-spawner and turret: Synthexis's incubators and its worms, 0.2.437)
+  -- What was clicked: a hostile unit, or any building of a hostile force that can be hurt (walls, gates, pylons and labs
+  -- too since 0.2.450; a list of types once, which left them out: the user, "Can't we right click buildings also?"),
+  -- the nearest to the click.
+  local target, td
+  for _, e in pairs(surface.find_entities_filtered{area = {{pos.x - 1.5, pos.y - 1.5}, {pos.x + 1.5, pos.y + 1.5}},
+    force = shared.hostile_forces()}) do
+    if e.health and e.destructible and (e.type == "unit" or e.type == "spider-unit" or e.prototype.is_building) then
+      local d = (e.position.x - pos.x) ^ 2 + (e.position.y - pos.y) ^ 2
+      if not td or d < td then target, td = e, d end
+    end
+  end
   storage.cmd.seq = (storage.cmd.seq or 0) + 1
   local n = 0
   local units = {}
@@ -1246,7 +1297,7 @@ function command.stats()
   for k, t in pairs(storage.cmd.hints or {}) do hints[k] = t end
   return {trained = storage.cmd.trained or 0, retired = storage.cmd.retired or 0, surplus_held = storage.cmd.surplus_held or 0,
     moved = storage.cmd.moved or 0, defend_sent = storage.cmd.defend_sent or 0,
-    route_searches = storage.cmd.route_searches or 0, kept_fighting = storage.cmd.kept_fighting or 0, routes_taken = storage.cmd.routes_taken or 0, hints = hints, alive = alive, offline = offline, capacity = command.capacity(f),
+    route_searches = storage.cmd.route_searches or 0, razing = storage.cmd.razing or 0, kept_fighting = storage.cmd.kept_fighting or 0, routes_taken = storage.cmd.routes_taken or 0, hints = hints, alive = alive, offline = offline, capacity = command.capacity(f),
     level = research_level(f), orders = orders, locks = storage.cmd.locks, charted = storage.cmd.charted or 0}
 end
 
