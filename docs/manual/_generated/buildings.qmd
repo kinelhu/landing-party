@@ -72,7 +72,6 @@ Each research lab advances one branch of Kessler-Hayashi's research, and only wh
 | Barracks | 350 | Trains units from orders. |
 | Rally beacon | 120 | Gathers a squad and orders it by signal: A advance, O occupy, R retreat, D defend, X and Y move its rally point. Squad size signals cap each unit it keeps. It outputs S its squad, E and T enemy units and turrets near it, W while its squad is out defending. |
 | Command relay | 250 | Lets you command 10 more units while powered. Research raises how many relays count. |
-| Muster point | 350 | Turns unit orders into units and sends them to the nearest rally beacon. |
 | Threat scanner | 120 | Outputs the number of faction units and biters within 64 tiles, by type. |
 | Mortar | 800 | Short-range artillery that fires mortar shells. |
 | Strip drill | 300 | Mines twice as fast as an electric mining drill and depletes ore at half the rate. |

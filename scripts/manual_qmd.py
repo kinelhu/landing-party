@@ -536,7 +536,7 @@ def write(rp):
     for n in ("lp-pen", "lp-biochamber", "lp-clinic", "lp-heating-tower", "lp-tumor", "lp-bred-worm", "lp-cell-lamp"):
         B.append(f"| {md(shown(n))} | {health(n)} | {desc_of(n)} |")
     B += ["", "### Yours", "", "| Building | Health | What it does |", "|:--|--:|:--|"]
-    for n in ("lp-barracks", "lp-rally-beacon", "lp-command-relay", "lp-muster-point", "lp-threat-scanner", "lp-player-mortar",
+    for n in ("lp-barracks", "lp-rally-beacon", "lp-command-relay", "lp-threat-scanner", "lp-player-mortar",
               "lp-strip-drill", "lp-claim-marker", "lp-pact-breaker", "lp-player-bait",
               "lp-player-dome", "lp-orbital-cannon", "lp-targeting-array"):  # (the strike beacon retired, 0.2.274)
         B.append(f"| {md(shown(n))} | {health(n)} | {desc_of(n)} |")

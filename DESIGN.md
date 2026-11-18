@@ -182,7 +182,7 @@ document still says Serenity where it records history.
 | Strangling: the line goes for outposts, then the next ore; at war it cuts belts and pipes on its edge | built | `strangle` (five) |
 | Hazard removal (a camp losing to biters clears their nest) and the ledger (Serenity bills the waves the player's cloud draws; paid, closed; unpaid past its grace, a collection raid on the polluter's ground) | built; the ledger's price and grace guesses; disputed by killing the billed nest | `hazard` (eight) |
 | Grubstake's skim (a truck parks at an exposed belt and fills its trunk, home to its yard) and dismantling (raids take machines apart, ghosts left, loot kept as items) | built | `skim` (three), `dismantle` (two) |
-| Space Age: landings and reliefs by cargo pod, tesla arcs, armour; the threat scanner, the muster point | built; armour and pods not seen in game | `podland` (two), `scanner`, `scanresponse`, `muster` |
+| Space Age: landings and reliefs by cargo pod, tesla arcs, armour; the threat scanner (the muster point retired in 0.2.448) | built; armour and pods not seen in game | `podland` (two), `scanner`, `scanresponse`, `muster` |
 | Raid leaders (an icon over one raider; Grubstake breaks when it falls and its foreman drops the haul, Serenity regroups) | built | `leader` (three) |
 | The player's army through the player's own gates (an order opens its force's gates within 40 tiles for its time, a trooper holds open those within 6) | built 0.2.224 | `owngates` (gate, gap, shut) |
 | Shields and an anti-air turret for the player | out of the first release (the user, 2026-11-08; vanilla turrets already shoot the fliers down). Not to be confused with the flak turret, which is built and live: Grubstake's field study G4 (a scrap cannon, or five scrap copters or bomb drones) unlocks it (studies.lua). (On 2026-11-10 the lead read this row as "no player anti-air" and said so to the user; the manual's subagent cut the flak turret on that word and put it back.) | |
@@ -8329,3 +8329,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   its fight 190 tiles from home, `director armyhold`: its order given again is its leash). Scenario `attackmove`: eight troopers sent fighting past two laser turrets; of the
   samples a trooper stood in a turret's reach, walking and not fighting 167 of 728 before, 3 of 589 after (check: at most
   5%).
+- **2026-11-18, retiring loses the unit; muster points retired (0.2.448).** The user, on muster points: "So players can
+  stockpile thousands of units technically? and deploy them instantly?", then "the fact you can stockpile and replace
+  losses instantly defeats the purposes of our barracks", and "What about 'retiring' amounting to killing the unit? is
+  that not how RTS do it?". Orders could leave a barracks (P > 0, packing) and a muster point deployed every one the cap
+  allowed at once, so a reserve replaced a lost army in a second; a retired unit walked home and handed its order back
+  (to the reserve), holding its bandwidth all the way. Now: retire takes the selection off the field at once, its
+  bandwidth freed, and nothing handed back (kit and rank lost, the Delete key's way); two presses, the second within
+  3 s (the panel's button reads Confirm, the key is told at the cursor). A squad's surplus with no other beacon with room
+  holds where it stands, out of the squad, until given an order (it was retired, and a lowered slider must lose
+  nothing). No packing; the muster point hidden, a save's placed ones taken off the map on loading with their orders
+  refunded as kit at their quality and their own makings beside, for the robots (`command.drop_musters`). A far
+  outpost's reserve is its own barracks, fed kit by train: it trains on while bandwidth is full, its finished orders
+  waiting in its output, and they step out as units when retiring makes room. Checks: `retire` (the first press arms;
+  the second retires three at once; no orders on the ground), `squad` (lowered, two hold out of the squad, none lost),
+  `squadmove` and `gunbuggy` without muster points, `musterdrop` (the migration); retire and squad seen failing on
+  0.2.447.

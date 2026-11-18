@@ -23,6 +23,5 @@ data:extend({
   tip("lp-army-scanner", "g", built("lp-threat-scanner", 1)),
   tip("lp-army-circuits", "gb", built("lp-rally-beacon", 3)),
   tip("lp-army-roads", "gc", built("lp-rally-beacon", 2)),
-  tip("lp-army-trains", "h", built("lp-muster-point", 1)),
   tip("lp-army-cannons", "i", research("lp-orbital-cannon")),
 })

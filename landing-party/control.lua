@@ -112,7 +112,7 @@ local function init()
 end
 
 script.on_init(init)
-script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs(); cell.refloor() end)
+script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs(); cell.refloor(); command.drop_musters() end)
 
 -- The watchdog's view of a settlement (scripts/watch.lua).
 local WATCH_DEPS = {
@@ -143,7 +143,7 @@ script.on_event({defines.events.on_player_built_tile, defines.events.on_robot_bu
   defines.events.on_space_platform_built_tile, defines.events.on_space_platform_mined_tile}, paving.forget)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
-  {filter = "name", name = "lp-command-relay"}, {filter = "name", name = "lp-muster-point"},
+  {filter = "name", name = "lp-command-relay"},
   {filter = "name", name = "lp-player-dome"}}
 -- The player's poles too: one built by a corporation's pylon is not wired to it (base.unwire).
 local BUILT = {{filter = "type", type = "electric-pole"}, {filter = "name", name = "lp-player-bait"},
@@ -274,9 +274,20 @@ script.on_event(defines.events.on_player_alt_reverse_selected_area, function(e)
   if e.item == TOOL then command.order(e.player_index, e.surface, e.area, true) end
 end)
 -- Retiring the selection: the key, or the army panel's button (scripts/command.lua).
-script.on_event("lp-retire", function(e) command.retire(e.player_index); command.gui_tick() end)
+-- Retiring loses the units: the first press arms it (told at the cursor), the second within 3 s retires (command.retire).
+local function retire(index)
+  local done = command.retire(index)
+  local p = game.get_player(index)
+  if done == 0 and command.retire_armed(index) and p then
+    local n = 0
+    for k in pairs((storage.cmd.selected or {})[index] or {}) do if storage.cmd.troopers[k] then n = n + 1 end end
+    p.create_local_flying_text{text = {"lp.army-retire-armed", n}, create_at_cursor = true, time_to_live = 120}
+  end
+  command.gui_tick()
+end
+script.on_event("lp-retire", function(e) retire(e.player_index) end)
 script.on_event(defines.events.on_gui_click, function(e)
-  if e.element and e.element.valid and e.element.name == "lp_army_retire" then command.retire(e.player_index); command.gui_tick() end
+  if e.element and e.element.valid and e.element.name == "lp_army_retire" then retire(e.player_index) end
   if cards.on_click(e) then command.gui_tick() end
   director_gui.on_click(e)
   squadgui.on_click(e)
@@ -1015,7 +1026,9 @@ remote.add_interface("landing-party", {
     return command.release(1, game.surfaces[1].find_entities_filtered{area = area, force = "player", type = "unit"})
   end,
   debug_order = function(area, attackmove) return command.order(1, game.surfaces[1], area, attackmove) end,
-  debug_retire = function() return command.retire(1) end,
+  debug_retire = function(now) return command.retire(1, now) end,
+  -- Tests only: the migration a save from before 0.2.448 gets on loading (muster points off the map).
+  debug_drop_musters = function() return command.drop_musters() end,
   -- Tests only: the squad panel's buttons (scripts/squadgui.lua), and what a beacon shows, in plain values.
   debug_squad_size = function(beacon, unit, n) return squadgui.set_size(beacon, unit, n) end,
   -- Tests only: the road router (scripts/paving.lua): a search, its result, and per-tick timings to script-output.

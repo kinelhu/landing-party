@@ -2,7 +2,7 @@
 
 | Technology | What it gives | How you get it | After |
 |:--|:--|:--|:--|
-| Command bandwidth 1 | Unlocks Barracks, Command relay, Rally beacon, Trooper, Breacher, Threat scanner, Muster point. | 100 × (Automation science pack + Logistic science pack) | Military 2, Heavy armor |
+| Command bandwidth 1 | Unlocks Barracks, Command relay, Rally beacon, Trooper, Breacher, Threat scanner. | 100 × (Automation science pack + Logistic science pack) | Military 2, Heavy armor |
 | Command bandwidth 2 | Unlocks Gun buggy, Rocket trooper. | 200 × (Automation science pack + Logistic science pack + Chemical science pack) | Command bandwidth 1, Chemical science pack, Automobilism, Personal battery, Rocketry |
 | Command bandwidth 3 | Unlocks Battle tank, Flamethrower trooper. | 300 × (Automation science pack + Logistic science pack + Chemical science pack + Military science pack) | Command bandwidth 2, Military 3, Flamethrower, Tank, Exoskeleton equipment, Energy shield equipment |
 | Command bandwidth 4 | Increases the number of command relays that control your units. | 150 × L × (Automation science pack + Logistic science pack + Chemical science pack + Military science pack), repeatable | Command bandwidth 3 |

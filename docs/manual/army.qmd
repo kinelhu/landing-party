@@ -10,8 +10,8 @@ bandwidth. You give them orders with rally beacons, the command tool or the circ
 
 ## The barracks and orders
 
-**Command bandwidth 1** unlocks the army: the barracks, the rally beacon, the command relay, the threat scanner, the
-muster point, troopers and breachers. It also gives you one command core. A barracks is built from an assembling machine
+**Command bandwidth 1** unlocks the army: the barracks, the rally beacon, the command relay, the threat scanner,
+troopers and breachers. It also gives you one command core. A barracks is built from an assembling machine
 2, steel, electronic circuits and a command core. Cores cannot be crafted, so every barracks after the first needs one
 from faction wreckage (see [Command cores](spoils.qmd#command-cores)).
 
@@ -79,7 +79,7 @@ A panel beside the beacon's window says what the squad is doing.
 squad keeps at most that many of that unit. New units join the nearest beacon that still has room for them. When every
 beacon in reach is full for a unit, its orders wait in the barracks, and a barracks whose output fills stops training.
 Lower a squad size and the surplus, those farthest from the rally point first, join the nearest other beacon with room
-for them; if none has room, they walk back to a barracks and hand in their orders, as retired units do. This is how you
+for them; if none has room, they leave the squad and hold where they stand until you give them an order. This is how you
 move units from one squad to another: lower one beacon's size and raise another's. The panel beside the beacon's
 window shows each unit's count against its size, with buttons to change it; on a wired beacon the network sets the
 sizes and the buttons are off. Raise it or clear it and the waiting orders deploy. A beacon with no squad size for a unit
@@ -129,10 +129,10 @@ number selects the group again, and pressing it twice in quick succession follow
 die drop out of their groups. A unit that is promoted stays in them.
 
 **Retiring units.** Select units with the command tool, then press ALT + R or the Retire button on the army panel (see
-below). Each one walks back to the nearest barracks without stopping to fight and hands in its order beside it. The
-order is marked for deconstruction, so your robots carry it to storage, and a muster point can turn it into a unit
-again later. A retired unit no longer takes any of your command bandwidth. With no barracks, a unit hands in its order
-where it stands. To keep a squad at a size without picking units by hand, use squad sizes on its beacon (see
+below), and press again within three seconds to confirm. The units leave the field at once and their command bandwidth is
+free for new ones. A retired unit is lost, with its kit and its rank: nothing is handed back. This is how you make room
+for a barracks at a far outpost to train when an attack comes there. To keep a squad at a size without picking units by
+hand, use squad sizes on its beacon (see
 [Rally beacons](#sec-beacons)).
 
 ## Ranks {#sec-ranks}
@@ -159,8 +159,8 @@ battle tank the most. The *Cost* column in the [Reference](reference.qmd#sec-uni
 
 **The army panel.** Once you have Command bandwidth 1, a panel at the top of the screen shows *Units*: the bandwidth
 your units take against the bandwidth you have, and how many units are offline. Its tooltip gives the command relays
-working, how many of them count, and the orders waiting at your barracks. The panel's Retire button sends the units you
-have selected home (see [Retiring units](#sec-command-tool)).
+working, how many of them count, and the orders waiting at your barracks. The panel's Retire button retires the units you
+have selected (see [Retiring units](#sec-command-tool)).
 
 **Command relays.** {{< var desc.entity_command_relay >}} A relay counts only while it has power. Command bandwidth 1, 2
 and 3 let {{< var army.relays_l1 >}}, {{< var army.relays_l2 >}} and {{< var army.relays_l3 >}} relays
@@ -180,10 +180,9 @@ reach of its rally point, and **W** 1 while a defending squad is out. A decider 
 want holds a squad until it is full, then attacks; one that reads W can shut gates or light lamps while the squad is
 away.
 
-**Barracks and muster points.** A barracks reports its contents and takes its recipe from the circuit network, as an
-assembling machine does. Send it P above zero and it keeps finished orders in its output instead of turning them into
-units. Inserters take them out, and trains, belts and robots carry them like any other item. A muster point turns the
-orders put into it into units beside it, sent to its nearest rally beacon while your bandwidth has room.
+**Barracks.** A barracks reports its contents and takes its recipe from the circuit network, as an assembling machine
+does. It keeps training while your bandwidth is full: its finished orders wait in its output and step out as units when
+there is room. A barracks at a far outpost, fed its kit by train, keeps a few units ready there.
 
 **Threat scanners.** {{< var desc.entity_threat_scanner >}} It updates once a second and cannot be opened. It outputs
 *Corporation infantry*, *tanks*, *walkers*, *flying units*, *railgunners*, *haulers* and *buggies*; *Corporation
@@ -207,7 +206,7 @@ beacon.
 - *Armour against armour.* A threat scanner's *Corporation tanks*, through an arithmetic combinator, set on a beacon as
   its *Squad size: battle tanks*: more tanks when more armour comes.
 - *Move units to where the threat is.* Raise the squad size on the beacon you want them at, then lower it on the one they
-  stand at. Lowered first, with no beacon in reach having room, the surplus retires instead.
+  stand at. Lowered first, with no beacon in reach having room, the surplus holds where it stands instead.
 
 ## Defenses of your own
 

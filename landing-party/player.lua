@@ -143,6 +143,10 @@ muster.minable = {mining_time = 0.3, result = "lp-muster-point"}
 muster.inventory_size = 16
 muster.next_upgrade = nil
 muster.fast_replaceable_group = nil
+-- Retired in 0.2.448 (orders stockpiled and deployed at once at the front; the user, "defeats the purposes of our
+-- barracks"): kept hidden only so a save's placed ones load, to be taken off the map with what they held refunded as kit
+-- (command.drop_musters).
+muster.hidden = true
 -- Its own body, rendered in Blender (tools/blender/player_army.py muster): a post, a radio box, a whip antenna with a lit
 -- tip, a floodlight (its light drawn by command.lua).
 do
@@ -210,8 +214,8 @@ end
 
 data:extend({
   barracks, beacon, relay, scanner, muster,
-  item("lp-muster-point", "__base__/graphics/icons/steel-chest.png", "lp-muster-point"),
-  {type = "recipe", name = "lp-muster-point", enabled = false, energy_required = 5,
+  (function() local it = item("lp-muster-point", "__base__/graphics/icons/steel-chest.png", "lp-muster-point"); it.hidden = true; return it end)(),
+  {type = "recipe", name = "lp-muster-point", enabled = false, hidden = true, energy_required = 5,
     ingredients = {{type = "item", name = "steel-chest", amount = 1}, {type = "item", name = "radar", amount = 1},
       {type = "item", name = "electronic-circuit", amount = 10}},
     results = {{type = "item", name = "lp-muster-point", amount = 1}}},
@@ -359,7 +363,6 @@ data:extend({
     {type = "unlock-recipe", recipe = "lp-barracks"}, {type = "unlock-recipe", recipe = "lp-command-relay"},
     {type = "unlock-recipe", recipe = "lp-rally-beacon"}, {type = "unlock-recipe", recipe = "lp-trooper-order"},
     {type = "unlock-recipe", recipe = "lp-breacher-order"}, {type = "unlock-recipe", recipe = "lp-threat-scanner"},
-    {type = "unlock-recipe", recipe = "lp-muster-point"},
     {type = "give-item", item = "lp-command-core", count = 1}}),
   -- Gun buggies and rocket troopers with the second level, once the player has cars, piercing rounds and rocket launchers.
   tech(2, {"lp-command-bandwidth-1", "chemical-science-pack", "automobilism", "battery-equipment", "rocketry"}, {red, green, blue},

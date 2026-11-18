@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.448
+Date: 2026-11-18
+  Changes:
+    - Retiring units now takes them off the field at once and frees their command bandwidth. They are lost: nothing is handed back. Press Retire (or ALT + R) twice to confirm.
+    - Units over a rally beacon's squad size, with no other beacon to join, now hold where they stand instead of retiring.
+    - Muster points are removed, and a barracks no longer keeps orders for transport. Placed muster points are taken down when a save loads, and what they held is left on the ground, unit orders as the kit they were made from.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.447
 Date: 2026-11-18
   Bugfixes:

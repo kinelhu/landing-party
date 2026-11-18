@@ -3021,17 +3021,19 @@ scenarios.retire = function()
     local xs = {}
     for _, u in ipairs(pick) do xs[#xs + 1] = u.position.x end
     S.picked = lp("debug_select", {{math.min(table.unpack(xs)) - 0.2, -40}, {math.max(table.unpack(xs)) + 0.2, 30}})
-    S.sent = lp("debug_retire")
+    -- (Two presses: the first arms, the second retires; since 0.2.448 retired units are lost, at once.)
+    S.armed = lp("debug_retire")
+    S.still = surface().count_entities_filtered{name = "lp-trooper", force = "player"}
   end)
-  schedule(60 + 75 * 60, function()
+  schedule(60 + 30 * 60 + 60, function()
+    S.sent = lp("debug_retire")
     S.after = lp("army_readout")
     S.left = surface().count_entities_filtered{name = "lp-trooper", force = "player"}
+  end)
+  schedule(60 + 75 * 60, function()
     S.orders = 0
-    for _, e in pairs(surface().find_entities_filtered{type = "item-entity", position = {0.5, 3}, radius = 8}) do
-      if e.stack.name == "lp-trooper-order" then
-        S.orders = S.orders + e.stack.count
-        S.marked = (S.marked or 0) + (e.to_be_deconstructed() and 1 or 0)
-      end
+    for _, e in pairs(surface().find_entities_filtered{type = "item-entity"}) do
+      if e.stack.name:find("^lp%-.*%-order$") then S.orders = S.orders + e.stack.count end
     end
   end)
   schedule(60 + 110 * 60, function()
@@ -3040,19 +3042,20 @@ scenarios.retire = function()
     info("retire: before " .. serpent.line(S.before) .. ", after " .. serpent.line(S.after) .. ", " .. serpent.line(st))
     check("retire: the readout counted six of ten", S.before.units == 6 and S.before.cap == 10 and S.before.working == 1,
       serpent.line(S.before))
-    check("retire: three picked and sent home", S.picked == 3 and S.sent == 3, string.format("%s picked, %s sent",
-      tostring(S.picked), tostring(S.sent)))
-    check("retire: three left, three orders handed in at the barracks, marked for the robots", S.left == 3 and S.orders == 3
-      and (S.marked or 0) >= 1, string.format("%d left, %d orders, %d stacks marked", S.left, S.orders, S.marked or 0))
-    check("retire: the readout says three of ten", S.after.units == 3 and S.after.cap == 10, serpent.line(S.after))
+    check("retire: three picked; the first press only arms it", S.picked == 3 and S.armed == 0 and S.still == 6,
+      string.format("%s picked, %s retired at the first press, %s troopers", tostring(S.picked), tostring(S.armed), tostring(S.still)))
+    check("retire: the second press retires the three at once", S.sent == 3 and S.left == 3,
+      string.format("%s retired, %d left", tostring(S.sent), S.left))
+    check("retire: nothing handed back: no orders on the ground", S.orders == 0, S.orders .. " orders")
+    check("retire: the readout says three of ten at once", S.after.units == 3 and S.after.cap == 10, serpent.line(S.after))
     check("retire: and the barracks did not deploy them again", S.later == 3, S.later .. " troopers")
   end)
 end
 
 -- Squad sizes (command.lua squad_room and enforce; the user, 2026-11-10: "Retiring: no signal for this? Manual only is not
 -- good"): a barracks holding six trooper orders, a rally beacon set to a squad of 4 troopers (its lp-squad-trooper
--- signal): four deploy, two wait in the barracks. The cap lowered to 2: two walk home and hand their orders in. The cap
--- cleared: every order left deploys.
+-- signal): four deploy, two wait in the barracks. The cap lowered to 2: two leave the squad and hold where they stand
+-- (since 0.2.448; they walked home and handed their orders in). The cap cleared: the two orders waiting deploy.
 scenarios.squad = function()
   local function put(name, x, y, force)
     return surface().create_entity{name = name, position = {x, y}, force = force or "player", raise_built = true}
@@ -3092,7 +3095,7 @@ scenarios.squad = function()
   end)
   schedule(60 + 90 * 60, function()
     S.second = {units = surface().count_entities_filtered{name = "lp-trooper", force = "player"}, waiting = waiting(),
-      handed = handed(), auto = lp("army").auto_retired}
+      handed = handed(), held = lp("army").surplus_held, squad = lp("debug_beacon_view", S.beacon).n}
     cap(nil)
   end)
   schedule(60 + 120 * 60, function()
@@ -3100,9 +3103,9 @@ scenarios.squad = function()
     info("squad: " .. serpent.line({S.first, S.second, S.third}))
     check("squad: a squad of 4: four deployed, two waiting in the barracks", S.first.units == 4 and S.first.waiting == 2,
       serpent.line(S.first))
-    check("squad: lowered to 2: two walked home and handed their orders in", S.second.units == 2 and S.second.handed == 2
-      and S.second.auto == 2, serpent.line(S.second))
-    check("squad: cleared: the orders waiting deployed", S.third.units == 4 and S.third.waiting == 0, serpent.line(S.third))
+    check("squad: lowered to 2: two left the squad and hold, none lost, nothing handed in", S.second.units == 4
+      and S.second.squad == 2 and S.second.held == 2 and S.second.handed == 0, serpent.line(S.second))
+    check("squad: cleared: the orders waiting deployed", S.third.units == 6 and S.third.waiting == 0, serpent.line(S.third))
   end)
 end
 
@@ -3128,12 +3131,15 @@ scenarios.gunbuggy = function()
     put("lp-command-relay", 6.5, 6.5)   -- (two: 20 of cap for the 4 and the 8)
     put("medium-electric-pole", 4.5, 8.5)
     S.beacon = put("lp-rally-beacon", 10.5, -6.5)
-    -- (At a muster point: a barracks' output takes its own recipe's order only, a new one's the trooper's.)
-    S.muster = put("lp-muster-point", -6.5, 0.5)
-    S.muster.get_inventory(defines.inventory.chest).insert{name = "lp-gun-buggy-order", count = 1}
+    -- (A barracks' output takes its own recipe's order only: the buggy's here, the tank's at a second barracks.)
+    S.barracks.set_recipe("lp-gun-buggy-order")
+    S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-gun-buggy-order", count = 1}
+    S.barracks2 = put("lp-barracks", -6.5, 0.5)
+    put("medium-electric-pole", -4.5, 2.5)
+    S.barracks2.set_recipe("lp-battle-tank-order")
   end)
   schedule(60 + 5 * 60, function()
-    S.muster.get_inventory(defines.inventory.chest).insert{name = "lp-battle-tank-order", count = 1}
+    S.barracks2.get_inventory(defines.inventory.crafter_output).insert{name = "lp-battle-tank-order", count = 1}
   end)
   schedule(60 + 12 * 60, function()
     S.r = lp("army_readout")
@@ -3467,18 +3473,19 @@ scenarios.squadmove = function()
     S.set1 = lp("debug_squad_size", S.A, "lp-trooper", 4) and lp("debug_squad_size", S.B, "lp-trooper", 0)
     local out = S.barracks.get_inventory(defines.inventory.crafter_output)
     out.insert{name = "lp-trooper-order", count = 6}
-    -- (The uncommon one at a muster point: a barracks' output is one slot, full with the normal ones.)
-    S.muster = put("lp-muster-point", 0.5, -8.5)
+    -- (The uncommon one at a second barracks: a barracks' output is one slot, full with the normal ones.)
+    S.barracks2 = put("lp-barracks", -5.5, 0.5)
+    put("medium-electric-pole", -3.5, 2.5)
   end)
   schedule(60 + 30 * 60, function()
     S.first = {a = view(S.A).n, b = view(S.B).n, waiting = waiting(), caps = view(S.B).caps}
-    S.ins = S.muster.get_inventory(defines.inventory.chest).insert{name = "lp-trooper-order", count = 1, quality = "uncommon"}
+    S.ins = S.barracks2.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 1, quality = "uncommon"}
     lp("debug_squad_size", S.A, "lp-trooper", 1)
     lp("debug_squad_size", S.B, "lp-trooper", 3)
   end)
   schedule(60 + 70 * 60, function()
     local a = lp("army")
-    S.second = {a = view(S.A).n, b = view(S.B).n, moved = a.moved, auto = a.auto_retired,
+    S.second = {a = view(S.A).n, b = view(S.B).n, moved = a.moved, auto = a.surplus_held,
       units = surface().count_entities_filtered{name = "lp-trooper", force = "player"},
       near_b = surface().count_entities_filtered{name = "lp-trooper", force = "player", position = {-25.5, -18.5}, radius = 14}}
     lp("debug_squad_size", S.A, "lp-trooper", nil)
@@ -3490,7 +3497,8 @@ scenarios.squadmove = function()
     if up[1] then
       local p = up[1].position
       S.picked = lp("debug_select", {{p.x - 0.3, p.y - 0.3}, {p.x + 0.3, p.y + 0.3}})
-      S.sent = lp("debug_retire")
+      S.sent = lp("debug_retire", true)
+      S.after = surface().count_entities_filtered{name = "lp-trooper", force = "player"}
     end
   end)
   schedule(60 + 160 * 60, function()
@@ -3501,13 +3509,107 @@ scenarios.squadmove = function()
     info("squadmove: " .. serpent.line({S.set1, S.first, S.second, S.third, S.picked, S.sent, orders}))
     check("squadmove: sizes set by the panel's writer: four to A, none to B, two waiting", S.set1 and S.first.a == 4
       and S.first.b == 0 and S.first.waiting == 2 and (S.first.caps or {})["lp-trooper"] == 0, serpent.line(S.first))
-    check("squadmove: A lowered to 1, B raised to 3: three moved to B and stand there, none retired", S.second.a == 1
+    check("squadmove: A lowered to 1, B raised to 3: three moved to B and stand there, none held out", S.second.a == 1
       and S.second.b == 3 and S.second.moved == 3 and S.second.auto == 0 and S.second.units == 4 and S.second.near_b == 3,
       serpent.line(S.second))
-    check("squadmove: A cleared: the two waiting deployed, and the muster point's uncommon order as an uncommon trooper", S.third.units == 7
+    check("squadmove: A cleared: the two waiting deployed, and the second barracks' uncommon order as an uncommon trooper", S.third.units == 7
       and S.third.waiting == 0 and S.third.uncommon == 1 and (S.third.caps or {})["lp-trooper"] == nil, serpent.line(S.third))
-    check("squadmove: retired, the uncommon trooper hands in an uncommon order", S.picked == 1 and (orders.uncommon or 0) == 1
-      and (orders.normal or 0) == 0, serpent.line({S.picked, orders}))
+    check("squadmove: retired, the uncommon trooper is gone and hands nothing in", S.picked == 1 and S.sent == 1
+      and S.after == 6 and (orders.uncommon or 0) == 0 and (orders.normal or 0) == 0, serpent.line({S.picked, S.sent, S.after, orders}))
+  end)
+end
+
+-- Muster points retired (0.2.448; the user: stockpiled orders deployed at once "defeats the purposes of our barracks"):
+-- a placed one from an old save, holding three trooper orders (one uncommon) and some iron, taken off the map as a save
+-- loads (command.drop_musters): gone, its orders laid as their kit at their quality, its iron and its own makings beside,
+-- all marked for the robots.
+scenarios.musterdrop = function()
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-20, -20, 20, 20)
+    local m = surface().create_entity{name = "lp-muster-point", position = {0.5, 0.5}, force = "player"}
+    local inv = m.get_inventory(defines.inventory.chest)
+    inv.insert{name = "lp-trooper-order", count = 2}
+    inv.insert{name = "lp-trooper-order", count = 1, quality = "uncommon"}
+    inv.insert{name = "iron-plate", count = 7}
+    S.placed = m.valid
+    lp("debug_drop_musters")
+    local got, marked, stacks = {}, 0, 0
+    for _, e in pairs(surface().find_entities_filtered{type = "item-entity", position = {0.5, 0.5}, radius = 10}) do
+      local k = e.stack.name .. "/" .. e.stack.quality.name
+      got[k] = (got[k] or 0) + e.stack.count
+      stacks = stacks + 1
+      if e.to_be_deconstructed() then marked = marked + 1 end
+    end
+    S.got, S.marked, S.stacks = got, marked, stacks
+    S.left = surface().count_entities_filtered{name = "lp-muster-point"}
+  end)
+  schedule(120, function()
+    local g = S.got
+    info("musterdrop: " .. serpent.line(g))
+    check("musterdrop: the muster point gone", S.placed and S.left == 0, tostring(S.left))
+    check("musterdrop: its orders laid as their kit, at their quality", g["heavy-armor/normal"] == 2
+      and g["heavy-armor/uncommon"] == 1 and g["submachine-gun/normal"] == 2 and g["firearm-magazine/uncommon"] == 10
+      and not g["lp-trooper-order/normal"], serpent.line(g))
+    check("musterdrop: its iron and its own makings beside, all for the robots", g["iron-plate/normal"] == 7
+      and g["steel-chest/normal"] == 1 and g["radar/normal"] == 1 and S.marked == S.stacks, string.format("%d of %d marked",
+      S.marked, S.stacks))
+  end)
+end
+
+-- A nest cleared (the user, playtest: "my 40 unit army could not clear a 3 nest vanilla biter base", evolution 0.49 on
+-- deathworld): 30 troopers and 10 breachers sent fighting into three biter nests with two medium and three small worms,
+-- the enemy at evolution 0.49. A probe: what falls, what is lost, and what the units did.
+scenarios.nestclear = function()
+  local function put(name, x, y, force)
+    return surface().create_entity{name = name, position = {x, y}, force = force or "player", raise_built = true}
+  end
+  local NX = 90
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-40, -60, 140, 60)
+    game.forces.enemy.set_evolution_factor(tonumber(params.mix) or 0.49, surface())
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    local e = put("electric-energy-interface", -10, 20); e.power_production, e.electric_buffer_size = 1e8, 1e8
+    for k = 0, 3 do
+      local b = put("lp-barracks", -20.5 + 4 * k, 0.5)
+      if k == 3 then b.set_recipe("lp-breacher-order") end
+      b.get_inventory(defines.inventory.crafter_output).insert{name = k == 3 and "lp-breacher-order" or "lp-trooper-order", count = 10}
+      put("lp-command-relay", -20.5 + 4 * k, 8.5)
+    end
+    for x = -24.5, -4.5, 4 do put("medium-electric-pole", x, 4.5) end
+    for x = -24.5, -4.5, 6 do put("medium-electric-pole", x, 12.5) end
+    put("medium-electric-pole", -10.5, 17.5)
+    S.beacon = put("lp-rally-beacon", 10.5, 0.5)
+    S.nests = {put("biter-spawner", NX, -8, "enemy"), put("biter-spawner", NX + 8, 4, "enemy"), put("biter-spawner", NX - 2, 12, "enemy")}
+    S.worms = {put("medium-worm-turret", NX - 8, 0, "enemy"), put("medium-worm-turret", NX + 6, 14, "enemy"),
+      put("small-worm-turret", NX - 6, -12, "enemy"), put("small-worm-turret", NX + 12, -6, "enemy"), put("small-worm-turret", NX - 10, 10, "enemy")}
+    S.killed = {}
+  end)
+  schedule(60 + 40 * 60, function()
+    S.sent = surface().count_entities_filtered{force = "player", type = "unit"}
+    lp("debug_select", {{-60, -60}, {60, 60}})
+    lp("debug_order", {{NX + 20, 2}, {NX + 21, 3}}, true)
+  end)
+  local function standing(list) local n = 0; for _, e in ipairs(list) do if e.valid then n = n + 1 end end; return n end
+  for t = 60 + 40 * 60, 60 + 280 * 60, 20 * 60 do
+    schedule(t, function()
+      local s = surface()
+      local line = string.format("t+%ds: units %d (troopers %d, breachers %d), nests %d, worms %d, biters out %d", (t - 60 - 40 * 60) / 60,
+        s.count_entities_filtered{force = "player", type = "unit"}, s.count_entities_filtered{force = "player", name = "lp-trooper"},
+        s.count_entities_filtered{force = "player", name = "lp-breacher"}, standing(S.nests), standing(S.worms),
+        s.count_entities_filtered{force = "enemy", type = "unit"})
+      info("nestclear: " .. line)
+    end)
+  end
+  schedule(60 + 290 * 60, function()
+    local a = lp("army")
+    info("nestclear: " .. serpent.line({sent = S.sent, nests = standing(S.nests), worms = standing(S.worms), orders = a.orders, kept = a.kept_fighting}))
+    local rows = {}
+    for k, v in pairs(S.dmg or {}) do rows[#rows + 1] = {k, v} end
+    table.sort(rows, function(x, y) return x[2] > y[2] end)
+    for i = 1, math.min(25, #rows) do info(string.format("nestclear dmg: %s %.0f", rows[i][1], rows[i][2])) end
+    check("nestclear: forty sent", S.sent == 40, tostring(S.sent))
   end)
 end
 
@@ -18883,64 +18985,6 @@ scenarios.roads = function()
   end)
 end
 
--- Muster (the user: "Trains could even play into the mix"): a barracks wired with P (packing) keeps 5 trooper orders as
--- items; none deploy. Carried (by script, as a train would) to a muster point 150 tiles off, they become 5 troopers
--- there within 3 s.
-scenarios.muster = function()
-  local function put(name, x, y)
-    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
-  end
-  local function near(e, r)
-    return surface().count_entities_filtered{name = "lp-trooper", force = "player", position = e.position, radius = r}
-  end
-  schedule(60, function()
-    lp("debug_tune", {raids_off = true})
-    flatten(-20, -20, 170, 20)
-    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
-    S.barracks = put("lp-barracks", 0.5, 0.5)
-    put("electric-energy-interface", 4, 1)
-    put("medium-electric-pole", 2.5, 2.5)
-    put("lp-command-relay", 0.5, 6.5)
-    put("medium-electric-pole", 2.5, 5.5)
-    put("lp-rally-beacon", 10.5, -10.5)
-    local cc = put("constant-combinator", -3.5, 0.5)
-    local red = defines.wire_connector_id.circuit_red
-    cc.get_wire_connector(red, true).connect_to(S.barracks.get_wire_connector(red, true))
-    cc.get_or_create_control_behavior().add_section().filters =
-      {{value = {type = "virtual", name = "signal-P", quality = "normal"}, min = 1}}
-    S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 5}
-    -- An inserter takes them out of the barracks into a chest (the start of the player's logistics).
-    -- Facing south: it picks up from the barracks (south) and drops in the chest (north); a pole for its power.
-    S.ins = put("inserter", 0.5, -1.5)
-    S.ins.direction = defines.direction.south
-    S.chest = put("iron-chest", 0.5, -2.5)
-    put("small-electric-pole", 1.5, -1.5)
-    S.muster = put("lp-muster-point", 150.5, 0.5)
-    put("lp-rally-beacon", 160.5, -10.5)
-  end)
-  schedule(60 + 3 * 60, function()
-    local out = S.barracks.get_inventory(defines.inventory.crafter_output)
-    S.taken = S.chest.get_item_count("lp-trooper-order")
-    -- Wherever they are: the barracks' output, the chest, or the inserter's hand.
-    local hand = S.ins.held_stack.valid_for_read and S.ins.held_stack.count or 0
-    S.packed, S.home = out.get_item_count("lp-trooper-order") + S.taken + hand, near(S.barracks, 30)
-    -- The train: the orders taken out and put in the muster point.
-    out.remove{name = "lp-trooper-order", count = 5}
-    S.chest.remove_item{name = "lp-trooper-order", count = 5}
-    S.ins.held_stack.clear()
-    S.muster.insert{name = "lp-trooper-order", count = S.packed}
-  end)
-  schedule(60 + 6 * 60, function() S.front, S.left = near(S.muster, 20), S.muster.get_item_count("lp-trooper-order") end)
-  schedule(END - 60, function()
-    info(string.format("muster: packed %s, at the barracks %s; at the muster point %s, orders left in it %s",
-      tostring(S.packed), tostring(S.home), tostring(S.front), tostring(S.left)))
-    check("muster: packing, the barracks keeps its orders", S.packed == 5 and S.home == 0,
-      string.format("%s kept, %s deployed", tostring(S.packed), tostring(S.home)))
-    check("muster: an inserter takes them out", (S.taken or 0) >= 1, tostring(S.taken))
-    check("muster: carried, they deploy at the muster point", S.front == 5 and S.left == 0,
-      string.format("%s there, %s left", tostring(S.front), tostring(S.left)))
-  end)
-end
 
 -- Podland (Space Age; the user: "I think it's okay to rely on space age"): a landing queued as the faction's own are
 -- comes down by cargo pod: pods seen in flight, the settlement there once they touch down (6.65 s), on the pod's spot,
@@ -21621,6 +21665,16 @@ end, params.scenario ~= "system" and params.scenario ~= "visit" and params.scena
   -- And spawners (hazard's nests): filtered without them, its check that each nest gone died where the harness saw it
   -- read 0 deaths for 6 nests the railgunners killed (2026-11-06; a note of 11-05 had it as "not logged in hazard").
   {filter = "type", type = "unit-spawner"}} or nil)
+
+-- Nestclear: who hurt whom, by the attacker's name (and the damage type), and the player's units' deaths by killer.
+if params.scenario == "nestclear" then
+  script.on_event(defines.events.on_entity_damaged, function(e)
+    S.dmg = S.dmg or {}
+    local a = e.cause and e.cause.valid and e.cause.name or ("?" .. (e.force and e.force.name or ""))
+    local k = a .. ">" .. e.entity.name .. ":" .. e.damage_type.name
+    S.dmg[k] = (S.dmg[k] or 0) + e.final_damage_amount
+  end)
+end
 
 -- Bait: what the biters it called do to Serenity (12 small biters reach its camp and bite; on 2.1 its flamers kill them
 -- all before anything falls: 42 to a pylon, nothing destroyed).

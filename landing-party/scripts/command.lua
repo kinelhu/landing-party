@@ -119,14 +119,6 @@ function command.on_built(e)
   end
   if ent.name == "lp-rally-beacon" then storage.cmd.beacons[ent.unit_number] = ent end
   if ent.name == "lp-command-relay" then storage.cmd.relays[ent.unit_number] = ent end
-  if ent.name == "lp-muster-point" then
-    storage.cmd.musters = storage.cmd.musters or {}
-    storage.cmd.musters[ent.unit_number] = ent
-    -- Its floodlight on the rally ground at night (the user, 2026-11-04: "why not a built in light"): a chest has no light
-    -- of its own; drawn on it, the light goes with it.
-    rendering.draw_light{sprite = "utility/light_medium", target = {entity = ent, offset = {-0.2, 0.9}}, surface = ent.surface,
-      scale = 1.4, intensity = 0.8, color = {r = 1, g = 0.92, b = 0.75}, minimum_darkness = 0.3}
-  end
 end
 
 local function nearest(list, pos, force, range)
@@ -145,11 +137,11 @@ end
 -- Squad sizes (the user, 2026-11-10: "Retiring: no signal for this? Manual only is not good"): a rally beacon's
 -- lp-squad-<unit> signals (shared.SQUAD_SIGNALS) cap how many of that unit its squad keeps. An order deploys to the nearest
 -- beacon in reach with room for its unit (one without a cap for it has room); with every beacon in reach full, it waits
--- where it is (a barracks' output fills and the barracks stops; a muster point holds it). Above a cap, the surplus walks
--- to a barracks and hands its orders in (enforce, below). squad_room: below, after signals.
+-- where it is (a barracks' output fills and the barracks stops). Above a cap, the surplus joins another beacon with room,
+-- or holds where it stands (enforce, below). squad_room: below, after signals.
 local squad_room
 local hint            -- (below: a stuck player's hint)
--- Orders in `inv` become units beside `at` (a barracks or a muster point), assigned to the nearest beacon with room for
+-- Orders in `inv` become units beside `at` (a barracks), assigned to the nearest beacon with room for
 -- them, while the force's bandwidth has room.
 local function deploy(at, inv, room, squads)
   local f = at.force
@@ -186,18 +178,10 @@ local function deploy(at, inv, room, squads)
   end
 end
 
--- Packing (the user, 2026-10-18: "Trains could even play into the mix"): a barracks wired with P > 0 keeps its finished
--- orders as items in its output, for inserters to take and the player's logistics (trains, belts, robots) to carry to
--- a muster point near the front, which turns them into units there.
-local PACK = {type = "virtual", name = "signal-P"}
-local function packing(b)
-  local red, green = defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green
-  if not (b.get_circuit_network(red) or b.get_circuit_network(green)) then return false end
-  return (b.get_signal(PACK, red, green) or 0) > 0
-end
-
--- Finished orders become units beside the barracks (unless it packs) and from what a muster point holds.
--- A finished order waits in the barracks while bandwidth is full; with its output full, the barracks stops.
+-- Finished orders become units beside the barracks. A finished order waits in the barracks while bandwidth is full; with
+-- its output full, the barracks stops. (No more packing, P > 0 keeping orders as items for a muster point at the front,
+-- since 0.2.448: the user, "the fact you can stockpile and replace losses instantly defeats the purposes of our
+-- barracks"; an outpost's own barracks, fed kit by train, holds its reserve.)
 -- A stuck player's hint (the user, 2026-11-10: "Yes to tutorial"), once a force: at the building, and in chat.
 hint = function(f, key, at)
   storage.cmd.hints = storage.cmd.hints or {}
@@ -221,20 +205,12 @@ local function train()
   for k, b in pairs(storage.cmd.barracks) do
     if not b.valid then
       storage.cmd.barracks[k] = nil
-    elseif not packing(b) then
+    else
       has_room(b.force)
       -- A finished order waiting with no bandwidth at all (no powered relay): told once why.
       local out = b.get_inventory(defines.inventory.crafter_output)
       if command.capacity(b.force) <= 0 and out and not out.is_empty() then hint(b.force, "no-relay", b) end
       deploy(b, out, room, squads)
-    end
-  end
-  for k, m in pairs(storage.cmd.musters or {}) do
-    if not m.valid then
-      storage.cmd.musters[k] = nil
-    else
-      has_room(m.force)
-      deploy(m, m.get_inventory(defines.inventory.chest), room, squads)
     end
   end
 end
@@ -1056,85 +1032,61 @@ local function chart_army()
   storage.cmd.chart_at = keep
 end
 
--- Retiring (the user, 2026-11-10: "How do you retire units?", there was no way): the selection walks to the nearest
--- barracks of its force on its surface and there hands in its order, laid beside it and marked for deconstruction (robots
--- carry it to storage; a muster point or a barracks' output deploys it again later), its bandwidth freed. Not into the
--- barracks' output: the barracks deploys what it holds there, and the order was back on the field a second later. With
--- no barracks, it hands in its order where it stands.
-local ORDER_OF = {}
-for item, name in pairs(shared.ORDERS) do ORDER_OF[name] = item end
-local RETIRE_AT = 6
+-- Retiring (the user, 2026-11-10: "How do you retire units?", there was no way): since 0.2.448 the selection is taken off
+-- the field at once, its bandwidth freed, and lost: no order handed back (the user: "What about 'retiring' amounting to
+-- killing the unit? is that not how RTS do it?"; walked home to hand its order in, it held its bandwidth all the way, and
+-- orders stockpiled to deploy at once). Two presses: the first arms it for RETIRE_ARM ticks, the second retires.
+local RETIRE_ARM = 180
 
-local function home_for(u)
-  local best, bd
-  for k, b in pairs(storage.cmd.barracks) do
-    if not b.valid then
-      storage.cmd.barracks[k] = nil
-    elseif b.force == u.force and b.surface == u.surface then
-      local d = (b.position.x - u.position.x) ^ 2 + (b.position.y - u.position.y) ^ 2
-      if not bd or d < bd then best, bd = b, d end
-    end
-  end
-  return best
-end
-
-local function unit_to_order(k, t, at)
+local function dismiss(k, t)
   local u = t.unit
-  local item = ORDER_OF[u.name]
-  if item then
-    u.surface.spill_item_stack{position = at and at.valid and {at.position.x, at.position.y + 2.5} or u.position,
-      stack = {name = item, count = 1, quality = u.quality.name}, force = u.force, allow_belts = false}
-  end
   storage.cmd.troopers[k] = nil
   for _, sel in pairs(storage.cmd.selected or {}) do sel[k] = nil end
-  u.destroy()
+  if u.valid then
+    for _, x in ipairs(u.prototype.dying_explosion or {}) do
+      u.surface.create_entity{name = x.name, position = u.position}
+    end
+    u.destroy()
+  end
   storage.cmd.retired = (storage.cmd.retired or 0) + 1
 end
 
-function command.retire(player_index)
+function command.retire_armed(player_index)
+  local at = (storage.cmd.retire_armed or {})[player_index]
+  return at and game.tick - at <= RETIRE_ARM or false
+end
+
+-- Returns how many were retired (0 while only arming); `now` skips the arming (tests).
+function command.retire(player_index, now)
   storage.cmd.selected = storage.cmd.selected or {}
+  storage.cmd.retire_armed = storage.cmd.retire_armed or {}
   local sel = storage.cmd.selected[player_index] or {}
-  storage.cmd.seq = (storage.cmd.seq or 0) + 1
+  if not next(sel) then return 0 end
+  if not now and not command.retire_armed(player_index) then
+    storage.cmd.retire_armed[player_index] = game.tick
+    return 0
+  end
+  storage.cmd.retire_armed[player_index] = nil
   local n = 0
   for k in pairs(sel) do
     local t = storage.cmd.troopers[k]
-    if t and t.unit.valid then
-      local home = home_for(t.unit)
-      if home then
-        t.manual, t.key = {kind = "retire", target = home, seq = storage.cmd.seq}, nil
-        manual(t)
-      else
-        unit_to_order(k, t, nil)
-      end
-      n = n + 1
-    end
+    if t and t.unit.valid then dismiss(k, t); n = n + 1 end
   end
   storage.cmd.selected[player_index] = {}
   rings(player_index)
   return n
 end
 
+-- Units still walking home under the old retire (saves from before 0.2.448): retired as they are now.
 local function retire_step()
   for k, t in pairs(storage.cmd.troopers) do
-    local m = t.manual
-    if m and m.kind == "retire" and t.unit.valid then
-      if not (m.target and m.target.valid) then
-        m.target = home_for(t.unit)
-        if m.target then t.key = nil; manual(t) end
-      end
-      local h = m.target
-      if not h then
-        unit_to_order(k, t, nil)
-      elseif (h.position.x - t.unit.position.x) ^ 2 + (h.position.y - t.unit.position.y) ^ 2 <= RETIRE_AT * RETIRE_AT then
-        unit_to_order(k, t, h)
-      end
-    end
+    if t.manual and t.manual.kind == "retire" then dismiss(k, t) end
   end
 end
 
 -- Squad sizes kept (see squad_room): above a beacon's cap for a unit, the surplus, farthest from its rally point first,
--- joins the nearest other beacon in reach with room for it; with none, it walks to the nearest barracks and hands in its
--- orders, as a retired unit does. (Moving first since 2026-11-16, with the defend stance: a squad was whoever had deployed
+-- joins the nearest other beacon in reach with room for it; with none, it holds where it stands, out of the squad, until
+-- given an order (since 0.2.448: retiring loses a unit, and a slider lowered must not). (Moving first since 2026-11-16, with the defend stance: a squad was whoever had deployed
 -- nearest, and sizes the only lever, so lowering one beacon's tanks and raising another's moves them; it retired them.)
 local function enforce()
   local squads = squad_counts()
@@ -1163,7 +1115,6 @@ local function enforce()
           for i = 1, #list - c do
             local e = list[i]
             local other = squad_room(e.t.unit.position, e.t.unit.force, name, squads)
-            local home = not other and home_for(e.t.unit)
             if other then
               local from, to = squads.count[id] or {}, squads.count[other.unit_number] or {}
               from[name] = math.max(0, (from[name] or 1) - 1)
@@ -1171,13 +1122,13 @@ local function enforce()
               squads.count[id], squads.count[other.unit_number] = from, to
               e.t.beacon, e.t.key = other.unit_number, nil
               storage.cmd.moved = (storage.cmd.moved or 0) + 1
-            elseif home then
-              e.t.manual, e.t.key = {kind = "retire", target = home, seq = storage.cmd.seq}, nil
-              manual(e.t)
             else
-              unit_to_order(e.k, e.t, nil)
+              local p = e.t.unit.position
+              e.t.beacon, e.t.key = nil, nil
+              e.t.manual = {kind = "hold", pos = {x = p.x, y = p.y}, seq = storage.cmd.seq}
+              manual(e.t)
+              storage.cmd.surplus_held = (storage.cmd.surplus_held or 0) + 1
             end
-            if not other then storage.cmd.auto_retired = (storage.cmd.auto_retired or 0) + 1 end
           end
         end
       end
@@ -1235,7 +1186,7 @@ function command.gui_tick()
       local sel = 0
       for k in pairs((storage.cmd.selected or {})[p.index] or {}) do if storage.cmd.troopers[k] then sel = sel + 1 end end
       local b = frame.lp_army_retire
-      b.caption = {"lp.army-retire", sel}
+      b.caption = command.retire_armed(p.index) and sel > 0 and {"lp.army-retire-confirm", sel} or {"lp.army-retire", sel}
       b.tooltip = {"lp.army-retire-tooltip"}
       b.enabled = sel > 0
       b.style.width = 110
@@ -1293,10 +1244,41 @@ function command.stats()
   end
   local hints = {}
   for k, t in pairs(storage.cmd.hints or {}) do hints[k] = t end
-  return {trained = storage.cmd.trained or 0, retired = storage.cmd.retired or 0, auto_retired = storage.cmd.auto_retired or 0,
+  return {trained = storage.cmd.trained or 0, retired = storage.cmd.retired or 0, surplus_held = storage.cmd.surplus_held or 0,
     moved = storage.cmd.moved or 0, defend_sent = storage.cmd.defend_sent or 0,
     route_searches = storage.cmd.route_searches or 0, kept_fighting = storage.cmd.kept_fighting or 0, routes_taken = storage.cmd.routes_taken or 0, hints = hints, alive = alive, offline = offline, capacity = command.capacity(f),
     level = research_level(f), orders = orders, locks = storage.cmd.locks, charted = storage.cmd.charted or 0}
+end
+
+-- Muster points taken off the map (0.2.448: retired with packing, above): each placed one removed, what it held laid where it
+-- stood for the force's robots, its unit orders as the kit they were made from (at their quality), and the muster
+-- point's own makings with them. Run on a configuration change (a save from before).
+function command.drop_musters()
+  storage.cmd.musters = nil
+  if not prototypes.entity["lp-muster-point"] then return end
+  local made = prototypes.recipe["lp-muster-point"]
+  for _, s in pairs(game.surfaces) do
+    for _, m in ipairs(s.find_entities_filtered{name = "lp-muster-point"}) do
+      local f, pos = m.force, m.position
+      local function lay(name, count, quality)
+        if count > 0 then s.spill_item_stack{position = pos, stack = {name = name, count = count, quality = quality},
+          force = f, allow_belts = false} end
+      end
+      for _, c in ipairs(m.get_inventory(defines.inventory.chest).get_contents()) do
+        local r = shared.ORDERS[c.name] and prototypes.recipe[c.name]
+        if r then
+          for _, ing in ipairs(r.ingredients) do
+            if ing.type == "item" then lay(ing.name, ing.amount * c.count, c.quality) end
+          end
+        else
+          lay(c.name, c.count, c.quality)
+        end
+      end
+      for _, ing in ipairs(made and made.ingredients or {}) do if ing.type == "item" then lay(ing.name, ing.amount, "normal") end end
+      shared.notice(f, {"lp.muster-removed", string.format("[gps=%d,%d,%s]", pos.x, pos.y, s.name)})
+      m.destroy()
+    end
+  end
 end
 
 -- Command cores dropped by the faction's wreckage, lootable.
