@@ -128,6 +128,7 @@ came as the pods landed: checked only on the director's minute, and a map tag al
 radar now (0.2.456). The strike was 41 units at the cap, counted a unit a point whatever the unit (8 tanks among them),
 against an army with nothing that beats tanks: points priced by strength now, 22 units for the same 41 points, measured
 on the save against a bandwidth 3 army (0.2.457), and the save given that army.
+Played again on 0.2.457 (the new director save): "Strike worked nicely, so did the defense. Got advance notice of it."
 
 Not yet seen in game: the lander's hover lines (0.2.450). Open: a squad sent from far off plans its path before your
 gates near it open and may stop at your own wall; `paved squad` fails on every version.
