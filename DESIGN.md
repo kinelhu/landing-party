@@ -8392,3 +8392,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   120 tiles off, toward the fallen camp); the fallen camp's own were all ruins. The check counted the force's turrets;
   now the fallen settlement's own (a test hook, `debug_owner`, names an entity's settlement). Seen failing with ruin()
   made to skip turrets: 19 of its own.
+- **2026-11-18, the barracks' times honest (0.2.454).** The user: "Are barracks beaconable?" No: no modules, no effects
+  allowed (kept: how fast a force trains is its barracks, each a command core). It kept assembling machine 2's crafting
+  speed, 0.75, so "30 s a trooper" took 40. Now speed 1 and the recipes at what training took (trooper and breacher 40,
+  rocket and flame trooper 53, gun buggy 80, battle tank 160): the pace unchanged, the numbers true. Check `caps` reads
+  the real time (recipe over speed): 40 before and after.

@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.454
+Date: 2026-11-18
+  Changes:
+    - The barracks trains at speed 1, and each order's recipe now shows its real training time: 40 s for a trooper or a breacher, 53 s for a rocket or flamethrower trooper, 80 s for a gun buggy, 160 s for a battle tank. Training is no faster or slower than before.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.453
 Date: 2026-11-18
   Info:

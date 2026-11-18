@@ -1398,7 +1398,10 @@ scenarios.caps = function()
     local r = prototypes.recipe["lp-trooper-order"]
     local core = false
     for _, i in pairs(prototypes.recipe["lp-barracks"].ingredients) do if i.name == "lp-command-core" then core = true end end
-    check("caps: a trooper takes 30 s, a barracks a core", r.energy == 30 and core, r.energy .. " s, core " .. tostring(core))
+    -- (Its real time: the recipe's at the barracks' speed, 1 since 0.2.454; 30 at 0.75 was 40.)
+    local speed = prototypes.entity["lp-barracks"].get_crafting_speed()
+    check("caps: a trooper takes 40 s, a barracks a core", r.energy / speed == 40 and core,
+      string.format("%.0f s (%.0f at speed %.2f), core %s", r.energy / speed, r.energy, speed, tostring(core)))
     local kit = {}
     for _, i in pairs(r.ingredients) do kit[i.name] = true end
     check("caps: a trooper is made of the engineer's kit", kit["heavy-armor"] and kit["submachine-gun"],

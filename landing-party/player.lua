@@ -10,6 +10,10 @@ barracks.fast_replaceable_group = nil
 barracks.crafting_categories = {"lp-training"}
 -- No fixed recipe: troopers, breachers or battle tanks (a new barracks starts on troopers).
 barracks.module_slots = 0
+-- Speed 1, so a recipe's time is its training time (assembling machine 2's 0.75 until 0.2.454: "30 s a trooper" took 40;
+-- the recipes raised to what training took, the pace unchanged). No modules, no beacons: how fast a force trains is how
+-- many barracks it has, each a command core earned from the corporations' wreckage.
+barracks.crafting_speed = 1
 barracks.allowed_effects = nil
 -- Its own body, rendered in Blender (tools/blender/player_army.py barracks, sheet.py): a training plant, an assembler's
 -- chamfered block in warm steel, a roll-up bay door; training, its roof fans turn, the strip over its door runs and its
@@ -256,15 +260,15 @@ data:extend({
   -- Units are made of the engineer's own kit (personal equipment, rarely automated: a fresh logistics chain,
   -- user 2026-10-13): a trooper is heavy armour, a submachine gun and magazines.
   {type = "recipe", name = "lp-trooper-order", categories = {"lp-training"}, enabled = false, hidden_in_factoriopedia = true,
-    -- 30 s a trooper: even at the cap, a lost army takes time to replace.
-    energy_required = 30,
+    -- 40 s a trooper: even at the cap, a lost army takes time to replace.
+    energy_required = 40,
     ingredients = {{type = "item", name = "heavy-armor", amount = 1}, {type = "item", name = "submachine-gun", amount = 1},
       {type = "item", name = "firearm-magazine", amount = 10}},
     results = {{type = "item", name = "lp-trooper-order", amount = 1}}},
   {type = "item", name = "lp-breacher-order", icon = "__base__/graphics/icons/grenade.png", hidden = true,
     stack_size = 10, subgroup = "other"},
   {type = "recipe", name = "lp-breacher-order", categories = {"lp-training"}, enabled = false, hidden_in_factoriopedia = true,
-    icon = "__base__/graphics/icons/grenade.png", energy_required = 30,
+    icon = "__base__/graphics/icons/grenade.png", energy_required = 40,
     ingredients = {{type = "item", name = "heavy-armor", amount = 1}, {type = "item", name = "grenade", amount = 10},
       {type = "item", name = "electronic-circuit", amount = 5}},
     results = {{type = "item", name = "lp-breacher-order", amount = 1}}},
@@ -272,7 +276,7 @@ data:extend({
     stack_size = 10, subgroup = "other"},
   -- Rocket troopers (the RTS pass, 2026-10-21): heavy armour, a rocket launcher and rockets; with the second level.
   {type = "recipe", name = "lp-rocket-trooper-order", categories = {"lp-training"}, enabled = false, hidden_in_factoriopedia = true,
-    icon = "__base__/graphics/icons/rocket-launcher.png", energy_required = 40,
+    icon = "__base__/graphics/icons/rocket-launcher.png", energy_required = 53,
     ingredients = {{type = "item", name = "heavy-armor", amount = 1}, {type = "item", name = "rocket-launcher", amount = 1},
       {type = "item", name = "rocket", amount = 10}},
     results = {{type = "item", name = "lp-rocket-trooper-order", amount = 1}}},
@@ -280,7 +284,7 @@ data:extend({
     stack_size = 10, subgroup = "other"},
   -- Flamethrower troopers (2026-10-24): heavy armour, a flamethrower and its fuel; with the third level.
   {type = "recipe", name = "lp-flame-trooper-order", categories = {"lp-training"}, enabled = false, hidden_in_factoriopedia = true,
-    icon = "__base__/graphics/icons/flamethrower.png", energy_required = 40,
+    icon = "__base__/graphics/icons/flamethrower.png", energy_required = 53,
     ingredients = {{type = "item", name = "heavy-armor", amount = 1}, {type = "item", name = "flamethrower", amount = 1},
       {type = "item", name = "flamethrower-ammo", amount = 10}},
     results = {{type = "item", name = "lp-flame-trooper-order", amount = 1}}},
@@ -288,14 +292,14 @@ data:extend({
   {type = "item", name = "lp-gun-buggy-order", icon = "__base__/graphics/icons/car.png", hidden = true,
     stack_size = 10, subgroup = "other"},
   {type = "recipe", name = "lp-gun-buggy-order", categories = {"lp-training"}, enabled = false, hidden_in_factoriopedia = true,
-    icon = "__base__/graphics/icons/car.png", energy_required = 60,
+    icon = "__base__/graphics/icons/car.png", energy_required = 80,
     ingredients = {{type = "item", name = "car", amount = 1}, {type = "item", name = "piercing-rounds-magazine", amount = 20},
       {type = "item", name = "battery-equipment", amount = 1}},
     results = {{type = "item", name = "lp-gun-buggy-order", amount = 1}}},
   {type = "item", name = "lp-battle-tank-order", icon = "__base__/graphics/icons/tank.png", hidden = true,
     stack_size = 10, subgroup = "other"},
   {type = "recipe", name = "lp-battle-tank-order", categories = {"lp-training"}, enabled = false, hidden_in_factoriopedia = true,
-    icon = "__base__/graphics/icons/tank.png", energy_required = 120,
+    icon = "__base__/graphics/icons/tank.png", energy_required = 160,
     -- (An exoskeleton and two energy shields since 0.2.438, the user: "I think the tank def needs more cost": per point of
     -- command bandwidth the cheapest unit, about 165 plates against a trooper's 425, and the strongest.)
     ingredients = {{type = "item", name = "tank", amount = 1}, {type = "item", name = "cannon-shell", amount = 20},
