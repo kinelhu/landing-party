@@ -401,6 +401,14 @@ function director.tick(tick)
     director.rotation_tick(storage.director, tick)
   end
   if tick % 60 == 45 and storage.director then walking(storage.director) end
+  -- (A radar's warning on the second, not on the director's minute: 0.2.456. Checked by director.strikes alone, once a
+  -- minute, a warning at the edge of a radar's reach (30 s) came as the pods landed, 0 s ahead: the playtest of
+  -- 2026-11-18, "Didn't see the radar warning", deathworld10x's first strike, its pods seen by a command relay.)
+  if tick % 60 == 15 and storage.director and storage.director.strikes then
+    for _, k in pairs(storage.director.strikes) do
+      if k.spot and not k.seen and tick >= k.spot.at then director.spot(storage.director, k) end
+    end
+  end
   if tick % 60 == 30 and storage.director and storage.director.masts then masts_tick(storage.director, tick) end
   if tick % 60 == 30 and storage.director and storage.director.bounty then bounty_tick(storage.director, tick) end
   if tick % 300 == 200 and storage.director and storage.director.salvage then director.salvage_tick(storage.director) end
@@ -1439,7 +1447,7 @@ local function strike(s, owner, corps, tick, mult, warn, aim, want)
   -- (How far ahead, by the radar's distance (the user, 2026-11-16, "Yes to radar distance": 2 minutes was generous once
   -- the defend stance answers at once): the full warning with a radar over the landing chunk, warn_edge of it at the
   -- edge of its reach, between in proportion; the best radar's. Told then, not at once.)
-  local seen, frac = false, nil
+  local seen, frac, eye = false, nil, nil
   if f then
     local cx, cy = math.floor(lp.x / 32), math.floor(lp.y / 32)
     -- (A command relay reveals as a radar does, but not under a blackout mast: kept powered for the army, its cover goes.)
@@ -1454,7 +1462,7 @@ local function strike(s, owner, corps, tick, mult, warn, aim, want)
       if r.status == defines.entity_status.working and d <= reach then
         seen = true
         local fr = reach > 0 and d / reach or 0
-        if not frac or fr < frac then frac = fr end
+        if not frac or fr < frac then frac, eye = fr, r end
       end
       ::next_radar::
     end
@@ -1477,7 +1485,7 @@ local function strike(s, owner, corps, tick, mult, warn, aim, want)
   end
   if seen then
     local lead = minutes * (1 - (1 - tun("warn_edge")) * frac)
-    k.spot = {at = k.pods_at - math.floor(lead * 3600), x = lp.x, y = lp.y, surface = surface.index, key = key}
+    k.spot = {at = k.pods_at - math.floor(lead * 3600), x = lp.x, y = lp.y, surface = surface.index, key = key, radar = eye}
     if tick >= k.spot.at then director.spot(s, k) end
   end
   shared.event("strike_warn", {key = key, corp = lead.corp, n = n, pos = {tx, ty}, minutes = minutes, base = lead.id,
@@ -1507,6 +1515,10 @@ war.on_strike_landed = function(key, units)
     if f and c then
       local surface = units[1].surface
       if k.tag and k.tag.valid then k.tag.destroy() end
+      if k.spot_alert and k.spot_alert.valid then
+        f.remove_alert{entity = k.spot_alert, type = defines.alert_type.custom}
+        k.spot_alert = nil
+      end
       k.tag = f.add_chart_tag(surface, {position = k.landed_at, text = c.name .. " strike force",
         icon = {type = "virtual", name = c.icon}})
       local gps = string.format("[gps=%.0f,%.0f,%s]", k.landed_at[1], k.landed_at[2], surface.name)
@@ -1743,6 +1755,13 @@ function director.spot(s, k)
   k.tag = f.add_chart_tag(surface, {position = {k.spot.x, k.spot.y}, text = c.name .. " pods inbound",
     icon = {type = "virtual", name = c.icon}})
   tell(k.owner, "lp.director-strike-seen", c.name, k.sent, gps, secs)
+  -- (An alert on the radar that saw them, as the landing's is on its first unit: with chat notices off, the warning was a
+  -- map tag alone, and the playtest of 2026-11-18 did not see it. Gone when they land.)
+  local eye = k.spot.radar
+  if eye and eye.valid then
+    f.add_custom_alert(eye, {type = "virtual", name = c.icon}, {"lp.director-strike-seen", c.name, k.sent, gps, secs}, true) -- notice-ok: a seen threat, the radar's warning
+    k.spot_alert = eye
+  end
   shared.event("strike_seen", {key = k.spot.key, lead = secs})
 end
 
@@ -1773,6 +1792,7 @@ local function strike_over(s, key, k, why)
   if k.group and k.group.valid then k.group.destroy() end
   local f = game.forces[k.owner]
   if f and k.alert and k.alert.valid then f.remove_alert{entity = k.alert} end
+  if f and k.spot_alert and k.spot_alert.valid then f.remove_alert{entity = k.spot_alert, type = defines.alert_type.custom} end
   local left = (k.joined or 0) + (k.shipped or 0) + (k.lifted or 0) + (hb and 0 or #live)
   trace(string.format("strike force %d over (%s): %d of %d home (%d joined camp %s, %d shipped off)", key, why, left,
     k.sent, k.joined or 0, tostring(k.home), k.shipped or 0))

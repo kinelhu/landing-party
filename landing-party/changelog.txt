@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.456
+Date: 2026-11-18
+  Bugfixes:
+    - A strike force seen coming by radar was told up to a minute late, often as its pods landed. It is now told as far ahead as the radar's distance allows, and the radar that saw it raises an alert.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.455
 Date: 2026-11-18
   Changes:

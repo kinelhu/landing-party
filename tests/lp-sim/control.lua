@@ -8765,11 +8765,25 @@ scenarios.director = function()
         math.abs(math.floor(r.position.y / 32) - math.floor(k.land[2] / 32)))
       local full = (k.pods_at - k.warned) / 60
       local want = dc <= reach and full * (1 - (1 - 0.25) * dc / reach) or nil
-      return {got = k.spot and (k.pods_at - k.spot.at) / 60 or nil, want = want, chunks = dc, reach = reach}
+      return {got = k.spot and (k.pods_at - k.spot.at) / 60 or nil, want = want, chunks = dc, reach = reach, warned = k.warned}
+    end
+    -- (The lead as told, seconds before its pods, not as scheduled: 0.2.456. Scheduled to the second, it was told on
+    -- the director's minute, the edge's 30 s told 0 s ahead: the playtest of 2026-11-18. Each second, the told lead.)
+    if radarlead then
+      S.told = {}
+      for t = 600, END - 120, 60 do
+        schedule(t, function()
+          local d = lp("director") or {}
+          -- (By the tick it was warned: a strike's key comes round again once the one before is over.)
+          for _, k in pairs(d.strikes or {}) do if k.seen_lead then S.told[k.warned] = k.seen_lead end end
+        end)
+      end
     end
     schedule(600, function()
       S.f1 = lp("director_cmd", "focus", S.A)
-      if radarlead then S.lead1 = lead_of(S.rA) end
+      if radarlead then
+        S.lead1 = lead_of(S.rA)
+      end
       if waiting then
         local d = lp("director") or {}
         local k = d.strikes and d.strikes[d.strike_n]
@@ -8796,7 +8810,9 @@ scenarios.director = function()
       S.rep1 = d.strikes_repelled or 0
       S.troopers = surface().count_entities_filtered{name = {"lp-trooper", "lp-rocket-trooper", "lp-battle-tank"}, force = "player"}
       S.f2 = lp("director_cmd", "focus", S.B)
-      if radarlead then S.lead2 = lead_of(S.rB) end
+      if radarlead then
+        S.lead2 = lead_of(S.rB)
+      end
     end)
     schedule(END - 60, function()
       local d = lp("director") or {}
@@ -8814,6 +8830,11 @@ scenarios.director = function()
           fits(a) and fits(b) and (d.strike_seen or 0) == 2, got)
         check("director: radarlead, the radar nearer its landing tells it longer ahead",
           a.chunks < b.chunks and a.got > b.got, got)
+        local ta, tb = a.warned and S.told[a.warned], b.warned and S.told[b.warned]
+        check("director: radarlead, each told that far ahead as it happened (within 2 s), not on the director's minute",
+          ta and tb and a.want and b.want and math.abs(ta - a.want) <= 2 and math.abs(tb - b.want) <= 2,
+          string.format("told %s and %s s ahead, the formula's %s and %s", tostring(ta), tostring(tb),
+            tostring(a.want), tostring(b.want)))
         return
       end
       if defend then

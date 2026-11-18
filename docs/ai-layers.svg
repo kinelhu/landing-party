@@ -79,8 +79,8 @@
 <title>The director (above every faction)</title>
 <path fill="#f7dede" stroke="black" d="M315.62,-850C315.62,-850 162.38,-850 162.38,-850 156.38,-850 150.38,-844 150.38,-838 150.38,-838 150.38,-818 150.38,-818 150.38,-812 156.38,-806 162.38,-806 162.38,-806 315.62,-806 315.62,-806 321.62,-806 327.62,-812 327.62,-818 327.62,-818 327.62,-838 327.62,-838 327.62,-844 321.62,-850 315.62,-850"/>
 <text xml:space="preserve" text-anchor="middle" x="239" y="-835.55" font-family="Helvetica,sans-Serif" font-size="11.00">The director (above every faction)</text>
-<text xml:space="preserve" text-anchor="middle" x="239" y="-823.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 2384 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="239" y="-811.55" font-family="Helvetica,sans-Serif" font-size="11.00">director 2254</text>
+<text xml:space="preserve" text-anchor="middle" x="239" y="-823.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 2404 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="239" y="-811.55" font-family="Helvetica,sans-Serif" font-size="11.00">director 2274</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Seams (leaves) -->
 <g id="edge31" class="edge">

@@ -8402,3 +8402,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   lightning tanks are), Strike drone to Gun drone ("strike" is a director beat), Flamethrower trooper to Flame trooper
   (beside the Flame tank). Prototype names unchanged; the locale, the manual's chapters and its words (the field guide
   reads names from the locale).
+- **2026-11-18, a radar's warning on time (0.2.456).** The playtest, director save: "Didn't see the radar warning, and the
+  squad basically arrived after we had lost 5 or 6 labs already." Kessler-Hayashi's first strike (41 units: 17 infantry,
+  16 railgunners, 8 tanks, at the labs) was seen by a command relay at the edge of its reach, due 30 s ahead; told 0 s
+  ahead, as the pods landed. The warning was scheduled to the second but checked only on the director's minute
+  (director.strikes), so a lead that was not a whole minute came late: 45 s came 10 s ahead, 15 s at the landing. Now
+  checked each second. And with chat notices off the warning was a map tag alone: now an alert on the radar that saw the
+  pods too, gone when they land. Check `director radarlead` reads the lead as told, not as scheduled (seen failing on
+  0.2.455: 10 and 0 s for 45 and 15). Open, for the calibration: the strike's size counts units, not their strength (the
+  base's worth at the cap, 40), and the army save's bandwidth 1 has nothing that beats tanks (breachers -1.00 against
+  them in the arena, troopers -0.13; rocket troopers +0.40 come with bandwidth 2).
