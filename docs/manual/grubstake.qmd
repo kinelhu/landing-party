@@ -47,7 +47,7 @@ more than your electric drills.
 
 ![A Grubstake lander just down, before its crews have laid the pad. Its first pylons and guns are going up round it.](media/stills/landing.jpg)
 
-Its army is buggies, shotgun hands and, from its {{< var grubstake.copter_level_nth >}} level, scrap copters. Its haulers, lightly armed trucks, build its
+Its army is buggies, shotgunners and, from its {{< var grubstake.copter_level_nth >}} level, scrap copters. Its haulers, lightly armed trucks, build its
 new lots, carry its loot and bring ore home from its claims. Its idle units wait in a yard on open ground outside its
 landing pad, {{< var camp.yard_near_tiles >}} to {{< var camp.yard_far_tiles >}} tiles from its first depot, on the
 side away from your spawn.
@@ -96,7 +96,7 @@ theft until the camp repairs it; destroying the tap ends it.
 
 **Claim jumpers.** When an enemy Grubstake has gone a while without destroying anything of yours, it sets up a digging
 rig outside your turrets' range. Inside your base, a mound of dirt grows next to your chests, with a trail of dust
-leading to it from the rig. After {{< var grubstake.rig_dig_min >}} minutes, shotgun hands come up through the mound,
+leading to it from the rig. After {{< var grubstake.rig_dig_min >}} minutes, shotgunners come up through the mound,
 empty the chests nearby, break what stands close and go back down. Destroy the rig before then and nothing comes up.
 Destroy it after, and the tunnel collapses with the hands still on your side.
 
@@ -163,7 +163,7 @@ your era (see [Arrivals](arrivals.qmd)). Its units are in the [Reference](refere
 
 ## Its units {#sec-gs-units}
 
-A camp lands with buggies and shotgun hands, and gets scrap copters at its {{< var grubstake.copter_level_nth >}} level. Everything else is researched,
+A camp lands with buggies and shotgunners, and gets scrap copters at its {{< var grubstake.copter_level_nth >}} level. Everything else is researched,
 with no lab you can raid.
 
 ::: {.tree tree="grubstake-units"}

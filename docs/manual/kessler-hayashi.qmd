@@ -208,7 +208,7 @@ Kessler-Hayashi researches as the other corporations do (see [Arrivals](arrivals
 destroy. Each branch has its own, at the heart of a walled district:
 
 - **Optics lab.** Laser damage, heavy laser troopers, shock troopers and laser tanks.
-- **Armory.** Armor for its troopers, anti-air troopers and heavy tanks.
+- **Armory.** Armor for its troopers, anti-air troopers and railgun tanks.
 - **Siege works.** Railgun damage, dug-in siege sites, shock troopers against your artillery, and lightning tanks.
 
 A branch advances only while one of its labs stands in some Kessler-Hayashi camp. Destroy the last one and the branch

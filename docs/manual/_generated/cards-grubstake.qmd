@@ -5,7 +5,7 @@ The Buggy is a scrap-plated car with a machine gun, and Grubstake's scout. One c
 :::
 
 ::: {.unit unit="lp-shotgun-hand"}
-The Shotgun hand is Grubstake's basic soldier: heavy armor, a pump shotgun and a set of wrenches. Hands do the looting. They walk up to machines no turret covers, take them apart and carry them home, and fight only at close range. A gun turret at each outpost keeps them off.
+The Shotgunner is Grubstake's basic soldier: heavy armor, a pump shotgun and a set of wrenches. Shotgunners do the looting. They walk up to machines no turret covers, take them apart and carry them home, and fight only at close range. A gun turret at each outpost keeps them off.
 :::
 
 ::: {.unit unit="lp-grubstake-harrier"}
@@ -17,7 +17,7 @@ The Slug buggy trades the buggy's machine gun for a heavy slug gun and adds armo
 :::
 
 ::: {.unit unit="lp-grubstake-sapper"}
-The Dynamite sapper throws sticks of dynamite from beyond shotgun range. The blast covers a few tiles and does not hurt Grubstake's own units, so sappers fight right among the Shotgun hands. Keep your squads spread out.
+The Dynamite sapper throws sticks of dynamite from beyond shotgun range. The blast covers a few tiles and does not hurt Grubstake's own units, so sappers fight right among the Shotgunners. Keep your squads spread out.
 :::
 
 ::: {.unit unit="lp-grubstake-scavenger"}

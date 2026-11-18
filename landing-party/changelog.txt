@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.455
+Date: 2026-11-18
+  Changes:
+    - Unit names: Grubstake's Shotgun hand is now the Shotgunner, Kessler-Hayashi's Heavy tank the Railgun tank and its Strike drone the Gun drone, and your Flamethrower trooper the Flame trooper.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.454
 Date: 2026-11-18
   Changes:

@@ -29,7 +29,7 @@ The Shock trooper fires an arc of lightning that jumps from target to target. Ea
 :::
 
 ::: {.unit unit="lp-aegis"}
-The Heavy tank is a tank with extra armor and a rail cannon. Its large shell ignores armor, which makes it Kessler-Hayashi's answer to your battle tanks, but it fires too slowly to matter against troopers. Fire does little to it. Your rocket troopers outrange it, so fight it at full range.
+The Railgun tank is a tank with extra armor and a rail cannon. Its large shell ignores armor, which makes it Kessler-Hayashi's answer to your battle tanks, but it fires too slowly to matter against troopers. Fire does little to it. Your rocket troopers outrange it, so fight it at full range.
 :::
 
 ::: {.unit unit="lp-prism"}

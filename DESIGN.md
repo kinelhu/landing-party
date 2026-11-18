@@ -8397,3 +8397,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   speed, 0.75, so "30 s a trooper" took 40. Now speed 1 and the recipes at what training took (trooper and breacher 40,
   rocket and flame trooper 53, gun buggy 80, battle tank 160): the pace unchanged, the numbers true. Check `caps` reads
   the real time (recipe over speed): 40 before and after.
+- **2026-11-18, four units renamed (0.2.455).** The user: "Shotgun Hand for instance feels weird", then "Agreed" to:
+  Shotgun hand to Shotgunner (beside Railgunner), Heavy tank to Railgun tank (named by its gun, as the laser, flame and
+  lightning tanks are), Strike drone to Gun drone ("strike" is a director beat), Flamethrower trooper to Flame trooper
+  (beside the Flame tank). Prototype names unchanged; the locale, the manual's chapters and its words (the field guide
+  reads names from the locale).

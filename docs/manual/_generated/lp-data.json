@@ -1,6 +1,6 @@
 {
  "_comment": "Written by scripts/roster_page.py --qmd (scripts/manual_qmd.py, booklet) from the prototype dump, shared.lua, the scripts, the locale and docs/manual/words.cfg. Do not edit: run it again.",
- "edition": "For Landing Party 0.2.454",
+ "edition": "For Landing Party 0.2.455",
  "portraits": "media/portraits",
  "factions": {
   "grubstake": {
@@ -63,7 +63,7 @@
    "era_level": 0,
    "role": "Kessler-Hayashi's basic soldier, armed with a laser rifle. Most of its raiding force.",
    "counters": "raiders, scouts, lone outposts",
-   "countered_by": "flamethrower troopers, gun turrets, tanks",
+   "countered_by": "flame troopers, gun turrets, tanks",
    "blurb": "The Laser trooper is Kessler-Hayashi's standard soldier: mech armor and a short-range laser rifle. Most of its raids and patrols are made of them. Once the Armory has researched heavier armor for them, bullets do much less, so switch to fire or tank shells."
   },
   "lp-tank": {
@@ -148,7 +148,7 @@
    "era_level": 1,
    "role": "A laser trooper with a heavier beam that outranges your troopers.",
    "counters": "your infantry",
-   "countered_by": "battle tanks, flamethrower troopers at a gate",
+   "countered_by": "battle tanks, flame troopers at a gate",
    "blurb": "The Heavy laser trooper carries a long laser that outranges your submachine guns and cuts through light armor. It stands back and fires. Close the distance with vehicles, or let a gun turret, which still outranges it, deal with it."
   },
   "lp-shock": {
@@ -169,7 +169,7 @@
    "blurb": "The Shock trooper fires an arc of lightning that jumps from target to target. Each hit builds a charge on the unit it strikes, and a unit hit often enough is stunned for a moment. It is made for crowds, and does little to a single vehicle. The Siege works also sends them after your artillery. Keep your squads spread out."
   },
   "lp-aegis": {
-   "name": "Heavy tank",
+   "name": "Railgun tank",
    "faction": "kessler-hayashi",
    "health": 1100,
    "portrait": "lp-aegis",
@@ -180,10 +180,10 @@
    "cost": "120 parts",
    "era": "Era 2, Armory",
    "era_level": 2,
-   "role": "A heavy tank with a rail cannon whose large shells ignore armor; used against your battle tanks.",
+   "role": "A tank with a rail cannon whose large shells ignore armor; used against your battle tanks.",
    "counters": "your vehicles",
-   "countered_by": "rocket troopers, flamethrower troopers, fliers",
-   "blurb": "The Heavy tank is a tank with extra armor and a rail cannon. Its large shell ignores armor, which makes it Kessler-Hayashi's answer to your battle tanks, but it fires too slowly to matter against troopers. Fire does little to it. Your rocket troopers outrange it, so fight it at full range."
+   "countered_by": "rocket troopers, flame troopers, fliers",
+   "blurb": "The Railgun tank is a tank with extra armor and a rail cannon. Its large shell ignores armor, which makes it Kessler-Hayashi's answer to your battle tanks, but it fires too slowly to matter against troopers. Fire does little to it. Your rocket troopers outrange it, so fight it at full range."
   },
   "lp-prism": {
    "name": "Laser tank",
@@ -252,7 +252,7 @@
    "blurb": "The Buggy is a scrap-plated car with a machine gun, and Grubstake's scout. One circling your base just outside turret range is looking for something unguarded, and the next raid goes where it went. Where a buggy is killed, the next one keeps further away. Its machine gun slows the infantry it hits."
   },
   "lp-shotgun-hand": {
-   "name": "Shotgun hand",
+   "name": "Shotgunner",
    "faction": "grubstake",
    "health": 120,
    "portrait": "lp-shotgun-hand",
@@ -266,7 +266,7 @@
    "role": "Grubstake's soldier, with a shotgun. Deadly up close, useless against a turret line.",
    "counters": "you on foot, troopers at close range",
    "countered_by": "gun turrets, flamethrowers, anything with reach",
-   "blurb": "The Shotgun hand is Grubstake's basic soldier: heavy armor, a pump shotgun and a set of wrenches. Hands do the looting. They walk up to machines no turret covers, take them apart and carry them home, and fight only at close range. A gun turret at each outpost keeps them off."
+   "blurb": "The Shotgunner is Grubstake's basic soldier: heavy armor, a pump shotgun and a set of wrenches. Shotgunners do the looting. They walk up to machines no turret covers, take them apart and carry them home, and fight only at close range. A gun turret at each outpost keeps them off."
   },
   "lp-grubstake-harrier": {
    "name": "Scrap copter",
@@ -317,7 +317,7 @@
    "role": "Throws dynamite at groups of units and at walls in its way. Spares its own side.",
    "counters": "your infantry",
    "countered_by": "turrets, tanks",
-   "blurb": "The Dynamite sapper throws sticks of dynamite from beyond shotgun range. The blast covers a few tiles and does not hurt Grubstake's own units, so sappers fight right among the Shotgun hands. Keep your squads spread out."
+   "blurb": "The Dynamite sapper throws sticks of dynamite from beyond shotgun range. The blast covers a few tiles and does not hurt Grubstake's own units, so sappers fight right among the Shotgunners. Keep your squads spread out."
   },
   "lp-grubstake-scavenger": {
    "name": "Bomb drone",
@@ -657,9 +657,9 @@
    "era": "Command bandwidth 1",
    "era_level": 1,
    "role": "Your basic soldier, with a submachine gun.",
-   "counters": "raiders, scouts, shotgun hands",
+   "counters": "raiders, scouts, shotgunners",
    "countered_by": "heavy laser troopers, shock troopers, laser tanks",
-   "blurb": "The trooper is your basic soldier: heavy armor and a submachine gun, and the cheapest unit on the command link. Troopers beat raiders, scouts and Shotgun hands and lose to long-range lasers, so send them in numbers. Only a powered barracks heals them."
+   "blurb": "The trooper is your basic soldier: heavy armor and a submachine gun, and the cheapest unit on the command link. Troopers beat raiders, scouts and Shotgunners and lose to long-range lasers, so send them in numbers. Only a powered barracks heals them."
   },
   "lp-rocket-trooper": {
    "name": "Rocket trooper",
@@ -676,7 +676,7 @@
    "role": "Fires rockets, good against armor and fliers. Slow to kill a crowd.",
    "counters": "tanks, fliers",
    "countered_by": "massed infantry, sappers",
-   "blurb": "The rocket trooper's rockets are made for armor and fliers; against troopers they are no better than a submachine gun. It takes more of the command link than a trooper and outranges a Heavy tank's rail cannon. Keep rocket troopers behind your troopers against infantry, and in front against tanks and drones."
+   "blurb": "The rocket trooper's rockets are made for armor and fliers; against troopers they are no better than a submachine gun. It takes more of the command link than a trooper and outranges a Railgun tank's rail cannon. Keep rocket troopers behind your troopers against infantry, and in front against tanks and drones."
   },
   "lp-gun-buggy": {
    "name": "Gun buggy",
@@ -691,11 +691,11 @@
    "era_level": 2,
    "role": "Your fastest unit, an autocannon on a car. Good against infantry, light vehicles and fliers, weak against armor.",
    "counters": "infantry, buggies, fliers",
-   "countered_by": "tanks, shotgun hands, big biters",
+   "countered_by": "tanks, shotgunners, big biters",
    "blurb": "The gun buggy is a car with an autocannon, and the fastest unit you have. Its explosive rounds break up infantry, buggies and drones and do little to a tank's armor. Set a defending beacon's squad with a few of them and they reach the attack first."
   },
   "lp-flame-trooper": {
-   "name": "Flamethrower trooper",
+   "name": "Flame trooper",
    "faction": "player",
    "health": 120,
    "portrait": "lp-flame-trooper",
@@ -709,7 +709,7 @@
    "role": "A flamethrower against swarms of biters and bunched infantry. Outranged, and weak against armor.",
    "counters": "biter swarms, bunched infantry",
    "countered_by": "armor, sappers, fliers",
-   "blurb": "The flamethrower trooper has the most damage of your infantry, and only the breacher has a shorter range. It burns biter swarms and bunched squads quickly but does little to vehicles, and nearly everything outranges it. Lead with it against Synthexis and keep it at the back against Kessler-Hayashi."
+   "blurb": "The flame trooper has the most damage of your infantry, and only the breacher has a shorter range. It burns biter swarms and bunched squads quickly but does little to vehicles, and nearly everything outranges it. Lead with it against Synthexis and keep it at the back against Kessler-Hayashi."
   },
   "lp-battle-tank": {
    "name": "Battle tank",
@@ -725,7 +725,7 @@
    "era_level": 3,
    "role": "Your heavy tank, for attacking bases.",
    "counters": "walls, turrets, camps",
-   "countered_by": "heavy tanks, slug buggies, rocket troopers",
+   "countered_by": "railgun tanks, slug buggies, rocket troopers",
    "blurb": "The battle tank fires a slow, heavy shell. It takes the longest to train and the most bandwidth. Its shell is made for buildings, so it is the tool for a walled camp and a poor one against crowds. Keep troopers with it."
   }
  },
@@ -897,7 +897,7 @@
       "warden"
      ],
      "answers": "your vehicles",
-     "label": "Heavy tank",
+     "label": "Railgun tank",
      "portrait": "lp-aegis",
      "note": "2,000 parts"
     },
@@ -977,7 +977,7 @@
     {
      "id": "mix-lp-infantry",
      "band": "land",
-     "label": "Shotgun hand",
+     "label": "Shotgunner",
      "portrait": "lp-shotgun-hand",
      "note": "from landing"
     },
@@ -1295,7 +1295,7 @@
      "id": "lp-flame-trooper",
      "band": "cb3",
      "column": "infantry",
-     "label": "Flamethrower trooper",
+     "label": "Flame trooper",
      "portrait": "lp-flame-trooper",
      "note": "2 bandwidth"
     },
@@ -1571,7 +1571,7 @@
      "label": "Command bandwidth 3",
      "kind": "tech",
      "how": "science",
-     "note": "battle tanks, flamethrower troopers",
+     "note": "battle tanks, flame troopers",
      "requires": [
       "lp-command-bandwidth-2"
      ]

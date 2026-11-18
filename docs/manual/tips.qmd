@@ -95,7 +95,7 @@
 - **Get Bred-biter telemetry early.** Fighting Synthexis unlocks it (see [Spoils](spoils.qmd#field-studies)). Wire the
   *Synthexis scouts* signal to a speaker and to your rally beacons: a scout comes before every wave.
 - **Attack-move into a culture.** A rally beacon's advance goes only for corporation targets. Send squads onto
-  incubators and biochambers with attack-move or the command tool's attack, flamethrower troopers in front for the
+  incubators and biochambers with attack-move or the command tool's attack, flame troopers in front for the
   swarms.
 - **Defend every side.** A wave takes the way in your turrets cover least, and a way that held costs more next time.
   The next wave comes at your weakest side.

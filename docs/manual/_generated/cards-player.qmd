@@ -5,11 +5,11 @@ The breacher carries demolition charges for walls and turrets. Against units the
 :::
 
 ::: {.unit unit="lp-trooper"}
-The trooper is your basic soldier: heavy armor and a submachine gun, and the cheapest unit on the command link. Troopers beat raiders, scouts and Shotgun hands and lose to long-range lasers, so send them in numbers. Only a powered barracks heals them.
+The trooper is your basic soldier: heavy armor and a submachine gun, and the cheapest unit on the command link. Troopers beat raiders, scouts and Shotgunners and lose to long-range lasers, so send them in numbers. Only a powered barracks heals them.
 :::
 
 ::: {.unit unit="lp-rocket-trooper"}
-The rocket trooper's rockets are made for armor and fliers; against troopers they are no better than a submachine gun. It takes more of the command link than a trooper and outranges a Heavy tank's rail cannon. Keep rocket troopers behind your troopers against infantry, and in front against tanks and drones.
+The rocket trooper's rockets are made for armor and fliers; against troopers they are no better than a submachine gun. It takes more of the command link than a trooper and outranges a Railgun tank's rail cannon. Keep rocket troopers behind your troopers against infantry, and in front against tanks and drones.
 :::
 
 ::: {.unit unit="lp-gun-buggy"}
@@ -17,7 +17,7 @@ The gun buggy is a car with an autocannon, and the fastest unit you have. Its ex
 :::
 
 ::: {.unit unit="lp-flame-trooper"}
-The flamethrower trooper has the most damage of your infantry, and only the breacher has a shorter range. It burns biter swarms and bunched squads quickly but does little to vehicles, and nearly everything outranges it. Lead with it against Synthexis and keep it at the back against Kessler-Hayashi.
+The flame trooper has the most damage of your infantry, and only the breacher has a shorter range. It burns biter swarms and bunched squads quickly but does little to vehicles, and nearly everything outranges it. Lead with it against Synthexis and keep it at the back against Kessler-Hayashi.
 :::
 
 ::: {.unit unit="lp-battle-tank"}
