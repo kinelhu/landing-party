@@ -438,3 +438,52 @@ data:extend({
   prize("serenity", {"lp-player-mortar", "lp-mortar-shell"}),
   prize("grubstake", {"lp-strip-drill"}),
 })
+
+-- The army against biters (the user, playtest: "my 40 unit army could not clear a 3 nest vanilla biter base"; scenario
+-- nestclear: 40 units at three nests, evolution 0.49). Infantry trained from an armour take its acid resistance: acid
+-- is the biters' and Synthexis's alone (no corporation deals it), half the damage the army took at the nests. Its other
+-- resistances not: heavy armour's 6 flat physical and 20 explosion cancel the corporations' rifles, turrets and shells.
+-- Vehicles none (spitters' acid stays the answer to a hull, biotech.lua). And each unit names the research that raises
+-- its damage and rate of fire (the engine applies the force's ammo damage and gun speed modifiers of its attack's ammo
+-- category: techprobe, +100% each, a trooper 24 a second to 96), read from the technologies' own effects.
+local function unit_proto(name) return data.raw.unit[name] or data.raw.car[name] end
+local by_category = {}
+for _, t in pairs(data.raw.technology) do
+  if not t.hidden then
+    for _, e in ipairs(t.effects or {}) do
+      if (e.type == "ammo-damage" or e.type == "gun-speed") and e.ammo_category then
+        local base = t.name:gsub("%-%d+$", "")
+        by_category[e.ammo_category] = by_category[e.ammo_category] or {}
+        by_category[e.ammo_category][base] = true
+      end
+    end
+  end
+end
+for item, unit in pairs(shared.ORDERS) do
+  local u, r = unit_proto(unit), data.raw.recipe[item]
+  if u and r then
+    for _, ing in ipairs(r.ingredients) do
+      local armor = data.raw.armor[ing.name]
+      if armor and data.raw.unit[unit] then
+        for _, res in ipairs(armor.resistances or {}) do
+          if res.type == "acid" then
+            u.resistances = u.resistances or {}
+            table.insert(u.resistances, {type = "acid", decrease = res.decrease, percent = res.percent})
+          end
+        end
+      end
+    end
+    local cat = u.attack_parameters and u.attack_parameters.ammo_category
+    local techs = {}
+    for base in pairs(by_category[cat] or {}) do techs[#techs + 1] = base end
+    table.sort(techs)
+    if #techs > 0 then
+      local list = {""}
+      for k, base in ipairs(techs) do
+        if k > 1 then list[#list + 1] = ", " end
+        list[#list + 1] = {"technology-name." .. base}
+      end
+      u.localised_description = {"lp.upgraded-by", list}
+    end
+  end
+end

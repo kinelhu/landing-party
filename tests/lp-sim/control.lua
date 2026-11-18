@@ -3559,7 +3559,11 @@ end
 
 -- A nest cleared (the user, playtest: "my 40 unit army could not clear a 3 nest vanilla biter base", evolution 0.49 on
 -- deathworld): 30 troopers and 10 breachers sent fighting into three biter nests with two medium and three small worms,
--- the enemy at evolution 0.49. A probe: what falls, what is lost, and what the units did.
+-- the enemy at evolution 0.49. LP_MIX=tech: with physical projectile damage and weapon shooting speed about level 3.
+-- Caught (0.2.448, with the save's research): all 40 dead in 40 s, one nest down; with tech, the nests down and 10 left.
+-- Since 0.2.449 the infantry take their armour's acid resistance (worm and spitter acid was half the damage). With tech,
+-- standing of 40 on seeds 12345, 777, 4242, 101: 10, 0 (two nests up), 8, 19 before; 12, 16, 21, 22 after. Check (tech):
+-- the nests down and at least 12 standing.
 scenarios.nestclear = function()
   local function put(name, x, y, force)
     return surface().create_entity{name = name, position = {x, y}, force = force or "player", raise_built = true}
@@ -3568,7 +3572,15 @@ scenarios.nestclear = function()
   schedule(60, function()
     lp("debug_tune", {raids_off = true})
     flatten(-40, -60, 140, 60)
-    game.forces.enemy.set_evolution_factor(tonumber(params.mix) or 0.49, surface())
+    game.forces.enemy.set_evolution_factor(0.49, surface())
+    -- (tech: physical projectile damage and weapon shooting speed about level 3 each, +40% for bullets and grenades;
+    -- else the user's save, +10% bullet damage.)
+    local mix = params.mix or ""
+    game.forces.player.set_ammo_damage_modifier("bullet", mix:find("tech") and 0.4 or 0.1)
+    if mix:find("tech") then
+      game.forces.player.set_gun_speed_modifier("bullet", 0.4)
+      game.forces.player.set_ammo_damage_modifier("grenade", 0.4)
+    end
     game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
     local e = put("electric-energy-interface", -10, 20); e.power_production, e.electric_buffer_size = 1e8, 1e8
     for k = 0, 3 do
@@ -3610,6 +3622,54 @@ scenarios.nestclear = function()
     table.sort(rows, function(x, y) return x[2] > y[2] end)
     for i = 1, math.min(25, #rows) do info(string.format("nestclear dmg: %s %.0f", rows[i][1], rows[i][2])) end
     check("nestclear: forty sent", S.sent == 40, tostring(S.sent))
+    if (params.mix or ""):find("tech") then
+      local alive = surface().count_entities_filtered{force = "player", type = "unit"}
+      check("nestclear: with midgame research, the three nests down and most of the army standing",
+        standing(S.nests) == 0 and alive >= 12, string.format("%d nests up, %d of 40 standing", standing(S.nests), alive))
+    end
+  end)
+end
+
+-- Engine probe (the user, 2026-11-18: "How are player military techs interacting with the military? guns, flammables,
+-- explosions..."): each of the player's unit kinds alone at an enemy steel chest kept at full health, 10 s of fire,
+-- its hits and their damage read; LP_MIX=tech: the force's damage and shooting speed modifiers +100% for every unit's
+-- ammo category (and the turret damage ones), as research gives.
+scenarios.techprobe = function()
+  local KINDS = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-gun-buggy", "lp-battle-tank"}
+  S.hits = {}
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-60, -60, 60, 260)
+    local f = game.forces.player
+    if params.mix == "tech" or params.mix == "techdmg" or params.mix == "techspeed" then
+      for _, c in ipairs({"bullet", "grenade", "rocket", "flamethrower", "cannon-shell"}) do
+        if params.mix ~= "techspeed" then f.set_ammo_damage_modifier(c, 1) end
+        if params.mix ~= "techdmg" then f.set_gun_speed_modifier(c, 1) end
+      end
+    end
+    S.targets = {}
+    for k, name in ipairs(KINDS) do
+      local y = (k - 1) * 40
+      local c = surface().create_entity{name = "steel-chest", position = {12, y}, force = "enemy"}
+      local u = surface().create_entity{name = name, position = {0, y}, force = "player"}
+      S.targets[c.unit_number] = {chest = c, kind = name}
+      u.commandable.set_command{type = defines.command.attack, target = c, distraction = defines.distraction.none}
+    end
+  end)
+  schedule(60 + 3 * 60, function() S.on = game.tick end)
+  for t = 61, 60 + 14 * 60 do
+    schedule(t, function()
+      for _, x in pairs(S.targets or {}) do if x.chest.valid then x.chest.health = x.chest.max_health end end
+    end)
+  end
+  schedule(60 + 13 * 60, function()
+    S.off = true
+    local out = {}
+    for _, name in ipairs(KINDS) do
+      local h = S.hits[name] or {n = 0, dmg = 0}
+      out[#out + 1] = string.format("%s %d hits, %.1f each, %.0f a second", name, h.n, h.n > 0 and h.dmg / h.n or 0, h.dmg / 10)
+    end
+    info("techprobe " .. (params.mix or "base") .. ": " .. table.concat(out, "; "))
   end)
 end
 
@@ -21665,6 +21725,17 @@ end, params.scenario ~= "system" and params.scenario ~= "visit" and params.scena
   -- And spawners (hazard's nests): filtered without them, its check that each nest gone died where the harness saw it
   -- read 0 deaths for 6 nests the railgunners killed (2026-11-06; a note of 11-05 had it as "not logged in hazard").
   {filter = "type", type = "unit-spawner"}} or nil)
+
+-- Techprobe: the hits each unit kind lands on its chest while sampling.
+if params.scenario == "techprobe" then
+  script.on_event(defines.events.on_entity_damaged, function(e)
+    local x = S.targets and S.targets[e.entity.unit_number]
+    if not (x and S.on and not S.off) then return end
+    local h = S.hits[x.kind] or {n = 0, dmg = 0}
+    h.n, h.dmg = h.n + 1, h.dmg + e.final_damage_amount
+    S.hits[x.kind] = h
+  end)
+end
 
 -- Nestclear: who hurt whom, by the attacker's name (and the damage type), and the player's units' deaths by killer.
 if params.scenario == "nestclear" then

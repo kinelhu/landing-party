@@ -34,6 +34,12 @@ little to armor; a defending squad of them reaches the far edge of its reach fir
 of biters and bunched infantry but are outranged. Battle tanks take bases apart and take the longest to train. Every unit's numbers are in the [Reference](reference.qmd#sec-units). While your command
 bandwidth is full, finished orders wait inside the barracks, and it stops once its output is full.
 
+**Research.** Your military research upgrades your units as it does your own weapons. Physical projectile damage and
+weapon shooting speed raise troopers, gun buggies and battle tanks; stronger explosives raise breachers and rocket
+troopers; refined flammables raise flamethrower troopers. Each unit's description names its research. Infantry trained
+from heavy armor also take its resistance to acid, so worms and spitters hurt them less. Without military research, a
+squad that clears corporation outposts will struggle against a large biter nest.
+
 **Field repair.** Your units within {{< var army.repair_tiles >}} tiles of a powered barracks heal. Nothing heals
 them anywhere else, so a barracks near the front works as a forward base. **Roads** help too: your units walk faster on
 stone path, concrete and refined concrete, by the same bonus those floors give you.

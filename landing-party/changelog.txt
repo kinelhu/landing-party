@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.449
+Date: 2026-11-18
+  Changes:
+    - Troopers, breachers, rocket troopers and flamethrower troopers resist acid as the heavy armor they are trained from does.
+    - Each of your units' descriptions names the research that raises its damage and rate of fire.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.448
 Date: 2026-11-18
   Changes:

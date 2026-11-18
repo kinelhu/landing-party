@@ -8345,3 +8345,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the second retires three at once; no orders on the ground), `squad` (lowered, two hold out of the squad, none lost),
   `squadmove` and `gunbuggy` without muster points, `musterdrop` (the migration); retire and squad seen failing on
   0.2.447.
+- **2026-11-18, the army against biters (0.2.449).** The user: "my 40 unit army could not clear a 3 nest vanilla biter
+  base" (evolution 0.49 on deathworld, +10% bullet damage researched). Synthexis's breeds have vanilla's stats; the
+  biters were vanilla's. Scenario `nestclear` (30 troopers and 10 breachers on three nests with five worms at 0.49):
+  all 40 dead in 40 s, one nest down; damage taken 5,200, half of it worm and spitter acid. Engine probe `techprobe`:
+  the force's ammo damage and gun speed modifiers of a unit's ammo category apply to its attack (+100% each, a trooper
+  24 a second to 96; bullet, grenade, rocket, flamethrower and cannon shell alike), so research already scaled the army,
+  unsaid. With about level 3 of physical projectile damage and weapon shooting speed the nests fell, 10 of 40 standing.
+  Heavy armour's whole resistances (6 flat physical, 20 explosion) would cancel the corporations' rifles, gun turrets
+  and shells; its acid alone touches only biters and Synthexis. Now infantry trained from an armour take its acid
+  resistance (player.lua, from the recipe's armour; vehicles none, spitters' acid the answer to a hull), and each unit's
+  description names the research that upgrades it (read from the technologies' effects), with a line in the barracks
+  tip and the manual. With that research, standing of 40 on four seeds: 10, 0 (two nests up), 8, 19 before; 12, 16,
+  21, 22 after (check: `nestclear tech`, nests down and 12 standing). The arena's counters (counters.lua) not
+  regenerated: no corporation deals acid, and Synthexis's columns against the player's infantry move a little.
