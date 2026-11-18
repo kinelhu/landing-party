@@ -1348,6 +1348,8 @@ remote.add_interface("landing-party", {
     return p and director_gui.toggle(p) or false
   end,
   director_prior = function(k) return director.tune(k) end,
+  -- Tests: what a corporation pays for a unit kind (shared.unit_cost), scenario director targets' pricing check.
+  debug_unit_cost = function(corp, kind) return shared.unit_cost(corp, kind) end,
   director_lines = function() return director_gui.lines() end,
   -- Tests and visits: what the director reads of a player force, beside a fuller reading (director.readings).
   debug_readings = function(owner) return director.readings(owner) end,

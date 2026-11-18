@@ -1,6 +1,6 @@
 # Playtest kit
 
-Mod 0.2.448, rewritten 2026-11-18 for the release playtest (0.3.0). The questions follow a session in the order you meet
+Mod 0.2.457, rewritten 2026-11-18 for the release playtest (0.3.0). The questions follow a session in the order you meet
 things: Synthexis first, then Grubstake, then your own army, and the director's beats once it takes over. Everything
 below is checked headless only, apart from what the 2026-11-17 and 2026-11-18 sessions already saw. Chat notices are
 off: the world should tell you what happens.
@@ -16,10 +16,11 @@ Close your own game first (Steam allows one copy). Then one of:
 
 The director save (items 5 to 9) is the army save run 13 minutes on headless: Grubstake and Kessler-Hayashi landed 350
 and 450 tiles from you (2,000 parts each), the director on from the start, laser turrets and weapon shooting speed 2
-researched (chemical science with them), four lasers at the base's edge toward each camp. Its first spree and strike
-force come about two minutes after loading: set a beacon to D first. Left alone in the same run, that strike took all 64
-labs in under a minute at minute 17, and about 1,250 belts, 290 inserters and 250 poles on its way (Kessler-Hayashi
-arriving at a base without chemical science, which it never meets in play: a note for the calibration).
+researched (chemical science with them), four lasers at the base's edge toward each camp. Since 0.2.457 it is also the
+army a player would have when Kessler-Hayashi lands: command bandwidth 3, five relays, 50 of population (20 troopers, 10
+breachers, 6 rocket troopers, a battle tank), one barracks on rocket troopers (the bandwidth 1 version is kept as
+`director-bw1.zip`). Its first strike comes about four minutes after loading, told by a relay 30 s ahead: set the beacon
+to D first. Headless, with D set, the army breaks it and loses most of itself and 10 of the 64 labs.
 
 The first opens a fresh copy of deathworld10x (never the real file) with Landing Party as a player would meet it, no
 test mod. The second is the same save with an army set up: command bandwidth 1 researched, three barracks fed by
@@ -119,6 +120,14 @@ power, 16 troopers and breachers).
 - Capture "feels a little forced": capture and the occupy stance removed; a fallen camp's outposts are ruins (0.2.452).
 - Answered: how gates work (your units open your own), how muster points worked, how to deselect (drag over empty
   ground), how to assign idle units to a beacon (automatic within 200 tiles; release hand-ordered ones).
+
+**5. A strike force landing** (director save, bandwidth 1). "Didn't see the radar warning, and the squad basically
+arrived after we had lost 5 or 6 labs already"; "the invading army seemed quite strong (against my 40 pop army they won,
+and it took reinforcements to drive them back)". The warning was due 30 s ahead (a relay at the edge of its reach) and
+came as the pods landed: checked only on the director's minute, and a map tag alone. Told on time with an alert on the
+radar now (0.2.456). The strike was 41 units at the cap, counted a unit a point whatever the unit (8 tanks among them),
+against an army with nothing that beats tanks: points priced by strength now, 22 units for the same 41 points, measured
+on the save against a bandwidth 3 army (0.2.457), and the save given that army.
 
 Not yet seen in game: the lander's hover lines (0.2.450). Open: a squad sent from far off plans its path before your
 gates near it open and may stop at your own wall; `paved squad` fails on every version.

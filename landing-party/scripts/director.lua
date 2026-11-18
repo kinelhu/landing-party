@@ -1431,7 +1431,25 @@ local function strike(s, owner, corps, tick, mult, warn, aim, want)
     pods_at = tick + minutes * 3600, kind = kind or "known", tent = tent, land = land, cover = cover,
     hunt = kind == "engineer" and tent or nil}
   s.strikes[key] = k
-  strike_mix(lead, k)  -- (Its mix as chosen, for the record and tests; drawn again as its pods go.)
+  local mix = strike_mix(lead, k)  -- (Its mix as chosen, for the record and tests; drawn again as its pods go.)
+  -- Its points priced by strength (0.2.457; the playtest of 2026-11-18, the user: "The invading army seemed quite strong
+  -- all things considered", then "First + third seem appropriate. Be careful not to over nerf"): a point is point_scale
+  -- of the lead camp's infantrymen in parts, the units as many as its mix's average price buys. Counted a unit a point,
+  -- Kessler-Hayashi's first strike on the director save was 41 at the cap (17 infantry, 16 railgunners, 8 tanks), 1,059
+  -- parts, two and a half times a 40-strong army of troopers. Prices are the arena's, tuned to equal spend.
+  local per = tun("point_scale")
+  if per and per > 0 and mix then
+    local wsum, csum = 0, 0
+    for name, x in pairs(mix) do
+      wsum = wsum + x
+      csum = csum + x * shared.unit_cost(lead.corp, name == "lp-hauler" and "lp-infantry" or name)
+    end
+    if wsum > 0 and csum > 0 then
+      local priced = math.max(1, math.floor(n * per * shared.unit_cost(lead.corp, "lp-infantry") * wsum / csum + 0.5))
+      k.points, k.sent = n, priced
+      n = priced
+    end
+  end
   s.reinforced = (s.reinforced or 0) + n
   s.points_sent = (s.points_sent or 0) + n
   s.strike_lead = lead.id

@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.457
+Date: 2026-11-18
+  Balancing:
+    - Strike forces are sized by strength, not by head count: one that brings tanks and other heavy units brings fewer of them. Kessler-Hayashi's first strike on a large base drops from 41 units to about 22.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.456
 Date: 2026-11-18
   Bugfixes:

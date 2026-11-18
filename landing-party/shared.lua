@@ -565,6 +565,10 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- player's worth, times the difficulty, the personality and the adaptation, points_max a camp at most (on the user's
   -- saves at steady: start about 11, nwa the cap). Its first beat a spree; supply drops out of steady's draw.
   points_per_worth = 0.02, points_max = 40,
+  -- (A point's price, since 0.2.457: point_scale of the lead camp's infantrymen in parts, its units as many as its mix's
+  -- average price buys; 0, a unit a point as before. Measured on the director save against a player's army of 50 at
+  -- Kessler-Hayashi's landing, DESIGN 2026-11-18.)
+  point_scale = 1.5,
   -- A strike force's time in the field before it walks home to its camp (director.strikes), and the most it takes to get
   -- there before what is left is its camp's where it stands (lift_minutes, 3, to its landing point until 0.2.419).
   strike_minutes = 8, home_minutes = 5,

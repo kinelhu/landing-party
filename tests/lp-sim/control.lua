@@ -8683,7 +8683,10 @@ scenarios.director = function()
     local waiting = params.mix == "armyradar"
     schedule(120, function()
       lp("debug_tune", {director = "steady", choice_off = true, director_tune = {grace = 0, fill = 0, hurt_floor = 100,
-        points_per_worth = 1, points_max = 12, warn_minutes = defend and 2 or 1, strike_minutes = 4, home_minutes = 3}})
+        points_per_worth = 1, points_max = 12, warn_minutes = defend and 2 or 1, strike_minutes = 4, home_minutes = 3,
+        -- (A unit a point, as these were sized before strikes were priced by strength, 0.2.457: the stance, the radar
+        -- and the drop under test, not the size; priced, armydefend's 12 came as 6 and died whole before it broke.)
+        point_scale = 0}})
       local id = (lp("bases") or {})[1]
       local o = lp("stats", id).origin
       local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
@@ -9051,7 +9054,7 @@ scenarios.director = function()
       S.r1 = lp("director_cmd", "strike", "research")
       lp("debug_setting", "lp-difficulty", "normal")
       local k = last()
-      S.k1 = {kind = k.kind, land = k.land, cover = k.cover, target = k.target, sent = k.sent, mix = k.mix, raw = k.mix_raw,
+      S.k1 = {kind = k.kind, land = k.land, cover = k.cover, target = k.target, sent = k.sent, points = k.points, corp = k.corp, mix = k.mix, raw = k.mix_raw,
         guards = k.guards}
       S.r2 = lp("director_cmd", "strike")
       k = last()
@@ -9105,8 +9108,25 @@ scenarios.director = function()
       check("director: targets, its units tilted against its target's guards", (S.k1 and S.k1.guards or 0) >= 3 and tilted,
         string.format("%s guards, mix %s, raw %s", tostring(S.k1 and S.k1.guards), serpent.line(S.k1 and S.k1.mix),
         serpent.line(S.k1 and S.k1.raw)))
-      check("director: targets, its difficulty after the cap: hard, 1.5 times points_max", S.k1 and S.k1.sent
-        == math.floor(lp("director_prior", "points_max") * 1.5), string.format("%s sent", tostring(S.k1 and S.k1.sent)))
+      -- (Its points, not its units, since 0.2.457: the units are as many as the points buy at its mix's price.)
+      check("director: targets, its difficulty after the cap: hard, 1.5 times points_max", S.k1 and S.k1.points
+        == math.floor(lp("director_prior", "points_max") * 1.5), string.format("%s points, %s sent",
+        tostring(S.k1 and S.k1.points), tostring(S.k1 and S.k1.sent)))
+      -- (Priced by strength, 0.2.457: the playtest of 2026-11-18, Kessler-Hayashi's 41 at the cap with 8 tanks. Its units
+      -- the points times point_scale infantrymen's parts over its mix's average price, to a unit.)
+      local priced
+      if S.k1 and S.k1.mix then
+        local w, c = 0, 0
+        for name, x in pairs(S.k1.mix) do
+          w = w + x
+          c = c + x * lp("debug_unit_cost", S.k1.corp, name == "lp-hauler" and "lp-infantry" or name)
+        end
+        priced = math.floor(S.k1.points * lp("director_prior", "point_scale") * lp("debug_unit_cost", S.k1.corp, "lp-infantry")
+          * w / c + 0.5)
+      end
+      check("director: targets, its units as many as its points buy by strength", priced and S.k1.sent == priced
+        and S.k1.sent < S.k1.points, string.format("%s sent for %s points, priced %s", tostring(S.k1 and S.k1.sent),
+        tostring(S.k1 and S.k1.points), tostring(priced)))
       check("director: targets, aimed at a position, its target there", S.aimsaid == "strike: aimed"
         and S.ka and dist(S.ka.target, S.aim) < 0.5, string.format("%s, %s at %s", tostring(S.aimsaid),
         tostring(S.ka and S.ka.kind), serpent.line(S.ka and S.ka.target)))
@@ -9269,7 +9289,9 @@ scenarios.director = function()
     schedule(120, function()
       -- (Its points so that about 16 land, against 16 guns on uranium rounds: 40 against eight on piercing, and 36 against
       -- 16, lost 9 and 10 and their tanks took the guns; never broke.)
-      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100, points_per_worth = 0.18}})
+      -- (point_scale 0: sized a unit a point, as before 0.2.457; priced, repelgap's force was too few to answer the guns.)
+      lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100, points_per_worth = 0.18,
+        point_scale = 0}})
       flatten(-30, -30, 30, 30)
       for x = -16, 16, 4 do for y = -16, 16, 8 do
         surface().create_entity{name = "assembling-machine-2", position = {x + 0.5, y + 0.5}, force = "player"}
@@ -9378,7 +9400,7 @@ scenarios.director = function()
         string.format("%s, %s climaxes, %s, %s min ahead, seen %s, told %s", tostring(r.climax), tostring(r.climaxes),
         tostring(r.phase_climax), tostring(r.climax_warn), tostring(r.seen), tostring(r.seen_told)))
       check("director: cmd, the panel tells the climax and its strike force due", (r.panel or ""):find("climaxes 1;", 1, true)
-        and (r.panel or ""):find("#1 2 due in 5:00", 1, true), r.panel or "nil")
+        and (r.panel or ""):find("#1 %d+ due in 5:00"), r.panel or "nil")
       check("director: cmd, off", r.active_off == false, tostring(r.active_off))
     end)
     return

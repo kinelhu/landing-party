@@ -8412,3 +8412,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   0.2.455: 10 and 0 s for 45 and 15). Open, for the calibration: the strike's size counts units, not their strength (the
   base's worth at the cap, 40), and the army save's bandwidth 1 has nothing that beats tanks (breachers -1.00 against
   them in the arena, troopers -0.13; rocket troopers +0.40 come with bandwidth 2).
+- **2026-11-18, strike points priced by strength (0.2.457).** The user: "First + third seem appropriate. Be careful not
+  to over nerf." A strike's points (worth, the cap 40) were units, one each whatever the unit; now a point is
+  `point_scale` of the lead camp's infantrymen in parts (arena prices, tuned to equal spend), the units as many as its
+  mix's average buys (shared.DIRECTOR). And the director save given the army a player has when Kessler-Hayashi lands
+  (bandwidth 3, five relays, 50 of population: 20 troopers, 10 breachers, 6 rocket troopers, a battle tank; the old one
+  kept as director-bw1.zip). Measured there, the beacon on D, Kessler-Hayashi's first strike (41 points), one run each:
+  a unit a point, 41 sent, the army gone and all 64 labs; 1.25, 18 sent, broken, 1 lab and 15 of 50 lost; **1.5, 22
+  sent, broken, 10 labs and 37 of 50 lost**; 1.75, 25, broken, 9 labs and 34; 2, 29, the army gone and all 64 labs. 1.5
+  taken: a step back from the cliff between 1.75 and 2, a win that costs. Grubstake's infantry is 8 parts, so its strikes
+  shrink less. Assumed, not measured: other bases and later strikes (the adaptation, the climax's double).
