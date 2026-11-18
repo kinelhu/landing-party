@@ -912,9 +912,6 @@ scenarios.defend = function()
     lp("debug_tune", {era = 2, rd_tech = {serenity = {weapons = {laser = 2}, plate = {["lp-infantry"] = "physical"}}}})
   end)
   schedule(STRIKE, function()
-    -- Capture off (at the strike: forked runs start after tick 200): the response is tested here, capture in fall (the
-    -- creeping turrets, the outpost's turrets dead, held it a minute and took four pieces before its rebuild came).
-    lp("debug_tune", {capture_off = true})
     local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
     local far, fd
     for _, t in pairs(lp_entities("lp-turret")) do
@@ -1210,9 +1207,10 @@ scenarios.uplink = function()
 end
 
 -- Army: the player's side, the mechanism alone. A powered barracks fed for 12 troopers, a rally beacon and a
--- constant combinator wired to it, beyond a faction outpost. At minute 8 the combinator sends O (occupy);
--- turrets near the target are removed and the faction's responses and raids are off, so this tests
--- training, orders, holding and capture, not a fight.
+-- constant combinator wired to it, beyond a faction outpost. At minute 8 the combinator moves the rally point onto the
+-- outpost (X and Y; it sent O, occupy, until 0.2.452); turrets near the target are removed and the faction's responses
+-- and raids are off, so this tests training, orders and holding, not a fight. Held, the outpost is not captured (capture
+-- retired in 0.2.452: on 0.2.451 its drills became the player's).
 scenarios.army = function()
   local red = defines.wire_connector_id.circuit_red
   schedule(STRIKE, function()
@@ -1306,7 +1304,9 @@ scenarios.army = function()
       position = S.target, radius = 80}) do x.destroy() end
     lp("debug_tune", {army_off = true})
     local sec = S.cc.get_or_create_control_behavior().get_section(1) or S.cc.get_or_create_control_behavior().add_section()
-    sec.filters = {{value = {type = "virtual", name = "signal-O", quality = "normal"}, min = 1}}
+    local bp = S.beacon.position
+    sec.filters = {{value = {type = "virtual", name = "signal-X", quality = "normal"}, min = math.floor(S.target[1] - bp.x)},
+      {value = {type = "virtual", name = "signal-Y", quality = "normal"}, min = math.floor(S.target[2] - bp.y)}}
   end)
   for t = STRIKE + 600, STRIKE + 4 * 3600, 600 do schedule(t, function() if S.feed then S.feed() end end) end
   S.reached = 0
@@ -1333,8 +1333,8 @@ scenarios.army = function()
     local shot = (S.killers or {})["lp-gun-turret"] or 0
     check("army: the beacon took them to the outpost", S.reached + shot >= 5,
       S.reached .. " at the outpost at most, " .. shot .. " shot by its turrets on the way")
-    check("army: holding it captured it", mine > 0 and st.captured > 0, mine .. " drills now the player's, " ..
-      st.captured .. " outposts captured")
+    check("army: held, it is not captured", mine == 0 and (st.captured or 0) == 0, mine .. " drills now the player's, " ..
+      tostring(st.captured) .. " outposts captured")
     info("army: " .. serpent.line(lp("army")) .. ", killed by " .. serpent.line(S.killers or {}))
   end)
 end
@@ -2035,30 +2035,16 @@ scenarios.fall = function()
       and inv.get_item_count("electronic-circuit") > 0,
       string.format("%d iron, %d circuits from a fabricator", inv.get_item_count("iron-plate"), inv.get_item_count("electronic-circuit")))
     inv.destroy()
-    -- Holding an outpost: a player turret on the fallen settlement's nearest bin (the farthest within 250 was
-    -- the other settlement's, whose turrets destroyed the holder).
-    local far, fd
-    for _, bin in pairs(surface().find_entities_filtered{name = "lp-bin", force = FORCE, position = S.lander_at, radius = 250}) do
-      local d = (bin.position.x - S.lander_at[1]) ^ 2 + (bin.position.y - S.lander_at[2]) ^ 2
-      if not fd or d < fd then far, fd = bin, d end
-    end
-    if far then
-      local p = surface().find_non_colliding_position("gun-turret", far.position, 8, 1)
-      S.holder = p and surface().create_entity{name = "gun-turret", position = p, force = "player"}
-      -- Lasting: the fall is the player's kill, so the grudge and the evacuation march past it, and Serenity's infantry
-      -- destroyed it before the hold completed (failing since 5281d15 at least). Capture by holding is what is tested.
-      if S.holder then S.holder.destructible = false end
-    end
-    S.captured0 = st.captured
+    -- Its mining outposts ruins with the rest (left to be captured until 0.2.452; on 0.2.451 none of its drills or bins
+    -- were neutral).
+    S.outpost_ruins = surface().count_entities_filtered{name = {"lp-drill", "lp-bin"}, force = "neutral", position = S.lander_at,
+      radius = 250}
     S.lost0 = st.lost
   end)
   schedule(STRIKE + 4 * 3600, function()
     local st = lp("stats", storage.id)
-    if S.holder and S.holder.valid then
-      for _, l in ipairs(lp("debug_modules", storage.id, {S.holder.position.x, S.holder.position.y}, 15)) do info("fall: module " .. l) end
-    end
-    check("fall: an outpost is taken by holding it", st.captured > (S.captured0 or 0),
-      string.format("%d captured (a holder %s)", st.captured - (S.captured0 or 0), S.holder and "placed" or "not placed"))
+    check("fall: its mining outposts are ruins too", (S.outpost_ruins or 0) > 0,
+      string.format("%d drills and bins neutral", S.outpost_ruins or 0))
     check("fall: nothing is rebuilt", st.rebuild_pending == 0 and st.queue == 0,
       st.rebuild_pending .. " rebuilds pending, " .. st.queue .. " queued")
   end)
@@ -20912,8 +20898,8 @@ scenarios.siege = function()
       elseif not S.moved then
         S.moved = game.tick
         S.target_turrets0 = 0
-        signals({["signal-O"] = 1, ["signal-X"] = math.floor(S.target[1] - b.x), ["signal-Y"] = math.floor(S.target[2] - b.y)})
-        info(string.format("siege t+%ds: no turret within 60 of the outpost; occupy (%d units left)",
+        signals({["signal-X"] = math.floor(S.target[1] - b.x), ["signal-Y"] = math.floor(S.target[2] - b.y)})
+        info(string.format("siege t+%ds: no turret within 60 of the outpost; hold on it (%d units left)",
           (game.tick - S.go) / 60, alive_troopers()))
       end
     end)

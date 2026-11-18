@@ -2,10 +2,8 @@
 -- the nearest rally beacon of its force. A beacon is a constant combinator: its signals (its own, or its
 -- networks' when wired) set the stance, and X and Y move its rally point that many tiles from it:
 --   signal A > 0   advance: attack the nearest faction turret within ATTACK_REACH of the rally point, then
---                  the military targets there no turret covers; with none left, occupy the nearest faction
---                  outpost in that reach, else hold
---   signal O > 0   occupy: go to the nearest faction outpost and stand on it (no rebuild there, then
---                  capture), fighting only what engages (an advance sent ten troopers at a hub's lasers)
+--                  the military targets there no turret covers; with none left, hold
+--                  (O, occupy, an outpost stood on until captured, retired with capture in 0.2.452)
 --   signal R > 0   retreat to the nearest barracks
 --   signal D > 0   defend: hold, and answer an attack on the player within DEFEND_REACH of the rally point (a strike
 --                  force told or landed, or enemy units at the player's buildings), then come back
@@ -18,7 +16,6 @@ local paving = require("__landing-party__.scripts.paving")
 local command = {}
 
 local ASSIGN_RANGE = 200
-local ADVANCE_RANGE = 200          -- outposts an occupy order looks for
 -- What an advance attacks: the beacon's own ground. At 200 one beacon sent its squad at a whole settlement,
 -- lander included; the player steers an assault by where the beacon stands.
 local ATTACK_REACH = 50
@@ -46,10 +43,8 @@ local MILITARY = shared.variants({"lp-turret", "lp-mortar", "lp-depot", "lp-rada
   "lp-optics-lab", "lp-line-lab", "lp-siege-lab"})
 local TURRETS = shared.variants({"lp-turret", "lp-mortar"})
 local LASERS = shared.variants("lp-turret")
-local BINS = shared.variants("lp-bin")
 local SIGNAL_ADVANCE = {type = "virtual", name = "signal-A"}
 local SIGNAL_RETREAT = {type = "virtual", name = "signal-R"}
-local SIGNAL_OCCUPY = {type = "virtual", name = "signal-O"}
 local SIGNAL_DEFEND = {type = "virtual", name = "signal-D"}
 -- The defend stance (the army consult, 2026-11-16: a squad fought only within 18 tiles of a unit and 50 of its rally
 -- point, so nothing answered a strike or a raid unless the player was at the screen). What sets it off is what the player
@@ -294,20 +289,18 @@ local function plan(beacon)
   local st = "hold"
   if v(SIGNAL_RETREAT.name) > 0 then st = "retreat"
   elseif v(SIGNAL_ADVANCE.name) > 0 then st = "advance"
-  elseif v(SIGNAL_OCCUPY.name) > 0 then st = "occupy"
   elseif v(SIGNAL_DEFEND.name) > 0 then st = "defend" end
   local dx = math.max(-MAX_OFFSET, math.min(MAX_OFFSET, v("signal-X")))
   local dy = math.max(-MAX_OFFSET, math.min(MAX_OFFSET, v("signal-Y")))
   return {stance = st, pos = {x = beacon.position.x + dx, y = beacon.position.y + dy}, surface = beacon.surface}
 end
 
--- What an advancing beacon goes for: the nearest faction turret, else the nearest military target, else the
--- nearest outpost bin.
-local function objective(p, occupy)
+-- What an advancing beacon goes for: the nearest faction turret, else the nearest military target no turret covers.
+local function objective(p)
   local s, at = p.surface, p.pos
   local f = shared.corp_forces()
   local best, bd, kind
-  if not occupy then
+  do
     -- Turrets first: sent at the nearest military building, a squad of 60 shot a depot between two turret
     -- groups and died to them (siege, seed 12345).
     -- Then what no turret covers: those in reach are gone by now, so a cover is outside it (a depot in reach
@@ -321,13 +314,6 @@ local function objective(p, occupy)
       end
       if best then return best, kind end
     end
-  end
-  -- An advance occupies only on the beacon's own ground: reaching beyond, a squad that had cleared its ground
-  -- walked past a walled turret compound to an outpost 60 tiles on, and died (siege, seed 12345).
-  for _, e in pairs(s.find_entities_filtered{position = at, radius = occupy and ADVANCE_RANGE or ATTACK_REACH,
-    force = f, name = BINS}) do
-    local d = (e.position.x - at.x) ^ 2 + (e.position.y - at.y) ^ 2
-    if not bd or d < bd then best, bd, kind = e, d, "occupy" end
   end
   return best, kind
 end
@@ -499,7 +485,7 @@ end
 
 -- The beacon's orders drawn for its force: a ring of its reach at the rally point, coloured by stance, and a
 -- line from the beacon when signals move the point.
-local COLOR = {hold = {0.8, 0.8, 0.8, 0.4}, advance = {1, 0.25, 0.1, 0.6}, occupy = {1, 0.8, 0.1, 0.6},
+local COLOR = {hold = {0.8, 0.8, 0.8, 0.4}, advance = {1, 0.25, 0.1, 0.6},
   retreat = {0.3, 0.5, 1, 0.6}, defend = {0.25, 0.85, 0.45, 0.6}}
 local function mark(k, beacon, p)
   storage.cmd.marks = storage.cmd.marks or {}
@@ -552,7 +538,7 @@ end
 -- outpost can be captured whole. An attack-move razes: arrived within RAZE_NEAR of its point, a unit not fighting
 -- attacks the nearest corporation building within RAZE_REACH of the point that can be hurt, by tiers (the user: "give
 -- walls a third priority tier behind military and economy"): military ones, then the rest, then walls and gates. A move,
--- or a beacon's occupy, leaves an outpost whole.
+-- leaves an outpost whole.
 local RAZE_NEAR, RAZE_REACH = 12, 30
 local RAZE_SKIP = {unit = true, ["spider-unit"] = true, car = true, ["spider-vehicle"] = true, character = true}
 local RAZE_LAST = {wall = true, gate = true}
@@ -845,31 +831,17 @@ local function lead()
               distraction = defines.distraction.none}, "retreat")
           end
         else
-          -- Occupy locks onto its first outpost until the order or the rally point changes: re-chosen each
-          -- time, a squad took one outpost after another down to the lander. Advance re-targets as targets fall.
-          storage.cmd.locks = storage.cmd.locks or {}
-          local here = string.format("%d,%d", p.pos.x, p.pos.y)
-          local lock = storage.cmd.locks[beacon.unit_number]
-          if st ~= "occupy" or (lock and (lock.stance ~= "occupy" or lock.at ~= here)) then
-            storage.cmd.locks[beacon.unit_number] = nil; lock = nil
-          end
+          -- Advance re-targets as targets fall.
+          storage.cmd.locks = nil   -- (occupy's, before 0.2.452)
           local o = objectives[beacon.unit_number]
-          if st == "occupy" and lock then o = {pos = lock.pos, kind = "occupy", key = lock.key} end
           if o == nil then
-            local target, kind = objective(p, st == "occupy")
+            local target, kind = objective(p)
             o = target and {target = target, pos = {target.position.x, target.position.y}, kind = kind,
               key = kind .. ":" .. target.unit_number} or false
             objectives[beacon.unit_number] = o
-            if o and st == "occupy" then
-              storage.cmd.locks[beacon.unit_number] = {stance = "occupy", pos = o.pos, key = o.key, at = here}
-            end
           end
-          if o and o.kind == "attack" then
+          if o then
             order(t, {type = defines.command.attack, target = o.target, distraction = defines.distraction.by_enemy}, o.key)
-          elseif o then
-            -- Occupying troopers fight back only when hit (attacking what they saw, they went on to destroy
-            -- the lander of an undefended settlement).
-            order(t, stay(o.pos, 4, defines.distraction.by_damage), o.key)
           else
             -- Nothing left in reach: to the rally point, to hold.
             hold()
@@ -1338,9 +1310,5 @@ function command.drop_cores(surface, pos, count)
   storage.cmd.cores_dropped = (storage.cmd.cores_dropped or 0) + count
 end
 
--- A captured outpost yields a core (base.lua cannot require this module's caller chain; it calls the hook).
-require("__landing-party__.scripts.base").on_capture = function(surface, pos)
-  command.drop_cores(surface, {x = pos[1], y = pos[2]}, 1)
-end
 
 return command

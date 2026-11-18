@@ -374,7 +374,6 @@ def write(rp):
             "crystal_pct": fmt(100 * crystal_p) if crystal_p is not None else "?",
             "gland_min": gland.group(1) if gland else "?",
             "gland_max": gland.group(2) if gland else "?",
-            "core_capture": grab(src("scripts/command.lua"), r"on_capture = function\(surface, pos\)\s*\n\s*command\.drop_cores\(surface, \{x = pos\[1\], y = pos\[2\]\}, (\d+)\)", "command: capture cores"),
             "core_survey": grab(phases_src, r'"lp-command-core", count = (\d+)', "phases: survey core"),
         },
         # The player's orbital cannons (shared.CANNON; scripts/cannon.lua; the strike's look, orbital.from_orbit). They

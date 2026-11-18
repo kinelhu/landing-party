@@ -233,7 +233,7 @@ data:extend({
     it.localised_description = relay.localised_description
     return it
   end)(),
-  -- Salvaged from the faction (a depot destroyed, an outpost captured, a lander destroyed) or granted once by
+  -- Salvaged from the faction (a depot destroyed, a lander destroyed, the survey party) or granted once by
   -- research: what a barracks is built around. Not craftable.
   {type = "item", name = "lp-command-core", icon = "__base__/graphics/icons/processing-unit.png", stack_size = 10,
     subgroup = "intermediate-product", order = "z[landing-party]-core"},

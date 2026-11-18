@@ -46,7 +46,7 @@ digraph ai {
     "lifeline" [label="lifeline\n155 lines", width=0.97, fillcolor="#eef2f7"];
   }
   subgraph cluster_5 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n1020 lines", width=1.93, fillcolor="#f7dede"];
+    "base" [label="base\n940 lines", width=1.84, fillcolor="#eef2f7"];
     "construction" [label="construction\n446 lines", width=1.30, fillcolor="#d9f0d9"];
     "planner" [label="planner\n391 lines", width=1.23, fillcolor="#eef2f7"];
     "layout" [label="layout\n1747 lines", width=2.74, fillcolor="#f7dede"];
@@ -106,7 +106,7 @@ digraph ai {
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "command" [label="command\n1346 lines", width=2.30, fillcolor="#f7dede"];
+    "command" [label="command\n1314 lines", width=2.26, fillcolor="#f7dede"];
     "squadgui" [label="squadgui\n206 lines", width=1.03, fillcolor="#eef2f7"];
     "paving" [label="paving\n272 lines", width=1.10, fillcolor="#d9f0d9"];
     "cards" [label="cards\n406 lines", width=1.25, fillcolor="#eef2f7"];
@@ -116,7 +116,7 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_11 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1435 lines", width=2.39, fillcolor="#f7dede"];
+    "control" [label="control\n1434 lines", width=2.39, fillcolor="#f7dede"];
     "dev" [label="dev\n613 lines", width=1.48, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n197 lines", width=1.02, fillcolor="#eef2f7"];

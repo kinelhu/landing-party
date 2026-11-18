@@ -138,8 +138,8 @@ document still says Serenity where it records history.
 | Player units: trooper, breacher (charges for walls), rocket trooper (anti-armour, 2 bandwidth), battle tank (6 bandwidth); barracks picks its recipe | built | `siege` (`LP_MIX`), arena |
 | Fought capture against live defences | in progress: no squad wins yet | `siege`, `duel` |
 | Corporations as forces (Grubstake, Serenity): own force, colour, intel; they raid each other | built (first step) | `rivals` |
-| Capture of mining outposts by holding | built | `army` |
-| The fall: a destroyed lander collapses its settlement (cascade, evacuation, ruins that mine to their loot) | built; capture by holding there fails since before 5281d15 (open) | `fall` |
+| Capture of mining outposts by holding | retired in 0.2.452 (forced, invisible; outposts razed or mined as ruins) | `army` (held, not captured) |
+| The fall: a destroyed lander collapses its settlement (cascade, evacuation, ruins that mine to their loot) | built; its mining outposts ruins with the rest since 0.2.452 (capture retired) | `fall` |
 | Command bandwidth: unit cap from relays and research, cores from the faction's wreckage | built | `caps` |
 | Patrols through settlements | built | `lively` (life animation) |
 | The yard: an idle garrison waits on open ground outside its walled landing pad (and any walled block), each unit on a slot of its own, standing (`army.yard`, 2026-11-04) | built | `idle` (both corporations; `LP_MIX=off` the bug as it was) |
@@ -8376,3 +8376,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
 - **2026-11-18, the hull's ring taken off (0.2.451).** The user: "What's the huge blue ring around the camp? looks weird".
   It was drawn at HULL_RADIUS, 80 tiles: 160 across, read as the camp's, not the lander's. Gone, and any a save holds
   taken off; the hover's lines tell the hull. Check `raze`: no ring, held or not.
+- **2026-11-18, capture and the occupy stance retired (0.2.452).** The user: "Is the capture mechanic necessary? FEels a
+  little forced", then "I would drop capture but not keep the core reward (we already get cores from destroying
+  landers, don't we?)" and "I would remove occupy stance too". Capture by holding (a mining outpost the player's
+  military stood on for a minute, unopposed, changed hands: its drills, bin and pylon, and a command core) was invisible,
+  its drills had no item to move them, and after a fall it had failed for a long while (the open note). Gone: a fallen
+  camp's mining outposts are ruins with the rest (minable for salvage), the occupy stance (O) with it (a beacon holds,
+  advances, defends or retreats; an advance with no military target left holds), and the capture's core (cores come
+  from depots, landers and the survey party). Kept: no rebuild where the player's military stands (construction), the
+  scenario `occupy`'s mechanic. The fall's notice says "Its buildings are ruins now, to mine for salvage." Checks:
+  `army` (held by a rally point moved onto it, not captured), `fall` (its drills and bins neutral; none on 0.2.451),
+  `siege` (holds on the outpost instead of occupying).

@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.452
+Date: 2026-11-18
+  Changes:
+    - Corporation outposts can no longer be captured by holding them. When a camp falls, its mining outposts turn to ruins with the rest, to mine for salvage.
+    - The rally beacon's occupy order (signal O) is removed. A squad set to advance holds once no military target is left in reach.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.451
 Date: 2026-11-18
   Changes:

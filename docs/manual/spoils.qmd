@@ -17,7 +17,7 @@ A few more things are worth taking:
 
 - **Grubstake yard.** Holds what Grubstake has stolen and drops its contents when destroyed, so you get your own goods
   back.
-- **Destroyed bases.** When a faction base loses its lander, its outposts can be captured and its ruins mined.
+- **Destroyed bases.** When a faction base loses its lander, all its buildings turn to ruins, to mine for salvage.
 
 The corporations salvage too. Grubstake can research salvage, and once it has, what it destroys funds its research.
 
@@ -97,5 +97,4 @@ technology at once: Kessler-Hayashi's mortar, or Grubstake's strip drill.
 ## Command cores
 
 A barracks costs a command core. **Command bandwidth 1** gives you your first one. The rest come from faction wreckage:
-{{< var spoils.core_depot >}} from a destroyed depot, {{< var spoils.core_lander >}} from a lander,
-{{< var spoils.core_capture >}} from a captured outpost, and {{< var spoils.core_survey >}} from Grubstake's survey party. See [Your army](army.qmd).
+{{< var spoils.core_depot >}} from a destroyed depot, {{< var spoils.core_lander >}} from a lander, and {{< var spoils.core_survey >}} from Grubstake's survey party. See [Your army](army.qmd).

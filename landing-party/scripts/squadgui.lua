@@ -12,7 +12,7 @@ local command = require("__landing-party__.scripts.command")
 local gui = {}
 local NAME = "lp_squad"
 local BEACON = "lp-rally-beacon"
-local LINK = {hold = {0.8, 0.8, 0.8, 0.5}, advance = {1, 0.3, 0.15, 0.7}, occupy = {1, 0.8, 0.1, 0.7},
+local LINK = {hold = {0.8, 0.8, 0.8, 0.5}, advance = {1, 0.3, 0.15, 0.7},
   retreat = {0.3, 0.5, 1, 0.7}, defend = {0.25, 0.85, 0.45, 0.7}}
 -- Units in the panel's order (shared.ORDERS is a map).
 local UNITS = {}

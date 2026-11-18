@@ -131,7 +131,7 @@ A claim on a patch Grubstake staked, as its hauler built it. The stake is remove
 
 **The road.** A claim has no power line or belt to the camp. Haulers empty its bins and drive the ore home, and a
 hauler killed on the way spills its ore. A claim that has sent no ore home for a while lapses: the camp stops
-rebuilding it, and its drills are yours to capture.
+rebuilding it.
 
 ## The pact with the biters {#sec-pact}
 

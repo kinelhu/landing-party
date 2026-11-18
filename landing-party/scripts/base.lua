@@ -295,70 +295,9 @@ local function pack_camp(b)
 end
 
 -- The base's network is the lander's: whatever is cut off from it stops counting.
--- Capture by holding: a mining outpost with hostile military on its ground (within OCCUPY_RADIUS of its
--- centre) and none of the faction's within CAPTURE_CLEAR for CAPTURE_TICKS changes hands, drills, bin and
--- pylon. No capture by damage (that is Proliferation's).
-local CAPTURE_CLEAR = 20
-local CAPTURE_TICKS = 60 * 60
--- Only the player's forces capture: a corporation's raid passing through a rival's outpost does not take it.
-local function holder(b, surface, pos)
-  local f = force(b)
-  for _, other in pairs(game.forces) do
-    if other ~= f and shared.is_player_force(other) and not f.get_cease_fire(other) then
-      local e = surface.find_entities_filtered{position = pos, radius = OCCUPY_RADIUS, force = other, type = OCCUPIERS,
-        limit = 1}[1]
-      if e then return other end
-    end
-  end
-end
--- What holds a module's ground: a turret there, or a unit of this settlement's own. Another camp's unit there does not
--- (an evacuee of the fallen camp, now its neighbour's, wandered by the ruins and kept every outpost from being taken,
--- fall).
-local function defender(b, surface, center)
-  local t = surface.find_entities_filtered{position = center, radius = CAPTURE_CLEAR, force = force(b),
-    type = {"electric-turret", "ammo-turret"}, limit = 1}[1]
-  if t then return t end
-  for _, u in pairs(surface.find_entities_filtered{position = center, radius = CAPTURE_CLEAR, force = force(b),
-    type = {"unit", "spider-unit"}, limit = 20}) do
-    if not u.unit_number or (storage.unit_owner or {})[u.unit_number] == b.id then return u end
-  end
-end
-
-local function capture(b)
-  if storage.capture_off then return end
-  local surface = game.surfaces[b.surface]
-  for _, m in ipairs(b.modules) do
-    local left = 0
-    for _, e in ipairs(m.entities) do if e.valid and e.force.name == b.force then left = left + 1 end end
-    -- Something must be left to take (a module with nothing standing was once "captured").
-    if m.kind == "mining" and m.built and not m.captured and left > 0 then
-      local by = holder(b, surface, m.center)
-      local defended = defender(b, surface, m.center) ~= nil
-      if by and not defended then
-        -- Occupied: it calls for help as a building under fire does (an undefended outpost was taken by holding it,
-        -- and the corporation never knew, siege).
-        if not m.held_since then army.alarm(b, {x = m.center[1], y = m.center[2]}, trace) end
-        m.held_since = m.held_since or game.tick
-        if game.tick - m.held_since >= CAPTURE_TICKS then
-          m.captured = by.name
-          local n = 0
-          for _, e in ipairs(m.entities) do
-            if e.valid and e.force.name == b.force then
-              storage.owner[e.unit_number] = nil
-              e.force = by
-              n = n + 1
-            end
-          end
-          b.captured = (b.captured or 0) + 1
-          if base.on_capture then base.on_capture(surface, m.center) end
-          trace(b, string.format("captured by %s: mining at %.0f,%.0f (%d entities)", by.name, m.center[1], m.center[2], n))
-        end
-      else
-        m.held_since = nil
-      end
-    end
-  end
-end
+-- (Capture by holding, a mining outpost changing hands after a minute held unopposed, retired in 0.2.452: the user,
+-- "Is the capture mechanic necessary? FEels a little forced"; invisible, its prize drills that could not be moved, and
+-- broken after a fall. An outpost is razed now, or mined once its camp falls.)
 
 army.on_deliver = function(b, cargo) if base.on_export then base.on_export(b, cargo) end end
 
@@ -671,7 +610,7 @@ ops.trace = trace
 layout.trace = trace
 
 -- A strip camp left alone twice on one patch stays (ops, strip_step): a mining module of the settlement,
--- rebuilt and capturable like any outpost. Its ore is hauled (no line home), marked on the map with its own disc.
+-- rebuilt like any outpost. Its ore is hauled (no line home), marked on the map with its own disc.
 function ops.settle(b, site, camp)
   local m = {kind = "mining", center = {site[1], site[2]}, entities = {}, built = true, claim = true}
   table.insert(b.modules, m)
@@ -685,8 +624,8 @@ end
 
 -- The fall: a settlement whose lander is destroyed collapses. Its generators fail one by one (every
 -- CASCADE_TICKS), so its turrets go dark; its units evacuate (army.disband). When the last generator is gone,
--- what stands becomes ruins: neutral and minable for salvage (the prototypes' results), except the mining
--- outposts, left to be taken by holding them with no one to stop it, and the mines, still live.
+-- what stands becomes ruins: neutral and minable for salvage (the prototypes' results), its mining outposts too (left
+-- to be captured until 0.2.452), all but the mines, still live.
 local CASCADE_TICKS = 90
 -- The howitzer at home (the legibility audit, step 1: "a kill's reward invisible; no warning before a siege"): a
 -- corporation that clears nests (Serenity) keeps its howitzer parked by its lander (a prop: lp-parked-howitzer). Gone while
@@ -809,16 +748,11 @@ local function hull(b)
 end
 
 local function ruin(b)
-  local mining = {}
-  for _, m in ipairs(b.modules) do
-    -- By unit number: entity references are not stable table keys (keyed by them, outposts were ruined too).
-    if m.kind == "mining" then for _, e in ipairs(m.entities) do if e.valid then mining[e.unit_number] = true end end end
-  end
   local n = 0
   local surface = game.surfaces[b.surface]
   for _, e in pairs(surface.find_entities_filtered{force = force(b), position = {b.origin.x, b.origin.y}, radius = 400}) do
     local own = e.unit_number and storage.owner[e.unit_number]
-    if own and own.base == b.id and not mining[e.unit_number] and shared.kind_of(e.name) ~= "lp-mine" then
+    if own and own.base == b.id and shared.kind_of(e.name) ~= "lp-mine" then
       storage.owner[e.unit_number] = nil
       e.force = "neutral"
       n = n + 1
@@ -856,7 +790,6 @@ function base.tick(tick)
   for _, b in pairs(storage.bases) do
     if b.fallen then
       collapse(b)
-      if tick % 600 == 300 then capture(b) end
     elseif b.lander.valid then
       if tick % 60 == 0 then hull(b); pack_camp(b) end
       if tick % 120 == 53 then park(b) end
@@ -890,7 +823,6 @@ function base.tick(tick)
       end
       army.tick(b, tick, trace)
       if tick % EXPORT_TICKS == 0 and not withdrawing then export(b) end
-      if tick % 600 == 300 then capture(b) end
       if tick % PLAN_TICKS == 0 then
         local pending = false
         for _, job in ipairs(b.rebuild) do
@@ -937,7 +869,7 @@ function base.tick(tick)
   end
 end
 
--- Tests only: the mining modules near a point and what capture sees there.
+-- Tests only: the mining modules near a point.
 function base.debug_modules(b, pos, r)
   local out = {}
   local surface = game.surfaces[b.surface]
@@ -945,19 +877,7 @@ function base.debug_modules(b, pos, r)
     if m.kind == "mining" and (m.center[1] - pos[1]) ^ 2 + (m.center[2] - pos[2]) ^ 2 <= r * r then
       local left = 0
       for _, e in ipairs(m.entities) do if e.valid and e.force.name == b.force then left = left + 1 end end
-      local by = holder(b, surface, m.center)
-      local def = defender(b, surface, m.center)
-      local c = def and def.commandable and def.commandable.command
-      local cname = c and tostring(c.type)
-      for k, v in pairs(defines.command) do if c and v == c.type then cname = k end end
-      local own = def and def.unit_number and storage.unit_owner and storage.unit_owner[def.unit_number]
-      cname = (cname or "-") .. " owner " .. tostring(own)
-      local order = c and string.format(" (order %s%s)", cname,
-        c.destination and string.format(" to %.0f,%.0f", c.destination.x, c.destination.y) or "") or ""
-      table.insert(out, string.format("%.0f,%.0f built=%s captured=%s left=%d held=%s holder=%s defended=%s", m.center[1],
-        m.center[2], tostring(m.built), tostring(m.captured), left,
-        m.held_since and tostring(game.tick - m.held_since) or "-", by and by.name or "-",
-        def and (def.name .. "@" .. math.floor(def.position.x) .. "," .. math.floor(def.position.y) .. order) or "-"))
+      table.insert(out, string.format("%.0f,%.0f built=%s left=%d", m.center[1], m.center[2], tostring(m.built), left))
     end
   end
   return out

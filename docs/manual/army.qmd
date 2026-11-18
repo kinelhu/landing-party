@@ -67,12 +67,7 @@ A panel beside the beacon's window says what the squad is doing.
 
 - **No signal: hold.** The squad stands at the rally point and fights what comes to it.
 - **A: advance.** The squad attacks the nearest corporation turret within reach of the rally point, then the other
-  military buildings there that no corporation turret covers. With none left, it occupies an outpost within reach, and
-  holds if there is none.
-- **O: occupy.** The squad walks to the nearest corporation outpost and stands on it, fighting back only when hit. A
-  corporation does not rebuild an outpost you occupy. The squad keeps to that outpost until you change the order or move
-  the rally point. Held for a while with no corporation unit or turret near it, a mining outpost becomes yours,
-  its drills, bin and pylon with it.
+  military buildings there that no corporation turret covers. With none left, it holds.
 - **R: retreat.** The squad walks back to the nearest barracks without stopping to fight, and heals there if the
   barracks has power.
 - **D: defend.** The squad holds at the rally point until an attack comes within {{< var army.defend_reach >}} tiles of
@@ -94,7 +89,7 @@ scanner sees more corporation armour.
 
 **The rally point.** Signals X and Y move the rally point that many tiles east and south of the beacon (negative values
 move it west and north), up to {{< var army.offset_max >}} tiles. A ring at the rally point shows its reach, gray
-for hold, red for advance, yellow for occupy and blue for retreat, with a dashed line back to the beacon. A unit that
+for hold, red for advance, green for defend and blue for retreat, with a dashed line back to the beacon. A unit that
 sees a corporation unit nearby attacks it before any building, but only inside the ring: your squads do not chase a
 garrison back into its turrets.
 
@@ -118,9 +113,9 @@ bandwidth 1.
 - **Shift + right-click** attack-moves: the units fight everything they meet on the way. Once there, they destroy the
   corporation buildings around that spot, defenses first, then the rest, then walls and gates, and hold.
 
-**Capturing or razing.** A corporation's drills, generators, pylons and storage are not military targets: your units and
-turrets do not fire at them by themselves, so a plain move or a beacon's occupy order takes an outpost whole. To destroy
-it instead, attack-move onto it. A lander cannot be harmed while at least half of the generators near it stand. Hover
+**Razing.** A corporation's drills, generators, pylons and storage are not military targets: your units and turrets do
+not fire at them by themselves. To destroy an outpost, attack-move onto it, or right-click its buildings. A corporation
+does not rebuild while your units or turrets stand on the ground it would build on. A lander cannot be harmed while at least half of the generators near it stand. Hover
 over the lander to see lines to each of them. Destroy those generators and the lander can be attacked.
 
 A marker flashes where each order went. Selected units obey you over their beacon until you release them; then each

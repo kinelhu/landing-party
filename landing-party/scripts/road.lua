@@ -2,7 +2,7 @@
 -- camp that stayed) has no line home: every HAUL its camp sends a truck out to empty the claim's bins and bring the ore
 -- home as feedstock. A truck killed on the way back spills its ore and the player is told what it cost ("expansion
 -- delayed N minutes": the cargo against the camp's own intake). A claim with no ore home for LAPSE lapses: its mark
--- goes, the camp stops rebuilding it, its drills are there to take by holding (base.capture).
+-- goes, the camp stops rebuilding it (its drills were there to take by holding until 0.2.452).
 local shared = require("__landing-party__.shared")
 local base = require("__landing-party__.scripts.base")
 local standing = require("__landing-party__.scripts.standing")

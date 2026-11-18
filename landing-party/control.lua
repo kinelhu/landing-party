@@ -378,7 +378,7 @@ script.on_event(defines.events.on_entity_died, function(e)
   if kind == "lp-uplink" then faction.uplink_lost(ent); achievements.uplink(ent, e.force) end
   if kind == "lp-radar" then phases.on_died(ent) end
   if kind == "lp-pacifier" then pact.lost(ent) end
-  -- Command cores from the wreckage: a depot gives one, a lander three (captured outposts: base.lua).
+  -- Command cores from the wreckage: a depot gives one, a lander three.
   if kind == "lp-depot" then command.drop_cores(ent.surface, ent.position, 1) end
   -- A mortar destroyed in the field (its loot is the prototype's: data.lua made_of).
   if kind == "lp-mortar" then
@@ -612,7 +612,6 @@ remote.add_interface("landing-party", {
     -- The arena (tests/lp-arena): a surface with no camp whose Scorchers still burn.
     if t.arena_surface then storage.arena_surfaces = storage.arena_surfaces or {}; storage.arena_surfaces[t.arena_surface] = true end
     if t.tap_step ~= nil then storage.tap_step = t.tap_step end
-    if t.capture_off ~= nil then storage.capture_off = t.capture_off end
     if t.biotech_unlearned ~= nil then storage.biotech_unlearned = t.biotech_unlearned or nil end
     if t.biotech_no_orders ~= nil then storage.biotech_no_orders = t.biotech_no_orders or nil end
     -- march_trace: each marching herd's group every second to the log (where, its state, its order; debugging).
