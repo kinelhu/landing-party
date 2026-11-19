@@ -42,6 +42,23 @@ A plan for two hours: the first hour on your own pacing (Synthexis, Grubstake, y
 you have radar near your base; then let the director run for an hour without the panel, and use the panel only at the
 end to see the beats you missed.
 
+## Before the public beta (0.2.458 to 0.2.464)
+
+About 20 minutes with the army save (`LP_WATCH=army.zip`), on what changed since the last session. The rest of the
+kit (items 4 and 6 to 10) is left to the beta's players.
+
+- **Ammunition.** Each unit carries its order's rounds (the cards and the panel do not show them yet; a beacon's M
+  signal counts its squad's magazines). Send the squad at a nest field or a camp and let it fight long. A dry unit walks
+  to the nearest powered barracks holding its ammunition, rearms from the barracks' input and goes back; with none, it
+  stands and you get one hint. Did you notice units going dry, and know why? Is walking back a fair cost, or a chore?
+  Would you leave it on?
+- **Right-click a beacon** with units selected: they join it. Shift + right-click: they attack-move there and join on
+  arrival. Did both do what you meant?
+- **Wild biters.** The army now fights the vanilla nests, and a holding squad clears the nests and worms near its
+  beacon. Do squads go out further than you expected?
+- **Circuits** (optional): a constant combinator on a beacon with Z sets its reach; the beacon reports H (arrived), N
+  (nests in reach) and M. Readable from a lamp or a display panel?
+
 ## In the order you meet them
 
 1. **Synthexis's first waves.** A wave goes for what it can reach most cheaply, round cliffs and lakes, and lays no

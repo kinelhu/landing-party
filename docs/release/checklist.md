@@ -32,6 +32,12 @@ manual revisited after calibration; an art direction pass before the playtest.
   war). On the way: a ledger from before 0.2.325 crashed its first collection (fixed, 0.2.424). Not yet covered: two
   clients using the army and the faction GUIs.
 
+## Beta prep (2026-11-19, 0.2.464)
+The user: a public beta takes on the playtest items not yet played (4, 6 to 10) and the calibration. Done: the page
+text brought to 0.2.464 with a beta note and how to report (docs/release/modpage.md), the playtest kit's pre-beta
+section (docs/playtest.md: ammunition, beacon right-click, wild biters, circuits). Left: the user's 20-minute session
+on those; then the steps below.
+
 ## Still to do before upload
 The backlog's "Before 0.3.0" (DESIGN.md, "Not built: the backlog") is the list; in short: the income fallback, the
 playtest and calibration, the two-client multiplayer run, then the release steps below. Done since this list was

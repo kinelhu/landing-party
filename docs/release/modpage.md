@@ -1,7 +1,7 @@
 # Landing Party: mod portal page (draft)
 
-Drafted 2026-11-10 for the user to edit, brought up to 0.2.339 on 2026-11-12, to 0.2.433 and to 0.2.438 (released as 0.3.0) on
-2026-11-16; the manual's link works once the v0.3.0 GitHub release carries the PDF; nothing here is published. Paste the part below the line into the portal's
+Drafted 2026-11-10 for the user to edit, brought up to 0.2.339 on 2026-11-12, to 0.2.433 and to 0.2.438 on 2026-11-16,
+and to 0.2.464 (released as 0.3.0, a public beta) on 2026-11-19; the manual's link works once the v0.3.0 GitHub release carries the PDF; nothing here is published. Paste the part below the line into the portal's
 "Information" field. Placeholders in [square brackets].
 
 Portal fields:
@@ -23,6 +23,10 @@ Three rival factions come to Nauvis. They land, mine real ore, and build walled 
 and defences. Their armies are made in their own factories. They fight you, each other and the biters.
 
 [Trailer: link]
+
+**Public beta.** The mechanics are tested by scripted runs and a few played sessions; the difficulty is not tuned yet.
+Tell us on the discussion page or in a GitHub issue what felt unfair, dull or broken, which version, and if you can, a
+save.
 
 ## The factions
 
@@ -76,17 +80,23 @@ The Director setting sets the pace: Steady, Gentle or Chaotic, or Off, which lea
   battle tanks from your own equipment: heavy armor and guns, a car, a tank with an exoskeleton. Order them with the
   command tool (ALT + C) or with rally beacons on the circuit network. A panel at the top of the screen shows your units
   against your cap; retire the ones you no longer need (ALT + R).
-- **Rally beacons:** signals on a beacon set its squad's stance: hold, advance, occupy, retreat or defend. A defending
-  squad goes out to a strike force your radar sees coming or to enemies at your buildings, and comes back when it is
-  over. A panel beside the beacon shows its squad and sets how many of each unit it keeps; lower one beacon's number and
-  raise another's, and the units move over. Hover over a beacon to see its squad.
+- **Rally beacons:** signals on a beacon set its squad's stance: hold, advance, retreat or defend. A defending squad goes
+  out to a strike force your radar sees coming, to enemies at your buildings or to a gun shelling your walls, and comes
+  back when it is over. A holding squad clears the biter nests near it. A panel beside the beacon shows its squad and
+  sets how many of each unit it keeps; lower one beacon's number and raise another's, and the units move over.
+  Right-click a beacon with units selected and they join its squad. Hover over a beacon to see its squad.
+- **Circuit control:** a beacon reads its stance, its rally point and its reach from signals, and reports its squad,
+  how many have arrived, the enemies, turrets and nests within reach, an alarm and its magazines. Patrols, outposts
+  that call for help and squads on a clock are built from combinators.
+- **Ammunition:** units carry the rounds their order was made with and spend them as they fire. A unit that runs dry
+  walks to the nearest powered barracks holding its ammunition and rearms there. A startup setting turns it off.
 - **Selection cards and control groups:** selected units show health bars, and a panel above the quickbar shows a card
   for each with its health and rank. Click a card to narrow the selection, SHIFT + click to drop it, right-click to
   follow it. CONTROL + 1 to 9 saves a group, ALT + 1 to 9 recalls it.
 - **Veterancy:** units that kill earn ranks (Veteran, Elite, Heroic), each adding health and damage, shown as gold
   chevrons. The corporations' units rank too, and a raid retreats sooner to save its elites.
-- **Scanners and roads:** a threat scanner reports enemy units by type to the circuit network; concrete roads speed up
-  your army; a muster point turns unit orders delivered by train into troops at the front.
+- **Scanners, roads and outposts:** a threat scanner reports enemy units by type to the circuit network; concrete roads
+  speed up your army, and squads take them; a far outpost's barracks, fed by train, is its reserve.
 - **Orbital cannons:** later in the game, build cannons on a space platform over Nauvis, keep them supplied with shells
   made on the ground and fuel made from asteroids, and call strikes with a remote (ALT + O). More cannons on a platform
   make a wider, denser strike; more platforms let you strike again sooner.
@@ -105,13 +115,13 @@ roar of a camp landing, a siege horn, a shield dome stopping a shell, the build-
 
 The Director, a difficulty preset, and for each faction: on or off, when it arrives, how many bases it can have, its
 strength, aggression and income. Also the time between landings, revenge landings, Kessler-Hayashi's orbital strikes,
-Grubstake's theft, and Synthexis's number of cultures, largest attack and learning.
+Grubstake's theft, Synthexis's number of cultures, largest attack and learning, and your army's ammunition.
 
 ## Requirements and notes
 
 - Factorio 2.1 with Space Age.
 - Works on a new game or an existing one: each faction arrives on its own trigger (chemical science, the first rocket,
-  the biters).
+  the biters). Saves made on an earlier version load on a later one.
 - Multiplayer: tested with a second player joining, through sieges and strike forces, without desyncs. Two players
   using the army and the faction panels at the same time has not been tested yet.
 - No known incompatible mods. Please report clashes on the discussion page.
