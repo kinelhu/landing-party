@@ -1018,6 +1018,13 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     right-click on a beacon does the same, the units that join attack-moving to its rally point first, the hand order
     ending there (0.2.459; the user: "people could simply attack move next to the beacon and not on it if they don't
     want it joined").
+  - **H, the squad here** (0.2.460; the user, of a patrol's legs: "How do we know troops have 'arrived'?"): a beacon
+    reports its squad's units within HERE (12) of its rally point, the distance a holding unit keeps to, so H = S is the
+    squad arrived and a circuit steps a patrol on arrival, not on a guessed leg time. Scenario `patrol`: four troopers, X
+    flipped 0 and 30 on H = S read off the beacon's wire, 15 legs in 150 s (5 to 8 s each), all four at the point at each
+    step; seen failing without H (no leg). Discussed, not built (the user: "Wait"): a reach signal for fight, advance
+    and defend (R is taken: retreat), an off switch handing a beacon's squad on (patrols by beacons on a clock), a
+    built-in back-and-forth patrol.
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the

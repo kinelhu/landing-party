@@ -358,6 +358,7 @@ def write(rp):
             "repair_tiles": fmt(num(src("scripts/command.lua"), r"^local REPAIR_RANGE = (\d+)", "REPAIR_RANGE")),
             "offset_max": fmt(num(src("scripts/command.lua"), r"^local MAX_OFFSET = (\d+)", "MAX_OFFSET")),
             "defend_reach": fmt(num(src("scripts/command.lua"), r"^local DEFEND_REACH = (\d+)", "DEFEND_REACH")),
+            "here": fmt(num(src("scripts/command.lua"), r"^local HERE = (\d+)", "HERE")),
             "assign_range": fmt(num(src("scripts/command.lua"), r"^local ASSIGN_RANGE = (\d+)", "ASSIGN_RANGE")),
             "road_min": fmt(num(src("scripts/command.lua"), r"^local ROUTE_MIN = (\d+)", "ROUTE_MIN")),
             "defend_quiet": fmt(num(src("scripts/command.lua"), r"^local DEFEND_QUIET = (\d+)", "DEFEND_QUIET")),

@@ -75,7 +75,8 @@ end
 
 -- The beacon's own signals (command.lua's report section apart) ----------------------------------------------------------
 
-local REPORTED = {["signal-S"] = true, ["signal-E"] = true, ["signal-T"] = true, ["signal-W"] = true}
+local REPORTED = {["signal-S"] = true, ["signal-H"] = true, ["signal-E"] = true, ["signal-T"] = true,
+  ["signal-W"] = true}
 local function wired(b)
   return b.get_circuit_network(defines.wire_connector_id.circuit_red) ~= nil
     or b.get_circuit_network(defines.wire_connector_id.circuit_green) ~= nil

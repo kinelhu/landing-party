@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.460
+Date: 2026-11-19
+  Features:
+    - Rally beacons output H, the squad's units within 12 tiles of the rally point. H equal to S means the squad has arrived, so a patrol circuit can move on when the squad gets there instead of on a timer.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.459
 Date: 2026-11-19
   Features:

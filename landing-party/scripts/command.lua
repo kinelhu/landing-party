@@ -8,8 +8,8 @@
 --   signal D > 0   defend: hold, and answer an attack on the player within DEFEND_REACH of the rally point (a strike
 --                  force told or landed, or enemy units at the player's buildings), then come back
 --   otherwise      hold: stay at the rally point
--- It reports on its own output: S its squad, E faction units and T faction turrets within reach of the
--- rally point, W 1 while a defending squad is out.
+-- It reports on its own output: S its squad, H those of it here (within HERE of the rally point), E faction units and
+-- T faction turrets within reach of the rally point, W 1 while a defending squad is out.
 local shared = require("__landing-party__.shared")
 local paving = require("__landing-party__.scripts.paving")
 
@@ -508,8 +508,13 @@ end
 -- The beacon's report, written into a section of its own (the first holding only report signals; made when
 -- missing): S its squad, E faction units and T faction turrets within reach of the rally point. A decider
 -- reading S can send A when the squad is full, or R when it is beaten.
-local REPORTED = {["signal-S"] = true, ["signal-E"] = true, ["signal-T"] = true, ["signal-W"] = true}
-local function report(beacon, p, squad)
+local REPORTED = {["signal-S"] = true, ["signal-H"] = true, ["signal-E"] = true, ["signal-T"] = true,
+  ["signal-W"] = true}
+-- H, here (the user, 2026-11-19, of a patrol's legs: "How do we know troops have 'arrived'?"): a squad's units within
+-- HERE of its rally point, the distance a holding unit keeps to (hold, in lead: further out it is ordered back), so
+-- H = S is a squad arrived, and a clock can step a patrol on arrival instead of on a guessed leg time.
+local HERE = 12
+local function report(beacon, p, squad, here)
   local cb = beacon.get_or_create_control_behavior()
   local sec
   for _, s in pairs(cb.sections) do
@@ -525,6 +530,7 @@ local function report(beacon, p, squad)
   local function v(name, n) return {value = {type = "virtual", name = name, quality = "normal"}, min = n} end
   sec.filters = {
     v("signal-S", squad),
+    v("signal-H", here),
     v("signal-E", s.count_entities_filtered{position = p.pos, radius = ATTACK_REACH, force = shared.hostile_forces(),
       type = {"unit", "spider-unit"}}),
     v("signal-T", s.count_entities_filtered{position = p.pos, radius = ATTACK_REACH, force = shared.corp_forces(),
@@ -768,9 +774,17 @@ local function lead()
   for k in pairs(storage.cmd.answering) do
     if not (plans[k] and plans[k].alarm) then storage.cmd.answering[k] = nil end
   end
+  local here = {}
+  for _, t in pairs(storage.cmd.troopers) do
+    local p = t.beacon and t.unit.valid and plans[t.beacon]
+    if p and p.surface == t.unit.surface
+      and (t.unit.position.x - p.pos.x) ^ 2 + (t.unit.position.y - p.pos.y) ^ 2 <= HERE * HERE then
+      here[t.beacon] = (here[t.beacon] or 0) + 1
+    end
+  end
   for k, b in pairs(storage.cmd.beacons) do
     mark(k, b, plans[k])
-    report(b, plans[k], squads[k] or 0)
+    report(b, plans[k], squads[k] or 0, here[k] or 0)
   end
   for k, m in pairs(storage.cmd.marks or {}) do
     if not plans[k] then m.ring.destroy(); m.line.destroy(); storage.cmd.marks[k] = nil end

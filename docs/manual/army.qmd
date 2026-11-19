@@ -187,7 +187,7 @@ relays like any building, so keep them inside your defenses and on a reliable gr
 
 **Beacons.** Wire a rally beacon and it reads the signals on its wires as well as its own. A decider combinator can then
 set its stance, and a clock on X or Y walks the rally point back and forth as a patrol. The beacon reports on its own
-output: **S** the units in its squad, **E** corporation units and Synthexis's biters and **T** corporation turrets within
+output: **S** the units in its squad, **H** those of them within {{< var army.here >}} tiles of its rally point, **E** corporation units and Synthexis's biters and **T** corporation turrets within
 reach of its rally point, and **W** 1 while a defending squad is out. A decider that sends A once S reaches the size you
 want holds a squad until it is full, then attacks; one that reads W can shut gates or light lamps while the squad is
 away.
@@ -215,6 +215,9 @@ beacon.
 - *Defend once trained.* S at least 8: output D. A squad too small to win stays home.
 - *Tell me it is out.* W above zero, wired to a programmable speaker or a lamp: an alert while a defending squad is away.
 - *A patrol.* A clock counting up and down on X walks the rally point back and forth along a wall.
+- *A patrol that waits for its squad.* H equal to S means the whole squad has arrived: step X to the next point then,
+  not on a fixed time, and slow units or a fight on the way do not leave anyone behind. H at least S minus 1 lets it go
+  on without one straggler.
 - *Armour against armour.* A threat scanner's *Corporation tanks*, through an arithmetic combinator, set on a beacon as
   its *Squad size: battle tanks*: more tanks when more armour comes.
 - *Move units to where the threat is.* Raise the squad size on the beacon you want them at, then lower it on the one they

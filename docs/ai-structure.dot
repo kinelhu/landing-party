@@ -106,8 +106,8 @@ digraph ai {
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "command" [label="command\n1402 lines", width=2.36, fillcolor="#f7dede"];
-    "squadgui" [label="squadgui\n206 lines", width=1.03, fillcolor="#eef2f7"];
+    "command" [label="command\n1416 lines", width=2.37, fillcolor="#f7dede"];
+    "squadgui" [label="squadgui\n207 lines", width=1.03, fillcolor="#eef2f7"];
     "paving" [label="paving\n272 lines", width=1.10, fillcolor="#d9f0d9"];
     "cards" [label="cards\n406 lines", width=1.25, fillcolor="#eef2f7"];
     "scanner" [label="scanner\n98 lines", width=0.91, fillcolor="#eef2f7"];

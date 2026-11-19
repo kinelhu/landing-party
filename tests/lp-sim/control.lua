@@ -3517,6 +3517,72 @@ scenarios.squadmove = function()
   end)
 end
 
+-- A patrol stepped on arrival (0.2.460; the user, of a patrol's legs: "How do we know troops have 'arrived'?"): a beacon
+-- reports H, its squad's units within 12 tiles of the rally point. Four troopers on a beacon wired to a combinator whose X
+-- the script flips between 0 and 30 as a circuit would, read off the beacon's own wire: when H = S, 3 s on, the next leg.
+scenarios.patrol = function()
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  local red = defines.wire_connector_id.circuit_red
+  local function sig(name)
+    for _, x in pairs(S.B.get_signals(red) or {}) do if x.signal.name == name then return x.count end end
+    return 0
+  end
+  local function setx(x)
+    S.cc.get_control_behavior().get_section(1).set_slot(1, {value = {type = "virtual", name = "signal-X",
+      quality = "normal"}, min = x})
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-40, -40, 40, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    S.B = put("lp-rally-beacon", -15.5, -10.5)
+    S.cc = put("constant-combinator", -17.5, -10.5)
+    S.cc.get_wire_connector(red, true).connect_to(S.B.get_wire_connector(red, true))
+    setx(0)
+    for i = 1, 4 do surface().create_entity{name = "lp-trooper", position = {-20 + 2 * i, -2}, force = "player"} end
+    lp("debug_enlist", {{-22, -4}, {-8, 0}})
+    S.x, S.legs, S.travel, S.arrived_at, S.near = 0, {}, 0, nil, {}
+    S.leg_from = game.tick
+  end)
+  -- Each second, the circuit: arrived (H = S, S > 0) for 3 s, the next leg.
+  for sec = 3, 150 do
+    schedule(60 + sec * 60, function()
+      local sq, h = sig("signal-S"), sig("signal-H")
+      if sq > 0 and h < sq then S.travel = S.travel + 1 end
+      if sq > 0 and h == sq then
+        S.arrived_at = S.arrived_at or game.tick
+        if game.tick - S.arrived_at >= 180 then
+          local px = S.B.position.x + S.x
+          S.near[#S.near + 1] = surface().count_entities_filtered{name = "lp-trooper", force = "player",
+            position = {px, -10.5}, radius = 12}
+          S.legs[#S.legs + 1] = math.floor((S.arrived_at - S.leg_from) / 60 + 0.5)
+          S.x = S.x == 0 and 30 or 0
+          setx(S.x)
+          S.arrived_at, S.leg_from = nil, game.tick
+        end
+      else
+        S.arrived_at = nil
+      end
+      S.last = {s = sq, h = h}
+    end)
+  end
+  schedule(60 + 152 * 60, function()
+    info("patrol: " .. serpent.line({legs = S.legs, travel = S.travel, near = S.near, last = S.last}))
+    check("patrol: the beacon reports H, its squad here, and S", S.last and S.last.s == 4, serpent.line(S.last))
+    check("patrol: five legs or more, each stepped on H = S", #S.legs >= 5, serpent.line(S.legs))
+    local all = #S.near > 0
+    for _, n in ipairs(S.near) do if n ~= 4 then all = false end end
+    check("patrol: at each step all four stood at the rally point", all, serpent.line(S.near))
+    check("patrol: and on the way H was below S (counted seconds)", S.travel >= 5, tostring(S.travel))
+  end)
+end
+
 -- Right-click on a rally beacon assigns the selection to it (0.2.458; the playtest: "Pro/con of enabling a right click on
 -- a beacon to assign selected units to it?"; before, the units moved onto its spot and stayed hand-ordered): six troopers
 -- held by hand, then four onto A (squad size 2: raised to 4), two onto B (wired, size 1 from a combinator: one joins, one
