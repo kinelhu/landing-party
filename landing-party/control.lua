@@ -268,7 +268,7 @@ script.on_event(defines.events.on_player_alt_selected_area, function(e)
   if e.item == "lp-orbital-remote" then remote_fire(e) end
 end)
 script.on_event(defines.events.on_player_reverse_selected_area, function(e)
-  if e.item == TOOL then command.order(e.player_index, e.surface, e.area, false) end
+  if e.item == TOOL then command.order(e.player_index, e.surface, e.area, false, squadgui.set_size) end
 end)
 script.on_event(defines.events.on_player_alt_reverse_selected_area, function(e)
   if e.item == TOOL then command.order(e.player_index, e.surface, e.area, true) end
@@ -1017,6 +1017,7 @@ remote.add_interface("landing-party", {
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,
   -- Tests and showcases only: parts for a settlement (a young one has no surplus to export).
   -- Tests only: the command tool without a mouse (player index 1 need not exist).
+  debug_select_units = function(units) return command.select(1, units) end,
   debug_select = function(area)
     local s = game.surfaces[1]
     return command.select(1, s.find_entities_filtered{area = area, force = "player", type = "unit"})
@@ -1024,7 +1025,7 @@ remote.add_interface("landing-party", {
   debug_release = function(area)
     return command.release(1, game.surfaces[1].find_entities_filtered{area = area, force = "player", type = "unit"})
   end,
-  debug_order = function(area, attackmove) return command.order(1, game.surfaces[1], area, attackmove) end,
+  debug_order = function(area, attackmove) return command.order(1, game.surfaces[1], area, attackmove, squadgui.set_size) end,
   debug_retire = function(now) return command.retire(1, now) end,
   -- Tests only: the migration a save from before 0.2.448 gets on loading (muster points off the map).
   debug_drop_musters = function() return command.drop_musters() end,
@@ -1038,6 +1039,11 @@ remote.add_interface("landing-party", {
   debug_hull_gens = function(lander) return #squadgui.hull_gens(lander) end,
   -- Tests only: the squad panel's buttons (scripts/squadgui.lua), and what a beacon shows, in plain values.
   debug_squad_size = function(beacon, unit, n) return squadgui.set_size(beacon, unit, n) end,
+  -- Tests only: an order with all it returns (a right-click on a beacon: units assigned, "assign", units held).
+  debug_order_detail = function(area, attackmove)
+    local n, kind, held = command.order(1, game.surfaces[1], area, attackmove, squadgui.set_size)
+    return {n = n, kind = kind, held = held}
+  end,
   -- Tests only: the road router (scripts/paving.lua): a search, its result, and per-tick timings to script-output.
   debug_paving_request = function(from, to) return paving.request(game.surfaces[1], from, to) end,
   debug_paving_result = function(id) return paving.result(id) end,

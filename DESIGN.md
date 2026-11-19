@@ -1011,6 +1011,11 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     nothing left it walks back. W = 1 on the beacon's output while out; its ring is green and drawn at 150.
   - **Surplus moves first** (enforce): above a lowered size, a unit joins the nearest other beacon in reach with room,
     and only with none walks to a barracks to retire. Squad sizes are the way to move units between squads.
+  - **Right-click on a beacon assigns** (0.2.458, command.order's assign): with units selected, a right-click on one of
+    the player's rally beacons ends their hand orders and puts them in its squad, at any distance (past the 200 a unit
+    joins by itself). A size the beacon sets for a unit rises to take them (the panel's writer); a wired beacon's size is
+    the circuit's, and the units beyond it, farthest first, hold where they stand, told at the beacon. Shift +
+    right-click on a beacon is an attack-move to its spot, as before.
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the
@@ -8422,3 +8427,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   sent, broken, 10 labs and 37 of 50 lost**; 1.75, 25, broken, 9 labs and 34; 2, 29, the army gone and all 64 labs. 1.5
   taken: a step back from the cliff between 1.75 and 2, a win that costs. Grubstake's infantry is 8 parts, so its strikes
   shrink less. Assumed, not measured: other bases and later strikes (the adaptation, the climax's double).
+- **2026-11-19, right-click on a beacon assigns (0.2.458).** The playtest: "Regarding beacons, what's the simplest way to
+  assign units to one if they weren't at birth?" (a move onto it, a release, within 200 tiles, and a size raised by
+  hand), then "Pro/con of enabling a right click on a beacon to assign selected units to it?", agreed as proposed. A
+  right-click on a beacon moved the units onto its spot and left them hand-ordered. Scenario `assign`: four onto a
+  beacon of size 2 (all join, size 4), two onto one wired to size 1 (one joins, one holds), one onto a beacon 260 tiles
+  off (joins, walks there), shift + right-click still an attack-move; seen failing with the branch off (4 of 6 checks).
+  The command-tool scenarios (squad, squadmove, orders, control, attackmove, retire, raze click, cards, tutorial,
+  director cmd, owngates, paved route) unchanged: they never right-click a beacon.

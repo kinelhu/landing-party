@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.458
+Date: 2026-11-19
+  Features:
+    - Right-click a rally beacon with the command tool to put the selected units in its squad, at any distance. A squad size set on the beacon rises to take them; a beacon wired to a circuit keeps its size, and the units beyond it stay where they are.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.457
 Date: 2026-11-18
   Balancing:

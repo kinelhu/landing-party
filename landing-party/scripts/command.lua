@@ -960,13 +960,92 @@ local function formation(units, pos)
 end
 command.formation = formation
 
--- An order for the selection: on a faction entity, attack it; elsewhere, move (or attack-move) to the middle
--- of the area clicked or dragged, each to its slot of a formation.
-function command.order(player_index, surface, area, attackmove)
+-- Right-click on one of your own rally beacons with units selected (the playtest, 2026-11-19: "Pro/con of enabling a right
+-- click on a beacon to assign selected units to it?"; before, it moved them onto its spot and they stayed hand-ordered,
+-- and joining a beacon took a release, within 200 tiles): the selection's hand orders end and it joins that beacon, at any
+-- distance. A squad size the beacon sets for a unit rises to take them (set_size, the squad panel's), so the click does
+-- what it says; a wired beacon's size is the circuit's: the units beyond it, farthest first, hold where they stand, told
+-- at the beacon.
+local function assign(player_index, beacon, units, set_size)
+  local squads = squad_counts()
+  local cap = caps(beacon)
+  local id = beacon.unit_number
+  local have = {}
+  for name, c in pairs(squads.count[id] or {}) do have[name] = c end
+  local bp = beacon.position
+  table.sort(units, function(a, b)
+    local da = (a.unit.position.x - bp.x) ^ 2 + (a.unit.position.y - bp.y) ^ 2
+    local db = (b.unit.position.x - bp.x) ^ 2 + (b.unit.position.y - bp.y) ^ 2
+    if da ~= db then return da < db end
+    return a.unit.unit_number < b.unit.unit_number
+  end)
+  -- Those already on it count as there (unless retiring, which squad_counts leaves out).
+  for _, t in ipairs(units) do
+    if t.beacon == id and not (t.manual and t.manual.kind == "retire") then
+      have[t.unit.name] = (have[t.unit.name] or 0) - 1
+    end
+  end
+  storage.cmd.seq = (storage.cmd.seq or 0) + 1
+  local n, held, wired = 0, 0, false
+  for _, t in ipairs(units) do
+    local name = t.unit.name
+    local c = cap and cap[name]
+    local room = not c or (have[name] or 0) < c
+    if not room and set_size(beacon, name, (have[name] or 0) + 1) then
+      cap[name], room = (have[name] or 0) + 1, true
+    elseif not room then
+      wired = true
+    end
+    if room then
+      t.beacon, t.manual, t.key = id, nil, nil
+      have[name] = (have[name] or 0) + 1
+      n = n + 1
+    else
+      local p = t.unit.position
+      t.manual, t.key = {kind = "hold", pos = {x = p.x, y = p.y}, seq = storage.cmd.seq}, nil
+      manual(t)
+      held = held + 1
+    end
+  end
+  storage.cmd.assigned = (storage.cmd.assigned or 0) + n
+  local player = game.get_player(player_index)
+  if player then
+    rendering.draw_circle{color = {0.4, 1, 0.5}, radius = 1.5, width = 3, filled = false, target = beacon,
+      surface = beacon.surface, players = {player_index}, time_to_live = 45, draw_on_ground = true}
+    if wired and held > 0 then
+      player.create_local_flying_text{text = {"lp.assign-wired", held}, position = beacon.position, time_to_live = 240,
+        speed = 0.3}
+    end
+  end
+  return n, "assign", held
+end
+
+-- An order for the selection: on one of your rally beacons, join it (assign, above); on a faction entity, attack it;
+-- elsewhere, move (or attack-move) to the middle of the area clicked or dragged, each to its slot of a formation.
+-- set_size: the squad panel's (scripts/squadgui.lua, which needs this module), for a right-click on a beacon.
+function command.order(player_index, surface, area, attackmove, set_size)
   storage.cmd.selected = storage.cmd.selected or {}
   local sel = storage.cmd.selected[player_index] or {}
   local lt, rb = area.left_top or area[1], area.right_bottom or area[2]
   local pos = {x = ((lt.x or lt[1]) + (rb.x or rb[1])) / 2, y = ((lt.y or lt[2]) + (rb.y or rb[2])) / 2}
+  local player = game.get_player(player_index)
+  local force = player and player.force or game.forces.player
+  if not attackmove and set_size then
+    local beacon, bd
+    for _, e in pairs(surface.find_entities_filtered{area = {{pos.x - 1.5, pos.y - 1.5}, {pos.x + 1.5, pos.y + 1.5}},
+      name = "lp-rally-beacon", force = force}) do
+      local d = (e.position.x - pos.x) ^ 2 + (e.position.y - pos.y) ^ 2
+      if storage.cmd.beacons[e.unit_number] and (not bd or d < bd) then beacon, bd = e, d end
+    end
+    if beacon then
+      local units = {}
+      for un in pairs(sel) do
+        local t = storage.cmd.troopers[un]
+        if t and t.unit.valid then units[#units + 1] = t else sel[un] = nil end
+      end
+      if #units > 0 then return assign(player_index, beacon, units, set_size) end
+    end
+  end
   -- What was clicked: a hostile unit, or any building of a hostile force that can be hurt (walls, gates, pylons and labs
   -- too since 0.2.450; a list of types once, which left them out: the user, "Can't we right click buildings also?"),
   -- the nearest to the click.
@@ -1000,7 +1079,7 @@ function command.order(player_index, surface, area, attackmove)
       sel[un] = nil
     end
   end
-  if n > 0 and game.get_player(player_index) then
+  if n > 0 and player then
     rendering.draw_circle{color = target and {1, 0.3, 0.2} or (attackmove and {1, 0.6, 0.2} or {0.4, 0.7, 1}),
       radius = 1.5, width = 3, filled = false, target = target or pos, surface = surface, players = {player_index},
       time_to_live = 45, draw_on_ground = true}

@@ -1,6 +1,6 @@
 # Playtest kit
 
-Mod 0.2.457, rewritten 2026-11-18 for the release playtest (0.3.0). The questions follow a session in the order you meet
+Mod 0.2.458, rewritten 2026-11-18 for the release playtest (0.3.0). The questions follow a session in the order you meet
 things: Synthexis first, then Grubstake, then your own army, and the director's beats once it takes over. Everything
 below is checked headless only, apart from what the 2026-11-17 and 2026-11-18 sessions already saw. Chat notices are
 off: the world should tell you what happens.
@@ -56,6 +56,7 @@ end to see the beats you missed.
    any of it surprise you? Is retiring for good the right cost?
    The squad panel beside a beacon's window, and the hover lines between a beacon and its units: readable? Do the
    buttons move units between beacons as you expect? Lowered with nowhere to go, the surplus holds where it stands.
+   Right-click a beacon with units selected (0.2.458): they join its squad from anywhere. Did it do what you meant?
    The gun buggy: slow heavy shots that burst, the fastest unit you have. Does it read as its own unit beside the tank?
    The battle tank costs an exoskeleton and two energy shields: too dear?
    Roads: lay a concrete road from a beacon toward where attacks come, off the straight line. Does a squad sent out

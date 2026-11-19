@@ -3517,6 +3517,93 @@ scenarios.squadmove = function()
   end)
 end
 
+-- Right-click on a rally beacon assigns the selection to it (0.2.458; the playtest: "Pro/con of enabling a right click on
+-- a beacon to assign selected units to it?"; before, the units moved onto its spot and stayed hand-ordered): six troopers
+-- held by hand, then four onto A (squad size 2: raised to 4), two onto B (wired, size 1 from a combinator: one joins, one
+-- holds, told), one of A's onto C, 260 tiles off (past the 200 a unit joins by itself), and shift + right-click on A stays
+-- an attack-move.
+scenarios.assign = function()
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  local function view(b) return lp("debug_beacon_view", b) end
+  local function at(e) local p = e.position; return {{p.x - 0.4, p.y - 0.4}, {p.x + 0.4, p.y + 0.4}} end
+  local function pick(list) return lp("debug_select_units", list) end
+  local red = defines.wire_connector_id.circuit_red
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-40, -40, 40, 30)
+    surface().request_to_generate_chunks({260, 0}, 2)
+    surface().force_generate_chunk_requests()
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    S.units = {}
+    for i = 1, 6 do
+      S.units[i] = surface().create_entity{name = "lp-trooper", position = {-6 + 2 * i, -8}, force = "player"}
+    end
+    lp("debug_enlist", {{-10, -10}, {10, -6}})
+    -- Held by hand first, so none joins a beacon by itself.
+    S.held0 = lp("debug_select", {{-10, -10}, {10, -6}})
+    lp("debug_order", {{-0.5, -8.5}, {0.5, -7.5}}, false)
+  end)
+  schedule(60 + 3 * 60, function()
+    S.A = put("lp-rally-beacon", 10.5, -18.5)
+    S.B = put("lp-rally-beacon", -15.5, -18.5)
+    S.C = put("lp-rally-beacon", 260.5, 0.5)
+    lp("debug_squad_size", S.A, "lp-trooper", 2)
+    local cc = put("constant-combinator", -17.5, -18.5)
+    cc.get_control_behavior().get_section(1).set_slot(1, {value = {type = "virtual", name = "lp-squad-trooper",
+      quality = "normal"}, min = 1})
+    cc.get_wire_connector(red, true).connect_to(S.B.get_wire_connector(red, true))
+  end)
+  schedule(60 + 5 * 60, function()
+    S.none = {a = view(S.A).n, b = view(S.B).n, c = view(S.C).n}
+    -- Four onto A, whose size is 2.
+    table.sort(S.units, function(a, b) return a.unit_number < b.unit_number end)
+    S.sel1 = pick({S.units[1], S.units[2], S.units[3], S.units[4]})
+    S.o1 = lp("debug_order_detail", at(S.A), false)
+    S.capA = (view(S.A).caps or {})["lp-trooper"]
+  end)
+  schedule(60 + 7 * 60, function()
+    S.sel2 = pick({S.units[5], S.units[6]})
+    S.o2 = lp("debug_order_detail", at(S.B), false)
+    S.capB = (view(S.B).caps or {})["lp-trooper"]
+  end)
+  schedule(60 + 9 * 60, function()
+    S.sel3 = pick({S.units[1]})
+    S.far0 = ((S.units[1].position.x - 260.5) ^ 2 + (S.units[1].position.y - 0.5) ^ 2) ^ 0.5
+    S.o3 = lp("debug_order_detail", at(S.C), false)
+    -- Shift + right-click on a beacon: an attack-move to its spot, as before.
+    S.sel4 = pick({S.units[2]})
+    S.o4 = lp("debug_order_detail", at(S.A), true)
+  end)
+  schedule(60 + 40 * 60, function()
+    S.after = {a = view(S.A).n, b = view(S.B).n, c = view(S.C).n, capA = (view(S.A).caps or {})["lp-trooper"],
+      capB = (view(S.B).caps or {})["lp-trooper"]}
+    S.far1 = ((S.units[1].position.x - 260.5) ^ 2 + (S.units[1].position.y - 0.5) ^ 2) ^ 0.5
+    S.nearA = surface().count_entities_filtered{name = "lp-trooper", force = "player", position = {10.5, -18.5}, radius = 12}
+    S.nearB = surface().count_entities_filtered{name = "lp-trooper", force = "player", position = {-15.5, -18.5}, radius = 12}
+    info("assign: " .. serpent.line({S.held0, S.none, S.sel1, S.o1, S.capA, S.sel2, S.o2, S.capB, S.sel3, S.o3, S.sel4,
+      S.o4, S.far0, S.far1, S.after, S.nearA, S.nearB}))
+    check("assign: six held by hand, none on a beacon", S.held0 == 6 and S.none.a == 0 and S.none.b == 0 and S.none.c == 0,
+      serpent.line({S.held0, S.none}))
+    check("assign: four onto A (size 2): all four join, its size raised to 4", S.o1 and S.o1.n == 4 and S.o1.kind == "assign"
+      and S.o1.held == 0 and S.capA == 4, serpent.line({S.sel1, S.o1, S.capA}))
+    check("assign: two onto wired B (size 1): one joins, one holds, the size the circuit's", S.o2 and S.o2.n == 1
+      and S.o2.held == 1 and S.capB == 1, serpent.line({S.sel2, S.o2, S.capB}))
+    check("assign: one onto C, 260 tiles off: it joins and walks there, kept on C", S.o3 and S.o3.n == 1
+      and S.after.c == 1 and S.far1 < S.far0 - 30, serpent.line({S.o3, S.far0, S.far1, S.after}))
+    check("assign: shift + right-click on a beacon is still an attack-move", S.o4 and S.o4.kind == "attackmove",
+      serpent.line(S.o4))
+    check("assign: after, A keeps 3 (one sent to C; the one attack-moving by hand still its) and B 1, at their beacons",
+      S.after.a == 3 and S.after.b == 1 and S.after.capA == 4 and S.after.capB == 1 and S.nearB >= 1 and S.nearA >= 3,
+      serpent.line({S.after, S.nearA, S.nearB}))
+  end)
+end
+
 -- Muster points retired (0.2.448; the user: stockpiled orders deployed at once "defeats the purposes of our barracks"):
 -- a placed one from an old save, holding three trooper orders (one uncommon) and some iron, taken off the map as a save
 -- loads (command.drop_musters): gone, its orders laid as their kit at their quality, its iron and its own makings beside,

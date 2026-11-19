@@ -104,6 +104,7 @@ army:
   repair_tiles: "30"
   offset_max: "300"
   defend_reach: "150"
+  assign_range: "200"
   road_min: "40"
   defend_quiet: "60"
   relays_l1: "4"
@@ -285,6 +286,6 @@ director:
   climax_times: "double"
   gentle_share: "half"
 mod:
-  version: "0.2.457"
+  version: "0.2.458"
   factorio: "2.1"
   needs: "base, space-age"

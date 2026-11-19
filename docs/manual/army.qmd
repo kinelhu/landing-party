@@ -110,6 +110,9 @@ bandwidth 1.
   where they arrive.
 - **Right-click** on a corporation building or unit attacks it, walls, gates and pylons included. When it falls, the
   units hold where it stood.
+- **Right-click** on one of your rally beacons puts the selection in its squad, however far away the units are. If the
+  beacon sets a squad size for them, the size goes up to take them. A beacon wired to a circuit keeps the circuit's
+  size: the units beyond it stay where they are.
 - **Shift + right-click** attack-moves: the units fight everything they meet on the way. Once there, they destroy the
   corporation buildings around that spot, defenses first, then the rest, then walls and gates, and hold.
 
@@ -119,7 +122,7 @@ does not rebuild while your units or turrets stand on the ground it would build 
 over the lander to see lines to each of them. Destroy those generators and the lander can be attacked.
 
 A marker flashes where each order went. Selected units obey you over their beacon until you release them; then each
-joins the nearest beacon. The attack order works only on corporation targets. Against Synthexis or the wild biters,
+joins the nearest beacon within {{< var army.assign_range >}} tiles, or the one you right-clicked. The attack order works only on corporation targets. Against Synthexis or the wild biters,
 attack-move onto them.
 
 **The selection panel.** While you have units selected, each one shows a health bar over its head, and a panel above
