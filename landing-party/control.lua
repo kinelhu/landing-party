@@ -205,6 +205,14 @@ table.insert(BUILDINGS, {filter = "name", name = "lp-tumor"})
 for _, t in ipairs({"electric-turret", "accumulator", "roboport", "electric-energy-interface"}) do
   table.insert(BUILDINGS, {filter = "type", type = t})
 end
+-- Shelling (command.on_shelled): explosions on walls, gates, turrets and radars, a squad on D answers the gun. (Every
+-- explosion on these: the player's artillery on a corporation's walls too, turned away by force at once.)
+local SHELLED = {wall = true, gate = true, ["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true,
+  ["artillery-turret"] = true, radar = true}
+for t in pairs(SHELLED) do
+  table.insert(BUILDINGS, {filter = "type", type = t})
+  table.insert(BUILDINGS, {filter = "damage-type", type = "explosion", mode = "and"})
+end
 -- Units and walls, electric hits only ("and" binds before "or"): the lightning's stun on units (stun.lua), and a Tesla's
 -- aim at a laser in its reach whatever its bolt struck (scorcher.aim: on what holds a charge alone, it never turned in a
 -- run where its bolts went into troopers and the wall). (A unit's other hits stay unseen: every bullet on a biter.)
@@ -216,6 +224,7 @@ end
 for _, name in pairs(shared.ORDERS) do table.insert(BUILDINGS, {filter = "name", name = name}) end
 script.on_event(defines.events.on_entity_damaged, function(e)
   local et = e.entity.type
+  if e.damage_type and e.damage_type.name == "explosion" and e.cause and SHELLED[et] then command.on_shelled(e) end
   if et == "unit" and e.entity.force.name == "player" then cards.on_hit(e.entity) end
   if et == "unit" or et == "wall" then
     if e.damage_type and e.damage_type.name == "electric" then

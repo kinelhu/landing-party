@@ -1040,10 +1040,33 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     right-click on a spawner attacks; a hold at Z 60 clears a spawner at 40 and a worm at 45, not one at 100; four
     troopers frozen 0 to 11 tiles from their point and a biter 14 the other side, all four sent (2 without aggro); seen
     failing on 0.2.461 (4 of 4) and with aggro alone off (1). Assumed, not measured: a holding squad by a big nest field
-    at the default 50 goes in nest by nest; Synthexis's own buildings are not nests here. Player regression (89 runs, new against 0.2.461 on the
+    at the default 50 goes in nest by nest; Synthexis's own buildings are not nests here (0.2.463: they are). Player regression (89 runs, new against 0.2.461 on the
     Studio): the same one failing on both (paved squad); siege 20,10,10 changed (aggro sent the squad in together, 20
     fighting against 6 at t+71 s), all 40 lost either way, the faction's losses 26, 13, 9, 25 against 31, 15, 8, 17 on
     seeds 12345, 777, 4242, 101 (73 against 71).
+  - **Every enemy building** (0.2.463; the user: "are there other military buildings we haven't discussed?", then "Yes...
+    and think of other gaps"). Defences read by type (DIRECT and DEFENCES in command.lua), not named: advance's four
+    names (lasers and mortars) left out flak, flamers, gun turrets, scrap cannons and howitzers, so its cover check (a
+    laser within 25) let a squad walk into a flamer's and T read 0 by one. Advance now: defences of the corporations and
+    Synthexis (bred worms), direct fire always, artillery only uncovered; then MILITARY uncovered; then masts (lp-jammer,
+    the director's objectives); then Synthexis's pens. A holding squad's nests are the wild biters' and Synthexis's; raze
+    includes Synthexis's buildings. Shelling (command.on_shelled, control.lua's explosion filter on walls, gates, turrets
+    and radars): a foe's gun or unit hitting them is an attack at the gun, kept while it fires, over when it falls, and a
+    defending squad goes for the gun (alarms carried enemy units near buildings alone). N on a beacon: nests and worms
+    within reach. Scenario `foes`, six sites: a depot a flamer covers not attacked and the flamer as T; a mast, a pen
+    attacked on advance; a pen and worm cleared on hold, N 2; a raze ordered on a clinic (by order: the engine's own
+    targeting shoots one on the way, and a click on it is an attack); a mortar shelling a wall from 40 answered and
+    attacked; seen failing on 0.2.462 (6 of 7). Measure before changing (asked): a holding squad by a big nest field at
+    the default reach; advance against a walled compound. Not built (the user's call): an alarm for the player's units
+    under attack in the field.
+  - **Found after 0.2.462 shipped: squad aggro pulled a holding squad out** (director armyhold, failing on 0.2.462 and
+    0.2.463, passing on 0.2.461; 0.2.462 was committed after the player regression without the director's army
+    scenarios). The squad on hold 100 tiles off went 71 out after a force passing by. Not the aggro's reach (capped to
+    what a unit on its spot sees, ENGAGE beyond HERE, still 71) nor a leash on the unit's fights (still 71): a debug pass
+    showed every far unit on its hold order walking back, distracted by enemies on the way and following the force. Now
+    a unit beyond its leash (Z, or ENGAGE beyond HERE) walks back fighting only what hits it ("back:"), and the aggro and
+    the fights are leashed as above. armyhold passes (out 35); the four army scenarios, wild, foes, attackmove, squad,
+    nestclear tech, scanresponse pass; siege's faction losses 26, 30, 8, 9 (73, against 71 on 0.2.461).
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the

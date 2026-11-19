@@ -65,16 +65,18 @@ its squad; hover over a unit and a line runs to its beacon.
 Open the beacon and set a signal to give its squad a stance. With more than one, R comes first, then A, then O, then D.
 A panel beside the beacon's window says what the squad is doing.
 
-- **No signal: hold.** The squad stands at the rally point and fights what comes to it. It also clears the wild
-  biters' nests and worms within its reach, nearest first.
-- **A: advance.** The squad attacks the nearest corporation turret within reach of the rally point, then the other
-  military buildings there that no corporation turret covers. With none left, it holds.
+- **No signal: hold.** The squad stands at the rally point and fights what comes to it. It also clears the nests and
+  worms within its reach, the wild biters' and Synthexis's, nearest first.
+- **A: advance.** The squad attacks the nearest enemy turret within reach of the rally point: a corporation's gun,
+  laser, flamer, flak or artillery, or a Synthexis worm. Then the other military buildings there that no turret covers,
+  then the corporations' masts, then Synthexis's pens. With none left, it holds.
 - **R: retreat.** The squad walks back to the nearest barracks without stopping to fight, and heals there if the
   barracks has power.
 - **D: defend.** The squad holds at the rally point until an attack comes within {{< var army.defend_reach >}} tiles of
   it, then goes out to meet it. It answers what you would know of: a strike force whose pods your radar sees coming, or
   whose target you are told; a strike force that has landed; and corporation units, Synthexis's biters or wild biters at your
-  buildings. It does not chase beyond the attack. When the strike force breaks, or no enemy has been near the place for
+  buildings; and a corporation mortar, howitzer or tank shelling your walls, turrets or radars from range, which the
+  squad goes for. It does not chase beyond the attack. When the strike force breaks, or no enemy has been near the place for
   {{< var army.defend_quiet >}} seconds, the squad walks back. Its ring is green, drawn at the full reach.
 - **Z: reach.** Z sets the squad's reach in tiles, up to {{< var army.offset_max >}}: how far from the rally point it
   fights, advances and answers an attack, and how far E and T count. Without it, the reach is {{< var
@@ -122,7 +124,7 @@ bandwidth 1.
   size: the units beyond it stay where they are. Shift + right-click on a beacon does the same, but the units fight
   their way to it first. To attack-move without joining, click beside the beacon.
 - **Shift + right-click** attack-moves: the units fight everything they meet on the way. Once there, they destroy the
-  corporation buildings around that spot, defenses first, then the rest, then walls and gates, and hold.
+  corporation and Synthexis buildings around that spot, defenses first, then the rest, then walls and gates, and hold.
 
 **Razing.** A corporation's drills, generators, pylons and storage are not military targets: your units and turrets do
 not fire at them by themselves. To destroy an outpost, attack-move onto it, or right-click its buildings. A corporation
@@ -196,8 +198,8 @@ relays like any building, so keep them inside your defenses and on a reliable gr
 
 **Beacons.** Wire a rally beacon and it reads the signals on its wires as well as its own. A decider combinator can then
 set its stance, and a clock on X or Y walks the rally point back and forth as a patrol. The beacon reports on its own
-output: **S** the units in its squad, **H** those of them within {{< var army.here >}} tiles of its rally point, **E** corporation units, Synthexis's biters and wild biters and **T** corporation turrets within
-reach of its rally point, and **W** 1 while a defending squad is out. A decider that sends A once S reaches the size you
+output: **S** the units in its squad, **H** those of them within {{< var army.here >}} tiles of its rally point, **E** corporation units, Synthexis's biters and wild biters and **T** enemy turrets and worms within
+reach of its rally point, **N** the nests and worms within reach, and **W** 1 while a defending squad is out. A decider that sends A once S reaches the size you
 want holds a squad until it is full, then attacks; one that reads W can shut gates or light lamps while the squad is
 away.
 
@@ -226,7 +228,7 @@ beacon.
 - *A patrol.* A clock counting up and down on X walks the rally point back and forth along a wall.
 - *A patrol that waits for its squad.* H equal to S means the whole squad has arrived: step X to the next point then,
   not on a fixed time, and slow units or a fight on the way do not leave anyone behind. H at least S minus 1 lets it go
-  on without one straggler.
+  on without one straggler. Wait on N = 0 too, and the patrol stays until the nests near each point are cleared.
 - *Armour against armour.* A threat scanner's *Corporation tanks*, through an arithmetic combinator, set on a beacon as
   its *Squad size: battle tanks*: more tanks when more armour comes.
 - *Move units to where the threat is.* Raise the squad size on the beacon you want them at, then lower it on the one they

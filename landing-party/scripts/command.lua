@@ -43,8 +43,13 @@ local GATE_NEAR = 6
 -- Every corporation's prototypes of these kinds.
 local MILITARY = shared.variants({"lp-turret", "lp-mortar", "lp-depot", "lp-radar", "lp-lander", "lp-uplink", "lp-launchpad",
   "lp-optics-lab", "lp-line-lab", "lp-siege-lab"})
-local TURRETS = shared.variants({"lp-turret", "lp-mortar"})
-local LASERS = shared.variants("lp-turret")
+-- Defences, read by type, not named (the user, 2026-11-19, "are there other military buildings we haven't discussed?":
+-- a list of the lasers and mortars left out the flak turrets, the flamers, the gun turrets, the scrap cannons and the
+-- howitzers, so advance's cover check let a squad walk into a flamer's and T read 0 beside them): what shoots directly,
+-- and the artillery, which covers no target here (its minimum range, and a mortar's reach would cover every camp).
+local DIRECT = {"turret", "ammo-turret", "electric-turret", "fluid-turret"}
+local DEFENCES = {"turret", "ammo-turret", "electric-turret", "fluid-turret", "artillery-turret"}
+local MASTS = {"lp-jammer"}   -- Kessler-Hayashi's and Serenity's masts (scripts/jammer.lua): the director's objectives
 local SIGNAL_ADVANCE = {type = "virtual", name = "signal-A"}
 local SIGNAL_RETREAT = {type = "virtual", name = "signal-R"}
 local SIGNAL_DEFEND = {type = "virtual", name = "signal-D"}
@@ -317,12 +322,27 @@ local function objective(p)
     -- groups and died to them (siege, seed 12345).
     -- Then what no turret covers: those in reach are gone by now, so a cover is outside it (a depot in reach
     -- covered by a compound's turret beyond it drew the squad into that turret's fire, siege seed 12345).
-    for _, names in ipairs({TURRETS, MILITARY}) do
-      for _, e in pairs(s.find_entities_filtered{position = at, radius = reach(p), force = f, name = names}) do
-        local d = (e.position.x - at.x) ^ 2 + (e.position.y - at.y) ^ 2
-        local covered = shared.kind_of(e.name) ~= "lp-turret" and s.count_entities_filtered{position = e.position,
-          radius = TURRET_COVER, force = f, name = LASERS, limit = 1} > 0
-        if not covered and (not bd or d < bd) then best, bd, kind = e, d, "attack" end
+    -- (Synthexis's too since 0.2.463: its bred worms are defences, its pens last; advance had ignored it.)
+    local syn = game.forces[shared.BIOTECH.force] and shared.BIOTECH.force
+    local all = {}
+    for _, x in ipairs(f) do all[#all + 1] = x end
+    if syn then all[#all + 1] = syn end
+    local passes = {
+      {force = all, type = DEFENCES},
+      {force = f, name = MILITARY},
+      {force = f, name = MASTS},
+      syn and {force = syn, type = "unit-spawner"} or nil,
+    }
+    for _, q in ipairs(passes) do
+      for _, e in pairs(s.find_entities_filtered{position = at, radius = reach(p), force = q.force, name = q.name,
+        type = q.type}) do
+        if e.destructible then
+          local d = (e.position.x - at.x) ^ 2 + (e.position.y - at.y) ^ 2
+          local direct = q.type == DEFENCES and e.type ~= "artillery-turret"
+          local covered = not direct and s.count_entities_filtered{position = e.position, radius = TURRET_COVER,
+            force = e.force, type = DIRECT, limit = 1} > 0
+          if not covered and (not bd or d < bd) then best, bd, kind = e, d, "attack" end
+        end
       end
       if best then return best, kind end
     end
@@ -532,11 +552,12 @@ end
 -- missing): S its squad, E faction units and T faction turrets within reach of the rally point. A decider
 -- reading S can send A when the squad is full, or R when it is beaten.
 local REPORTED = {["signal-S"] = true, ["signal-H"] = true, ["signal-E"] = true, ["signal-T"] = true,
-  ["signal-W"] = true}
+  ["signal-W"] = true, ["signal-N"] = true}
 -- H, here (the user, 2026-11-19, of a patrol's legs: "How do we know troops have 'arrived'?"): a squad's units within
 -- HERE of its rally point, the distance a holding unit keeps to (hold, in lead: further out it is ordered back), so
 -- H = S is a squad arrived, and a clock can step a patrol on arrival instead of on a guessed leg time.
 local HERE = 12
+local nests_in   -- (below, with nest)
 local function report(beacon, p, squad, here)
   local cb = beacon.get_or_create_control_behavior()
   local sec
@@ -556,8 +577,9 @@ local function report(beacon, p, squad, here)
     v("signal-H", here),
     v("signal-E", s.count_entities_filtered{position = p.pos, radius = reach(p), force = foes(),
       type = {"unit", "spider-unit"}}),
-    v("signal-T", s.count_entities_filtered{position = p.pos, radius = reach(p), force = shared.corp_forces(),
-      name = LASERS}),
+    v("signal-T", s.count_entities_filtered{position = p.pos, radius = reach(p), force = foes(), type = DIRECT}),
+    -- N, nests (0.2.463): spawners and worms, the wild biters' and Synthexis's, within reach; a patrol waits on N = 0.
+    v("signal-N", nests_in(p)),
     v("signal-W", p.alarm and 1 or 0),
   }
 end
@@ -578,7 +600,7 @@ local function raze_target(u, m)
   if not list then
     raze_seen = {}
     list = {}
-    for _, e in pairs(u.surface.find_entities_filtered{position = m.pos, radius = RAZE_REACH, force = shared.corp_forces()}) do
+    for _, e in pairs(u.surface.find_entities_filtered{position = m.pos, radius = RAZE_REACH, force = shared.hostile_forces()}) do
       if not RAZE_SKIP[e.type] and e.destructible and e.health and e.prototype.is_building then
         list[#list + 1] = {e = e, tier = e.is_military_target and 1 or (RAZE_LAST[e.type] and 3 or 2)}
       end
@@ -732,14 +754,41 @@ local function alarms(defending)
         type = {"unit", "spider-unit"}, limit = 1} > 0 then
         h.last = tick
       end
-      if not s or tick - h.last > DEFEND_QUIET * 60 then
+      -- (A shelling's gun destroyed: over at once.)
+      if not s or tick - h.last > DEFEND_QUIET * 60 or (h.cause and not h.cause.valid) then
         hits[n] = nil
       else
-        list[#list + 1] = {key = "h" .. n, pos = h.pos, surface = s, rank = 2}
+        list[#list + 1] = {key = "h" .. n, pos = h.pos, surface = s, rank = 2, target = h.cause}
       end
     end
   end
   return out
+end
+
+-- Shelling (the user, 2026-11-19, "think of other gaps": a squad on D answered enemy units at the player's buildings, so a
+-- mortar or a howitzer shelling a wall from 40 tiles never called it out): an explosion's hit on a wall, gate, turret or
+-- radar of a force with a beacon, from a foe's gun or unit, is an attack at the gun (control.lua's filter), its place and
+-- its gun kept while it fires (DEFEND_QUIET after its last hit) and over when the gun falls; the squad goes for the gun.
+function command.on_shelled(e)
+  local c, ent = e.cause, e.entity
+  if not (c and c.valid and ent.valid) or c.force == ent.force or not ent.force.is_enemy(c.force) then return end
+  local fname = ent.force.name
+  local ok
+  for _, b in pairs(storage.cmd.beacons) do if b.valid and b.force == ent.force then ok = true; break end end
+  if not ok then return end
+  local enemy
+  for _, name in ipairs(foes()) do if name == c.force.name then enemy = true end end
+  if not enemy then return end
+  storage.cmd.hits = storage.cmd.hits or {}
+  local hits = storage.cmd.hits[fname] or {}
+  storage.cmd.hits[fname] = hits
+  for _, h in pairs(hits) do
+    if h.cause == c then h.last = game.tick; return end
+  end
+  storage.cmd.hit_n = (storage.cmd.hit_n or 0) + 1
+  hits[storage.cmd.hit_n] = {pos = {x = c.position.x, y = c.position.y}, surface = c.surface.index, last = game.tick,
+    cause = c}
+  storage.cmd.shelled = (storage.cmd.shelled or 0) + 1
 end
 
 -- A defending beacon's answer: of its force's alarms on its surface within its reach (Z, else DEFEND_REACH) of its rally point, an active one
@@ -771,10 +820,22 @@ end
 -- spawner or worm nearest the rally point within its reach, once a pass a beacon; the squad clears them one by one, a
 -- patrol along a line clears the nests that spread toward it. Never the corporations' turrets: a hold that went for them
 -- walked into a compound's lasers (siege, seed 12345; advance does that, choosing the uncovered).
+local function nest_forces()
+  local out = {}
+  if game.forces[WILD] then out[#out + 1] = WILD end
+  if game.forces[shared.BIOTECH.force] then out[#out + 1] = shared.BIOTECH.force end
+  return out
+end
+nests_in = function(p)
+  local fs = nest_forces()
+  if #fs == 0 then return 0 end
+  return p.surface.count_entities_filtered{position = p.pos, radius = reach(p), force = fs, type = {"unit-spawner", "turret"}}
+end
 local function nest(p)
-  if not game.forces[WILD] then return nil end
+  local fs = nest_forces()
+  if #fs == 0 then return nil end
   local best, bd
-  for _, e in pairs(p.surface.find_entities_filtered{position = p.pos, radius = reach(p), force = WILD,
+  for _, e in pairs(p.surface.find_entities_filtered{position = p.pos, radius = reach(p), force = fs,
     type = {"unit-spawner", "turret"}}) do
     local d = (e.position.x - p.pos.x) ^ 2 + (e.position.y - p.pos.y) ^ 2
     if not bd or d < bd then best, bd = e, d end
@@ -868,20 +929,40 @@ local function lead()
         now_fought[beacon.unit_number] = now_fought[beacon.unit_number] or foe
       elseif p and st ~= "retreat" then
         local q = fought[beacon.unit_number]
-        local r = leash.reach or ATTACK_REACH
+        -- (At home with no Z, only as far as a unit on its spot sees, ENGAGE beyond HERE: at the leash's 50 the whole
+        -- holding squad went 71 tiles out after a force passing by, director armyhold, 0.2.462. Z set, Z; out to an
+        -- attack, ATTACK_REACH round it.)
+        local r = leash.reach or (p.alarm and ATTACK_REACH or (ENGAGE + HERE))
         if q and q.valid and q.surface == u.surface
           and (q.position.x - leash.pos.x) ^ 2 + (q.position.y - leash.pos.y) ^ 2 <= r * r then
           foe = q
           now_fought[beacon.unit_number] = now_fought[beacon.unit_number] or q
+        elseif p.alarm and p.alarm.target and p.alarm.target.valid then
+          -- (Out to a shelling: its gun.)
+          foe = p.alarm.target
         elseif st == "hold" or (st == "defend" and not p.alarm) then
           local k = beacon.unit_number
           if nests[k] == nil then nests[k] = nest(p) or false end
           foe = nests[k] or nil
         end
       end
+      -- The unit's own leash (director armyhold, 0.2.462: with squad aggro a holding squad went 71 tiles out after a force
+      -- passing by, the foe leashed to the point but not the unit): at home with no Z, a unit beyond what one on its spot
+      -- sees (ENGAGE beyond HERE) drops the fight and walks back; Z set, beyond Z; out to an attack, beyond ATTACK_REACH of
+      -- it. (Nests are let be: the squad goes to them by order, within the reach.)
+      if foe and p and foe.type ~= "unit-spawner" and foe.type ~= "turret" then
+        local lr = leash.reach or (p.alarm and ATTACK_REACH or (ENGAGE + HERE))
+        if (u.position.x - leash.pos.x) ^ 2 + (u.position.y - leash.pos.y) ^ 2 > lr * lr then foe = nil end
+      end
       -- Holding at the rally point; the key carries the point, so a moved point is a new order.
       local function hold()
-        if (u.position.x - p.pos.x) ^ 2 + (u.position.y - p.pos.y) ^ 2 > 12 * 12 then
+        local d2 = (u.position.x - p.pos.x) ^ 2 + (u.position.y - p.pos.y) ^ 2
+        local lr = p.reach or (ENGAGE + HERE)
+        if d2 > lr * lr then
+          -- (Beyond its leash, back fighting only what hits it: walking back distracted by enemies, a holding squad
+          -- pulled out by squad aggro followed a passing force to 71 tiles, director armyhold, 0.2.462.)
+          order(t, stay(p.pos, 6, defines.distraction.by_damage), string.format("back:%d,%d", p.pos.x, p.pos.y))
+        elseif d2 > 12 * 12 then
           order(t, stay(p.pos, 6, defines.distraction.by_enemy), string.format("hold:%d,%d", p.pos.x, p.pos.y))
         end
       end

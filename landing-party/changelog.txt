@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.463
+Date: 2026-11-19
+  Features:
+    - Squads on advance go for every kind of enemy turret, not just lasers and mortars: gun turrets, flamers, flak and howitzers too, and they no longer walk into a target a flamer or gun turret covers. Then the corporations' masts, then Synthexis's pens and worms.
+    - A defending squad answers shelling: a mortar, howitzer or tank firing on your walls, turrets or radars from range brings it out to destroy the gun.
+    - Holding squads clear Synthexis's pens and worms within reach as well as the wild biters' nests, and attack-move razes Synthexis's buildings.
+    - Rally beacons output N, the nests and worms within reach. T now counts every enemy turret and worm within reach.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.462
 Date: 2026-11-19
   Features:

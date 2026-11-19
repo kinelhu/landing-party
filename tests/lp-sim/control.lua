@@ -3517,6 +3517,155 @@ scenarios.squadmove = function()
   end)
 end
 
+-- Every enemy building (0.2.463; the user: "are there other military buildings we haven't discussed?", then "Yes... and
+-- think of other gaps"), six sites 200 tiles apart, north of spawn:
+--   1 a depot 40 off an advancing beacon (Z 45), a flamer 20 beyond it: covered, not attacked (lasers alone covered);
+--     a holding beacon there at Z 100 counts the flamer as T (lasers alone counted)
+--   2 a jamming mast 30 off an advancing beacon, nothing else: attacked (masts were no target)
+--   3 a Synthexis pen and bred worm within a holding beacon's Z 60: N = 2, and the squad goes for them
+--   4 a Synthexis pen 30 off an advancing beacon: attacked (advance ignored Synthexis)
+--   5 an attack-move onto a Synthexis clinic: razed (attack-move razed corporations' buildings alone)
+--   6 a corporation mortar 40 tiles from a wall it shells (explosions, the mortar their cause): a squad on D goes for it
+scenarios.foes = function()
+  local Y = -450.5
+  local function put(name, x, y, force)
+    return surface().create_entity{name = name, position = {x, y}, force = force or "player", raise_built = not force}
+  end
+  local red = defines.wire_connector_id.circuit_red
+  local function sig(b, name)
+    for _, x in pairs(b.get_signals(red) or {}) do if x.signal.name == name then return x.count end end
+    return 0
+  end
+  local function beacon(x, slots)
+    local b = put("lp-rally-beacon", x, Y)
+    local cc = put("constant-combinator", x - 2, Y)
+    for i, sl in ipairs(slots) do
+      cc.get_control_behavior().get_section(1).set_slot(i, {value = {type = "virtual", name = sl[1], quality = "normal"},
+        min = sl[2]})
+    end
+    cc.get_wire_connector(red, true).connect_to(b.get_wire_connector(red, true))
+    return b
+  end
+  local function squad(x, y, n)
+    local out = {}
+    for i = 1, n do out[i] = surface().create_entity{name = "lp-trooper", position = {x + 2 * i, y}, force = "player"} end
+    lp("debug_enlist", {{x, y - 1}, {x + 2 * n + 1, y + 1}})
+    return out
+  end
+  local function keyed(units, prefix)
+    local n = 0
+    for _, u in ipairs(units) do
+      local st = u.valid and lp("debug_trooper_state", u)
+      if st and st.key and st.key:find(prefix, 1, true) then n = n + 1 end
+    end
+    return n
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, army_off = true})
+    for i = 0, 5 do
+      surface().request_to_generate_chunks({200 * i, Y}, 3)
+    end
+    surface().force_generate_chunk_requests()
+    for i = 0, 5 do flatten(200 * i - 40, Y - 50, 200 * i + 70, Y + 50) end
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    game.forces.player.technologies["lp-command-bandwidth-2"].researched = true
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    for i = 0, 3 do put("lp-command-relay", 0.5 + 4 * i, 6.5) end
+    put("medium-electric-pole", 2.5, 5.5)
+    put("medium-electric-pole", 8.5, 5.5)
+    local syn = game.forces["lp-biotech"] or game.create_force("lp-biotech")
+    syn.set_cease_fire("player", false); game.forces.player.set_cease_fire(syn, false)
+    syn.set_friend("player", false); game.forces.player.set_friend(syn, false)
+    -- 1
+    S.A1 = beacon(0.5, {{"signal-A", 1}, {"signal-Z", 45}})
+    S.u1 = squad(-10, Y + 4, 4)
+    S.depot = put("lp-depot", 40.5, Y, FORCE)
+    S.flamer = put("lp-flamer", 60.5, Y, FORCE)
+    S.T1 = beacon(0.5 + 6, {{"signal-Z", 100}})
+    -- 2
+    S.A2 = beacon(200.5, {{"signal-A", 1}, {"signal-Z", 60}})
+    S.u2 = squad(190, Y + 4, 4)
+    S.mast = put("lp-jammer", 230.5, Y, FORCE)
+    -- 3
+    S.H3 = beacon(400.5, {{"signal-Z", 60}})
+    S.u3 = squad(390, Y + 4, 6)
+    S.pen3 = put("lp-pen", 430.5, Y, "lp-biotech")
+    S.worm3 = put("lp-bred-worm", 400.5, Y + 30, "lp-biotech")
+    -- 4
+    S.A4 = beacon(600.5, {{"signal-A", 1}, {"signal-Z", 60}})
+    S.u4 = squad(590, Y + 4, 4)
+    S.pen4 = put("lp-pen", 630.5, Y, "lp-biotech")
+    -- 5 (no beacon in reach: the hand order alone)
+    S.u5 = squad(790, Y + 4, 3)
+    S.clinic = put("lp-clinic", 810.5, Y, "lp-biotech")
+    -- (A second 27 tiles on: beyond a trooper's guns at the point, so only razing reaches it.)
+    S.clinic2 = put("lp-clinic", 837.5, Y, "lp-biotech")
+    -- 6
+    S.D6 = beacon(1000.5, {{"signal-D", 1}})
+    S.u6 = squad(990, Y + 4, 4)
+    S.wall = put("stone-wall", 1010.5, Y)
+    S.mortar = put("lp-mortar", 1050.5, Y, FORCE)
+    S.made = {depot = S.depot ~= nil, flamer = S.flamer ~= nil, mast = S.mast ~= nil, pen3 = S.pen3 ~= nil,
+      worm3 = S.worm3 ~= nil, pen4 = S.pen4 ~= nil, clinic = S.clinic ~= nil, wall = S.wall ~= nil, mortar = S.mortar ~= nil}
+    S.id = {}
+    for _, k in ipairs({"depot", "mast", "pen3", "worm3", "pen4", "mortar", "clinic", "clinic2"}) do S.id[k] = S[k] and S[k].unit_number end
+    -- What each squad was sent at, seen every second (a target can fall before the reading).
+    S.seen = {depot = 0, mast = 0, syn3 = 0, pen4 = 0, mortar = 0, raze = 0}
+  end)
+  for sec = 2, 20 do
+    schedule(60 + sec * 60, function()
+      local function mx(k, v) if v > S.seen[k] then S.seen[k] = v end end
+      mx("depot", keyed(S.u1, "attack:" .. S.id.depot))
+      mx("mast", keyed(S.u2, "attack:" .. S.id.mast))
+      mx("syn3", keyed(S.u3, "fight:" .. S.id.pen3) + keyed(S.u3, "fight:" .. S.id.worm3))
+      mx("pen4", keyed(S.u4, "attack:" .. S.id.pen4))
+      mx("mortar", keyed(S.u6, "fight:" .. S.id.mortar))
+      mx("raze", keyed(S.u5, "r" .. S.id.clinic) + (S.id.clinic2 and keyed(S.u5, "r" .. S.id.clinic2) or 0))
+      if lp("debug_beacon_view", S.D6).answering then S.answered = true end
+    end)
+  end
+  schedule(60 + 4 * 60, function()
+    S.n3 = sig(S.H3, "signal-N")
+    S.t1 = sig(S.T1, "signal-T")
+    lp("debug_select_units", S.u5)
+    -- (Beside it: a click on it is an attack on it, not an attack-move.)
+    local p = {x = S.clinic.position.x - 8, y = S.clinic.position.y}
+    lp("debug_order", {{p.x - 0.3, p.y - 0.3}, {p.x + 0.3, p.y + 0.3}}, true)
+  end)
+  -- 6: the mortar's shells, every 3 s.
+  for sec = 5, 20, 3 do
+    schedule(60 + sec * 60, function()
+      if S.wall and S.wall.valid and S.mortar and S.mortar.valid then
+        S.wall.health = S.wall.prototype.get_max_health()
+        S.wall.damage(10, FORCE, "explosion", S.mortar)
+      end
+    end)
+  end
+  schedule(60 + 21 * 60, function()
+    S.k = {depot = S.seen.depot, mast = S.seen.mast, syn3 = S.seen.syn3, pen4 = S.seen.pen4, mortar = S.seen.mortar,
+      answering = S.answered == true}
+  end)
+  schedule(60 + 50 * 60, function()
+    S.clinic_gone = not S.clinic.valid and not (S.clinic2 and S.clinic2.valid)
+    info("foes: " .. serpent.line({S.made, S.n3, S.t1, S.k, S.clinic_gone}))
+    check("foes: all placed", S.made.depot and S.made.flamer and S.made.mast and S.made.pen3 and S.made.worm3
+      and S.made.pen4 and S.made.clinic and S.made.wall and S.made.mortar, serpent.line(S.made))
+    check("foes: a depot a flamer covers is not attacked; the flamer counts as T", S.k.depot == 0 and S.t1 >= 1,
+      serpent.line({S.k.depot, S.t1}))
+    check("foes: an advancing squad goes for a jamming mast", S.k.mast ~= 0, tostring(S.k.mast))
+    check("foes: a holding squad by a Synthexis pen and worm reads N 2 and goes for them", S.n3 == 2 and S.k.syn3 > 0,
+      serpent.line({S.n3, S.k.syn3}))
+    check("foes: an advancing squad goes for a Synthexis pen", S.k.pen4 ~= 0, tostring(S.k.pen4))
+    -- (Gone on 0.2.462 too, shot on the way by the engine's own targeting: the raze order is what is new.)
+    -- (Ordered, not finished: three troopers take minutes over 1,500 health each.)
+    check("foes: an attack-move beside a Synthexis clinic is ordered to raze it", S.seen.raze > 0,
+      serpent.line({S.clinic_gone, S.seen.raze}))
+    check("foes: a squad on D answers a mortar shelling a wall from 40 tiles, and goes for the mortar",
+      S.k.answering and S.k.mortar ~= 0, serpent.line({S.k.answering, S.k.mortar}))
+  end)
+end
+
 -- The wild biters (0.2.462; the user: "Vanilla biters don't count? Isn't that an oversight?", then "All"): a defending
 -- squad answers wild biters at a wall 40 tiles off and E counts them; a holding squad at Z 60 clears a spawner and a worm
 -- within it, not a spawner 100 off, and a right-click on a nest attacks it; squad aggro: four troopers frozen 0 to 11
