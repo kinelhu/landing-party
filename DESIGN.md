@@ -1125,7 +1125,9 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     window, tests/lp-mp over RCON; the units drained through the real shot handler): the cards' bars, the hover rings
     (green filled round the barracks, amber round the depot) and the alert for a real player, raised dry, cleared on
     rearming, kept by the stranded one; no desync. It caught a bug: a stranded unit's alert, once it timed out, was never
-    raised again (`next()` on get_alerts' map, which holds empty lists; now counted; the check read 0, then 1). Not
+    raised again (`next()` on get_alerts' map, which holds empty lists; now counted; the check read 0, then 1). `/lp dry [r]`
+    (0.2.468): the player's units within r fire their last round through the shot handler and run dry as they would
+    (command.empty); scenario `dev` checks a trooper dry and alerted (seen failing with one round left). Not
     checkable by script: the squad panel (a script's `opened` reads nil for a client's player), and two clients at once
     (two Steam clients of one account share its name; the server refuses the second, UserWithThatNameAlreadyInGame).
     `LP_SHOTS=army` (single player, tests/lp-shots) saw the cards but stalled after 12 s on the Studio, the mouse owning

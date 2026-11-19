@@ -12,7 +12,7 @@
 
 `/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | stun [r] | kill <unit> [n] | chartcheck | clear [r] | parade | squad [n] | dozers [n] | bombers [n] | prism [n] | flak [n] | spread | ranks | provoke | era <n> | trace`
 
-Further verbs: `director`, `airraid`, `incidents`, `biotech` (Synthexis lands now), `wave` (Synthexis sends a wave now), `rig`, `tap`, `cannon`.
+Further verbs: `director`, `airraid`, `incidents`, `biotech` (Synthexis lands now), `wave` (Synthexis sends a wave now), `rig`, `tap`, `dry`, `cannon`.
 
 `burst` sets off a Synthexis burster east of you (`big` for a big burster): its wind-up and its blast, which is real. `spread` and `ranks` make Synthexis's next siege a spread assault or a siege in ranks; `wave` sends it.
 :::

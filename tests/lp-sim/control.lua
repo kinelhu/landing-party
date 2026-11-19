@@ -6875,6 +6875,19 @@ scenarios.dev = function()
     S.before = lp("bases")
     lp("dev", {"land", "grubstake", tostring(params.distance)}, {0, 0})
   end)
+  -- /lp dry (0.2.468): a trooper of the player's, enlisted, emptied by its last round through the shot handler; dry and
+  -- alerted (the flag its alert follows: headless has no player) a second later. Nothing to rearm from: it stays dry.
+  schedule(180, function()
+    S.dry_t = surface().create_entity{name = "lp-trooper", position = {-40, 40}, force = "player"}
+    lp("debug_enlist", {{-42, 38}, {-38, 42}})
+    S.dry_before = lp("debug_ammo", S.dry_t)
+    lp("dev", {"dry"}, {-40, 40})
+  end)
+  schedule(240, function()
+    local a = S.dry_t.valid and lp("debug_ammo", S.dry_t)
+    check("dev: /lp dry emptied the trooper and it raised its alert", S.dry_before ~= nil and not S.dry_before.dry
+      and a and a.dry and a.ammo == 0 and a.alerted, serpent.line({before = S.dry_before, after = a}))
+  end)
   -- (/lp land comes by pod as the faction's own landings do, since 2026-11-04: its pod 7 s, its ground waited for first.)
   schedule(120 + 60 * 60, function()
     for _, id in ipairs(lp("bases")) do

@@ -1002,6 +1002,15 @@ function command.on_shot(e)
     rearm(t)
   end
 end
+-- /lp dry (dev.lua): a unit's last round fired through the shot handler, so it runs dry as it would: it walks to rearm,
+-- raises its alert, and its card and squad panel say so. False when it keeps no ammunition or is dry already.
+function command.empty(u)
+  local t = u and u.valid and storage.cmd.troopers[u.unit_number]
+  if not (t and ammo_of(t)) or t.dry then return false end
+  t.ammo = 1
+  command.on_shot{source_entity = u}
+  return t.dry == true
+end
 
 local function lead()
   local objectives = {}

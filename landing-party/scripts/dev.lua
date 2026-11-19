@@ -30,6 +30,8 @@
 --                            "Stunned by lightning"). With none, at your units within 60: its lightning stuns them
 --                            (scripts/stun.lua). They are real and stay: kill them or let them be
 --   stun [r]                 your units within r (15) of you stunned at once, chance aside: the lightning's stun's look
+--   dry [r]                  your units within r (15) of you out of ammunition, their last round fired: each walks to
+--                            rearm and raises its alert (the squad panel's and the cards' ammunition lines to look at)
 --   kill <unit> [n]          n (1) of a unit set 8 tiles east of you, a tile apart, and killed there: how it dies (a
 --                            hull's cook-off, a flier's fall, the Scorcher's fuel). Kessler-Hayashi's unless it is
 --                            Grubstake's name
@@ -353,6 +355,13 @@ function dev.run(player, args)
       stun.apply(u); n = n + 1
     end
     player.print(n .. " of your units stunned")
+  elseif what == "dry" then
+    local n = 0
+    for _, u in ipairs(player.surface.find_entities_filtered{position = player.position, radius = tonumber(args[2]) or 15,
+      type = "unit", force = player.force}) do
+      if command.empty(u) then n = n + 1 end
+    end
+    player.print(n .. " of your units out of ammunition")
   elseif what == "kill" then
     local name, n = args[2], math.max(1, math.min(10, tonumber(args[3]) or 1))
     if not (name and prototypes.entity[name]) then return player.print("no unit " .. tostring(name)) end

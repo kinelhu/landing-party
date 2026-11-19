@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.468
+Date: 2026-11-20
+  Features:
+    - /lp dry [r]: your units within reach of you run out of ammunition, to see the alert, the cards and the squad panel.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.467
 Date: 2026-11-19
   Features:
