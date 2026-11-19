@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.461
+Date: 2026-11-19
+  Features:
+    - Signal Z on a rally beacon sets its squad's reach in tiles, up to 300: how far from the rally point it fights, advances and answers attacks, and how far its E and T outputs count. Without it, the reach stays 50 tiles, and 150 for the attacks a defending squad answers.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.460
 Date: 2026-11-19
   Features:

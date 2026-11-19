@@ -75,6 +75,11 @@ A panel beside the beacon's window says what the squad is doing.
   whose target you are told; a strike force that has landed; and corporation units or Synthexis's biters at your
   buildings. It does not chase beyond the attack. When the strike force breaks, or no enemy has been near the place for
   {{< var army.defend_quiet >}} seconds, the squad walks back. Its ring is green, drawn at the full reach.
+- **Z: reach.** Z sets the squad's reach in tiles, up to {{< var army.offset_max >}}: how far from the rally point it
+  fights, advances and answers an attack, and how far E and T count. Without it, the reach is {{< var
+  army.attack_reach >}} tiles, and {{< var army.defend_reach >}} for the attacks a defending squad answers. A small
+  outpost's squad on a short reach defends only that outpost and stays home when your main base is attacked; a long one
+  covers a wide outpost or a stretch of rail. The ring at the rally point shows the reach in use.
 
 **Squad sizes.** Each kind of unit has a squad size signal, such as *Squad size: troopers*. Set one on a beacon and its
 squad keeps at most that many of that unit. New units join the nearest beacon that still has room for them. When every

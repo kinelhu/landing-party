@@ -1022,9 +1022,14 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     reports its squad's units within HERE (12) of its rally point, the distance a holding unit keeps to, so H = S is the
     squad arrived and a circuit steps a patrol on arrival, not on a guessed leg time. Scenario `patrol`: four troopers, X
     flipped 0 and 30 on H = S read off the beacon's wire, 15 legs in 150 s (5 to 8 s each), all four at the point at each
-    step; seen failing without H (no leg). Discussed, not built (the user: "Wait"): a reach signal for fight, advance
-    and defend (R is taken: retreat), an off switch handing a beacon's squad on (patrols by beacons on a clock), a
-    built-in back-and-forth patrol.
+    step; seen failing without H (no leg). Discussed, not built (the user: "Wait"): an off switch handing a beacon's
+    squad on (patrols by beacons on a clock), a built-in back-and-forth patrol.
+  - **Z, the reach** (0.2.461; the user: "We need the reach signal no?", of small outposts, whose squad the fixed 150
+    sent to the base beside it): one number, up to MAX_OFFSET, for the leash (threat), the advance (objective), the
+    defence (the scan and the answer) and the E and T counts, and the ring; unset, 50 and 150 as before. Out defending,
+    the leash round the attack stays ATTACK_REACH. Scenario `reach`: biters by a wall 100 tiles from B's point and 189
+    from C's; B at Z 60 and C unset, neither answers; C at 250 answers; B unset answers; seen failing with Z ignored (3 of
+    3). The attackers are Synthexis's: wild biters are outside hostile_forces, so no beacon answers them (open, asked).
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the

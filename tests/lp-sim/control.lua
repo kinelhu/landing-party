@@ -3517,6 +3517,89 @@ scenarios.squadmove = function()
   end)
 end
 
+-- A squad's reach, signal Z (0.2.461; the user, of small outposts: "We need the reach signal no?"): biters by a wall
+-- 100 tiles east of beacon B's rally point and 189 from C's, both beacons on D with four troopers each. B at Z = 60 and
+-- C unset (150): neither answers, and B's E counts nothing; C at Z = 250 answers; B unset again (150) answers too.
+scenarios.reach = function()
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  local red = defines.wire_connector_id.circuit_red
+  local function sig(b, name)
+    for _, x in pairs(b.get_signals(red) or {}) do if x.signal.name == name then return x.count end end
+    return 0
+  end
+  local function set(cc, slot, name, n)
+    cc.get_control_behavior().get_section(1).set_slot(slot, {value = {type = "virtual", name = name, quality = "normal"},
+      min = n})
+  end
+  local function state(b)
+    local v = lp("debug_beacon_view", b)
+    return {answering = v.answering ~= nil, w = sig(b, "signal-W"), e = sig(b, "signal-E")}
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    surface().request_to_generate_chunks({0, 70}, 6)
+    surface().force_generate_chunk_requests()
+    flatten(-40, -40, 40, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    S.B = put("lp-rally-beacon", -15.5, -10.5)
+    S.C = put("lp-rally-beacon", -15.5, 149.5)
+    S.ccB = put("constant-combinator", -17.5, -10.5)
+    S.ccC = put("constant-combinator", -17.5, 149.5)
+    S.ccB.get_wire_connector(red, true).connect_to(S.B.get_wire_connector(red, true))
+    S.ccC.get_wire_connector(red, true).connect_to(S.C.get_wire_connector(red, true))
+    set(S.ccB, 1, "signal-D", 1); set(S.ccB, 2, "signal-Z", 60)
+    set(S.ccC, 1, "signal-D", 1)
+    for i = 1, 4 do
+      surface().create_entity{name = "lp-trooper", position = {-20 + 2 * i, -6}, force = "player"}
+      surface().create_entity{name = "lp-trooper", position = {-20 + 2 * i, 145}, force = "player"}
+    end
+    lp("debug_enlist", {{-22, -8}, {-8, -4}})
+    lp("debug_enlist", {{-22, 143}, {-8, 147}})
+  end)
+  schedule(60 + 4 * 60, function()
+    -- The attack: three biters beside a wall the biters cannot break, 100 tiles east of B's point.
+    for i = 0, 4 do
+      local w = put("stone-wall", 84.5, -12.5 + i)
+      if w then w.destructible = false end
+    end
+    -- (Synthexis's: a defending squad answers the corporations and Synthexis, not the wild biters.)
+    local syn = game.forces["lp-biotech"] or game.create_force("lp-biotech")
+    syn.set_cease_fire("player", false); game.forces.player.set_cease_fire(syn, false)
+    for i = 0, 2 do
+      -- (Unkillable, so the attack lasts while each squad's answer is read.)
+      local e = surface().create_entity{name = "small-biter", position = {88, -12 + 2 * i}, force = syn}
+      if e then e.destructible = false end
+    end
+    S.biters = surface().count_entities_filtered{name = "small-biter", force = "lp-biotech"}
+  end)
+  schedule(60 + 20 * 60, function()
+    S.p1 = {b = state(S.B), c = state(S.C), sent = lp("army").defend_sent or 0}
+    set(S.ccC, 2, "signal-Z", 250)
+  end)
+  schedule(60 + 32 * 60, function()
+    S.p2 = {b = state(S.B), c = state(S.C), sent = lp("army").defend_sent or 0}
+    S.ccB.get_control_behavior().get_section(1).clear_slot(2)
+  end)
+  schedule(60 + 44 * 60, function()
+    S.p3 = {b = state(S.B), c = state(S.C), sent = lp("army").defend_sent or 0,
+      biters = surface().count_entities_filtered{name = "small-biter", force = "lp-biotech"}}
+    info("reach: " .. serpent.line({S.biters, S.p1, S.p2, S.p3}))
+    check("reach: B at Z 60 (the attack 100 off) and C unset (189 off, past 150): neither answers, B's E is 0",
+      S.biters == 3 and not S.p1.b.answering and not S.p1.c.answering and S.p1.b.e == 0 and S.p1.sent == 0,
+      serpent.line({S.biters, S.p1}))
+    check("reach: C at Z 250 answers it (W 1), B still not", S.p2.c.answering and S.p2.c.w == 1 and not S.p2.b.answering,
+      serpent.line(S.p2))
+    check("reach: B unset again, the default 150: B answers too", S.p3.b.answering and S.p3.c.answering,
+      serpent.line(S.p3))
+  end)
+end
+
 -- A patrol stepped on arrival (0.2.460; the user, of a patrol's legs: "How do we know troops have 'arrived'?"): a beacon
 -- reports H, its squad's units within 12 tiles of the rally point. Four troopers on a beacon wired to a combinator whose X
 -- the script flips between 0 and 30 as a circuit would, read off the beacon's own wire: when H = S, 3 s on, the next leg.

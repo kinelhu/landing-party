@@ -8,6 +8,8 @@
 --   signal D > 0   defend: hold, and answer an attack on the player within DEFEND_REACH of the rally point (a strike
 --                  force told or landed, or enemy units at the player's buildings), then come back
 --   otherwise      hold: stay at the rally point
+--   signal Z > 0   the squad's reach, in tiles (up to MAX_OFFSET): how far from the rally point it fights, advances and
+--                  answers an attack, and counts E and T; unset, ATTACK_REACH, and DEFEND_REACH for an attack defended
 -- It reports on its own output: S its squad, H those of it here (within HERE of the rally point), E faction units and
 -- T faction turrets within reach of the rally point, W 1 while a defending squad is out.
 local shared = require("__landing-party__.shared")
@@ -292,7 +294,17 @@ local function plan(beacon)
   elseif v(SIGNAL_DEFEND.name) > 0 then st = "defend" end
   local dx = math.max(-MAX_OFFSET, math.min(MAX_OFFSET, v("signal-X")))
   local dy = math.max(-MAX_OFFSET, math.min(MAX_OFFSET, v("signal-Y")))
-  return {stance = st, pos = {x = beacon.position.x + dx, y = beacon.position.y + dy}, surface = beacon.surface}
+  -- Z, the reach (the user, 2026-11-19, of small outposts and patrols: "We need the reach signal no?"): one number for
+  -- the leash, the advance and the defence, so an outpost's squad can answer only its own outpost (the fixed 150
+  -- answered the base beside it and left it bare), a long one be covered whole, and a patrol keep to its route.
+  local z = v("signal-Z")
+  return {stance = st, pos = {x = beacon.position.x + dx, y = beacon.position.y + dy}, surface = beacon.surface,
+    reach = z > 0 and math.min(z, MAX_OFFSET) or nil}
+end
+
+-- A plan's reach: its Z, else ATTACK_REACH, and DEFEND_REACH for the attacks a defending squad answers (defend).
+local function reach(p, defend)
+  return p.reach or (defend and DEFEND_REACH or ATTACK_REACH)
 end
 
 -- What an advancing beacon goes for: the nearest faction turret, else the nearest military target no turret covers.
@@ -306,7 +318,7 @@ local function objective(p)
     -- Then what no turret covers: those in reach are gone by now, so a cover is outside it (a depot in reach
     -- covered by a compound's turret beyond it drew the squad into that turret's fire, siege seed 12345).
     for _, names in ipairs({TURRETS, MILITARY}) do
-      for _, e in pairs(s.find_entities_filtered{position = at, radius = ATTACK_REACH, force = f, name = names}) do
+      for _, e in pairs(s.find_entities_filtered{position = at, radius = reach(p), force = f, name = names}) do
         local d = (e.position.x - at.x) ^ 2 + (e.position.y - at.y) ^ 2
         local covered = shared.kind_of(e.name) ~= "lp-turret" and s.count_entities_filtered{position = e.position,
           radius = TURRET_COVER, force = f, name = LASERS, limit = 1} > 0
@@ -477,7 +489,9 @@ local function threat(u, p)
   for _, e in pairs(u.surface.find_entities_filtered{position = u.position, radius = ENGAGE, force = shared.hostile_forces(),
     type = {"unit", "spider-unit"}}) do
     local d = (e.position.x - u.position.x) ^ 2 + (e.position.y - u.position.y) ^ 2
-    local leash = (e.position.x - p.pos.x) ^ 2 + (e.position.y - p.pos.y) ^ 2 <= ATTACK_REACH * ATTACK_REACH
+    -- (Out defending, p is the attack's place, no reach: ATTACK_REACH round it.)
+    local r = p.reach or ATTACK_REACH
+    local leash = (e.position.x - p.pos.x) ^ 2 + (e.position.y - p.pos.y) ^ 2 <= r * r
     if leash and (not bd or d < bd) then best, bd = e, d end
   end
   return best
@@ -500,7 +514,7 @@ local function mark(k, beacon, p)
   m.ring.target = p.pos
   m.ring.color = COLOR[p.stance]
   -- (A defending beacon's ring is the reach it answers in.)
-  m.ring.radius = p.stance == "defend" and DEFEND_REACH or ATTACK_REACH
+  m.ring.radius = reach(p, p.stance == "defend")
   m.line.to = p.pos
   m.line.color = COLOR[p.stance]
 end
@@ -531,9 +545,9 @@ local function report(beacon, p, squad, here)
   sec.filters = {
     v("signal-S", squad),
     v("signal-H", here),
-    v("signal-E", s.count_entities_filtered{position = p.pos, radius = ATTACK_REACH, force = shared.hostile_forces(),
+    v("signal-E", s.count_entities_filtered{position = p.pos, radius = reach(p), force = shared.hostile_forces(),
       type = {"unit", "spider-unit"}}),
-    v("signal-T", s.count_entities_filtered{position = p.pos, radius = ATTACK_REACH, force = shared.corp_forces(),
+    v("signal-T", s.count_entities_filtered{position = p.pos, radius = reach(p), force = shared.corp_forces(),
       name = LASERS}),
     v("signal-W", p.alarm and 1 or 0),
   }
@@ -684,7 +698,7 @@ local function alarms(defending)
     if #foes > 0 then
       for _, d in ipairs(g.beacons) do
         local s = d.beacon.surface
-        for _, e in ipairs(s.find_entities_filtered{position = d.plan.pos, radius = DEFEND_REACH, force = foes,
+        for _, e in ipairs(s.find_entities_filtered{position = d.plan.pos, radius = reach(d.plan, true), force = foes,
           type = {"unit", "spider-unit"}}) do
           local known
           for _, h in pairs(hits) do
@@ -719,7 +733,7 @@ local function alarms(defending)
   return out
 end
 
--- A defending beacon's answer: of its force's alarms on its surface within DEFEND_REACH of its rally point, an active one
+-- A defending beacon's answer: of its force's alarms on its surface within its reach (Z, else DEFEND_REACH) of its rally point, an active one
 -- before a warning, the nearest first; the one it is answering kept while it lasts, unless one of a higher rank comes.
 -- (Re-chosen each pass, a landed strike force's place (its moving front) and the attacks at buildings round it took
 -- turns as the nearest: nine answers in one fight, each a new order, and the squad, stopping to re-path, lost all 12
@@ -727,14 +741,15 @@ end
 local function answer(d, list, was)
   local best, br, bd
   local keep
+  local R = reach(d.plan, true)
   for _, a in ipairs(list or {}) do
     if was and a.key == was.key and a.surface == d.beacon.surface
-      and (a.pos.x - d.plan.pos.x) ^ 2 + (a.pos.y - d.plan.pos.y) ^ 2 <= DEFEND_REACH * DEFEND_REACH then keep = a end
+      and (a.pos.x - d.plan.pos.x) ^ 2 + (a.pos.y - d.plan.pos.y) ^ 2 <= R * R then keep = a end
   end
   for _, a in ipairs(list or {}) do
     if a.surface == d.beacon.surface then
       local dd = (a.pos.x - d.plan.pos.x) ^ 2 + (a.pos.y - d.plan.pos.y) ^ 2
-      if dd <= DEFEND_REACH * DEFEND_REACH and (not best or a.rank > br or (a.rank == br and dd < bd)) then
+      if dd <= R * R and (not best or a.rank > br or (a.rank == br and dd < bd)) then
         best, br, bd = a, a.rank, dd
       end
     end

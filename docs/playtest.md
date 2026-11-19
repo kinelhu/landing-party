@@ -1,6 +1,6 @@
 # Playtest kit
 
-Mod 0.2.460, rewritten 2026-11-18 for the release playtest (0.3.0). The questions follow a session in the order you meet
+Mod 0.2.461, rewritten 2026-11-18 for the release playtest (0.3.0). The questions follow a session in the order you meet
 things: Synthexis first, then Grubstake, then your own army, and the director's beats once it takes over. Everything
 below is checked headless only, apart from what the 2026-11-17 and 2026-11-18 sessions already saw. Chat notices are
 off: the world should tell you what happens.
