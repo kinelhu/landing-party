@@ -3667,6 +3667,56 @@ scenarios.depot = function()
   end)
 end
 
+-- Repair by construction robots (0.2.466; stage 3 of the army-logistics consult, a spike first): the player's units
+-- without not-repairable. A roboport with construction robots and repair packs on its own power, no barracks anywhere;
+-- a trooper standing, one walking back and forth inside the roboport's area, a battle tank, all damaged to a third;
+-- health read over 40 s. Seen failing with the flag kept: 51 -> 51 for both troopers.
+scenarios.robotrepair = function()
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-60, -60, 60, 60)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    S.port = put("roboport", 6, 6)
+    S.port.get_inventory(defines.inventory.roboport_robot).insert{name = "construction-robot", count = 10}
+    S.port.get_inventory(defines.inventory.roboport_material).insert{name = "repair-pack", count = 50}
+    S.still = surface().create_entity{name = "lp-trooper", position = {-10, -10}, force = "player"}
+    S.walk = surface().create_entity{name = "lp-trooper", position = {-15, 15}, force = "player"}
+    S.tank = surface().create_entity{name = "lp-battle-tank", position = {15, -15}, force = "player"}
+    for _, u in ipairs({S.still, S.walk, S.tank}) do u.damage(u.max_health * 0.66, "enemy", "physical") end
+    S.h0 = {S.still.health, S.walk.health, S.tank.health, S.still.max_health}
+    S.reg0 = {S.still.is_registered_for_repair(), S.walk.is_registered_for_repair()}
+    S.flags = prototypes.entity["lp-trooper"].flags
+  end)
+  for sec = 2, 42, 2 do
+    schedule(60 + sec * 60, function()
+      if S.walk.valid then
+        S.walk.commandable.set_command{type = defines.command.go_to_location, destination = {(sec % 4 == 0) and 15 or -15, 15},
+          distraction = defines.distraction.none}
+      end
+      S.trace = S.trace or {}
+      S.trace[#S.trace + 1] = string.format("%d:%.0f/%.0f/%.0f r%s%s", sec, S.still.health, S.walk.health, S.tank.health,
+        tostring(S.still.is_registered_for_repair()), tostring(S.walk.is_registered_for_repair()))
+    end)
+  end
+  schedule(60 + 44 * 60, function()
+    info("robotrepair: " .. serpent.line({h0 = S.h0, reg0 = S.reg0, flags = S.flags,
+      packs = S.port.get_inventory(defines.inventory.roboport_material).get_item_count("repair-pack")}))
+    info("robotrepair trace: " .. table.concat(S.trace, " "))
+    check("robotrepair: the standing trooper was repaired to full", S.still.health >= S.h0[4] - 1, string.format("%.0f -> %.0f", S.h0[1], S.still.health))
+    check("robotrepair: the walking trooper was repaired, partly at least", S.walk.health > S.h0[2] + 10, string.format("%.0f -> %.0f", S.h0[2], S.walk.health))
+    check("robotrepair: the battle tank was repaired to full", S.tank.health >= S.tank.max_health - 1,
+      string.format("%.0f -> %.0f", S.h0[3], S.tank.health))
+    check("robotrepair: the corporations' units stay unrepairable", prototypes.entity["lp-trooper"].flags["not-repairable"] == nil
+      and prototypes.entity["lp-harrier"] and prototypes.entity["lp-harrier"].flags["not-repairable"] == true,
+      serpent.line(prototypes.entity["lp-harrier"] and prototypes.entity["lp-harrier"].flags))
+  end)
+end
+
 -- Shots counted at the weapons' rates (0.2.464; the consult's open question: does the flame trooper's stream count once a
 -- shot?): one of each of the six by a spawner healed each second, rounds counted from 10 s to 20 s against 60 / cooldown;
 -- the flame trooper fires in bursts (about eight, then 6 to 12 s), so for it the gaps between its triggers within a

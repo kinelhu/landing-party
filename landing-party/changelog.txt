@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.466
+Date: 2026-11-19
+  Features:
+    - Construction robots repair your army's units with repair packs, as they repair your turrets: in a roboport's area, or round you with a personal roboport.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.465
 Date: 2026-11-19
   Features:

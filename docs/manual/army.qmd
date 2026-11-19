@@ -40,8 +40,10 @@ troopers; refined flammables raise flame troopers. Each unit's description names
 from heavy armor also take its resistance to acid, so worms and spitters hurt them less. Without military research, a
 squad that clears corporation outposts will struggle against a large biter nest.
 
-**Field repair.** Your units within {{< var army.repair_tiles >}} tiles of a powered barracks heal. Nothing heals
-them anywhere else, so a barracks near the front works as a forward base. **Roads** help too: your units walk faster on
+**Field repair.** Your units within {{< var army.repair_tiles >}} tiles of a powered barracks heal. Construction
+robots repair them too, as they repair your turrets: a squad inside a roboport's area is mended with repair packs, and
+your own personal roboport mends the units round you. Robots keep up poorly with units on the move, and they fly into the
+fight to do it. Nowhere else does anything heal them, so a barracks or a roboport near the front works as a forward base. **Roads** help too: your units walk faster on
 stone path, concrete and refined concrete, by the same bonus those floors give you.
 
 **Gates and the map.** Your units open your own gates as they come to them, so a squad can march out of a walled base

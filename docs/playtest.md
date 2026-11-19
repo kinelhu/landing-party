@@ -1,6 +1,6 @@
 # Playtest kit
 
-Mod 0.2.465, rewritten 2026-11-18 for the release playtest (0.3.0). The questions follow a session in the order you meet
+Mod 0.2.466, rewritten 2026-11-18 for the release playtest (0.3.0). The questions follow a session in the order you meet
 things: Synthexis first, then Grubstake, then your own army, and the director's beats once it takes over. Everything
 below is checked headless only, apart from what the 2026-11-17 and 2026-11-18 sessions already saw. Chat notices are
 off: the world should tell you what happens.
@@ -42,7 +42,7 @@ A plan for two hours: the first hour on your own pacing (Synthexis, Grubstake, y
 you have radar near your base; then let the director run for an hour without the panel, and use the panel only at the
 end to see the beats you missed.
 
-## Before the public beta (0.2.458 to 0.2.465)
+## Before the public beta (0.2.458 to 0.2.466)
 
 About 20 minutes with the army save (`LP_WATCH=army.zip`), on what changed since the last session. The rest of the
 kit (items 4 and 6 to 10) is left to the beta's players.
@@ -55,6 +55,8 @@ kit (items 4 and 6 to 10) is left to the beta's players.
 - **Supply depot and ranges** (0.2.465; the save has no logistic system: `/c game.player.force.technologies["logistic-system"].researched = true`).
   Hover over a barracks: rings show where units heal and rearm. Put a depot by a forward beacon with magazines in it.
   Does the squad fight on without walking back? Are the rings and the cards' amber bar readable?
+- **Robots repair units** (0.2.466): a roboport with construction robots and repair packs by a squad's beacon. Do the
+  robots mend the squad in a fight? Too strong (a squad that never dies), or a fair price in packs and robots lost?
 - **Right-click a beacon** with units selected: they join it. Shift + right-click: they attack-move there and join on
   arrival. Did both do what you meant?
 - **Wild biters.** The army now fights the vanilla nests, and a holding squad clears the nests and worms near its

@@ -211,10 +211,10 @@ written when it was true; several went stale (the orbital cannon and veterancy, 
 above in the same commit; when one is dropped, move it to Dropped below with the user's words.
 
 **Before 0.3.0**
-- The army's ammunition, what stages 1 and 2 (0.2.464, 0.2.465) left: the flame trooper fires in bursts of about eight
-  with 6 to 12 s between (scenario shotrate), so its 1,000 rounds never run dry: look at the unit first; stages 3 and 4
-  of docs/reviews/2026-11-19-army-logistics-consult.md (repair by the robots after a spike, the threat with the
-  factory); director armydefend with a depot by the D beacon (the consult's reading: magazines drawn a beat).
+- The army's ammunition, what stages 1 to 3 (0.2.464 to 0.2.466) left: the flame trooper fires in bursts of about eight
+  with 6 to 12 s between (scenario shotrate), so its 1,000 rounds never run dry: look at the unit first; stage 4 of
+  docs/reviews/2026-11-19-army-logistics-consult.md (the threat with the factory); director armydefend with a depot by
+  the D beacon and a roboport (the consult's readings: magazines drawn and packs used a beat).
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
@@ -1108,6 +1108,13 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     depot empty, its trooper runs dry and walks to the barracks; the panel's view counts 100 of 100 (seen failing with
     depots off: the north trooper walks to the barracks). rearm, cards, raze, squadmove pass. **Not seen in game:** the
     hover rings, the cards' bar and the panel line (headless has no screen).
+  - **Ammunition stage 3: repair by construction robots** (0.2.466; the user's idea, a spike first as the consult asked).
+    data-final-fixes drops `not-repairable` from the player's six; the engine's robots then mend them in a roboport's
+    construction area with repair packs. Scenario `robotrepair` (the spike kept): a standing trooper 51 to 120, full, in
+    6 s; a battle tank 427 to 900 in 14 s; a trooper walking back and forth 51 to 89 in 40 s (robots chase a moving unit
+    poorly); one pack for all; with the flag kept, 51 to 51 (seen failing); the corporations' units keep the flag. The
+    barracks' free repair stays (home, R's promise). director armydrop, armyradar, armydefend, armyhold on 12345:
+    identical to 0.2.464 (no roboport in those fights).
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the

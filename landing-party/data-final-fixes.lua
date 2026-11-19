@@ -621,3 +621,15 @@ if settings.startup["lp-army-ammo"].value then
     end
   end
 end
+
+-- Repair by construction robots (0.2.466; stage 3 of the army-logistics consult, the user: "Rearming and repairing seems
+-- like it could also be a job done by logo bots"): the player's six lose not-repairable, the engine's own flag, so a
+-- roboport's robots mend them with repair packs in its construction area, as they do turrets (scenario robotrepair: a
+-- trooper standing full in 6 s, a tank in 14, a walking trooper partly, one pack for all; with the flag, none). The
+-- corporations' units keep it.
+for _, name in pairs(require("__landing-party__.shared").ORDERS) do
+  local u = data.raw.unit[name]
+  if u and u.flags then
+    for i = #u.flags, 1, -1 do if u.flags[i] == "not-repairable" then table.remove(u.flags, i) end end
+  end
+end
