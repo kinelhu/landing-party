@@ -8,7 +8,9 @@ set -euo pipefail
 source "$(dirname "$0")/env.sh"
 SH="$HOME/Library/Application Support/factorio-lp-shots"
 mkdir -p "$SH/config" "$SH/mods" "$SH/saves"
-printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$SH" > "$SH/config/config.ini"
+# (The tips bubble off, 2026-11-19: on the Studio, over ssh, the Tab below asks macOS for leave to control System
+# Events, and nobody is at that screen to give it. LP_NOTAB=1 skips the Tab.)
+printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n[interface]\nshow-tips-and-tricks-notifications=false\n' "$SH" > "$SH/config/config.ini"
 ln -sfn "$REPO/landing-party" "$SH/mods/landing-party"
 ln -sfn "$REPO/tests/lp-shots" "$SH/mods/lp-shots"
 # LP_SHOTS=town: Grubstake's town only, grown at once; LP_SHOTS=culture: a Synthexis culture eight minutes on
@@ -37,7 +39,7 @@ for i in $(seq 1 1500); do
   grep -q "caused a non-recoverable error" "$SH/factorio-current.log" 2>/dev/null && { status="error"; break; }
   if pgrep -f "$SH/config/config.ini" > /dev/null; then started=1; elif [ "$started" = 1 ]; then status="exited"; break; fi
   # The tips bubble's Tab: a few tries once the window is up.
-  if [ "$started" = 1 ] && [ $tabs -lt 6 ] && [ $((i % 5)) -eq 0 ]; then
+  if [ -z "${LP_NOTAB:-}" ] && [ "$started" = 1 ] && [ $tabs -lt 6 ] && [ $((i % 5)) -eq 0 ]; then
     pid=$(pgrep -f "$SH/config/config.ini" | head -1)
     osascript -e "tell application \"System Events\" to set frontmost of (first process whose unix id is $pid) to true" \
       -e 'delay 0.5' -e 'tell application "System Events" to key code 48' > "$SH/tab.out" 2>&1 && tabs=$((tabs + 1)) || true

@@ -50,7 +50,7 @@ kit (items 4 and 6 to 10) is left to the beta's players.
 - **Ammunition.** Each unit carries its order's rounds, shown under its health on the cards and counted in the squad
   panel. Send the squad at a nest field or a camp and let it fight long. A dry unit walks
   to the nearest powered barracks holding its ammunition, rearms from the barracks' input and goes back; with none, it
-  stands and you get one hint. A dry unit raises an alert, shown on the map, until it rearms (0.2.467). Did you notice units going dry, and know why? Is walking back a fair cost, or a chore?
+  stands and you get one hint. A dry unit raises an alert, shown on the map, until it rearms (0.2.467). Open a rally beacon and read the squad panel's ammunition line: the one part no windowed check could open. Did you notice units going dry, and know why? Is walking back a fair cost, or a chore?
   Would you leave it on?
 - **Supply depot and ranges** (0.2.465; the save has no logistic system: `/c game.player.force.technologies["logistic-system"].researched = true`).
   Hover over a barracks: rings show where units heal and rearm. Put a depot by a forward beacon with magazines in it.

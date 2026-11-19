@@ -218,7 +218,8 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
-- Multiplayer: two clients using the army and the faction GUIs (scripts/mp.sh covers one client and the director).
+- Multiplayer: two clients using the army and the faction GUIs (scripts/mp.sh covers one client and the director, and
+  one client with the army, LP_ARMY=1; a second client needs a second Steam account: left to the beta).
 - Release: the 0.3.0 bump, the full regression, package.sh, the music credit, the GitHub release, the portal upload
   (the user's go for each outward step). Checklist: docs/release/checklist.md.
 
@@ -1119,8 +1120,16 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     for each connected player of its force (its ammunition's icon, "<unit> out of ammunition", shown on the map), added
     again on a pass when a player has lost it, cleared when it rearms. The engine's `turret_out_of_ammo` type is not used
     for units (assumed turrets only, not tested). Scenario `rearm` checks the flag the alert follows (no player headless):
-    raised dry, cleared on rearming, kept by the stranded rocket trooper (seen failing with the clearing removed). **Not
-    seen in game:** the alert itself.
+    raised dry, cleared on rearming, kept by the stranded rocket trooper (seen failing with the clearing removed).
+    **Windowed** (2026-11-19, `scripts/mp.sh` LP_ARMY=1 LP_CLIENTS=1 on the Studio: a headless server, one client in a
+    window, tests/lp-mp over RCON; the units drained through the real shot handler): the cards' bars, the hover rings
+    (green filled round the barracks, amber round the depot) and the alert for a real player, raised dry, cleared on
+    rearming, kept by the stranded one; no desync. It caught a bug: a stranded unit's alert, once it timed out, was never
+    raised again (`next()` on get_alerts' map, which holds empty lists; now counted; the check read 0, then 1). Not
+    checkable by script: the squad panel (a script's `opened` reads nil for a client's player), and two clients at once
+    (two Steam clients of one account share its name; the server refuses the second, UserWithThatNameAlreadyInGame).
+    `LP_SHOTS=army` (single player, tests/lp-shots) saw the cards but stalled after 12 s on the Studio, the mouse owning
+    the selection; mp.sh is the harness.
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the

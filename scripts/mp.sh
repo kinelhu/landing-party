@@ -70,14 +70,19 @@ if [ -n "${LP_ARMY:-}" ]; then
   "$FACTORIO" --config "$C/config/config.ini" --mp-connect "127.0.0.1:$PORT" --disable-audio > "$OUT/client.log" 2>&1 &
   cpid=$!
   for _ in $(seq 1 300); do [ "$(joined)" -ge 1 ] && break; kill -0 $cpid 2>/dev/null || break; sleep 1; done
-  "$FACTORIO" --config "$C2/config/config.ini" --mp-connect "127.0.0.1:$PORT" --disable-audio > "$OUT/client2.log" 2>&1 &
-  c2pid=$!
-  for _ in $(seq 1 300); do [ "$(joined)" -ge 2 ] && break; kill -0 $c2pid 2>/dev/null || break; sleep 1; done
-  [ "$(joined)" -ge 2 ] || { echo "MP FAILED: $(joined) of 2 clients joined"; tail -20 "$OUT/client2.log"; exit 1; }
-  echo "both clients joined at tick $(tick)"
-  { step setup; sleep 3; step gui; sleep 3; step read_gui; } | tee "$OUT/army.txt"
+  # (Two Steam clients of one account share its name: the server refuses the second, UserWithThatNameAlreadyInGame,
+  # 2026-11-19, and HOME elsewhere does not hide Steam. A second account, or LP_CLIENTS=1: one player does both parts.)
+  NC="${LP_CLIENTS:-2}"
+  if [ "$NC" -ge 2 ]; then
+    "$FACTORIO" --config "$C2/config/config.ini" --mp-connect "127.0.0.1:$PORT" --disable-audio > "$OUT/client2.log" 2>&1 &
+    c2pid=$!
+    for _ in $(seq 1 300); do [ "$(joined)" -ge 2 ] && break; kill -0 $c2pid 2>/dev/null || break; sleep 1; done
+  fi
+  [ "$(joined)" -ge "$NC" ] || { echo "MP FAILED: $(joined) of $NC clients joined"; tail -20 "$OUT/client.log" "$OUT/client2.log" 2>/dev/null; exit 1; }
+  echo "$NC client(s) joined at tick $(tick)"
+  { step setup; sleep 3; step gui; sleep 3; step read_gui; step drain; } | tee "$OUT/army.txt"
   for _ in $(seq 1 "${LP_ARMY_POLLS:-120}"); do
-    kill -0 $cpid 2>/dev/null && kill -0 $c2pid 2>/dev/null || { echo "CHECK BAD clients: one quit" | tee -a "$OUT/army.txt"; break; }
+    kill -0 $cpid 2>/dev/null && { [ -z "$c2pid" ] || kill -0 $c2pid 2>/dev/null; } || { echo "CHECK BAD clients: one quit" | tee -a "$OUT/army.txt"; break; }
     step poll > "$OUT/poll.txt"; sleep 1
   done
   tail -1 "$OUT/poll.txt"
@@ -153,7 +158,11 @@ echo "ended at tick $(tick)"
 stop; trap - EXIT; exec 3>&-; sleep 3
 fail=0
 grep -q "CHECK BAD" "$OUT/army.txt" 2>/dev/null && { grep "CHECK BAD" "$OUT/army.txt"; fail=1; }
-[ -n "${LP_ARMY:-}" ] && [ "$(grep -c "CHECK ok" "$OUT/army.txt")" -lt 7 ] && { echo "army: $(grep -c "CHECK ok" "$OUT/army.txt") of 7 checks ok"; fail=1; }
+if [ -n "${LP_ARMY:-}" ]; then
+  ok=$(grep -c "CHECK ok" "$OUT/army.txt"); sk=$(grep -c "CHECK skip" "$OUT/army.txt")
+  echo "army: $ok checks ok, $sk skipped of 7"; grep "CHECK skip" "$OUT/army.txt"
+  [ $((ok + sk)) -lt 7 ] && fail=1
+fi
 for f in "$OUT/server.log" "$OUT/client.log" "$OUT/client2.log"; do
   [ -f "$f" ] || continue
   if grep -inE "desync|crc mismatch|heavy mode.*(differ|mismatch)" "$f" | grep -v "toggle-heavy-mode" | head -5 | grep .; then fail=1; fi

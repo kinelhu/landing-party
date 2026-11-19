@@ -1121,6 +1121,19 @@ remote.add_interface("landing-party", {
   debug_group_keep = function(n) return cards.keep_group(1, n) end,
   -- (A player index, the multiplayer run's second client: scripts/mp.sh LP_ARMY=1; 1 otherwise.)
   debug_select_army = function(idle, pi) return cards.select_army(pi or 1, idle) end,
+  -- (The windowed checks, tests/lp-shots and tests/lp-mp: the rings drawn as hovering the entity draws them; in a game
+  -- window the mouse owns the selection, so a script's selected would not last.)
+  -- (The windowed checks: n shots spent through the real handler, so a unit runs dry on cue.)
+  debug_shots = function(u, n)
+    for _ = 1, n do command.on_shot{source_entity = u} end
+    return command.ammo_of(storage.cmd.troopers[u.unit_number])
+  end,
+  debug_hover = function(pi, entity)
+    local p = game.get_player(pi)
+    if not p then return false end
+    command.on_hover(p, entity)
+    return true
+  end,
   -- Where a unit's order sends it (a formation's slot, or the point clicked).
   -- An older save's pads relaid (cell.refloor, run on configuration changes): the tiles relaid.
   debug_refloor = function() return cell.refloor() end,

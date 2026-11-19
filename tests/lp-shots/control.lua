@@ -495,7 +495,20 @@ if MODE == "army" then
   -- (A spawner healed each second: they do not fire on one that cannot be hurt.)
   apoll(180, 150 * 60, 60, function() if S.foe and S.foe.valid then S.foe.health = S.foe.max_health end end)
   -- Hover rings: a powered barracks, then the depot, then nothing.
-  only(300, function() P().selected = S.bk end)
+  -- (Whether the engine raises on_selected_entity_changed for a script's selected is noted; if not, the handler is
+  -- called through debug_hover, as the event would.)
+  local function hover(e)
+    P().selected = e
+    S.sel = P().selected and P().selected.name or "nil"
+  end
+  local function hover_fallback()
+    if rings() == 0 and P().selected then
+      note("hover: no rings 5 ticks after a script's selected (" .. S.sel .. "): the handler called through debug_hover")
+      lp("debug_hover", 1)
+    end
+  end
+  only(300, function() hover(S.bk) end)
+  only(305, hover_fallback)
   only(310, function()
     local n, f, col = rings()
     S.ring_bk = n
@@ -503,20 +516,21 @@ if MODE == "army" then
       string.format("%d rings, %d filled, %s", n, f, serpent.line(col)))
     gshot("army-01-rings-barracks", {0, 0}, 0.3, "hover over the powered barracks: green ring filled, grey round the unpowered one east, amber round the depot west")
   end)
-  only(400, function() P().selected = S.depot end)
+  only(400, function() hover(S.depot) end)
+  only(405, hover_fallback)
   only(410, function()
     local n, f, col = rings()
     check("rings on hovering the depot", n >= 3 and f >= 1, string.format("%d rings, %d filled, %s", n, f, serpent.line(col)))
     gshot("army-02-rings-depot", {0, 0}, 0.3, "hover over the depot: its amber ring filled")
   end)
-  only(500, function() P().selected = nil end)
+  only(500, function() hover(nil) end)
+  only(505, function() if rings() > 0 then lp("debug_hover", 1) end end)
   only(510, function()
     local n = rings()
     check("rings gone when nothing is hovered", n == 0, n .. " rings")
   end)
   -- Cards: the army selected; each card's ammunition bar against the unit's rounds.
   local function cards_check(tag, shotname, what)
-    lp("debug_select_army", false)
     local fr = P().gui.screen.lp_cards
     local bars = {}
     local function walk(el)
@@ -530,18 +544,19 @@ if MODE == "army" then
       tostring(r and r.full)))
     gshot(shotname, S.T.position, 0.8, what)
   end
+  only(570, function() lp("debug_select_army", false) end)
   only(600, function() cards_check("at the start", "army-03-cards-full", "the cards: amber bars full under the health bars") end)
   -- The squad panel, opened on the beacon.
   local function panel_check(tag, shotname)
-    P().opened = S.B
     local f = P().gui.relative.lp_squad
     local cap = f and f.ammo and f.ammo.caption
     local v = lp("debug_beacon_ammo", S.B)
     check("squad panel " .. tag, f ~= nil and f.ammo.visible, string.format("caption %s; view %s", serpent.line(cap), serpent.line(v)))
     gshot(shotname, S.B.position, 0.8, "the beacon's window and the squad panel beside it: its ammunition line")
   end
-  only(660, function() panel_check("at the start", "army-04-panel-full") end)
-  only(720, function() P().opened = nil end)
+  only(640, function() P().opened = S.B end)
+  only(730, function() panel_check("at the start", "army-04-panel-full") end)
+  only(760, function() P().opened = nil end)
   -- The dry trooper: its alert while dry, none once it is back; the rocket trooper's, kept.
   apoll(780, 150 * 60, 30, function()
     local a, r = lp("debug_ammo", S.T), lp("debug_ammo", S.R)
@@ -554,6 +569,12 @@ if MODE == "army" then
       S.dry_at = game.tick
       S.alert_dry = alerts_of(S.T)
       gshot("army-05-alert", {0, -30}, 0.5, "the trooper dry: its alert in the alert bar, its card's bar empty, the rocket trooper's alert")
+      lp("debug_select_army", false)
+      P().opened = S.B
+      S.dry_read = game.tick + 90
+    end
+    if S.dry_read and game.tick >= S.dry_read then
+      S.dry_read = nil
       cards_check("one dry", "army-06-cards-dry", "the cards with one dry: its bar empty, its order line 'dry' or 'rearm'")
       panel_check("one dry", "army-07-panel-dry")
       P().opened = nil

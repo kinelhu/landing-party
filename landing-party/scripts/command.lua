@@ -933,12 +933,20 @@ end
 -- turrets"): its ammunition's icon, shown on the map, for each connected player of its force, added again on a pass when
 -- one has lost it (a player joining, the alert timing out), cleared when it rearms. The engine's own turret_out_of_ammo
 -- type is the turrets'; a unit's is a custom alert.
+-- (Counted, not next(): get_alerts maps surface to type to a list, and the map can hold an empty list. With next(), a
+-- stranded unit's alert, once it timed out, was never raised again: the windowed check, scripts/mp.sh LP_ARMY=1.)
+local function has_alert(p, u)
+  for _, by_type in pairs(p.get_alerts{entity = u, type = defines.alert_type.custom}) do
+    for _, list in pairs(by_type) do if #list > 0 then return true end end
+  end
+  return false
+end
 local function dry_alert(t, on)
   local u = t.unit
   if not (u and u.valid) then return end
   t.alerted = on or nil
   for _, p in pairs(u.force.connected_players) do
-    local have = next(p.get_alerts{entity = u, type = defines.alert_type.custom}) ~= nil
+    local have = has_alert(p, u)
     if on and not have then
       local l = loadout(u.name)
       p.add_custom_alert(u, {type = "item", name = l.items[1].name}, {"lp.alert-unit-dry", u.localised_name}, true) -- notice-ok: an alert on a thing in the world, as a turret's
@@ -1206,11 +1214,12 @@ end
 -- green where units heal and rearm (a powered barracks), amber where they rearm only (a depot), grey for an unpowered
 -- barracks; the one hovered filled. Cleared when the cursor leaves.
 local SERVICE = {["lp-barracks"] = true, ["lp-supply-depot"] = true}
-function command.on_hover(player)
+-- (`hovered`, the windowed checks only: in a game window the mouse owns the selection, so a script's would not last.)
+function command.on_hover(player, hovered)
   storage.cmd.hover = storage.cmd.hover or {}
   for _, r in ipairs(storage.cmd.hover[player.index] or {}) do if r.valid then r.destroy() end end
   storage.cmd.hover[player.index] = nil
-  local sel = player.selected
+  local sel = hovered or player.selected
   if not (sel and sel.valid and SERVICE[sel.name] and sel.force == player.force) then return end
   local out = {}
   for _, list in ipairs({storage.cmd.barracks, storage.cmd.depots or {}}) do

@@ -23,7 +23,8 @@ end
 local function rings(index)
   local n, filled = 0, 0
   for _, o in pairs(rendering.get_all_objects("landing-party")) do
-    if o.valid and o.type == "circle" then
+    -- (The supply rings only, 30 tiles: a selected unit's own ring is a circle too.)
+    if o.valid and o.type == "circle" and o.radius and o.radius >= 20 then
       for _, pl in pairs(o.players or {}) do
         if pl.index == index then n = n + 1; if o.filled then filled = filled + 1 end end
       end
@@ -40,10 +41,13 @@ local function alerts(p, u)
 end
 local out = {}
 local function check(name, ok, detail) out[#out + 1] = string.format("CHECK %s %s: %s", ok and "ok" or "BAD", name, detail or "") end
+local function skip(name, why) out[#out + 1] = string.format("CHECK skip %s: %s", name, why) end
+-- (One client, LP_CLIENTS=1: two Steam clients of one account share its name and the server refuses the second, so
+-- a single player does both parts and the checks that need two say so.)
 local function players()
   local c = game.connected_players
   table.sort(c, function(x, y) return x.index < y.index end)
-  return c[1], c[2]
+  return c[1], c[2] or c[1]
 end
 local function shot(p, name, pos, zoom)
   game.take_screenshot{player = p, by_player = p, surface = surface(), position = pos, resolution = {1600, 900},
@@ -66,6 +70,7 @@ function steps.setup()
   S.bk.set_recipe("lp-trooper-order")
   S.bk.get_inventory(defines.inventory.crafter_input).insert{name = "firearm-magazine", count = 30}
   S.depot = put("lp-supply-depot", -40.5, 0.5)
+  S.pole = put("small-electric-pole", -10.5, -30.5)
   S.B = put("lp-rally-beacon", 0.5, -45.5)
   S.T = surface().create_entity{name = "lp-trooper", position = {-1, -47}, force = "player"}
   S.R = surface().create_entity{name = "lp-rocket-trooper", position = {2, -47}, force = "player"}
@@ -79,28 +84,46 @@ end
 -- Both GUIs at once: a's cards, b's panel and rings.
 function steps.gui()
   local a, b = players()
-  if not (a and b) then return "CHECK BAD gui: two players needed" end
+  if not a then return "CHECK BAD gui: no player" end
   lp("debug_select_army", false, a.index)
+  b.teleport({3, -42})
   b.opened = S.B
-  b.selected = S.bk
+  S.opened_now = b.opened and b.opened.name or "nil"
+  lp("debug_hover", b.index, S.bk)
   return "gui: a selected the army, b opened the beacon and hovers the barracks"
 end
 function steps.read_gui()
   out = {}
   local a, b = players()
   local fa, fb = a.gui.screen.lp_cards, b.gui.screen.lp_cards
-  check("a has its cards, b none", fa ~= nil and (fb == nil or not fb.visible), string.format("a %s, b %s",
-    tostring(fa and fa.visible), tostring(fb and fb.visible)))
+  local two = a ~= b
+  check(two and "a has its cards, b none" or "the player's cards", fa ~= nil and (not two or fb == nil or not fb.visible),
+    string.format("a %s, b %s", tostring(fa and fa.visible), tostring(two and fb and fb.visible)))
   local pa, pb = a.gui.relative.lp_squad, b.gui.relative.lp_squad
-  check("b's squad panel with its ammunition line", pb ~= nil and pb.ammo and pb.ammo.visible,
-    serpent.line(pb and pb.ammo and pb.ammo.caption))
+  -- (A script cannot open the beacon's window for a client's player, 2026-11-19: opened reads nil at once, so the panel
+  -- is left to a person; the check runs if the engine ever lets it.)
+  if S.opened_now == "nil" then
+    skip("the squad panel", "a script's opened reads nil for a client's player; the panel is a person's to see")
+  else
+  check(two and "b's squad panel with its ammunition line, a has none" or "the squad panel with its ammunition line",
+    pb ~= nil and pb.ammo and pb.ammo.visible and (not two or pa == nil),
+    string.format("opened %s, read back at once %s; %s", tostring(b.opened and b.opened.name), S.opened_now, serpent.line(pb and pb.ammo and pb.ammo.caption)))
+  end
   local na, nb = rings(a.index), rings(b.index)
-  check("the rings are b's alone", nb >= 2 and na == 0, string.format("a %d, b %d", na, nb))
+  check(two and "the rings are b's alone" or "the rings drawn for the player", nb >= 2 and (not two or na == 0),
+    string.format("a %d, b %d", na, nb))
   shot(a, "mp-a-cards", a.position, 0.6)
   shot(b, "mp-b-panel", b.position, 0.6)
   return table.concat(out, "\n")
 end
 -- Each poll: the spawner healed, and the alerts noted when the trooper goes dry and comes back.
+-- Both units drained through the mod's own shot handler: the trooper walks back to the barracks, the rocket trooper,
+-- no rockets anywhere, stays dry.
+function steps.drain()
+  local t = lp("debug_shots", S.T, 100)
+  local r = lp("debug_shots", S.R, 10)
+  return string.format("drain: trooper %s, rocket %s", tostring(t), tostring(r))
+end
 function steps.poll()
   if S.foe and S.foe.valid then S.foe.health = S.foe.max_health end
   local a, b = players()
@@ -118,7 +141,8 @@ function steps.report()
   check("both cleared when it rearmed", S.back and S.back[1] == 0 and S.back[2] == 0, serpent.line(S.back))
   check("the stranded rocket trooper's alert kept for both", S.rdry and S.rdry[1] >= 1 and S.rdry[2] >= 1, serpent.line(S.rdry))
   local a, b = players()
-  b.opened = nil; b.selected = nil
+  b.opened = nil
+  lp("debug_hover", b.index, S.pole)
   check("b's rings gone when it hovers nothing", rings(b.index) == 0, tostring(rings(b.index)))
   return table.concat(out, "\n")
 end
