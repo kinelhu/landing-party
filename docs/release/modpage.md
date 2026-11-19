@@ -86,7 +86,7 @@ The Director setting sets the pace: Steady, Gentle or Chaotic, or Off, which lea
   sets how many of each unit it keeps; lower one beacon's number and raise another's, and the units move over.
   Right-click a beacon with units selected and they join its squad. Hover over a beacon to see its squad.
 - **Circuit control:** a beacon reads its stance, its rally point and its reach from signals, and reports its squad,
-  how many have arrived, the enemies, turrets and nests within reach, an alarm and its magazines. Patrols, outposts
+  how many have arrived, the enemies, turrets and spawners within reach, an alarm and its ammunition. Patrols, outposts
   that call for help and squads on a clock are built from combinators.
 - **Ammunition:** units carry the rounds their order was made with and spend them as they fire. A unit that runs dry
   walks to the nearest powered barracks holding its ammunition and rearms there. With the logistic system, supply depots
