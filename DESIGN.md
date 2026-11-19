@@ -1115,6 +1115,12 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     poorly); one pack for all; with the flag kept, 51 to 51 (seen failing); the corporations' units keep the flag. The
     barracks' free repair stays (home, R's promise). director armydrop, armyradar, armydefend, armyhold on 12345:
     identical to 0.2.464 (no roboport in those fights).
+  - **The dry alert** (0.2.467; the user: "an alert like the one for ammoless turrets"). A dry unit raises a custom alert
+    for each connected player of its force (its ammunition's icon, "<unit> out of ammunition", shown on the map), added
+    again on a pass when a player has lost it, cleared when it rearms. The engine's `turret_out_of_ammo` type is not used
+    for units (assumed turrets only, not tested). Scenario `rearm` checks the flag the alert follows (no player headless):
+    raised dry, cleared on rearming, kept by the stranded rocket trooper (seen failing with the clearing removed). **Not
+    seen in game:** the alert itself.
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the

@@ -141,7 +141,8 @@ the units too far away to see the enemy.
 
 **Ammunition.** Each unit carries the ammunition its order took: a trooper its order's magazines, a battle tank its shells.
 Every shot spends a round. A unit that runs out stops firing and walks to the nearest powered barracks whose input holds
-its ammunition, takes what it lacks, and goes back to its orders. Feed your barracks the ammunition of the units they
+its ammunition, takes what it lacks, and goes back to its orders. While it is dry it raises an alert, as a turret out
+of ammunition does. Feed your barracks the ammunition of the units they
 serve: a barracks making troopers holds magazines, but a squad of rocket troopers needs one holding rockets. With none
 within reach, the unit stands where it is, and you are told once. Units within {{< var army.repair_tiles >}} tiles of a
 powered barracks top up from it as they fight.

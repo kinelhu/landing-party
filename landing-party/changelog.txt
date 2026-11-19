@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.467
+Date: 2026-11-19
+  Features:
+    - A unit out of ammunition raises an alert, as a turret out of ammunition does, shown on the map until it rearms.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.466
 Date: 2026-11-19
   Features:

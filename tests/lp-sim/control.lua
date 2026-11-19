@@ -3562,7 +3562,11 @@ scenarios.rearm = function()
       if sec == 6 then S.m0 = sig(S.B, "signal-M"); S.full = {t = a.full, r = r.full} end
       if a.dry and not S.dry_at then S.dry_at, S.fired_dry, S.mags_dry = sec, a.fired, mags() end
       if a.key and a.key:find("rearm:", 1, true) then S.walked = true end
-      if S.dry_at and not a.dry and not S.back_at then S.back_at, S.ammo_back, S.mags_back = sec, a.ammo, mags() end
+      if a.dry and a.alerted and not S.back_at then S.alert_dry = true end
+      if S.dry_at and not a.dry and not S.back_at then
+        S.back_at, S.ammo_back, S.mags_back, S.alert_after = sec, a.ammo, mags(), a.alerted
+      end
+      if r.dry then S.r_alert = r.alerted end
       if S.back_at and a.key and a.key:find("fight:", 1, true) then S.fighting_again = true end
       if r.dry then S.r_dry = true; S.r_key = r.key end
       S.mlast = sig(S.B, "signal-M")
@@ -3584,6 +3588,10 @@ scenarios.rearm = function()
     check("rearm: dry, it walked to the barracks and drew 10 magazines, full again", S.walked and S.ammo_back == 100
       and S.mags_dry - S.mags_back == 10, serpent.line({S.walked, S.ammo_back, S.mags_dry, S.mags_back}))
     check("rearm: then it went back to the fight", S.fighting_again == true, tostring(S.fighting_again))
+    -- (0.2.467, the user: "an alert like the one for ammoless turrets". No player in a headless run: the flag the alert
+    -- follows, not the alert itself.)
+    check("rearm: a dry unit raises an alert, cleared when it rearms; the stranded one keeps it", S.alert_dry and not S.alert_after
+      and S.r_alert, serpent.line({S.alert_dry, S.alert_after, S.r_alert}))
     check("rearm: the rocket trooper, no rockets in any barracks, stands dry, and the force is told once",
       S.r_dry and S.r_key == "dry" and S.hint, serpent.line({S.r_dry, S.r_key, S.hint}))
   end)

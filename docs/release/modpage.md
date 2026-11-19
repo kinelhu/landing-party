@@ -89,7 +89,7 @@ The Director setting sets the pace: Steady, Gentle or Chaotic, or Off, which lea
   how many have arrived, the enemies, turrets and spawners within reach, an alarm and its ammunition. Patrols, outposts
   that call for help and squads on a clock are built from combinators.
 - **Ammunition:** units carry the rounds their order was made with and spend them as they fire. A unit that runs dry
-  walks to the nearest powered barracks holding its ammunition and rearms there. With the logistic system, supply depots
+  raises an alert, walks to the nearest powered barracks holding its ammunition and rearms there. With the logistic system, supply depots
   your robots fill rearm the squads at the front. A startup setting turns it off.
 - **Repair:** units heal near a powered barracks, and construction robots repair them with repair packs, as they do
   your turrets.

@@ -1082,7 +1082,7 @@ remote.add_interface("landing-party", {
     local t = storage.cmd.troopers[u.unit_number]
     if not t then return nil end
     local a, full = command.ammo_of(t)
-    return {ammo = a, full = full, dry = t.dry == true, key = t.key, fired = t.fired or 0}
+    return {ammo = a, full = full, dry = t.dry == true, key = t.key, fired = t.fired or 0, alerted = t.alerted == true}
   end,
   -- Tests only: a beacon's squad's ammunition, as its panel shows it (0.2.465).
   debug_beacon_ammo = function(b) return command.beacon_view(b).ammo end,

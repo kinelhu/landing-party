@@ -929,9 +929,28 @@ local function ammo_source(u)
   end
   return best
 end
+-- A dry unit's alert, as a turret out of ammunition raises one (the user, 0.2.467: "an alert like the one for ammoless
+-- turrets"): its ammunition's icon, shown on the map, for each connected player of its force, added again on a pass when
+-- one has lost it (a player joining, the alert timing out), cleared when it rearms. The engine's own turret_out_of_ammo
+-- type is the turrets'; a unit's is a custom alert.
+local function dry_alert(t, on)
+  local u = t.unit
+  if not (u and u.valid) then return end
+  t.alerted = on or nil
+  for _, p in pairs(u.force.connected_players) do
+    local have = next(p.get_alerts{entity = u, type = defines.alert_type.custom}) ~= nil
+    if on and not have then
+      local l = loadout(u.name)
+      p.add_custom_alert(u, {type = "item", name = l.items[1].name}, {"lp.alert-unit-dry", u.localised_name}, true) -- notice-ok: an alert on a thing in the world, as a turret's
+    elseif not on and have then
+      p.remove_alert{entity = u, type = defines.alert_type.custom}
+    end
+  end
+end
 -- A dry unit's step, each pass (and at once when it runs dry).
 local function rearm(t)
   local u = t.unit
+  dry_alert(t, true)
   local b = t.rearm_at and (storage.cmd.barracks[t.rearm_at] or (storage.cmd.depots or {})[t.rearm_at])
   if not live_source(b) then
     b = ammo_source(u)
@@ -947,6 +966,7 @@ local function rearm(t)
   if (u.position.x - b.position.x) ^ 2 + (u.position.y - b.position.y) ^ 2 <= SUPPLY_RANGE ^ 2 then
     if draw(t, b) > 0 then
       t.dry, t.rearm_at, t.key = nil, nil, nil
+      dry_alert(t, false)
       storage.cmd.rearmed = (storage.cmd.rearmed or 0) + 1
     else
       t.rearm_at = nil   -- (emptied meanwhile: the next pass looks again)
