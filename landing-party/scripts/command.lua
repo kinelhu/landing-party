@@ -484,9 +484,18 @@ end
 -- shot a holding squad unanswered for half a minute): chasing a garrison as it fell back, troopers followed it into a walled
 -- compound's lasers and mines and 33 of 45 died while their beacon said hold (siege, seed 12345).
 local ENGAGE = 18
+-- What the army fights: the corporations, Synthexis and the wild biters (the user, 2026-11-19: "Vanilla biters don't
+-- count? Isn't that an oversight?"; shared.hostile_forces left them to the units' own targeting, so a defending squad
+-- ignored the commonest attack on most maps, E never counted them, and a right-click on a nest did nothing).
+local WILD = "enemy"
+local function foes()
+  local out = shared.hostile_forces()
+  if game.forces[WILD] then out[#out + 1] = WILD end
+  return out
+end
 local function threat(u, p)
   local best, bd
-  for _, e in pairs(u.surface.find_entities_filtered{position = u.position, radius = ENGAGE, force = shared.hostile_forces(),
+  for _, e in pairs(u.surface.find_entities_filtered{position = u.position, radius = ENGAGE, force = foes(),
     type = {"unit", "spider-unit"}}) do
     local d = (e.position.x - u.position.x) ^ 2 + (e.position.y - u.position.y) ^ 2
     -- (Out defending, p is the attack's place, no reach: ATTACK_REACH round it.)
@@ -545,7 +554,7 @@ local function report(beacon, p, squad, here)
   sec.filters = {
     v("signal-S", squad),
     v("signal-H", here),
-    v("signal-E", s.count_entities_filtered{position = p.pos, radius = reach(p), force = shared.hostile_forces(),
+    v("signal-E", s.count_entities_filtered{position = p.pos, radius = reach(p), force = foes(),
       type = {"unit", "spider-unit"}}),
     v("signal-T", s.count_entities_filtered{position = p.pos, radius = reach(p), force = shared.corp_forces(),
       name = LASERS}),
@@ -650,7 +659,7 @@ local MOBILE = {"unit", "spider-unit", "character", "car", "spider-vehicle", "sp
   "item-entity"}
 local function enemies_of(f)
   local out = {}
-  for _, name in ipairs(shared.hostile_forces()) do
+  for _, name in ipairs(foes()) do
     local g = game.forces[name]
     if g and f.is_enemy(g) then out[#out + 1] = name end
   end
@@ -758,8 +767,27 @@ local function answer(d, list, was)
   return best
 end
 
+-- A holding squad's nest (the user, of a rail line's patrol: nests and worms within reach are targets): the wild biters'
+-- spawner or worm nearest the rally point within its reach, once a pass a beacon; the squad clears them one by one, a
+-- patrol along a line clears the nests that spread toward it. Never the corporations' turrets: a hold that went for them
+-- walked into a compound's lasers (siege, seed 12345; advance does that, choosing the uncovered).
+local function nest(p)
+  if not game.forces[WILD] then return nil end
+  local best, bd
+  for _, e in pairs(p.surface.find_entities_filtered{position = p.pos, radius = reach(p), force = WILD,
+    type = {"unit-spawner", "turret"}}) do
+    local d = (e.position.x - p.pos.x) ^ 2 + (e.position.y - p.pos.y) ^ 2
+    if not bd or d < bd then best, bd = e, d end
+  end
+  return best
+end
+
 local function lead()
   local objectives = {}
+  -- Squad aggro (the user: "All"): a foe one unit of a squad fights, its squadmates fight too, within the reach, a pass
+  -- on (a strung-out squad fought one by one: each saw only what came within ENGAGE of itself).
+  local fought, now_fought = storage.cmd.squad_foe or {}, {}
+  local nests = {}
   local plans = {}
   local squads = {}
   for _, t in pairs(storage.cmd.troopers) do
@@ -834,7 +862,23 @@ local function lead()
       local p = beacon and plans[beacon.unit_number]
       local st = p and p.stance
       -- (Defending, out: fights within reach of the attack, not of home.)
-      local foe = p and st ~= "retreat" and threat(u, p.alarm and {pos = p.alarm.pos} or p)
+      local leash = p and (p.alarm and {pos = p.alarm.pos} or p)
+      local foe = p and st ~= "retreat" and threat(u, leash)
+      if foe then
+        now_fought[beacon.unit_number] = now_fought[beacon.unit_number] or foe
+      elseif p and st ~= "retreat" then
+        local q = fought[beacon.unit_number]
+        local r = leash.reach or ATTACK_REACH
+        if q and q.valid and q.surface == u.surface
+          and (q.position.x - leash.pos.x) ^ 2 + (q.position.y - leash.pos.y) ^ 2 <= r * r then
+          foe = q
+          now_fought[beacon.unit_number] = now_fought[beacon.unit_number] or q
+        elseif st == "hold" or (st == "defend" and not p.alarm) then
+          local k = beacon.unit_number
+          if nests[k] == nil then nests[k] = nest(p) or false end
+          foe = nests[k] or nil
+        end
+      end
       -- Holding at the rally point; the key carries the point, so a moved point is a new order.
       local function hold()
         if (u.position.x - p.pos.x) ^ 2 + (u.position.y - p.pos.y) ^ 2 > 12 * 12 then
@@ -881,6 +925,7 @@ local function lead()
       end
     end
   end
+  storage.cmd.squad_foe = now_fought
 end
 
 -- Field repair: the player's units near a powered barracks recover REPAIR_SHARE of their health a second, so
@@ -1089,8 +1134,9 @@ function command.order(player_index, surface, area, attackmove, set_size)
   -- the nearest to the click.
   local target, td
   for _, e in pairs(surface.find_entities_filtered{area = {{pos.x - 1.5, pos.y - 1.5}, {pos.x + 1.5, pos.y + 1.5}},
-    force = shared.hostile_forces()}) do
-    if e.health and e.destructible and (e.type == "unit" or e.type == "spider-unit" or e.prototype.is_building) then
+    force = foes()}) do
+    if e.health and e.destructible and (e.type == "unit" or e.type == "spider-unit" or e.type == "unit-spawner"
+      or e.type == "turret" or e.prototype.is_building) then
       local d = (e.position.x - pos.x) ^ 2 + (e.position.y - pos.y) ^ 2
       if not td or d < td then target, td = e, d end
     end

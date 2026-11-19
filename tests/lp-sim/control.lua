@@ -3517,6 +3517,114 @@ scenarios.squadmove = function()
   end)
 end
 
+-- The wild biters (0.2.462; the user: "Vanilla biters don't count? Isn't that an oversight?", then "All"): a defending
+-- squad answers wild biters at a wall 40 tiles off and E counts them; a holding squad at Z 60 clears a spawner and a worm
+-- within it, not a spawner 100 off, and a right-click on a nest attacks it; squad aggro: four troopers frozen 0 to 11
+-- tiles east of their point, a frozen biter 14 west, so only the nearest sees it: all four are sent at it.
+scenarios.wild = function()
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  local red = defines.wire_connector_id.circuit_red
+  local function sig(b, name)
+    for _, x in pairs(b.get_signals(red) or {}) do if x.signal.name == name then return x.count end end
+    return 0
+  end
+  local function wire(b, x, y, slots)
+    local cc = put("constant-combinator", x, y)
+    for i, sl in ipairs(slots) do
+      cc.get_control_behavior().get_section(1).set_slot(i, {value = {type = "virtual", name = sl[1], quality = "normal"},
+        min = sl[2]})
+    end
+    cc.get_wire_connector(red, true).connect_to(b.get_wire_connector(red, true))
+  end
+  local function wild(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "enemy"}
+  end
+  local function troopers(x, y, n, dx)
+    local out = {}
+    for i = 1, n do
+      out[i] = surface().create_entity{name = "lp-trooper", position = {x + (i - 1) * (dx or 2), y}, force = "player"}
+    end
+    lp("debug_enlist", {{x - 1, y - 1}, {x + n * (dx or 2) + 1, y + 1}})
+    return out
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    surface().request_to_generate_chunks({0, 150}, 7)
+    surface().force_generate_chunk_requests()
+    flatten(-40, -40, 60, 30)
+    flatten(-40, 110, 120, 220)
+    flatten(-40, -340, 40, -260)
+    game.map_settings.enemy_expansion.enabled = false
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("lp-command-relay", 4.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    -- D: defend.
+    S.D = put("lp-rally-beacon", -15.5, -10.5)
+    wire(S.D, -17.5, -10.5, {{"signal-D", 1}})
+    troopers(-20, -6, 4)
+    -- N: hold at Z 60, by nests.
+    S.N = put("lp-rally-beacon", -15.5, 150.5)
+    wire(S.N, -17.5, 150.5, {{"signal-Z", 60}})
+    S.nt = troopers(-20, 146, 6)
+    -- A: aggro.
+    S.A = put("lp-rally-beacon", 0.5, -300.5)
+  end)
+  schedule(60 + 3 * 60, function()
+    for i = 0, 4 do
+      local w = put("stone-wall", 24.5, -12.5 + i)
+      if w then w.destructible = false end
+    end
+    S.biters = {}
+    for i = 0, 2 do
+      local e = wild("small-biter", 28, -12 + 2 * i)
+      if e then e.destructible = false; e.disabled_by_script = true; S.biters[#S.biters + 1] = e end
+    end
+    S.spawner = wild("biter-spawner", 25, 150)
+    S.worm = wild("small-worm-turret", -15, 195)
+    S.far = wild("biter-spawner", 85, 150)
+    -- The aggro squad, frozen in a line east of A's point; the biter 14 west of it.
+    S.at = troopers(0.5, -300.5, 4, 3.6)
+    for _, u in ipairs(S.at) do u.disabled_by_script = true end
+    S.bait = wild("small-biter", -13.5, -300.5)
+    if S.bait then S.bait.destructible = false; S.bait.disabled_by_script = true end
+    S.click = lp("debug_select_units", {S.nt[1]})
+    local p = S.spawner.position
+    S.o = lp("debug_order_detail", {{p.x - 0.3, p.y - 0.3}, {p.x + 0.3, p.y + 0.3}}, false)
+    lp("debug_release_units", {S.nt[1]})
+  end)
+  schedule(60 + 10 * 60, function()
+    local v = lp("debug_beacon_view", S.D)
+    S.d = {answering = v.answering ~= nil, w = sig(S.D, "signal-W"), e = sig(S.D, "signal-E")}
+    S.keys = {}
+    for _, u in ipairs(S.at) do
+      local st = lp("debug_trooper_state", u)
+      S.keys[#S.keys + 1] = st and st.key == ("fight:" .. S.bait.unit_number) and 1 or 0
+    end
+    S.dist = {}
+    for _, u in ipairs(S.at) do
+      S.dist[#S.dist + 1] = math.floor(((u.position.x - S.bait.position.x) ^ 2 + (u.position.y - S.bait.position.y) ^ 2) ^ 0.5)
+    end
+  end)
+  schedule(60 + 80 * 60, function()
+    S.nests = {spawner = S.spawner.valid, worm = S.worm.valid, far = S.far.valid,
+      alive = surface().count_entities_filtered{name = "lp-trooper", force = "player", position = {-15.5, 150.5}, radius = 120}}
+    info("wild: " .. serpent.line({S.d, S.o, S.keys, S.dist, S.nests}))
+    check("wild: a defending squad answers wild biters at a wall 40 off, and E counts them", S.d.answering and S.d.w == 1
+      and S.d.e == 3, serpent.line(S.d))
+    check("wild: a right-click on a wild spawner attacks it", S.o and S.o.kind == "attack" and S.o.n == 1, serpent.line(S.o))
+    check("wild: a holding squad at Z 60 clears the spawner (40 off) and the worm (45), not the spawner 100 off",
+      not S.nests.spawner and not S.nests.worm and S.nests.far, serpent.line(S.nests))
+    local n = 0
+    for _, k in ipairs(S.keys) do n = n + k end
+    check("wild: squad aggro: all four sent at the biter only the nearest sees", n == 4, serpent.line({S.keys, S.dist}))
+  end)
+end
+
 -- A squad's reach, signal Z (0.2.461; the user, of small outposts: "We need the reach signal no?"): biters by a wall
 -- 100 tiles east of beacon B's rally point and 189 from C's, both beacons on D with four troopers each. B at Z = 60 and
 -- C unset (150): neither answers, and B's E counts nothing; C at Z = 250 answers; B unset again (150) answers too.

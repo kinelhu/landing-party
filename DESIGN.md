@@ -1029,7 +1029,21 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     defence (the scan and the answer) and the E and T counts, and the ring; unset, 50 and 150 as before. Out defending,
     the leash round the attack stays ATTACK_REACH. Scenario `reach`: biters by a wall 100 tiles from B's point and 189
     from C's; B at Z 60 and C unset, neither answers; C at 250 answers; B unset answers; seen failing with Z ignored (3 of
-    3). The attackers are Synthexis's: wild biters are outside hostile_forces, so no beacon answers them (open, asked).
+    3). The attackers are Synthexis's: wild biters were outside hostile_forces, so no beacon answered them (0.2.462).
+  - **The wild biters, nests and squad aggro** (0.2.462; the user: "Vanilla biters don't count? Isn't that an
+    oversight?", then of a rail line's patrol, "All"). The army's foes (command.lua's foes) are the corporations,
+    Synthexis and the wild biters: the defence's scan, E, the leash and the right-click attack (spawners and worms too).
+    A holding squad (hold, or defend at home) goes for the wild spawner or worm nearest its rally point within its
+    reach, once a pass a beacon; never the corporations' turrets (a hold that chased into a compound's lasers, siege).
+    Squad aggro: the first foe a squad's unit fights is its squadmates' too, a pass on, within the reach (a strung-out
+    squad fought one by one). Scenario `wild`: a defending squad answers wild biters at a wall 40 off, E 3; a
+    right-click on a spawner attacks; a hold at Z 60 clears a spawner at 40 and a worm at 45, not one at 100; four
+    troopers frozen 0 to 11 tiles from their point and a biter 14 the other side, all four sent (2 without aggro); seen
+    failing on 0.2.461 (4 of 4) and with aggro alone off (1). Assumed, not measured: a holding squad by a big nest field
+    at the default 50 goes in nest by nest; Synthexis's own buildings are not nests here. Player regression (89 runs, new against 0.2.461 on the
+    Studio): the same one failing on both (paved squad); siege 20,10,10 changed (aggro sent the squad in together, 20
+    fighting against 6 at t+71 s), all 40 lost either way, the faction's losses 26, 13, 9, 25 against 31, 15, 8, 17 on
+    seeds 12345, 777, 4242, 101 (73 against 71).
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the

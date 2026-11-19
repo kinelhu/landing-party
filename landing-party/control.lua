@@ -1022,6 +1022,7 @@ remote.add_interface("landing-party", {
     local s = game.surfaces[1]
     return command.select(1, s.find_entities_filtered{area = area, force = "player", type = "unit"})
   end,
+  debug_release_units = function(units) return command.release(1, units) end,
   debug_release = function(area)
     return command.release(1, game.surfaces[1].find_entities_filtered{area = area, force = "player", type = "unit"})
   end,
@@ -1062,7 +1063,7 @@ remote.add_interface("landing-party", {
   -- Tests only: a unit's beacon and hand order.
   debug_trooper_state = function(u)
     local t = storage.cmd.troopers[u.unit_number]
-    return t and {beacon = t.beacon, manual = t.manual and t.manual.kind, join = t.manual and t.manual.join}
+    return t and {beacon = t.beacon, manual = t.manual and t.manual.kind, join = t.manual and t.manual.join, key = t.key}
   end,
   debug_beacon_view = function(beacon)
     local v = command.beacon_view(beacon)

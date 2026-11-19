@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.462
+Date: 2026-11-19
+  Features:
+    - Your army now fights the wild biters as it fights the corporations and Synthexis. A defending squad answers wild biters at your buildings, E counts them, and a right-click on a biter, nest or worm attacks it.
+    - A holding squad clears the wild biters' nests and worms within its reach, so a patrol along a rail line clears the nests that spread toward it.
+    - Squads fight together: when one unit starts a fight, the rest of its squad within reach joins it.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.461
 Date: 2026-11-19
   Features:
