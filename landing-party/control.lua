@@ -87,7 +87,10 @@ script.on_event(defines.events.on_ai_command_completed, function(e)
   prowl.on_command_completed(e)
 end)
 script.on_event(defines.events.on_entity_spawned, farm.on_spawned)
-script.on_event(defines.events.on_script_trigger_effect, function(e) aim.on_trigger(e); studies.on_trigger(e); burstfx.on_trigger(e) end)
+script.on_event(defines.events.on_script_trigger_effect, function(e)
+  if e.effect_id == "lp-army-shot" then return command.on_shot(e) end
+  aim.on_trigger(e); studies.on_trigger(e); burstfx.on_trigger(e)
+end)
 script.on_nth_tick(3600, aim.sweep)
 war.forgive = standing.forgive
 rd.era = ops.era
@@ -1069,6 +1072,13 @@ remote.add_interface("landing-party", {
     return out
   end,
   debug_paving_prof = function(on) storage.paving_prof = on; return paving.stats() end,
+  -- Tests only: a unit's ammunition (rounds, its loadout's, dry, where it rearms).
+  debug_ammo = function(u)
+    local t = storage.cmd.troopers[u.unit_number]
+    if not t then return nil end
+    local a, full = command.ammo_of(t)
+    return {ammo = a, full = full, dry = t.dry == true, key = t.key, fired = t.fired or 0}
+  end,
   -- Tests only: a unit's beacon and hand order.
   debug_trooper_state = function(u)
     local t = storage.cmd.troopers[u.unit_number]

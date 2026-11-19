@@ -3517,6 +3517,145 @@ scenarios.squadmove = function()
   end)
 end
 
+-- Ammunition (0.2.464; stage 1 of the army-logistics consult, the user: "Let's try that"): a trooper and a rocket trooper
+-- on a beacon by a spawner healed each second; a powered barracks 45 tiles off, its input 30 magazines and no rockets. The
+-- trooper's loadout is its order's 10 magazines, 100 rounds: it fires 100, runs dry, walks to the barracks, draws 10
+-- magazines and goes back to fighting; the rocket trooper's 10 rockets spent, it stands dry and the force is told once.
+scenarios.rearm = function()
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  local red = defines.wire_connector_id.circuit_red
+  local function sig(b, name)
+    for _, x in pairs(b.get_signals(red) or {}) do if x.signal.name == name then return x.count end end
+    return 0
+  end
+  local function mags() return S.bk.get_inventory(defines.inventory.crafter_input).get_item_count("firearm-magazine") end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-40, -75, 40, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("lp-command-relay", 4.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    -- (The beacon 45 tiles off, past the barracks' 30 of repair and top-ups: the trooper has to walk.)
+    S.bk = put("lp-barracks", 0.5, 0.5)
+    S.bk.set_recipe("lp-trooper-order")
+    S.bk.get_inventory(defines.inventory.crafter_input).insert{name = "firearm-magazine", count = 30}
+    S.B = put("lp-rally-beacon", 0.5, -45.5)
+    local cc = put("constant-combinator", -1.5, -45.5)
+    cc.get_wire_connector(red, true).connect_to(S.B.get_wire_connector(red, true))
+    S.T = surface().create_entity{name = "lp-trooper", position = {-1, -47}, force = "player"}
+    S.R = surface().create_entity{name = "lp-rocket-trooper", position = {2, -47}, force = "player"}
+    lp("debug_enlist", {{-3, -49}, {4, -45}})
+    -- (A spawner healed each second: units do not fire on one that cannot be hurt, nor on a frozen biter.)
+    S.foe = surface().create_entity{name = "biter-spawner", position = {0.5, -59}, force = "enemy"}
+    S.m0, S.mags0 = nil, mags()
+    S.keys = {}
+  end)
+  for sec = 2, 110 do
+    schedule(60 + sec * 60, function()
+      if S.foe.valid then S.foe.health = S.foe.max_health end
+      local a, r = lp("debug_ammo", S.T), lp("debug_ammo", S.R)
+      if sec == 6 then S.m0 = sig(S.B, "signal-M"); S.full = {t = a.full, r = r.full} end
+      if a.dry and not S.dry_at then S.dry_at, S.fired_dry, S.mags_dry = sec, a.fired, mags() end
+      if a.key and a.key:find("rearm:", 1, true) then S.walked = true end
+      if S.dry_at and not a.dry and not S.back_at then S.back_at, S.ammo_back, S.mags_back = sec, a.ammo, mags() end
+      if S.back_at and a.key and a.key:find("fight:", 1, true) then S.fighting_again = true end
+      if r.dry then S.r_dry = true; S.r_key = r.key end
+      S.mlast = sig(S.B, "signal-M")
+      S.mmin = math.min(S.mmin or 100, S.mlast)
+    end)
+  end
+  schedule(60 + 112 * 60, function()
+    local a = lp("army")
+    S.hint = a.hints and a.hints["1:no-ammo"] ~= nil
+    info("rearm: " .. serpent.line({full = S.full, m0 = S.m0, dry_at = S.dry_at, fired = S.fired_dry, walked = S.walked,
+      back_at = S.back_at, ammo_back = S.ammo_back, mags = {S.mags0, S.mags_dry, S.mags_back}, again = S.fighting_again,
+      r_dry = S.r_dry, r_key = S.r_key, hint = S.hint, mlast = S.mlast, mmin = S.mmin, shots = a.shots, rearmed = a.rearmed}))
+    check("rearm: loadouts read from the orders: a trooper 100 rounds, a rocket trooper 10", S.full and S.full.t == 100
+      and S.full.r == 10, serpent.line(S.full))
+    check("rearm: the beacon's M falls as they fire, and reads 0 while both are dry", S.m0 and S.m0 > 0 and S.m0 < 100
+      and S.mmin == 0, serpent.line({S.m0, S.mmin}))
+    check("rearm: the trooper ran dry after its 100 rounds", S.dry_at and S.fired_dry >= 95 and S.fired_dry <= 105,
+      serpent.line({S.dry_at, S.fired_dry}))
+    check("rearm: dry, it walked to the barracks and drew 10 magazines, full again", S.walked and S.ammo_back == 100
+      and S.mags_dry - S.mags_back == 10, serpent.line({S.walked, S.ammo_back, S.mags_dry, S.mags_back}))
+    check("rearm: then it went back to the fight", S.fighting_again == true, tostring(S.fighting_again))
+    check("rearm: the rocket trooper, no rockets in any barracks, stands dry, and the force is told once",
+      S.r_dry and S.r_key == "dry" and S.hint, serpent.line({S.r_dry, S.r_key, S.hint}))
+  end)
+end
+
+-- Shots counted at the weapons' rates (0.2.464; the consult's open question: does the flame trooper's stream count once a
+-- shot?): one of each of the six by a spawner healed each second, rounds counted from 10 s to 20 s against 60 / cooldown;
+-- the flame trooper fires in bursts (about eight, then 6 to 12 s), so for it the gaps between its triggers within a
+-- burst are read off the event itself, against its cooldown.
+scenarios.shotrate = function()
+  local NAMES = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-gun-buggy", "lp-battle-tank"}
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-40, -60, 40, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    local function put(name, x, y)
+      return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+    end
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("lp-command-relay", 4.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    put("lp-rally-beacon", 0.5, -30.5)
+    S.u = {}
+    for i, n in ipairs(NAMES) do
+      S.u[n] = surface().create_entity{name = n, position = {-10 + 4 * i, -32}, force = "player"}
+    end
+    lp("debug_enlist", {{-12, -36}, {20, -28}})
+    S.foe = surface().create_entity{name = "biter-spawner", position = {0.5, -41}, force = "enemy"}
+    S.gaps, S.last = {}, nil
+    script.on_event(defines.events.on_script_trigger_effect, function(e)
+      local u = e.source_entity
+      if e.effect_id == "lp-army-shot" and u and u.valid and u.name == "lp-flame-trooper" then
+        if S.last and game.tick - S.last < 30 then S.gaps[#S.gaps + 1] = game.tick - S.last end
+        S.last = game.tick
+      end
+    end)
+  end)
+  for sec = 2, 22 do
+    schedule(60 + sec * 60, function()
+      if S.foe.valid then S.foe.health = S.foe.max_health end
+      if sec == 10 or sec == 20 then
+        S["f" .. sec] = {}
+        for n, u in pairs(S.u) do
+          local a = u.valid and lp("debug_ammo", u)
+          S["f" .. sec][n] = a and a.fired or -1
+        end
+      end
+    end)
+  end
+  schedule(60 + 23 * 60, function()
+    local out, ok = {}, true
+    table.sort(S.gaps)
+    local med = S.gaps[math.max(1, math.floor(#S.gaps / 2))]
+    local fcd = prototypes.entity["lp-flame-trooper"].attack_parameters.cooldown
+    out.flame_gap = string.format("median %s of %d gaps, cooldown %d", tostring(med), #S.gaps, fcd)
+    if not med or math.abs(med - fcd) > 1 or #S.gaps < 10 then ok = false end
+    for _, n in ipairs(NAMES) do
+      local cd = prototypes.entity[n].attack_parameters.cooldown
+      local want = 10 * 60 / cd
+      local got = (S.f20[n] or 0) - (S.f10[n] or 0)
+      out[n] = string.format("%d/%.1f", got, want)
+      -- (Within 20%, and one shot: a unit's first volley and a re-aim can fall either side of the window.)
+      if n ~= "lp-flame-trooper" and math.abs(got - want) > math.max(1, 0.2 * want) then ok = false end
+    end
+    info("shotrate: " .. serpent.line(out))
+    check("shotrate: each unit's rounds in 10 s are its weapon's rate (60 / cooldown); the flame trooper's, once a shot in its bursts",
+      ok, serpent.line(out))
+  end)
+end
+
 -- Every enemy building (0.2.463; the user: "are there other military buildings we haven't discussed?", then "Yes... and
 -- think of other gaps"), six sites 200 tiles apart, north of spawn:
 --   1 a depot 40 off an advancing beacon (Z 45), a flamer 20 beyond it: covered, not attacked (lasers alone covered);
@@ -9346,8 +9485,9 @@ scenarios.director = function()
           if (u.position.x - S.P[1]) ^ 2 + (u.position.y - S.P[2]) ^ 2 <= 20 * 20 then home = home + 1 end
         end
         local a = lp("army")
-        local got = string.format("A: razed %.0f, repelled %s; B: razed %.0f, repelled %d; enlisted %s, sent %d, out as far as %.0f, %d alive, %d home",
-          S.l1 or -1, tostring(S.rep1), l2, rep2, tostring(S.enlisted), a.defend_sent, S.far or 0, alive, home)
+        local got = string.format("A: razed %.0f, repelled %s; B: razed %.0f, repelled %d; enlisted %s, sent %d, out as far as %.0f, %d alive, %d home; ran dry %s, rearmed %s, shots %s",
+          S.l1 or -1, tostring(S.rep1), l2, rep2, tostring(S.enlisted), a.defend_sent, S.far or 0, alive, home,
+          tostring(a.dried), tostring(a.rearmed), tostring(a.shots))
         if params.mix == "armyhold" then
           -- (Not "not broken": having razed A, the force walked on to the squad and broke on it there, 2026-11-16.)
           check("director: armyhold, the squad 100 tiles off on hold stays home and A is razed as B is, unanswered",

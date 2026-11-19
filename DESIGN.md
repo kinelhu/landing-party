@@ -211,6 +211,10 @@ written when it was true; several went stale (the orbital cannon and veterancy, 
 above in the same commit; when one is dropped, move it to Dropped below with the user's words.
 
 **Before 0.3.0**
+- The army's ammunition, what stage 1 (0.2.464) left: a magazine bar on the cards and M in the squad panel; the flame
+  trooper fires in bursts of about eight with 6 to 12 s between (scenario shotrate), so its 1,000 rounds never run dry:
+  look at the unit first; stages 2 to 4 of docs/reviews/2026-11-19-army-logistics-consult.md (a supply depot the robots
+  fill, repair by the robots after a spike, the threat with the factory).
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
@@ -1067,6 +1071,23 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     a unit beyond its leash (Z, or ENGAGE beyond HERE) walks back fighting only what hits it ("back:"), and the aggro and
     the fights are leashed as above. armyhold passes (out 35); the four army scenarios, wild, foes, attackmove, squad,
     nestclear tech, scanresponse pass; siege's faction losses 26, 30, 8, 9 (73, against 71 on 0.2.461).
+  - **Ammunition, stage 1** (0.2.464; the army-logistics consult, docs/reviews/2026-11-19-army-logistics-consult.md; the
+    user: "Rearming and repairing seems like it could also be a job done by logo bots", then "Let's try that"). A unit's
+    loadout is its order recipe's ammo and capsules, a magazine's rounds each (trooper 100, breacher 10, rocket trooper
+    10, flame trooper 1,000, gun buggy 200, battle tank 20; read from the prototypes). data-final-fixes adds a script
+    trigger beside each of the six weapons' action (startup setting lp-army-ammo); command.on_shot spends a round. Dry, a
+    unit walks undistracted to the nearest powered barracks within 300 whose input holds its kinds, draws what it lacks,
+    resumes (hand orders too); none, it stands ("dry") and the force is hinted once. repair() tops up within 30, whole
+    magazines only (rounding up, a trooper took a magazine for 3 rounds and emptied 30 in a minute). M on the beacon.
+    Scenarios: `rearm` (100 rounds then dry, the walk, 10 magazines drawn, full, fighting again; a rocket trooper with no
+    rockets anywhere dry and hinted; M falls and reads 0; seen failing with the counter off, 6 of 6) and `shotrate`
+    (five weapons' counted rounds at 60 / cooldown; the flame trooper's stream counts once a shot, gaps of its cooldown 4
+    within its bursts, the consult's open question). Units do not fire at an indestructible or a frozen target (the
+    probes heal a spawner instead). Measured against ammunition off (0.2.463), seeds 12345 and 777: director armydefend
+    identical, no unit dry (407 and 433 rounds among 24, about 17 a unit against a trooper's 100: the consult's worry
+    that troopers run dry mid-defend did not happen); armyhold 12345, 3 dry, one fewer home (out 39 against 35); armydrop,
+    armyradar (777 failing on both), wild, nestclear tech, scanresponse identical; siege 26 and 29 against 26 and 30. The
+    pull ammunition makes is in long fights (nests, patrols, sieges), not defends.
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the

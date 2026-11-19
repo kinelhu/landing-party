@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.464
+Date: 2026-11-19
+  Features:
+    - Army ammunition: each unit carries the ammunition its order took and spends it as it fires. A unit that runs out walks to the nearest powered barracks holding its ammunition, rearms from its input and goes back to its orders. Units passing near a powered barracks top up. A startup setting turns it off.
+    - Rally beacons output M, the squad's ammunition left as a share of full.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.463
 Date: 2026-11-19
   Features:

@@ -604,3 +604,20 @@ do
     if u then u.affected_by_tiles = true end
   end
 end
+
+-- The army's ammunition (scripts/command.lua, on_shot; the army-logistics consult, 2026-11-19): every shot of the player's
+-- units runs a script trigger, the unit its source, so the script spends a round of what it carries. A second action
+-- beside the weapon's own, whatever its delivery (projectile, stream, instant).
+if settings.startup["lp-army-ammo"].value then
+  for _, name in pairs(require("__landing-party__.shared").ORDERS) do
+    local u = data.raw.unit[name]
+    local at = u and u.attack_parameters and u.attack_parameters.ammo_type
+    if at and at.action then
+      local act = at.action
+      if act.type then act = {act} end
+      table.insert(act, {type = "direct", action_delivery = {type = "instant",
+        source_effects = {{type = "script", effect_id = "lp-army-shot"}}}})
+      at.action = act
+    end
+  end
+end

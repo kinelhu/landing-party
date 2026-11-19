@@ -552,13 +552,14 @@ end
 -- missing): S its squad, E faction units and T faction turrets within reach of the rally point. A decider
 -- reading S can send A when the squad is full, or R when it is beaten.
 local REPORTED = {["signal-S"] = true, ["signal-H"] = true, ["signal-E"] = true, ["signal-T"] = true,
-  ["signal-W"] = true, ["signal-N"] = true}
+  ["signal-W"] = true, ["signal-N"] = true, ["signal-M"] = true}
 -- H, here (the user, 2026-11-19, of a patrol's legs: "How do we know troops have 'arrived'?"): a squad's units within
 -- HERE of its rally point, the distance a holding unit keeps to (hold, in lead: further out it is ordered back), so
 -- H = S is a squad arrived, and a clock can step a patrol on arrival instead of on a guessed leg time.
 local HERE = 12
 local nests_in   -- (below, with nest)
-local function report(beacon, p, squad, here)
+-- M, the squad's ammunition (0.2.464): what its units carry, a share of their loadouts, 0 to 100.
+local function report(beacon, p, squad, here, m)
   local cb = beacon.get_or_create_control_behavior()
   local sec
   for _, s in pairs(cb.sections) do
@@ -575,6 +576,7 @@ local function report(beacon, p, squad, here)
   sec.filters = {
     v("signal-S", squad),
     v("signal-H", here),
+    v("signal-M", m or 0),
     v("signal-E", s.count_entities_filtered{position = p.pos, radius = reach(p), force = foes(),
       type = {"unit", "spider-unit"}}),
     v("signal-T", s.count_entities_filtered{position = p.pos, radius = reach(p), force = foes(), type = DIRECT}),
@@ -843,6 +845,125 @@ local function nest(p)
   return best
 end
 
+-- Ammunition (stage 1 of the army-logistics consult, docs/reviews/2026-11-19-army-logistics-consult.md; the user: "Let's
+-- try that"): a unit carries the ammunition its order took (its recipe's ammo and capsules, a magazine's rounds each:
+-- read from the prototypes, no number typed), spends a round a shot (on_shot, the trigger data-final-fixes adds), and
+-- dry walks without firing to the nearest powered barracks within REARM_REACH whose input holds it, draws what it lacks
+-- and goes back to its orders; with none, it stands where it is, told once (hint). Passing near a powered barracks
+-- (repair's range) a unit tops up from its input. Off with the startup setting lp-army-ammo (the arena, comparisons).
+local AMMO_ON = settings.startup["lp-army-ammo"] and settings.startup["lp-army-ammo"].value
+local REARM_REACH = MAX_OFFSET
+local REARM_NEAR = 6
+local loadouts
+local function loadout(name)
+  if not loadouts then
+    loadouts = {}
+    for item, unit in pairs(shared.ORDERS) do
+      local r = prototypes.recipe[item]
+      local l = {rounds = 0, items = {}}
+      for _, ing in ipairs(r and r.ingredients or {}) do
+        local ip = ing.type == "item" and prototypes.item[ing.name]
+        if ip and (ip.type == "ammo" or ip.type == "capsule") then
+          local per = ip.type == "ammo" and ip.magazine_size or 1
+          l.items[#l.items + 1] = {name = ing.name, per = per}
+          l.rounds = l.rounds + per * ing.amount
+        end
+      end
+      loadouts[unit] = l
+    end
+  end
+  return loadouts[name]
+end
+command.loadout = loadout
+-- A unit's rounds and its loadout's (nil: no ammunition kept for it).
+local function ammo_of(t)
+  if not AMMO_ON then return nil end
+  local l = loadout(t.unit.name)
+  if not l or l.rounds == 0 then return nil end
+  return t.ammo or l.rounds, l.rounds
+end
+command.ammo_of = ammo_of
+-- Draws what the unit lacks from a barracks' input (the kinds its order took, in its recipe's order). A top-up (passing by)
+-- takes only whole magazines it has room for: rounding up, a trooper topped up each second took a magazine for 3 rounds
+-- spent and emptied 30 in a minute (scenario rearm).
+local function draw(t, b, topup)
+  local have, full = ammo_of(t)
+  if not have or have >= full then return 0 end
+  local inv = b.get_inventory(defines.inventory.crafter_input)
+  if not inv then return 0 end
+  local got = 0
+  for _, it in ipairs(loadout(t.unit.name).items) do
+    local need = full - have - got
+    if need <= 0 then break end
+    local n = math.min(topup and math.floor(need / it.per) or math.ceil(need / it.per), inv.get_item_count(it.name))
+    if n > 0 then got = got + inv.remove{name = it.name, count = n} * it.per end
+  end
+  if got > 0 then
+    t.ammo = math.min(full, have + got)
+    storage.cmd.drawn = (storage.cmd.drawn or 0) + got
+  end
+  return got
+end
+local function ammo_source(u)
+  local l = loadout(u.name)
+  local best, bd
+  for _, b in pairs(storage.cmd.barracks) do
+    if b.valid and b.force == u.force and b.surface == u.surface and b.energy > 0 then
+      local d = (b.position.x - u.position.x) ^ 2 + (b.position.y - u.position.y) ^ 2
+      if d <= REARM_REACH * REARM_REACH and (not bd or d < bd) then
+        local inv = b.get_inventory(defines.inventory.crafter_input)
+        for _, it in ipairs(inv and l.items or {}) do
+          if inv.get_item_count(it.name) > 0 then best, bd = b, d; break end
+        end
+      end
+    end
+  end
+  return best
+end
+-- A dry unit's step, each pass (and at once when it runs dry).
+local function rearm(t)
+  local u = t.unit
+  local b = t.rearm_at and storage.cmd.barracks[t.rearm_at]
+  if not (b and b.valid and b.energy > 0) then
+    b = ammo_source(u)
+    t.rearm_at = b and b.unit_number
+  end
+  if not b then
+    order(t, {type = defines.command.wander, radius = 2, distraction = defines.distraction.none}, "dry")
+    hint(u.force, "no-ammo", u)
+    return
+  end
+  if (u.position.x - b.position.x) ^ 2 + (u.position.y - b.position.y) ^ 2 <= (REARM_NEAR + 4) ^ 2 then
+    if draw(t, b) > 0 then
+      t.dry, t.rearm_at, t.key = nil, nil, nil
+      storage.cmd.rearmed = (storage.cmd.rearmed or 0) + 1
+    else
+      t.rearm_at = nil   -- (emptied meanwhile: the next pass looks again)
+    end
+  else
+    order(t, {type = defines.command.go_to_location, destination = b.position, radius = REARM_NEAR,
+      distraction = defines.distraction.none}, "rearm:" .. b.unit_number)
+  end
+end
+-- (A stream's trigger runs once a shot too, every 4 ticks for the flame trooper's: the consult's open question, measured
+-- in scenario shotrate. Its trooper fires in bursts of about eight with pauses of 6 to 12 s between.)
+function command.on_shot(e)
+  if not AMMO_ON then return end
+  local u = e.source_entity
+  local t = u and u.valid and storage.cmd.troopers[u.unit_number]
+  if not t then return end
+  local have = ammo_of(t)
+  if not have then return end
+  t.ammo = math.max(0, have - 1)
+  t.fired = (t.fired or 0) + 1
+  storage.cmd.shots = (storage.cmd.shots or 0) + 1
+  if t.ammo == 0 and not t.dry then
+    t.dry, t.key = true, nil
+    storage.cmd.dried = (storage.cmd.dried or 0) + 1
+    rearm(t)
+  end
+end
+
 local function lead()
   local objectives = {}
   -- Squad aggro (the user: "All"): a foe one unit of a squad fights, its squadmates fight too, within the reach, a pass
@@ -878,8 +999,12 @@ local function lead()
   for k in pairs(storage.cmd.answering) do
     if not (plans[k] and plans[k].alarm) then storage.cmd.answering[k] = nil end
   end
-  local here = {}
+  local here, amm, ammx = {}, {}, {}
   for _, t in pairs(storage.cmd.troopers) do
+    if t.beacon and t.unit.valid then
+      local a, full = ammo_of(t)
+      if a then amm[t.beacon] = (amm[t.beacon] or 0) + a; ammx[t.beacon] = (ammx[t.beacon] or 0) + full end
+    end
     local p = t.beacon and t.unit.valid and plans[t.beacon]
     if p and p.surface == t.unit.surface
       and (t.unit.position.x - p.pos.x) ^ 2 + (t.unit.position.y - p.pos.y) ^ 2 <= HERE * HERE then
@@ -888,7 +1013,8 @@ local function lead()
   end
   for k, b in pairs(storage.cmd.beacons) do
     mark(k, b, plans[k])
-    report(b, plans[k], squads[k] or 0, here[k] or 0)
+    report(b, plans[k], squads[k] or 0, here[k] or 0,
+      ammx[k] and math.floor(100 * amm[k] / ammx[k]) or ((squads[k] or 0) > 0 and 100 or 0))
   end
   for k, m in pairs(storage.cmd.marks or {}) do
     if not plans[k] then m.ring.destroy(); m.line.destroy(); storage.cmd.marks[k] = nil end
@@ -908,6 +1034,10 @@ local function lead()
         u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.by_damage}
         t.key = "offline"
       end
+    elseif t.dry then
+      t.offline = nil
+      open_near(u)
+      rearm(t)
     elseif t.manual then
       t.offline = nil
       manual(t)
@@ -1021,6 +1151,9 @@ local function repair()
       for _, u in pairs(b.surface.find_entities_filtered{position = b.position, radius = REPAIR_RANGE, force = b.force,
         name = UNIT_NAMES}) do
         if u.health < u.max_health then u.health = math.min(u.max_health, u.health + u.max_health * REPAIR_SHARE) end
+        -- (And topped up from its input, ammunition, 0.2.464.)
+        local t = storage.cmd.troopers[u.unit_number]
+        if t and not t.dry then draw(t, b, true) end
       end
     end
   end
@@ -1514,7 +1647,9 @@ function command.stats()
   return {trained = storage.cmd.trained or 0, retired = storage.cmd.retired or 0, surplus_held = storage.cmd.surplus_held or 0,
     moved = storage.cmd.moved or 0, defend_sent = storage.cmd.defend_sent or 0,
     route_searches = storage.cmd.route_searches or 0, razing = storage.cmd.razing or 0, kept_fighting = storage.cmd.kept_fighting or 0, routes_taken = storage.cmd.routes_taken or 0, hints = hints, alive = alive, offline = offline, capacity = command.capacity(f),
-    level = research_level(f), orders = orders, locks = storage.cmd.locks, charted = storage.cmd.charted or 0}
+    level = research_level(f), orders = orders, locks = storage.cmd.locks, charted = storage.cmd.charted or 0,
+    shots = storage.cmd.shots or 0, dried = storage.cmd.dried or 0, rearmed = storage.cmd.rearmed or 0,
+    drawn = storage.cmd.drawn or 0}
 end
 
 -- Muster points taken off the map (0.2.448: retired with packing, above): each placed one removed, what it held laid where it

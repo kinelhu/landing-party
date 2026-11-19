@@ -137,6 +137,13 @@ joins the nearest beacon within {{< var army.assign_range >}} tiles, or the one 
 **Fighting as a squad.** When one unit of a squad starts a fight, the rest of the squad within its reach joins it, even
 the units too far away to see the enemy.
 
+**Ammunition.** Each unit carries the ammunition its order took: a trooper its order's magazines, a battle tank its shells.
+Every shot spends a round. A unit that runs out stops firing and walks to the nearest powered barracks whose input holds
+its ammunition, takes what it lacks, and goes back to its orders. Feed your barracks the ammunition of the units they
+serve: a barracks making troopers holds magazines, but a squad of rocket troopers needs one holding rockets. With none
+within reach, the unit stands where it is, and you are told once. Units passing near a powered barracks top up from it.
+The setting *Army ammunition* turns all of this off.
+
 **The selection panel.** While you have units selected, each one shows a health bar over its head, and a panel above
 the quickbar shows a card for each: its picture, a health bar and the chevrons of its rank. With more than {{< var
 army.cards_max >}} selected, the panel shows one card for each kind of unit instead, with how many are selected and
@@ -199,7 +206,9 @@ relays like any building, so keep them inside your defenses and on a reliable gr
 **Beacons.** Wire a rally beacon and it reads the signals on its wires as well as its own. A decider combinator can then
 set its stance, and a clock on X or Y walks the rally point back and forth as a patrol. The beacon reports on its own
 output: **S** the units in its squad, **H** those of them within {{< var army.here >}} tiles of its rally point, **E** corporation units, Synthexis's biters and wild biters and **T** enemy turrets and worms within
-reach of its rally point, **N** the nests and worms within reach, and **W** 1 while a defending squad is out. A decider that sends A once S reaches the size you
+reach of its rally point, **N** the nests and worms within reach, **M** the squad's ammunition as a share of what its units carry when full, from 0
+to 100, and **W** 1 while a defending squad is out. A decider that sends R when M falls below 30 pulls a squad home to
+rearm before it runs dry. A decider that sends A once S reaches the size you
 want holds a squad until it is full, then attacks; one that reads W can shut gates or light lamps while the squad is
 away.
 

@@ -1,6 +1,11 @@
 -- Chat notices (scripts: shared.notice): off by default. The user (2026-10-17): "nothing is communicated through notices
 -- in factorio"; on, for debugging, the corporations' moves are told in chat and with alerts as before.
 local shared = require("shared")
+-- The army's ammunition (scripts/command.lua; the army-logistics consult, 2026-11-19): units spend the rounds their orders
+-- carried and rearm at a barracks. Startup, as it adds a trigger to their guns; off for the arena and comparison runs.
+data:extend{
+  {type = "bool-setting", name = "lp-army-ammo", setting_type = "startup", default_value = true, order = "a-b"},
+}
 data:extend{
   {type = "bool-setting", name = "lp-chat-notices", setting_type = "runtime-global", default_value = false, order = "a"},
 }
