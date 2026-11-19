@@ -146,7 +146,7 @@ script.on_event({defines.events.on_player_built_tile, defines.events.on_robot_bu
   defines.events.on_space_platform_built_tile, defines.events.on_space_platform_mined_tile}, paving.forget)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
-  {filter = "name", name = "lp-command-relay"},
+  {filter = "name", name = "lp-command-relay"}, {filter = "name", name = "lp-supply-depot"},
   {filter = "name", name = "lp-player-dome"}}
 -- The player's poles too: one built by a corporation's pylon is not wired to it (base.unwire).
 local BUILT = {{filter = "type", type = "electric-pole"}, {filter = "name", name = "lp-player-bait"},
@@ -308,10 +308,15 @@ script.on_event(defines.events.on_gui_click, function(e)
   end
 end)
 -- Which units are whose (scripts/squadgui.lua): hover links, and the squad panel beside a rally beacon's window.
-script.on_event(defines.events.on_selected_entity_changed, function(e) squadgui.on_selected(e) end)
+script.on_event(defines.events.on_selected_entity_changed, function(e)
+  squadgui.on_selected(e)
+  local p = game.get_player(e.player_index)
+  if p then command.on_hover(p) end
+end)
 script.on_event(defines.events.on_gui_opened, function(e) squadgui.on_opened(e) end)
 -- The selection's cards and control groups (scripts/cards.lua).
 cards.on_select = function(pi) command.rings(pi) end
+cards.ammo_of = command.ammo_of
 for n = 1, cards.GROUPS do
   script.on_event("lp-group-keep-" .. n, function(e)
     local k = cards.keep_group(e.player_index, n)
@@ -1079,6 +1084,8 @@ remote.add_interface("landing-party", {
     local a, full = command.ammo_of(t)
     return {ammo = a, full = full, dry = t.dry == true, key = t.key, fired = t.fired or 0}
   end,
+  -- Tests only: a beacon's squad's ammunition, as its panel shows it (0.2.465).
+  debug_beacon_ammo = function(b) return command.beacon_view(b).ammo end,
   -- Tests only: a unit's beacon and hand order.
   debug_trooper_state = function(u)
     local t = storage.cmd.troopers[u.unit_number]

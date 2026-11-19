@@ -89,7 +89,8 @@ The Director setting sets the pace: Steady, Gentle or Chaotic, or Off, which lea
   how many have arrived, the enemies, turrets and nests within reach, an alarm and its magazines. Patrols, outposts
   that call for help and squads on a clock are built from combinators.
 - **Ammunition:** units carry the rounds their order was made with and spend them as they fire. A unit that runs dry
-  walks to the nearest powered barracks holding its ammunition and rearms there. A startup setting turns it off.
+  walks to the nearest powered barracks holding its ammunition and rearms there. With the logistic system, supply depots
+  your robots fill rearm the squads at the front. A startup setting turns it off.
 - **Selection cards and control groups:** selected units show health bars, and a panel above the quickbar shows a card
   for each with its health and rank. Click a card to narrow the selection, SHIFT + click to drop it, right-click to
   follow it. CONTROL + 1 to 9 saves a group, ALT + 1 to 9 recalls it.

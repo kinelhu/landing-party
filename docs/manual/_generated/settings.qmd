@@ -3,7 +3,7 @@
 | Setting | Default | Choices | What it does |
 |:--|:--|:--|:--|
 | Chat notices | Off | On, Off | Show faction activity in chat and as alerts. First landings, destroyed bases and arriving threats are always shown. |
-| Army ammunition | On | On, Off | Your units spend the ammunition their orders carried and walk to a barracks holding it to rearm. Off: they never run out. |
+| Army ammunition | On | On, Off | Your units spend the ammunition their orders carried and walk to a barracks or supply depot holding it to rearm. Off: they never run out. |
 | Difficulty | Normal | Easy (×0.5), Normal, Hard (×1.5), Very hard (×2) | Scales every faction's strength, aggression and income. Each faction's own settings apply on top. |
 | Time between landings (minutes) | 90 | 15 to 600 | Time between a faction's landings once the first has come. |
 | Revenge landings | On | On, Off | A faction whose base you destroy sends its next landing with a larger escort. |

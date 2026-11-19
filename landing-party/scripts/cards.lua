@@ -44,6 +44,13 @@ end
 cards.live = live
 
 local function share(u) return u.max_health > 0 and u.health / u.max_health or 0 end
+-- A unit's rounds and its loadout's (0.2.465), or nil: command.ammo_of, set by control.lua as cards.ammo_of (cards does
+-- not require command).
+local function ammo(u)
+  local t = cards.ammo_of and cmd().troopers[u.unit_number]
+  if not t then return nil end
+  return cards.ammo_of(t)
+end
 
 -- A health share's colour: green, yellow at half, red at a quarter (vanilla's own health bars' steps).
 local function hp_colour(s)
@@ -52,6 +59,7 @@ local function hp_colour(s)
   return {r = 0.95, g = 0.2, b = 0.15}
 end
 cards.hp_colour = hp_colour
+local AMMO_COLOUR = {r = 0.95, g = 0.65, b = 0.1}
 
 -- What the panel shows: {n, grouped, cards = {{kind, name, count, units, health, max_health, share, rank}}, single}.
 function cards.model(player_index)
@@ -62,7 +70,7 @@ function cards.model(player_index)
     for _, u in ipairs(units) do
       local k = by[u.name]
       if not k then
-        k = {kind = "group", name = u.name, count = 0, units = {}, health = 0, max_health = 0, rank = 0}
+        k = {kind = "group", name = u.name, count = 0, units = {}, health = 0, max_health = 0, rank = 0, rounds = 0, full = 0}
         by[u.name] = k
         m.cards[#m.cards + 1] = k
       end
@@ -70,20 +78,28 @@ function cards.model(player_index)
       k.units[#k.units + 1] = u
       k.health, k.max_health = k.health + u.health, k.max_health + u.max_health
       k.rank = math.max(k.rank, veterancy.rank(u))
+      local have, full = ammo(u)
+      if have then k.rounds, k.full = k.rounds + have, k.full + full end
     end
-    for _, k in ipairs(m.cards) do k.share = k.max_health > 0 and k.health / k.max_health or 0 end
+    for _, k in ipairs(m.cards) do
+      k.share = k.max_health > 0 and k.health / k.max_health or 0
+      k.ammo = k.full > 0 and k.rounds / k.full or nil
+    end
   else
     for _, u in ipairs(units) do
+      local have, full = ammo(u)
       m.cards[#m.cards + 1] = {kind = "unit", name = u.name, count = 1, units = {u}, unit_number = u.unit_number,
-        health = u.health, max_health = u.max_health, share = share(u), rank = veterancy.rank(u)}
+        health = u.health, max_health = u.max_health, share = share(u), rank = veterancy.rank(u),
+        rounds = have, full = full, ammo = have and full > 0 and have / full or nil}
     end
   end
   if #units == 1 then
     local u = units[1]
     local t = cmd().troopers[u.unit_number]
     local order = t and t.manual and t.manual.kind or (t and t.key and t.key:gsub(":.*", "")) or "idle"
+    local have, full = ammo(u)
     m.single = {unit = u, rank = veterancy.rank(u), merit = (storage.merit or {})[u.unit_number] or 0,
-      order = order, offline = t and t.offline or false}
+      order = order, offline = t and t.offline or false, rounds = have, full = full, dry = t and t.dry or false}
   end
   return m
 end
@@ -277,6 +293,10 @@ local function build(p, m)
     b.style.size = 40
     local bar = f.add{type = "progressbar", name = "lp_card_hp", style = "lp_card_hp_bar", value = c.share}
     bar.style.color = hp_colour(c.share)
+    -- (Its ammunition under its health, 0.2.465: amber, red when out; none for a unit that keeps no rounds.)
+    local am = f.add{type = "progressbar", name = "lp_card_ammo", style = "lp_card_hp_bar", value = c.ammo or 0}
+    am.style.color = AMMO_COLOUR
+    am.visible = c.ammo ~= nil
     -- (Its rank: the unit's own gold chevrons, inside the button's corner. A label under it with a negative margin
     -- pushed the card out of its row, 2026-11-12.)
     if c.rank > 0 then
@@ -297,6 +317,7 @@ local function build(p, m)
     info.style.left_margin = 6
     info.add{type = "label", name = "lp_cards_name", style = "heading_2_label", caption = s.unit.localised_name}
     info.add{type = "label", name = "lp_cards_health"}
+    info.add{type = "label", name = "lp_cards_ammo"}
     info.add{type = "label", name = "lp_cards_rank"}
     info.add{type = "label", name = "lp_cards_order"}
   end
@@ -312,6 +333,8 @@ local function update(frame, m)
     if f then
       f.lp_card_hp.value = c.share
       f.lp_card_hp.style.color = hp_colour(c.share)
+      f.lp_card_ammo.value = c.ammo or 0
+      f.lp_card_ammo.visible = c.ammo ~= nil
       f.lp_card_button.tooltip = card_tooltip(c)
     end
   end
@@ -319,13 +342,15 @@ local function update(frame, m)
   if pane and m.single then
     local s, info = m.single, pane.lp_cards_info
     info.lp_cards_health.caption = {"lp.card-health", math.floor(s.unit.health + 0.5), math.floor(s.unit.max_health + 0.5)}
+    info.lp_cards_ammo.caption = s.rounds and (s.dry and {"lp.card-ammo-dry"} or {"lp.card-ammo", s.rounds, s.full}) or ""
+    info.lp_cards_ammo.visible = s.rounds ~= nil
     info.lp_cards_rank.caption = s.rank > 0 and {"lp.card-rank", rank_text(s.rank), {"lp.rank-" .. s.rank}, s.merit}
       or {"lp.card-merit", s.merit}
     info.lp_cards_order.caption = s.offline and {"lp.card-offline"} or {"lp.card-order-" .. s.order}
   end
 end
 
-local ORDERS_SHOWN = {move = true, attack = true, attackmove = true, idle = true}
+local ORDERS_SHOWN = {move = true, attack = true, attackmove = true, idle = true, rearm = true, dry = true}
 
 -- Everything for one player, now.
 function cards.refresh(player_index)

@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.465
+Date: 2026-11-19
+  Features:
+    - Supply depot, unlocked by the logistic system: a requester chest for your army. Your units within 30 tiles rearm from the ammunition in it; robots, inserters and trains fill it.
+    - Hover over a barracks or a supply depot to see where your units heal and rearm.
+    - The selection cards show each unit's ammunition under its health; the squad panel counts the squad's rounds and how many are rearming.
+  Changes:
+    - A unit out of ammunition rearms as soon as it is within 30 tiles of a barracks, where units already topped up.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.464
 Date: 2026-11-19
   Features:

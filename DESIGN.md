@@ -211,10 +211,10 @@ written when it was true; several went stale (the orbital cannon and veterancy, 
 above in the same commit; when one is dropped, move it to Dropped below with the user's words.
 
 **Before 0.3.0**
-- The army's ammunition, what stage 1 (0.2.464) left: a magazine bar on the cards and M in the squad panel; the flame
-  trooper fires in bursts of about eight with 6 to 12 s between (scenario shotrate), so its 1,000 rounds never run dry:
-  look at the unit first; stages 2 to 4 of docs/reviews/2026-11-19-army-logistics-consult.md (a supply depot the robots
-  fill, repair by the robots after a spike, the threat with the factory).
+- The army's ammunition, what stages 1 and 2 (0.2.464, 0.2.465) left: the flame trooper fires in bursts of about eight
+  with 6 to 12 s between (scenario shotrate), so its 1,000 rounds never run dry: look at the unit first; stages 3 and 4
+  of docs/reviews/2026-11-19-army-logistics-consult.md (repair by the robots after a spike, the threat with the
+  factory); director armydefend with a depot by the D beacon (the consult's reading: magazines drawn a beat).
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
@@ -1091,6 +1091,23 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     first long fight seen dry: eight troopers' 800 rounds fall short of the outpost and, its barracks holding no
     magazines, they stood with 2 walls left; its barracks now holds magazines and they rearm and finish (raze, move and
     click pass). paved squad fails as on every version.
+  - **Ammunition, stage 2: the supply depot, and showing it** (0.2.465; the user: "Yes we definitely need to continue that
+    thread", "could use a UI overlay on the barracks and depot showing healing/rearming range? perhaps on hover?").
+    `lp-supply-depot` (player.lua): vanilla's requester chest re-tinted, 32 slots, 500 health, made from a requester
+    chest and 10 steel and unlocked by vanilla's logistic system (a cheap requester at command bandwidth 1 would have been
+    a requester chest before vanilla's; before it the far outpost's train-fed barracks is the forward supply). The
+    player sets its requests; robots, inserters and trains fill it. Each second, the player's units within
+    shared.SUPPLY_RANGE (30, the barracks' repair range, now one constant) top up from it, whole magazines; a dry unit
+    walks to the nearest barracks or depot holding its kinds and draws once within SUPPLY_RANGE (before, within 10 of a
+    barracks while top-ups ran at 30). A depot needs no power and never heals. Hovering over a barracks or depot draws
+    SUPPLY_RANGE round each of the force's (green: a powered barracks, heals and rearms; amber: a depot, rearms; grey:
+    unpowered), the hovered one filled, to that player. The cards: an amber bar under each health bar (a group's rounds
+    together); one unit selected, "Ammunition: n / full" or none, and its order "walking to rearm" or "nowhere to rearm".
+    The squad panel: the squad's rounds against its loadouts and how many are rearming. Scenario `depot`: robots carry
+    magazines to a depot by a beacon, its trooper fires 357 rounds without walking to the barracks; the other beacon's
+    depot empty, its trooper runs dry and walks to the barracks; the panel's view counts 100 of 100 (seen failing with
+    depots off: the north trooper walks to the barracks). rearm, cards, raze, squadmove pass. **Not seen in game:** the
+    hover rings, the cards' bar and the panel line (headless has no screen).
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the

@@ -69,7 +69,7 @@ Each research lab advances one branch of Kessler-Hayashi's research, and only wh
 
 | Building | Health | What it does |
 |:--|--:|:--|
-| Barracks | 350 | Trains units from orders. |
+| Barracks | 350 | Trains units from orders. Heals your units within 30 tiles and rearms them from its input. |
 | Rally beacon | 120 | Gathers a squad and orders it by signal: A advance, R retreat, D defend, X and Y move its rally point. Squad size signals cap each unit it keeps. It outputs S its squad, E and T enemy units and turrets near it, W while its squad is out defending. |
 | Command relay | 250 | Lets you command 10 more units while powered. Research raises how many relays count. |
 | Threat scanner | 120 | Outputs the number of faction units and biters within 64 tiles, by type. |

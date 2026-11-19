@@ -355,7 +355,7 @@ def write(rp):
             "reserve_pct": fmt(100 * (num(src("scripts/army.lua"), r"^army\.RESERVE = ([\d.]+)", "army.RESERVE") or 0)),
         },
         "army": {
-            "repair_tiles": fmt(num(src("scripts/command.lua"), r"^local REPAIR_RANGE = (\d+)", "REPAIR_RANGE")),
+            "repair_tiles": fmt(num(src("shared.lua"), r"^shared\.SUPPLY_RANGE = (\d+)", "shared.SUPPLY_RANGE")),
             "offset_max": fmt(num(src("scripts/command.lua"), r"^local MAX_OFFSET = (\d+)", "MAX_OFFSET")),
             "defend_reach": fmt(num(src("scripts/command.lua"), r"^local DEFEND_REACH = (\d+)", "DEFEND_REACH")),
             "attack_reach": fmt(num(src("scripts/command.lua"), r"^local ATTACK_REACH = (\d+)", "ATTACK_REACH")),

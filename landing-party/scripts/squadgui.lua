@@ -136,6 +136,7 @@ local function build(p)
     anchor = anchor()}
   f.add{type = "label", name = "stance", style = "bold_label"}
   f.add{type = "label", name = "doing"}
+  f.add{type = "label", name = "ammo"}
   f.add{type = "line"}
   local t = f.add{type = "table", name = "units", column_count = 5}
   t.style.horizontal_spacing = 6
@@ -164,6 +165,10 @@ local function refresh(p)
   f.doing.caption = a and {"lp.squad-answering", string.format("[gps=%.0f,%.0f,%s]", a.pos.x, a.pos.y, b.surface.name)}
     or (v.stance == "defend" and {"lp.squad-waiting"} or "")
   f.doing.visible = f.doing.caption ~= ""
+  -- (Its ammunition, 0.2.465: the squad's rounds against its loadouts, and how many are dry and walking to rearm.)
+  local am = v.ammo
+  f.ammo.caption = am and (am.dry > 0 and {"lp.squad-ammo-dry", am.rounds, am.full, am.dry} or {"lp.squad-ammo", am.rounds, am.full}) or ""
+  f.ammo.visible = am ~= nil
   local w = wired(b)
   f.wired.visible = w
   local t = f.units

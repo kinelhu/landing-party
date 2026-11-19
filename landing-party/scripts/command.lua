@@ -65,6 +65,7 @@ local DEFEND_QUIET = 60
 function command.init()
   storage.cmd = storage.cmd or {barracks = {}, beacons = {}, troopers = {}}
   storage.cmd.relays = storage.cmd.relays or {}
+  storage.cmd.depots = storage.cmd.depots or {}
 end
 
 -- Command bandwidth. Capacity: RELAY_CAPACITY for each working relay, as many relays as research allows.
@@ -121,6 +122,7 @@ function command.on_built(e)
   end
   if ent.name == "lp-rally-beacon" then storage.cmd.beacons[ent.unit_number] = ent end
   if ent.name == "lp-command-relay" then storage.cmd.relays[ent.unit_number] = ent end
+  if ent.name == "lp-supply-depot" then storage.cmd.depots[ent.unit_number] = ent end
 end
 
 local function nearest(list, pos, force, range)
@@ -848,12 +850,13 @@ end
 -- Ammunition (stage 1 of the army-logistics consult, docs/reviews/2026-11-19-army-logistics-consult.md; the user: "Let's
 -- try that"): a unit carries the ammunition its order took (its recipe's ammo and capsules, a magazine's rounds each:
 -- read from the prototypes, no number typed), spends a round a shot (on_shot, the trigger data-final-fixes adds), and
--- dry walks without firing to the nearest powered barracks within REARM_REACH whose input holds it, draws what it lacks
--- and goes back to its orders; with none, it stands where it is, told once (hint). Passing near a powered barracks
--- (repair's range) a unit tops up from its input. Off with the startup setting lp-army-ammo (the arena, comparisons).
+-- dry walks without firing to the nearest source within REARM_REACH holding it (a powered barracks, its input; a supply
+-- depot, 0.2.465, its chest), draws what it lacks once within SUPPLY_RANGE of it and goes back to its orders; with none,
+-- it stands where it is, told once (hint). Within SUPPLY_RANGE of a source a unit tops up from it each second. Off with the startup setting lp-army-ammo (the arena, comparisons).
 local AMMO_ON = settings.startup["lp-army-ammo"] and settings.startup["lp-army-ammo"].value
 local REARM_REACH = MAX_OFFSET
 local REARM_NEAR = 6
+local SUPPLY_RANGE = shared.SUPPLY_RANGE
 local loadouts
 local function loadout(name)
   if not loadouts then
@@ -889,7 +892,7 @@ command.ammo_of = ammo_of
 local function draw(t, b, topup)
   local have, full = ammo_of(t)
   if not have or have >= full then return 0 end
-  local inv = b.get_inventory(defines.inventory.crafter_input)
+  local inv = b.get_inventory(b.name == "lp-supply-depot" and defines.inventory.chest or defines.inventory.crafter_input)
   if not inv then return 0 end
   local got = 0
   for _, it in ipairs(loadout(t.unit.name).items) do
@@ -904,16 +907,22 @@ local function draw(t, b, topup)
   end
   return got
 end
+-- A source a unit may draw from: a powered barracks, or a supply depot (a chest: no power).
+local function live_source(b)
+  return b and b.valid and (b.name == "lp-supply-depot" or b.energy > 0)
+end
 local function ammo_source(u)
   local l = loadout(u.name)
   local best, bd
-  for _, b in pairs(storage.cmd.barracks) do
-    if b.valid and b.force == u.force and b.surface == u.surface and b.energy > 0 then
-      local d = (b.position.x - u.position.x) ^ 2 + (b.position.y - u.position.y) ^ 2
-      if d <= REARM_REACH * REARM_REACH and (not bd or d < bd) then
-        local inv = b.get_inventory(defines.inventory.crafter_input)
-        for _, it in ipairs(inv and l.items or {}) do
-          if inv.get_item_count(it.name) > 0 then best, bd = b, d; break end
+  for _, list in ipairs({storage.cmd.barracks, storage.cmd.depots or {}}) do
+    for _, b in pairs(list) do
+      if live_source(b) and b.force == u.force and b.surface == u.surface then
+        local d = (b.position.x - u.position.x) ^ 2 + (b.position.y - u.position.y) ^ 2
+        if d <= REARM_REACH * REARM_REACH and (not bd or d < bd) then
+          local inv = b.get_inventory(b.name == "lp-supply-depot" and defines.inventory.chest or defines.inventory.crafter_input)
+          for _, it in ipairs(inv and l.items or {}) do
+            if inv.get_item_count(it.name) > 0 then best, bd = b, d; break end
+          end
         end
       end
     end
@@ -923,8 +932,8 @@ end
 -- A dry unit's step, each pass (and at once when it runs dry).
 local function rearm(t)
   local u = t.unit
-  local b = t.rearm_at and storage.cmd.barracks[t.rearm_at]
-  if not (b and b.valid and b.energy > 0) then
+  local b = t.rearm_at and (storage.cmd.barracks[t.rearm_at] or (storage.cmd.depots or {})[t.rearm_at])
+  if not live_source(b) then
     b = ammo_source(u)
     t.rearm_at = b and b.unit_number
   end
@@ -933,7 +942,9 @@ local function rearm(t)
     hint(u.force, "no-ammo", u)
     return
   end
-  if (u.position.x - b.position.x) ^ 2 + (u.position.y - b.position.y) ^ 2 <= (REARM_NEAR + 4) ^ 2 then
+  -- (Within SUPPLY_RANGE, where the top-ups are and the hover ring is drawn: before 0.2.465 a dry unit walked to within
+  -- 10 tiles of a barracks while one passing at 30 topped up.)
+  if (u.position.x - b.position.x) ^ 2 + (u.position.y - b.position.y) ^ 2 <= SUPPLY_RANGE ^ 2 then
     if draw(t, b) > 0 then
       t.dry, t.rearm_at, t.key = nil, nil, nil
       storage.cmd.rearmed = (storage.cmd.rearmed or 0) + 1
@@ -1140,8 +1151,8 @@ local function lead()
 end
 
 -- Field repair: the player's units near a powered barracks recover REPAIR_SHARE of their health a second, so
--- a squad pulled back (R) comes back whole; out in the field nothing mends them.
-local REPAIR_RANGE = 30
+-- a squad pulled back (R) comes back whole; out in the field nothing mends them. A supply depot tops up, never heals.
+local REPAIR_RANGE = shared.SUPPLY_RANGE
 local REPAIR_SHARE = 0.02
 local UNIT_NAMES = {}
 for _, name in pairs(shared.ORDERS) do table.insert(UNIT_NAMES, name) end
@@ -1157,6 +1168,48 @@ local function repair()
       end
     end
   end
+  for k, d in pairs(storage.cmd.depots or {}) do
+    if not d.valid then
+      storage.cmd.depots[k] = nil
+    elseif AMMO_ON and not d.get_inventory(defines.inventory.chest).is_empty() then
+      for _, u in pairs(d.surface.find_entities_filtered{position = d.position, radius = REPAIR_RANGE, force = d.force,
+        name = UNIT_NAMES}) do
+        local t = storage.cmd.troopers[u.unit_number]
+        if t and not t.dry then draw(t, d, true) end
+      end
+    end
+  end
+end
+
+-- Hovering over a barracks or a supply depot (the user: "a UI overlay on the barracks and depot showing healing/rearming
+-- range? perhaps on hover?"): a ring of SUPPLY_RANGE round each of the force's on the surface, to that player only,
+-- green where units heal and rearm (a powered barracks), amber where they rearm only (a depot), grey for an unpowered
+-- barracks; the one hovered filled. Cleared when the cursor leaves.
+local SERVICE = {["lp-barracks"] = true, ["lp-supply-depot"] = true}
+function command.on_hover(player)
+  storage.cmd.hover = storage.cmd.hover or {}
+  for _, r in ipairs(storage.cmd.hover[player.index] or {}) do if r.valid then r.destroy() end end
+  storage.cmd.hover[player.index] = nil
+  local sel = player.selected
+  if not (sel and sel.valid and SERVICE[sel.name] and sel.force == player.force) then return end
+  local out = {}
+  for _, list in ipairs({storage.cmd.barracks, storage.cmd.depots or {}}) do
+    for _, b in pairs(list) do
+      if b.valid and b.force == player.force and b.surface == sel.surface then
+        local depot = b.name == "lp-supply-depot"
+        local c = depot and {0.95, 0.65, 0.1} or (b.energy > 0 and {0.3, 0.9, 0.35} or {0.6, 0.6, 0.6})
+        local mine = b == sel
+        out[#out + 1] = rendering.draw_circle{color = {c[1], c[2], c[3], mine and 0.9 or 0.5}, radius = REPAIR_RANGE,
+          width = mine and 3 or 2, filled = false, target = b, surface = b.surface, players = {player.index},
+          draw_on_ground = true}
+        if mine then
+          out[#out + 1] = rendering.draw_circle{color = {c[1] * 0.12, c[2] * 0.12, c[3] * 0.12, 0.12}, radius = REPAIR_RANGE,
+            filled = true, target = b, surface = b.surface, players = {player.index}, draw_on_ground = true}
+        end
+      end
+    end
+  end
+  storage.cmd.hover[player.index] = out
 end
 
 -- The command tool's actions (control.lua passes the selection events; tests call these directly).
@@ -1609,14 +1662,20 @@ end
 function command.beacon_view(beacon)
   local p = plan(beacon)
   local count, units = {}, {}
+  local ammo = {rounds = 0, full = 0, dry = 0}
   for _, t in pairs(storage.cmd.troopers) do
     if t.beacon == beacon.unit_number and t.unit.valid and not (t.manual and t.manual.kind == "retire") then
       count[t.unit.name] = (count[t.unit.name] or 0) + 1
       units[#units + 1] = t.unit
+      local have, full = ammo_of(t)
+      if have then
+        ammo.rounds, ammo.full = ammo.rounds + have, ammo.full + full
+        if t.dry then ammo.dry = ammo.dry + 1 end
+      end
     end
   end
   return {stance = p.stance, pos = p.pos, answering = (storage.cmd.answering or {})[beacon.unit_number], count = count,
-    units = units, caps = caps(beacon) or {}}
+    units = units, caps = caps(beacon) or {}, ammo = ammo.full > 0 and ammo or nil}
 end
 function command.beacon_of(u)
   local t = storage.cmd.troopers[u.unit_number]

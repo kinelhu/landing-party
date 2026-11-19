@@ -4,6 +4,7 @@ local shared = require("shared")
 
 local barracks = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
 barracks.name = "lp-barracks"
+barracks.localised_description = {"entity-description.lp-barracks", tostring(shared.SUPPLY_RANGE)}
 barracks.minable = {mining_time = 0.5, result = "lp-barracks"}
 barracks.next_upgrade = nil
 barracks.fast_replaceable_group = nil
@@ -211,13 +212,41 @@ for _, m in ipairs({13, 14, 15}) do
     target_movement_modifier = m / 10, flags = {"not-on-map"}}})
 end
 
+-- The supply depot (stage 2 of the army-logistics consult; the user: "Rearming and repairing seems like it could also be a
+-- job done by logo bots"): a requester chest the player's robots, inserters or trains fill with ammunition; the player's
+-- units within shared.SUPPLY_RANGE rearm from it (command.lua). Built from a requester chest with the logistic system
+-- research: a cheaper requester before vanilla's would be a leak.
+local DEPOT_TINT = {r = 0.62, g = 0.72, b = 0.42}
+local depot = table.deepcopy(data.raw["logistic-container"]["requester-chest"])
+depot.name = "lp-supply-depot"
+depot.icons = {{icon = "__base__/graphics/icons/requester-chest.png", tint = DEPOT_TINT}}
+depot.icon = nil
+depot.minable = {mining_time = 0.2, result = "lp-supply-depot"}
+depot.max_health = 500
+depot.inventory_size = 32
+depot.fast_replaceable_group = nil
+depot.next_upgrade = nil
+depot.localised_description = {"entity-description.lp-supply-depot", tostring(shared.SUPPLY_RANGE)}
+for _, l in ipairs(depot.robot_door and depot.robot_door.animation and depot.robot_door.animation.layers or {}) do
+  if not l.draw_as_shadow then l.tint = DEPOT_TINT end
+end
+
 local function item(name, icon, place)
   return {type = "item", name = name, icon = icon, stack_size = 10, place_result = place, subgroup = "defensive-structure",
     order = "z[landing-party]-" .. name}
 end
 
 data:extend({
-  barracks, beacon, relay, scanner, muster,
+  barracks, beacon, relay, scanner, muster, depot,
+  (function()
+    local it = item("lp-supply-depot", "__base__/graphics/icons/requester-chest.png", "lp-supply-depot")
+    it.icon, it.icons = nil, depot.icons
+    it.localised_description = depot.localised_description
+    return it
+  end)(),
+  {type = "recipe", name = "lp-supply-depot", enabled = false, energy_required = 2,
+    ingredients = {{type = "item", name = "requester-chest", amount = 1}, {type = "item", name = "steel-plate", amount = 10}},
+    results = {{type = "item", name = "lp-supply-depot", amount = 1}}},
   (function() local it = item("lp-muster-point", "__base__/graphics/icons/steel-chest.png", "lp-muster-point"); it.hidden = true; return it end)(),
   {type = "recipe", name = "lp-muster-point", enabled = false, hidden = true, energy_required = 5,
     ingredients = {{type = "item", name = "steel-chest", amount = 1}, {type = "item", name = "radar", amount = 1},
@@ -242,7 +271,11 @@ data:extend({
   {type = "item", name = "lp-command-core", icon = "__base__/graphics/icons/processing-unit.png", stack_size = 10,
     subgroup = "intermediate-product", order = "z[landing-party]-core"},
   {type = "recipe-category", name = "lp-training"},
-  item("lp-barracks", "__base__/graphics/icons/assembling-machine-2.png", "lp-barracks"),
+  (function()
+    local it = item("lp-barracks", "__base__/graphics/icons/assembling-machine-2.png", "lp-barracks")
+    it.localised_description = barracks.localised_description
+    return it
+  end)(),
   item("lp-rally-beacon", "__base__/graphics/icons/small-lamp.png", "lp-rally-beacon"),
   {type = "item", name = "lp-trooper-order", icon = "__base__/graphics/icons/firearm-magazine.png", hidden = true,
     stack_size = 10, subgroup = "other"},
@@ -489,5 +522,14 @@ for item, unit in pairs(shared.ORDERS) do
       end
       u.localised_description = {"lp.upgraded-by", list}
     end
+  end
+end
+
+-- (The supply depot with the logistic system, beside vanilla's requester chest; above.)
+do
+  local ls = data.raw.technology["logistic-system"]
+  if ls then
+    ls.effects = ls.effects or {}
+    table.insert(ls.effects, {type = "unlock-recipe", recipe = "lp-supply-depot"})
   end
 end

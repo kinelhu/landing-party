@@ -3589,6 +3589,84 @@ scenarios.rearm = function()
   end)
 end
 
+-- The supply depot (0.2.465; stage 2 of the army-logistics consult, the user: "Rearming and repairing seems like it could
+-- also be a job done by logo bots"): two beacons 45 tiles north and south of a powered barracks whose input holds 30
+-- magazines, a trooper on each by a spawner healed each second, a supply depot beside each beacon. The north depot asks
+-- for 20 magazines and a roboport's logistic robots fill it from a passive provider; the south depot stays empty. North,
+-- the trooper tops up from its depot as it fires and never walks to the barracks, the robots refilling what it draws;
+-- south, it runs dry and walks to the barracks, as before depots. The panel's view counts the squad's rounds.
+scenarios.depot = function()
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  local function mags(e, inv) return e.get_inventory(inv).get_item_count("firearm-magazine") end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-75, -75, 40, 75)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("lp-command-relay", 4.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    S.bk = put("lp-barracks", 0.5, 0.5)
+    S.bk.set_recipe("lp-trooper-order")
+    S.bk.get_inventory(defines.inventory.crafter_input).insert{name = "firearm-magazine", count = 30}
+    -- North: a beacon, its depot, a roboport on its own power with logistic robots, a passive provider of magazines.
+    S.N = put("lp-rally-beacon", 0.5, -45.5)
+    S.dn = put("lp-supply-depot", 4.5, -44.5)
+    S.dn.get_logistic_sections().add_section().set_slot(1, {value = "firearm-magazine", min = 20})
+    put("electric-energy-interface", 14, -38)
+    put("medium-electric-pole", 12.5, -40.5)
+    S.port = put("roboport", 10, -44)
+    S.port.get_inventory(defines.inventory.roboport_robot).insert{name = "logistic-robot", count = 5}
+    S.pp = put("passive-provider-chest", 14.5, -44.5)
+    S.pp.get_inventory(defines.inventory.chest).insert{name = "firearm-magazine", count = 200}
+    -- South: a beacon and an empty depot.
+    S.S = put("lp-rally-beacon", 0.5, 45.5)
+    S.ds = put("lp-supply-depot", 4.5, 44.5)
+    S.TN = surface().create_entity{name = "lp-trooper", position = {-1, -47}, force = "player"}
+    S.TS = surface().create_entity{name = "lp-trooper", position = {-1, 47}, force = "player"}
+    lp("debug_enlist", {{-3, -49}, {1, -45}})
+    lp("debug_enlist", {{-3, 45}, {1, 49}})
+    S.fn = surface().create_entity{name = "biter-spawner", position = {0.5, -59}, force = "enemy"}
+    S.fs = surface().create_entity{name = "biter-spawner", position = {0.5, 59}, force = "enemy"}
+    S.bk0 = mags(S.bk, defines.inventory.crafter_input)
+  end)
+  for sec = 2, 120 do
+    schedule(60 + sec * 60, function()
+      if S.fn.valid then S.fn.health = S.fn.max_health end
+      if S.fs.valid then S.fs.health = S.fs.max_health end
+      local a, b = lp("debug_ammo", S.TN), lp("debug_ammo", S.TS)
+      local dn = mags(S.dn, defines.inventory.chest)
+      S.dn_max = math.max(S.dn_max or 0, dn)
+      if a.dry then S.n_dry = true end
+      if a.key and a.key:find("rearm:" .. S.bk.unit_number, 1, true) then S.n_walked = true end
+      if b.key and b.key:find("rearm:" .. S.bk.unit_number, 1, true) then S.s_walked = true end
+      if b.dry then S.s_dry = true end
+      if S.s_dry and not b.dry then S.s_back = true end
+      if sec == 10 then S.view = lp("debug_beacon_ammo", S.N) end
+      S.n_fired = a.fired
+    end)
+  end
+  schedule(60 + 122 * 60, function()
+    local a = lp("army")
+    local out = {dn_max = S.dn_max, dn = mags(S.dn, defines.inventory.chest), pp = mags(S.pp, defines.inventory.chest),
+      n_fired = S.n_fired, n_dry = S.n_dry, n_walked = S.n_walked, s_dry = S.s_dry, s_walked = S.s_walked, s_back = S.s_back,
+      bk = {S.bk0, mags(S.bk, defines.inventory.crafter_input)}, view = S.view, drawn = a.drawn}
+    info("depot: " .. serpent.line(out))
+    -- (The trooper draws as the robots fill: the depot peaked at 19 of its 20, so the check reads the provider's fall.)
+    check("depot: the robots filled the north depot from the passive provider", S.dn_max > 0 and out.pp <= 200 - 20,
+      serpent.line({S.dn_max, out.pp}))
+    check("depot: the north trooper fired past its loadout, topped up from its depot, never walking to the barracks",
+      (S.n_fired or 0) > 150 and not S.n_walked and out.pp + out.dn < 200, serpent.line({S.n_fired, S.n_walked, S.n_dry, out.pp, out.dn}))
+    check("depot: the south trooper, its depot empty, ran dry and walked to the barracks to rearm",
+      S.s_dry and S.s_walked and S.s_back and out.bk[2] < out.bk[1], serpent.line({S.s_dry, S.s_walked, S.s_back, out.bk}))
+    check("depot: the panel counts the north squad's rounds against its loadout", S.view and S.view.full == 100
+      and S.view.rounds > 0 and S.view.rounds <= 100, serpent.line(S.view))
+  end)
+end
+
 -- Shots counted at the weapons' rates (0.2.464; the consult's open question: does the flame trooper's stream count once a
 -- shot?): one of each of the six by a spawner healed each second, rounds counted from 10 s to 20 s against 60 / cooldown;
 -- the flame trooper fires in bursts (about eight, then 6 to 12 s), so for it the gaps between its triggers within a

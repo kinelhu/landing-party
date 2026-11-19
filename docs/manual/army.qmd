@@ -141,7 +141,17 @@ the units too far away to see the enemy.
 Every shot spends a round. A unit that runs out stops firing and walks to the nearest powered barracks whose input holds
 its ammunition, takes what it lacks, and goes back to its orders. Feed your barracks the ammunition of the units they
 serve: a barracks making troopers holds magazines, but a squad of rocket troopers needs one holding rockets. With none
-within reach, the unit stands where it is, and you are told once. Units passing near a powered barracks top up from it.
+within reach, the unit stands where it is, and you are told once. Units within {{< var army.repair_tiles >}} tiles of a
+powered barracks top up from it as they fight.
+
+**Supply depots.** With the logistic system researched you can build a supply depot, a requester chest for your army.
+Set its requests to the ammunition your squads use, and your robots fill it; inserters and trains can fill it too. Your
+units within {{< var army.repair_tiles >}} tiles of a depot top up from it, and a unit that runs out walks to a depot as
+readily as to a barracks. A depot needs no power, but it heals nobody. Put one by a forward beacon and the squad there
+fights on as long as the depot is fed. It is a chest on the front line, and the enemy will find it. Hover over a
+barracks or a depot to see where your units heal and rearm: green round a powered barracks, amber round a depot. The
+cards show each unit's ammunition under its health, and the squad panel counts the squad's rounds.
+
 The setting *Army ammunition* turns all of this off.
 
 **The selection panel.** While you have units selected, each one shows a health bar over its head, and a panel above
