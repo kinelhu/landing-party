@@ -59,6 +59,11 @@ fi
 # docs choose nothing: changed alone, a scenario's own checks need --area or LP_ONLY. The whole list stays the
 # milestone's, and --full the growth change's.
 area_of_scenario() {
+  # (The director's runs with the player's army in them are the army's too: 0.2.462 changed the army's holding, the
+  # player regression passed, and director armyhold, an ops run, failed unseen until the next batch.)
+  case "$1|$2" in
+    "director|LP_MIX=army"*|"director|LP_MIX=cmd"|"director|LP_MIX=repel"*|"director|LP_MIX=radarlead") echo "ops player"; return;;
+  esac
   case "$1" in
     herd|farm|creep|clear|cinder|town|quiet|biters|maxevo|stun|shotdown|cliffgap) echo biotech;;
     cut|raid|occupy|defend|army|train|siege|orders|control|attackmove|raze|nestclear|techprobe|retire|squad|squadmove|assign|patrol|reach|wild|foes|musterdrop|gunbuggy|paved|cards|tutorial|veteran|cannon|rifle|bait|flak|pdome|studies|owngates|suppress|hulls) echo player;;
@@ -119,7 +124,9 @@ if [ -n "$AREAS" ] && [ "${AREAS#* all }" = "$AREAS" ]; then
     IFS='|' read -r sc envs _ <<< "$r"
     case "$QUICK" in *" $sc|$envs "*) kept+=("$r"); continue;; esac
     [ -z "${LP_NIGHTLY:-}" ] && case "$NIGHTLY" in *" $sc|${envs// /~} "*) continue;; esac
-    case "$AREAS" in *" $(area_of_scenario "$sc") "*) kept+=("$r");; esac
+    for a in $(area_of_scenario "$sc" "$envs"); do
+      case "$AREAS" in *" $a "*) kept+=("$r"); break;; esac
+    done
   done
   RUNS=("${kept[@]}")
   echo "areas$AREAS: ${#RUNS[@]} scenarios"
