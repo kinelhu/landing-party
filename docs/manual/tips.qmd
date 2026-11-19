@@ -14,10 +14,13 @@
   a line before you need troops in a hurry.
 - **Build a relay with your first barracks.** With no working command relay you have no bandwidth, and the barracks
   holds its finished orders. Put a rally beacon down too, or new units stand where they were trained.
-- **Retire units to make room.** When your bandwidth is full, select the units you can spare and press ALT + R. They
-  walk back to a barracks and hand in their orders, and the bandwidth they took is free again.
+- **Retire units to make room.** When your bandwidth is full, select the units you can spare and press ALT + R twice.
+  They leave the field at once, lost with their kit, and the bandwidth they took is free again.
 - **Bring your veterans home.** A ranked unit is worth more than a new one, and a powered barracks heals it. Pull a
   hurt squad back before it is lost; its card in the selection panel shows how much health it has left.
+- **Keep ammunition in your barracks.** A unit that runs dry walks to the nearest barracks holding its ammunition, so
+  a barracks training troopers should hold spare magazines, and one near rocket troopers spare rockets. Further out, a
+  supply depot your robots fill lets a squad fight on without walking back.
 - **Put a threat scanner at each outpost.** Wired to a programmable speaker or a lamp, it tells you a raid has come
   before the turrets start firing.
 - **Turn on Chat notices** in the map settings if you want to hear about raids and sieges as they start. Without it,
@@ -94,9 +97,8 @@
 
 - **Get Bred-biter telemetry early.** Fighting Synthexis unlocks it (see [Spoils](spoils.qmd#field-studies)). Wire the
   *Synthexis scouts* signal to a speaker and to your rally beacons: a scout comes before every wave.
-- **Attack-move into a culture.** A rally beacon's advance goes only for corporation targets. Send squads onto
-  incubators and biochambers with attack-move or the command tool's attack, flame troopers in front for the
-  swarms.
+- **Advance on a culture.** A squad set to advance goes for its worms, then its spawning buildings, and an attack-move
+  destroys what stands round the spot it was sent to. Put flame troopers in front for the swarms.
 - **Defend every side.** A wave takes the way in your turrets cover least, and a way that held costs more next time.
   The next wave comes at your weakest side.
 - **Leave room behind the wall.** Bursters blow up at the wall and damage the turrets close to it. Turrets set a few

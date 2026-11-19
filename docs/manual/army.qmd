@@ -30,7 +30,7 @@ would pick a recipe, and a new barracks starts on troopers. What it makes is an 
 A finished order steps out of the barracks as a unit and joins the nearest rally beacon. Troopers fight units. Breachers
 throw demolition charges that wreck walls and turrets and do little to units. Rocket troopers kill armor and fliers.
 Gun buggies are your fastest unit, an autocannon on a car that breaks up infantry, light vehicles and fliers and does
-little to armor; a defending squad of them reaches the far edge of its reach first. Flame troopers burn swarms
+little to armor; in a defending squad they arrive first. Flame troopers burn swarms
 of biters and bunched infantry but are outranged. Battle tanks take bases apart and take the longest to train. Every unit's numbers are in the [Reference](reference.qmd#sec-units). While your command
 bandwidth is full, finished orders wait inside the barracks, and it stops once its output is full.
 
@@ -64,7 +64,7 @@ until that beacon is removed; then it joins the nearest one again. A unit with n
 place a beacon before your first barracks finishes an order. Hover over a beacon and lines run from it to each unit of
 its squad; hover over a unit and a line runs to its beacon.
 
-Open the beacon and set a signal to give its squad a stance. With more than one, R comes first, then A, then O, then D.
+Open the beacon and set a signal to give its squad a stance. With more than one, R comes first, then A, then D.
 A panel beside the beacon's window says what the squad is doing.
 
 - **No signal: hold.** The squad stands at the rally point and fights what comes to it. It also clears the nests and
@@ -152,17 +152,18 @@ units within {{< var army.repair_tiles >}} tiles of a depot top up from it, and 
 readily as to a barracks. A depot needs no power, but it heals nobody. Put one by a forward beacon and the squad there
 fights on as long as the depot is fed. It is a chest on the front line, and the enemy will find it. Hover over a
 barracks or a depot to see where your units heal and rearm: green round a powered barracks, amber round a depot. The
-cards show each unit's ammunition under its health, and the squad panel counts the squad's rounds.
+squad panel beside a beacon's window counts its squad's rounds.
 
 The setting *Army ammunition* turns all of this off.
 
 **The selection panel.** While you have units selected, each one shows a health bar over its head, and a panel above
-the quickbar shows a card for each: its picture, a health bar and the chevrons of its rank. With more than {{< var
+the quickbar shows a card for each: its picture, a health bar, an amber bar of its ammunition and the chevrons of its
+rank. With more than {{< var
 army.cards_max >}} selected, the panel shows one card for each kind of unit instead, with how many are selected and
 their health together. Click a card to keep only that unit, or that kind, selected. CONTROL + click on a unit's card
 selects all of its kind, and SHIFT + click drops it from the selection. Right-click a card to follow the unit in remote
-view. With a single unit selected, a larger card beside it shows the unit itself, its health, its rank and merit, and
-what it is doing.
+view. With a single unit selected, a larger card beside it shows the unit itself, its health, its ammunition, its rank and merit,
+and what it is doing.
 
 ![Twelve units selected: a health bar over each one and a card for each above the quickbar. The ranked ones wear their chevrons on the map and on their cards.](media/stills/selection-panel.jpg)
 

@@ -228,6 +228,10 @@ def write(rp):
                "bounty_minutes", "salvage_claim", "salvage_expire", "salvage_distance", "contract_minutes",
                "rotation_minutes", "rotation_max", "lull_minutes", "spree_minutes", "surge_minutes", "supply_wait",
                "expedition_minutes", "fought_minutes")}
+        # A starving camp's supply drop and departure (lifeline.lua, shared.LIFELINE).
+        lif = src("shared.lua")
+        out["lifeline_minutes"] = fmt(num(lif, r"^shared\.LIFELINE = \{[^}]*?\bminutes = (\d+)", "LIFELINE.minutes"))
+        out["lifeline_leave"] = fmt(num(lif, r"^shared\.LIFELINE = \{[^}]*?\bleave = (\d+)", "LIFELINE.leave"))
         out["wave_word"] = worded("count", need("wave_size"), "DIRECTOR.wave_size")
         out["strike_break_pct"] = pct("strike_break")
         out["warn_edge_seconds"] = fmt(round(need("warn_minutes") * 60 * need("warn_edge")))

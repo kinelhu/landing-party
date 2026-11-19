@@ -180,7 +180,7 @@ rush the first gap any of them opens. Whether it spreads again at a place depend
 - **Hit the supply.** Destroy a biochamber and its incubator stops breeding. Attacking a biochamber does not recall
   the wave, so it is a good target while a wave is out.
 - **Hit an incubator to call the wave back.** An incubator under attack recalls the wave on its way, and the fight moves
-  back along its trail.
+  back along the way it came.
 - **Kill the tumors.** Incubators cut off from the creep go back to the wild.
 - **Kill the clinic** to stop its breeds getting stronger.
 - **Starve it.** Less pollution reaching its field means less biomass and smaller waves.

@@ -98,7 +98,7 @@ theft until the camp repairs it; destroying the tap ends it.
 rig outside your turrets' range. Inside your base, a mound of dirt grows next to your chests, with a trail of dust
 leading to it from the rig. After {{< var grubstake.rig_dig_min >}} minutes, shotgunners come up through the mound,
 empty the chests nearby, break what stands close and go back down. Destroy the rig before then and nothing comes up.
-Destroy it after, and the tunnel collapses with the hands still on your side.
+Destroy it after, and the tunnel collapses with the shotgunners still on your side.
 
 **Sieges.** Only a camp that landed with a grudge, after you destroyed one of Grubstake's landers, besieges your
 walls. Against a wall your robots keep repairing, it brings a howitzer on a truck to shell your roboports from long

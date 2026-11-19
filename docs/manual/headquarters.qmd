@@ -60,7 +60,7 @@ target.
 **Warning.** You are told when it lands, with an alert and a marker on the map. If your radars cover the spot where
 its pods will come down, you are told ahead, with the place: {{< var director.warn_minutes >}} minutes with a radar right
 over the spot ({{< var director.climax_warn >}} for the largest), less the further the spot lies from the nearest
-radar, down to {{< var director.warn_edge_seconds >}} seconds at the edge of its reach. A strike at your power or at the pumps feeding your boilers
+radar, down to {{< var director.warn_edge_seconds >}} seconds at the edge of its reach. The radar that saw it raises an alert of its own. A strike at your power or at the pumps feeding your boilers
 is always told ahead, with its target named and marked on the map. It comes only while you are on the planet in
 person, and while it is out no other attack on you starts, nor for {{< var director.power_hold >}} minutes after.
 
@@ -126,6 +126,10 @@ next strike force is marked on your map as soon as it is chosen.
 - **Supply drop.** A crate of parts comes down by pod for the poorest camp at war with you, between that camp and your
   base, and is marked on your map. If the crate still stands {{< var director.supply_wait >}} minutes later, the camp
   has its parts. Destroy it first, or take the iron plates inside.
+- **A camp in trouble.** A camp that has made nothing for {{< var director.lifeline_minutes >}} minutes and is short
+  of parts gets a crate from its corporation the same way, marked on your map. If it still makes nothing
+  {{< var director.lifeline_leave >}} minutes after the drop, the camp packs up and leaves. A headquarters never leaves,
+  and neither does a camp you are fighting.
 - **Research breakthrough.** A corporation buys its next research at once. Its new units are the only sign.
 - **Joint strike.** Two corporations each send a strike force of {{< var director.joint_share_pct >}}% the usual size
   at one target, and both land together.
