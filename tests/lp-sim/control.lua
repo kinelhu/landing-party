@@ -4333,6 +4333,10 @@ scenarios.raze = function()
     put("lp-command-relay", 0.5, 6.5)
     put("medium-electric-pole", 2.5, 5.5)
     S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 8}
+    -- (Magazines in its input since 0.2.464: eight troopers carry 800 rounds, less than the outpost takes, and dry with
+    -- nothing to rearm from they stood with 2 walls left; they walk back, rearm and finish it.)
+    S.barracks.set_recipe("lp-trooper-order")
+    S.barracks.get_inventory(defines.inventory.crafter_input).insert{name = "firearm-magazine", count = 200}
     S.econ = {put("lp-generator", OX - 6, OY, FORCE), put("lp-generator", OX + 6, OY, FORCE), put("lp-generator", OX, OY + 6, FORCE),
       put("lp-pylon", OX - 3, OY - 4, FORCE), put("lp-pylon", OX + 3, OY - 4, FORCE), put("lp-bin", OX - 2, OY + 2, FORCE),
       put("lp-bin", OX + 2, OY + 2, FORCE)}

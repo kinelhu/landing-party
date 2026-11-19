@@ -1087,7 +1087,10 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     identical, no unit dry (407 and 433 rounds among 24, about 17 a unit against a trooper's 100: the consult's worry
     that troopers run dry mid-defend did not happen); armyhold 12345, 3 dry, one fewer home (out 39 against 35); armydrop,
     armyradar (777 failing on both), wild, nestclear tech, scanresponse identical; siege 26 and 29 against 26 and 30. The
-    pull ammunition makes is in long fights (nests, patrols, sieges), not defends.
+    pull ammunition makes is in long fights (nests, patrols, sieges), not defends. The player regression after (100 runs): raze failed, the
+    first long fight seen dry: eight troopers' 800 rounds fall short of the outpost and, its barracks holding no
+    magazines, they stood with 2 walls left; its barracks now holds magazines and they rearm and finish (raze, move and
+    click pass). paved squad fails as on every version.
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the
