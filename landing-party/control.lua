@@ -1119,7 +1119,8 @@ remote.add_interface("landing-party", {
     return n
   end,
   debug_group_keep = function(n) return cards.keep_group(1, n) end,
-  debug_select_army = function(idle) return cards.select_army(1, idle) end,
+  -- (A player index, the multiplayer run's second client: scripts/mp.sh LP_ARMY=1; 1 otherwise.)
+  debug_select_army = function(idle, pi) return cards.select_army(pi or 1, idle) end,
   -- Where a unit's order sends it (a formation's slot, or the point clicked).
   -- An older save's pads relaid (cell.refloor, run on configuration changes): the tiles relaid.
   debug_refloor = function() return cell.refloor() end,

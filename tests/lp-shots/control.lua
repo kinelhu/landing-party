@@ -44,7 +44,7 @@ local function poll(from, to, every, f) for t = from, to, every do schedule(t, f
 local ok_mode, mode = pcall(require, "mode")
 local MODE = ok_mode and mode or "all"
 local only = schedule
-if MODE == "town" or MODE == "culture" then schedule = function(t, f) if t <= 60 then only(t, f) end end end
+if MODE == "town" or MODE == "culture" or MODE == "army" then schedule = function(t, f) if t <= 60 then only(t, f) end end end
 
 -- Setup: no biters near, the day frozen at noon, two camps.
 schedule(60, function()
@@ -420,6 +420,157 @@ if MODE == "culture" then
     shot("23-culture-night", S.field, 0.5, true, "the culture by night")
   end)
   only(8 * 3600 + 120, function()
+    helpers.write_file(DIR .. "shots.txt", table.concat(lines, "\n") .. "\n")
+    helpers.write_file(DIR .. "done.txt", "done\n")
+  end)
+end
+
+-- LP_SHOTS=army (0.2.465 to 0.2.467, what headless runs cannot see: they have no player): the hover rings round a powered
+-- barracks, an unpowered one and a supply depot; the cards' ammunition bars and the squad panel's line beside the
+-- rounds the units really hold; a dry unit's alert, raised and cleared on rearming; a stranded one's, kept. Each reading
+-- goes in shots.txt as "CHECK ok|BAD name: detail", read back by the caller.
+if MODE == "army" then
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  local function apoll(from, to, every, f) for t = from, to, every do only(t, f) end end
+  local function check(name, ok, detail) note(string.format("CHECK %s %s: %s", ok and "ok" or "BAD", name, detail or "")) end
+  local function P() return game.get_player(1) end
+  local function gshot(name, pos, zoom, what)
+    game.take_screenshot{player = P(), by_player = P(), surface = surface(), position = pos, resolution = {1600, 900},
+      zoom = zoom, show_gui = true, show_entity_info = true, path = DIR .. name .. ".png", force_render = true}
+    note(string.format("%s.png: %s", name, what))
+  end
+  -- The rings drawn for player 1: {total, by colour key, filled}.
+  local function rings()
+    local n, filled, col = 0, 0, {}
+    for _, o in pairs(rendering.get_all_objects("landing-party")) do
+      if o.valid and o.type == "circle" then
+        local mine = false
+        for _, pl in pairs(o.players or {}) do if pl.index == 1 then mine = true end end
+        if mine then
+          n = n + 1
+          if o.filled then filled = filled + 1 end
+          local c = o.color
+          local k = string.format("%.1f/%.1f/%.1f", c.r, c.g, c.b)
+          col[k] = (col[k] or 0) + 1
+        end
+      end
+    end
+    return n, filled, col
+  end
+  local function alerts_of(u)
+    local n = 0
+    for _, by_type in pairs(P().get_alerts{entity = u, type = defines.alert_type.custom}) do
+      for _, list in pairs(by_type) do n = n + #list end
+    end
+    return n
+  end
+  only(120, function()
+    game.speed = 1
+    flatten(-60, -80, 60, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    game.forces.player.technologies["logistic-system"].researched = true
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("lp-command-relay", 4.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    S.bk = put("lp-barracks", 0.5, 0.5)
+    S.bk.set_recipe("lp-trooper-order")
+    S.bk.get_inventory(defines.inventory.crafter_input).insert{name = "firearm-magazine", count = 30}
+    -- An unpowered barracks 40 east, a depot 40 west with magazines in it (off the way north: the trooper rearms at the
+    -- barracks).
+    S.cold = put("lp-barracks", 40.5, 0.5)
+    S.depot = put("lp-supply-depot", -40.5, 0.5)
+    S.depot.get_inventory(defines.inventory.chest).insert{name = "firearm-magazine", count = 20}
+    S.B = put("lp-rally-beacon", 0.5, -45.5)
+    S.T = surface().create_entity{name = "lp-trooper", position = {-1, -47}, force = "player"}
+    S.R = surface().create_entity{name = "lp-rocket-trooper", position = {2, -47}, force = "player"}
+    lp("debug_enlist", {{-3, -49}, {4, -45}})
+    S.foe = surface().create_entity{name = "biter-spawner", position = {0.5, -59}, force = "enemy"}
+    P().teleport({0, -20})
+    note("army: set up")
+  end)
+  -- (A spawner healed each second: they do not fire on one that cannot be hurt.)
+  apoll(180, 150 * 60, 60, function() if S.foe and S.foe.valid then S.foe.health = S.foe.max_health end end)
+  -- Hover rings: a powered barracks, then the depot, then nothing.
+  only(300, function() P().selected = S.bk end)
+  only(310, function()
+    local n, f, col = rings()
+    S.ring_bk = n
+    check("rings on hovering the barracks: one each for 3 sources, the hovered filled", n >= 3 and f >= 1,
+      string.format("%d rings, %d filled, %s", n, f, serpent.line(col)))
+    gshot("army-01-rings-barracks", {0, 0}, 0.3, "hover over the powered barracks: green ring filled, grey round the unpowered one east, amber round the depot west")
+  end)
+  only(400, function() P().selected = S.depot end)
+  only(410, function()
+    local n, f, col = rings()
+    check("rings on hovering the depot", n >= 3 and f >= 1, string.format("%d rings, %d filled, %s", n, f, serpent.line(col)))
+    gshot("army-02-rings-depot", {0, 0}, 0.3, "hover over the depot: its amber ring filled")
+  end)
+  only(500, function() P().selected = nil end)
+  only(510, function()
+    local n = rings()
+    check("rings gone when nothing is hovered", n == 0, n .. " rings")
+  end)
+  -- Cards: the army selected; each card's ammunition bar against the unit's rounds.
+  local function cards_check(tag, shotname, what)
+    lp("debug_select_army", false)
+    local fr = P().gui.screen.lp_cards
+    local bars = {}
+    local function walk(el)
+      if el.name == "lp_card_ammo" then bars[#bars + 1] = string.format("%.2f%s", el.value, el.visible and "" or "(hidden)") end
+      for _, c in pairs(el.children) do walk(c) end
+    end
+    if fr then walk(fr) end
+    local a, r = lp("debug_ammo", S.T), lp("debug_ammo", S.R)
+    check("cards " .. tag, fr ~= nil and #bars >= 1, string.format("frame %s, bars %s; trooper %s/%s, rocket %s/%s",
+      tostring(fr ~= nil), table.concat(bars, " "), tostring(a and a.ammo), tostring(a and a.full), tostring(r and r.ammo),
+      tostring(r and r.full)))
+    gshot(shotname, S.T.position, 0.8, what)
+  end
+  only(600, function() cards_check("at the start", "army-03-cards-full", "the cards: amber bars full under the health bars") end)
+  -- The squad panel, opened on the beacon.
+  local function panel_check(tag, shotname)
+    P().opened = S.B
+    local f = P().gui.relative.lp_squad
+    local cap = f and f.ammo and f.ammo.caption
+    local v = lp("debug_beacon_ammo", S.B)
+    check("squad panel " .. tag, f ~= nil and f.ammo.visible, string.format("caption %s; view %s", serpent.line(cap), serpent.line(v)))
+    gshot(shotname, S.B.position, 0.8, "the beacon's window and the squad panel beside it: its ammunition line")
+  end
+  only(660, function() panel_check("at the start", "army-04-panel-full") end)
+  only(720, function() P().opened = nil end)
+  -- The dry trooper: its alert while dry, none once it is back; the rocket trooper's, kept.
+  apoll(780, 150 * 60, 30, function()
+    local a, r = lp("debug_ammo", S.T), lp("debug_ammo", S.R)
+    if not (a and r) then return end
+    if r.dry and not S.r_seen then
+      S.r_seen = game.tick
+      S.r_alert0 = alerts_of(S.R)
+    end
+    if a.dry and not S.dry_at then
+      S.dry_at = game.tick
+      S.alert_dry = alerts_of(S.T)
+      gshot("army-05-alert", {0, -30}, 0.5, "the trooper dry: its alert in the alert bar, its card's bar empty, the rocket trooper's alert")
+      cards_check("one dry", "army-06-cards-dry", "the cards with one dry: its bar empty, its order line 'dry' or 'rearm'")
+      panel_check("one dry", "army-07-panel-dry")
+      P().opened = nil
+    end
+    if S.dry_at and not a.dry and not S.back_at then
+      S.back_at = game.tick
+      S.alert_back = alerts_of(S.T)
+    end
+  end)
+  only(150 * 60 + 30, function()
+    check("rocket trooper dry and stranded, alerted, still alerted at the end", S.r_seen and S.r_alert0 >= 1 and alerts_of(S.R) >= 1,
+      string.format("dry at %s, alerts then %s, now %d", tostring(S.r_seen), tostring(S.r_alert0), alerts_of(S.R)))
+    check("trooper's alert while dry", S.dry_at and S.alert_dry >= 1, string.format("dry at %s, %s alerts",
+      tostring(S.dry_at), tostring(S.alert_dry)))
+    check("trooper's alert cleared once rearmed", S.back_at and S.alert_back == 0, string.format("back at %s, %s alerts",
+      tostring(S.back_at), tostring(S.alert_back)))
+    gshot("army-08-end", {0, -30}, 0.5, "the end: the rocket trooper's alert still up")
     helpers.write_file(DIR .. "shots.txt", table.concat(lines, "\n") .. "\n")
     helpers.write_file(DIR .. "done.txt", "done\n")
   end)
