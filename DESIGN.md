@@ -1015,7 +1015,9 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     the player's rally beacons ends their hand orders and puts them in its squad, at any distance (past the 200 a unit
     joins by itself). A size the beacon sets for a unit rises to take them (the panel's writer); a wired beacon's size is
     the circuit's, and the units beyond it, farthest first, hold where they stand, told at the beacon. Shift +
-    right-click on a beacon is an attack-move to its spot, as before.
+    right-click on a beacon does the same, the units that join attack-moving to its rally point first, the hand order
+    ending there (0.2.459; the user: "people could simply attack move next to the beacon and not on it if they don't
+    want it joined").
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the

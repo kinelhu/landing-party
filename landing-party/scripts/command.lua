@@ -598,6 +598,8 @@ local function manual(t)
     local u = t.unit
     if u.commandable.distraction_command then return end
     if (u.position.x - m.pos.x) ^ 2 + (u.position.y - m.pos.y) ^ 2 <= RAZE_NEAR * RAZE_NEAR then
+      -- (Fought its way to the beacon it joins: the squad's from here, assign.)
+      if m.join then t.manual, t.key = nil, nil; return end
       local e = raze_target(u, m)
       if e then
         storage.cmd.razing = (storage.cmd.razing or 0) + (t.key == key .. "r" .. e.unit_number and 0 or 1)
@@ -965,8 +967,10 @@ command.formation = formation
 -- and joining a beacon took a release, within 200 tiles): the selection's hand orders end and it joins that beacon, at any
 -- distance. A squad size the beacon sets for a unit rises to take them (set_size, the squad panel's), so the click does
 -- what it says; a wired beacon's size is the circuit's: the units beyond it, farthest first, hold where they stand, told
--- at the beacon.
-local function assign(player_index, beacon, units, set_size)
+-- at the beacon. Shift + right-click (fight): the same, and the units that join attack-move to its rally point first, the
+-- hand order ending there (the user: "people could simply attack move next to the beacon and not on it if they don't want
+-- it joined").
+local function assign(player_index, beacon, units, set_size, fight)
   local squads = squad_counts()
   local cap = caps(beacon)
   local id = beacon.unit_number
@@ -987,6 +991,7 @@ local function assign(player_index, beacon, units, set_size)
   end
   storage.cmd.seq = (storage.cmd.seq or 0) + 1
   local n, held, wired = 0, 0, false
+  local rally = fight and plan(beacon).pos
   for _, t in ipairs(units) do
     local name = t.unit.name
     local c = cap and cap[name]
@@ -998,6 +1003,10 @@ local function assign(player_index, beacon, units, set_size)
     end
     if room then
       t.beacon, t.manual, t.key = id, nil, nil
+      if fight then
+        t.manual = {kind = "attackmove", pos = {x = rally.x, y = rally.y}, seq = storage.cmd.seq, join = true}
+        manual(t)
+      end
       have[name] = (have[name] or 0) + 1
       n = n + 1
     else
@@ -1017,7 +1026,7 @@ local function assign(player_index, beacon, units, set_size)
         speed = 0.3}
     end
   end
-  return n, "assign", held
+  return n, fight and "assign-attackmove" or "assign", held
 end
 
 -- An order for the selection: on one of your rally beacons, join it (assign, above); on a faction entity, attack it;
@@ -1030,7 +1039,7 @@ function command.order(player_index, surface, area, attackmove, set_size)
   local pos = {x = ((lt.x or lt[1]) + (rb.x or rb[1])) / 2, y = ((lt.y or lt[2]) + (rb.y or rb[2])) / 2}
   local player = game.get_player(player_index)
   local force = player and player.force or game.forces.player
-  if not attackmove and set_size then
+  if set_size then
     local beacon, bd
     for _, e in pairs(surface.find_entities_filtered{area = {{pos.x - 1.5, pos.y - 1.5}, {pos.x + 1.5, pos.y + 1.5}},
       name = "lp-rally-beacon", force = force}) do
@@ -1043,7 +1052,7 @@ function command.order(player_index, surface, area, attackmove, set_size)
         local t = storage.cmd.troopers[un]
         if t and t.unit.valid then units[#units + 1] = t else sel[un] = nil end
       end
-      if #units > 0 then return assign(player_index, beacon, units, set_size) end
+      if #units > 0 then return assign(player_index, beacon, units, set_size, attackmove) end
     end
   end
   -- What was clicked: a hostile unit, or any building of a hostile force that can be hurt (walls, gates, pylons and labs

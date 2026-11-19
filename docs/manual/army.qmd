@@ -112,7 +112,8 @@ bandwidth 1.
   units hold where it stood.
 - **Right-click** on one of your rally beacons puts the selection in its squad, however far away the units are. If the
   beacon sets a squad size for them, the size goes up to take them. A beacon wired to a circuit keeps the circuit's
-  size: the units beyond it stay where they are.
+  size: the units beyond it stay where they are. Shift + right-click on a beacon does the same, but the units fight
+  their way to it first. To attack-move without joining, click beside the beacon.
 - **Shift + right-click** attack-moves: the units fight everything they meet on the way. Once there, they destroy the
   corporation buildings around that spot, defenses first, then the rest, then walls and gates, and hold.
 

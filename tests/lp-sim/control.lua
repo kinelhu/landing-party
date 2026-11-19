@@ -3520,8 +3520,9 @@ end
 -- Right-click on a rally beacon assigns the selection to it (0.2.458; the playtest: "Pro/con of enabling a right click on
 -- a beacon to assign selected units to it?"; before, the units moved onto its spot and stayed hand-ordered): six troopers
 -- held by hand, then four onto A (squad size 2: raised to 4), two onto B (wired, size 1 from a combinator: one joins, one
--- holds, told), one of A's onto C, 260 tiles off (past the 200 a unit joins by itself), and shift + right-click on A stays
--- an attack-move.
+-- holds, told), one of A's onto C, 260 tiles off (past the 200 a unit joins by itself), and shift + right-click on A for
+-- the one left holding: it attack-moves there and joins (the user: "people could simply attack move next to the beacon
+-- and not on it if they don't want it joined").
 scenarios.assign = function()
   local function put(name, x, y)
     return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
@@ -3576,18 +3577,21 @@ scenarios.assign = function()
     S.sel3 = pick({S.units[1]})
     S.far0 = ((S.units[1].position.x - 260.5) ^ 2 + (S.units[1].position.y - 0.5) ^ 2) ^ 0.5
     S.o3 = lp("debug_order_detail", at(S.C), false)
-    -- Shift + right-click on a beacon: an attack-move to its spot, as before.
-    S.sel4 = pick({S.units[2]})
+    -- Shift + right-click on a beacon: the one B left holding attack-moves to A and joins it there.
+    S.loner = (lp("debug_trooper_state", S.units[5]) or {}).beacon == nil and S.units[5] or S.units[6]
+    S.sel4 = pick({S.loner})
     S.o4 = lp("debug_order_detail", at(S.A), true)
+    S.st4 = lp("debug_trooper_state", S.loner)
   end)
   schedule(60 + 40 * 60, function()
     S.after = {a = view(S.A).n, b = view(S.B).n, c = view(S.C).n, capA = (view(S.A).caps or {})["lp-trooper"],
       capB = (view(S.B).caps or {})["lp-trooper"]}
+    S.st5 = lp("debug_trooper_state", S.loner)
     S.far1 = ((S.units[1].position.x - 260.5) ^ 2 + (S.units[1].position.y - 0.5) ^ 2) ^ 0.5
     S.nearA = surface().count_entities_filtered{name = "lp-trooper", force = "player", position = {10.5, -18.5}, radius = 12}
     S.nearB = surface().count_entities_filtered{name = "lp-trooper", force = "player", position = {-15.5, -18.5}, radius = 12}
     info("assign: " .. serpent.line({S.held0, S.none, S.sel1, S.o1, S.capA, S.sel2, S.o2, S.capB, S.sel3, S.o3, S.sel4,
-      S.o4, S.far0, S.far1, S.after, S.nearA, S.nearB}))
+      S.o4, S.st4, S.st5, S.far0, S.far1, S.after, S.nearA, S.nearB}))
     check("assign: six held by hand, none on a beacon", S.held0 == 6 and S.none.a == 0 and S.none.b == 0 and S.none.c == 0,
       serpent.line({S.held0, S.none}))
     check("assign: four onto A (size 2): all four join, its size raised to 4", S.o1 and S.o1.n == 4 and S.o1.kind == "assign"
@@ -3596,10 +3600,11 @@ scenarios.assign = function()
       and S.o2.held == 1 and S.capB == 1, serpent.line({S.sel2, S.o2, S.capB}))
     check("assign: one onto C, 260 tiles off: it joins and walks there, kept on C", S.o3 and S.o3.n == 1
       and S.after.c == 1 and S.far1 < S.far0 - 30, serpent.line({S.o3, S.far0, S.far1, S.after}))
-    check("assign: shift + right-click on a beacon is still an attack-move", S.o4 and S.o4.kind == "attackmove",
-      serpent.line(S.o4))
-    check("assign: after, A keeps 3 (one sent to C; the one attack-moving by hand still its) and B 1, at their beacons",
-      S.after.a == 3 and S.after.b == 1 and S.after.capA == 4 and S.after.capB == 1 and S.nearB >= 1 and S.nearA >= 3,
+    check("assign: shift + right-click on A: the one left holding attack-moves there, then is A's with no hand order",
+      S.o4 and S.o4.kind == "assign-attackmove" and S.o4.n == 1 and S.st4 and S.st4.manual == "attackmove" and S.st4.join
+      and S.st5 and S.st5.manual == nil and S.st5.beacon == S.A.unit_number, serpent.line({S.o4, S.st4, S.st5}))
+    check("assign: after, A keeps 4 (one sent to C, one fought its way in) and B 1, at their beacons",
+      S.after.a == 4 and S.after.b == 1 and S.after.capA == 4 and S.after.capB == 1 and S.nearB >= 1 and S.nearA >= 4,
       serpent.line({S.after, S.nearA, S.nearB}))
   end)
 end

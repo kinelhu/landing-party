@@ -1059,6 +1059,11 @@ remote.add_interface("landing-party", {
     return out
   end,
   debug_paving_prof = function(on) storage.paving_prof = on; return paving.stats() end,
+  -- Tests only: a unit's beacon and hand order.
+  debug_trooper_state = function(u)
+    local t = storage.cmd.troopers[u.unit_number]
+    return t and {beacon = t.beacon, manual = t.manual and t.manual.kind, join = t.manual and t.manual.join}
+  end,
   debug_beacon_view = function(beacon)
     local v = command.beacon_view(beacon)
     return {stance = v.stance, answering = v.answering, count = v.count, caps = v.caps, n = #v.units}

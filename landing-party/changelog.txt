@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.459
+Date: 2026-11-19
+  Features:
+    - Shift + right-click on a rally beacon puts the selected units in its squad too, after they fight their way to it. To attack-move without joining, click beside the beacon.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.458
 Date: 2026-11-19
   Features:
