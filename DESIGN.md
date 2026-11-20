@@ -2775,8 +2775,9 @@ if their units are upgraded also." `scripts/rd.lua`.
   again, not where research was set outright, rd.set and max_tracks: `fixed`). Scenario catchup (new): both seen
   failing on 0.2.476. techup's bound a band (6 to 14), research's cap read against the prototypes; research quick and
   catchup in the regression list; the manual's lab income per branch with a lab, tiers in the preset labels, the
-  difficulty preset's research. Open, the user's: the late band (0.2.476), Grubstake's research on old saves until it
-  builds a workshop, the tier cap and ordnance as calls made unasked.
+  difficulty preset's research. The late band: kept (the user, 2026-11-20: "I think the late lead might be ok": the
+  player leads late, +23 to +71, nothing corporate beats more than 3 of 6). Open, the user's: Grubstake's research on
+  old saves until it builds a workshop, the tier cap and ordnance as calls made unasked.
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers
