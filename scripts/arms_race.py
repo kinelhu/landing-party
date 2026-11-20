@@ -110,7 +110,8 @@ def corp_power(corp, cat, era, ahead):
     dmg = spd = 0.0
     for k in sorted(lad):
         if lad[k][2] <= era + ahead:
-            dmg += lad[k][0]; spd += lad[k][1]
+            # (A track without speed, optics since 0.2.476: damage alone.)
+            dmg += lad[k][0]; spd += lad[k][1] if n.get("speed") is not False else 0
     return (1 + dmg) * (1 + spd)
 
 def cat_of(unit):

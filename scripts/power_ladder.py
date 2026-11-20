@@ -133,7 +133,7 @@ for corp, kind in CORP_UNITS:
         dmg = track["step"] * (track.get("levels") or 0)
     elif track:
         r = research[cat]
-        dmg, spd = r["ammo-damage"], r["gun-speed"]
+        dmg, spd = r["ammo-damage"], (r["gun-speed"] if track.get("speed") is not False else 0)
     plate = next((n for n in tree_of(corp) if kind in (n.get("plates") or {})), None)
     pf = 1.0
     if plate:

@@ -30,7 +30,8 @@ def track_levels(n, d):
         if t.get("max_level") == "infinite":
             continue
         for e in t.get("effects") or []:
-            if e.get("type") in ("ammo-damage", "gun-speed") and e.get("ammo_category") in n["track"]:
+            if e.get("type") in (("ammo-damage",) if n.get("speed") is False else ("ammo-damage", "gun-speed")) \
+                    and e.get("ammo_category") in n["track"]:
                 m = re.search(r"-(\d+)$", t["name"])
                 top = max(top, int(m.group(1)) if m else 1)
     return top
@@ -517,7 +518,8 @@ def write(rp):
     ]
     L = ["## Units {#sec-units}", "",
          "Numbers are from the game's prototypes, before research. Damage is one shot. A corporation's research raises its",
-         "weapons' damage, and its armor research adds resistance to some units. *Hits air* says whether the unit's weapon",
+         "weapons' damage and most of their rates of fire, and its armor research adds resistance to some units. An era is",
+         "yours (see [The threat curve](arrivals.qmd#sec-era)). *Hits air* says whether the unit's weapon",
          "can touch a flying unit. Speed is in tiles a second, range in tiles and rate in shots a second. Corporations pay",
          "for units in parts, Synthexis in biomass, and you in command bandwidth.", ""]
     for title, items in groups:

@@ -29,7 +29,7 @@ arrival:
   research_every_min: "10"
   research_window_min: "30"
   lab_rate: "20"
-  weapon_levels: "7"
+  weapon_levels: "6"
   rail_level_pct: "60"
   research_ahead: "1"
   research_behind: "1"
@@ -297,6 +297,6 @@ director:
   climax_times: "double"
   gentle_share: "half"
 mod:
-  version: "0.2.475"
+  version: "0.2.476"
   factorio: "2.1"
   needs: "base, space-age"

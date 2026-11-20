@@ -2753,6 +2753,17 @@ if their units are upgraded also." `scripts/rd.lua`.
     the Reference), the research timeline (scripts/research_timeline.py from docs/manual/data/research-timeline.jsonl;
     the Kessler-Hayashi chapter).
 
+- **Lasers rein in (0.2.476; the user, reading the counter matrix: "the anti air trooper wins against everything?").**
+  At the top of both sides' research the anti-air trooper beat all six of the player's units (-61 to -99) and the heavy
+  laser trooper all six too: lasers took the base game's steepest ladder (laser damage and laser shooting speed, x10.6),
+  from ranges of 22 and 17 against the player's 15 to 18. Its anti-air trooper fires its own category, lp-anti-air,
+  raised by no research (its job is fliers); Kessler-Hayashi's optics track takes laser damage alone (`speed = false`:
+  x3.3, below bullets' x5). Arena late: no corporate unit beats more than 3 of the 6 (5 beat 4 or more with no
+  research); against corporations trooper +54, gun buggy +62, rocket trooper +71 (20 of 20), battle tank +53, breacher
+  +23, flame trooper -44 (from +37, +44, +59, +42, +2, -49): the player leads late more than early (+0 to +47), nothing
+  dominates. `director armylate`: the squad loses 50% (54%). techup: at lasers 5 the raid needs 10; its cap read from
+  laser damage technologies (6 at the top).
+
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers
 differentiate between factions? I was thinking range, rate of fire, even main weapon (Grubstake could use shotguns,

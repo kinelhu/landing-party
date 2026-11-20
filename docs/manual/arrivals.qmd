@@ -80,7 +80,7 @@ base falls every {{< var arrival.withdraw_min >}} minutes until none is left. Th
 {{< var arrival.vacancy_min >}} minutes sooner, and you get the withdrawn corporation's prize technology (see
 [Spoils](spoils.qmd)).
 
-## The threat curve
+## The threat curve {#sec-era}
 
 The corporations measure your progress by the science you have mastered. A technology's tier is how many kinds of
 science pack it takes, and you pass a tier once you have researched {{< var arrival.era_share_pct >}}% of the
@@ -101,8 +101,8 @@ units over the last {{< var arrival.research_window_min >}} minutes: armor again
 combat robots, heavier lasers against your troopers. It never gets far ahead of you:
 
 - Its weapons go up a level at a time ({{< var arrival.weapon_levels >}} at most), and a level is your own technology
-  of that level: at laser level 3 its lasers have what Laser weapons damage 3 and Laser shooting speed 3 give yours, in
-  damage and in rate of fire. It takes a level only once that technology is within its reach: a technology of a tier
+  of that level: at level 3 Grubstake's guns have what Physical projectile damage 3 and Weapon shooting speed 3
+  give yours, in damage and in rate of fire. Kessler-Hayashi's lasers take laser damage alone, not laser shooting speed. It takes a level only once that technology is within its reach: a technology of a tier
   no more than {{< var arrival.research_ahead >}} past your era, the tier you are researching now. Railgun damage,
   which none of your technologies raises, goes up {{< var arrival.rail_level_pct >}}% a level, one level a tier.
 - New units and abilities each carry an era, and come only once you have reached it.

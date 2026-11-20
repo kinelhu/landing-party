@@ -221,7 +221,7 @@ A camp lands with troopers, tanks and railgunners, and gets laser drones at its 
 researched in one of its three labs, once your attacks call for it.
 
 ::: {.tree tree="kessler-hayashi-units"}
-A node can be bought with parts once the units it counters have cost Kessler-Hayashi enough. Eras are yours: no node
+A node can be bought with parts once the units it counters have cost Kessler-Hayashi enough. Eras are yours (see [The threat curve](arrivals.qmd#sec-era)): no node
 comes before you reach its era. Dashed nodes are armor and siege abilities. A branch is researched, and its units
 fielded, only while its lab stands.
 :::

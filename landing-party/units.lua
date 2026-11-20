@@ -1074,10 +1074,13 @@ local function anti_air(air, ground, dtype, radius, look, ground_radius, puffs)
 end
 -- Anti-air trooper (lp-skyguard; Kessler-Hayashi's Line): a Laser trooper's body with a long tracking laser, 30 to a flier and 8 to the ground
 -- every 30 ticks, range 22. Bought when fliers kill its units (shared.CORPS tree).
+data:extend({{type = "ammo-category", name = "lp-anti-air", hidden = true}})
 local skyguard = make_infantry("lp-skyguard", {r = 0.85, g = 0.9, b = 1, a = 1}, "mech-armor")
 skyguard.max_health = shared.units["lp-skyguard"].health
 skyguard.attack_parameters = {
-  type = "projectile", ammo_category = "laser", cooldown = 30, range = 22, range_mode = "bounding-box-to-bounding-box",
+  -- (Its own category, raised by no research, 0.2.476: on lasers its weak ground hit from range 22 took the arms race's
+  -- x10.6, and at the top of both sides' research it beat all six of the player's units.)
+  type = "projectile", ammo_category = "lp-anti-air", cooldown = 30, range = 22, range_mode = "bounding-box-to-bounding-box",
   sound = table.deepcopy(data.raw["electric-turret"]["laser-turret"].attack_parameters.sound),
   animation = table.deepcopy(infantry.attack_parameters.animation),
   ammo_type = {action = {

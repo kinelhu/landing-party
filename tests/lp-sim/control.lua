@@ -7670,7 +7670,8 @@ scenarios.techup = function()
     local function cap_for(tiers)
       local cap = 0
       for k = 1, 10 do
-        for _, n in ipairs({"laser-weapons-damage-" .. k, "laser-shooting-speed-" .. k}) do
+        -- (Damage technologies alone: its lasers take no laser shooting speed since 0.2.476.)
+        for _, n in ipairs({"laser-weapons-damage-" .. k}) do
           local t = prototypes.technology[n]
           if t and t.max_level < 4294967295 and #t.research_unit_ingredients <= tiers then cap = math.max(cap, k) end
         end
@@ -7702,7 +7703,8 @@ scenarios.techup = function()
       local want = lp("debug_rd_track", "serenity", "optics", lvl).laser
       local f = game.forces["lp-serenity"]
       local dmg, spd = f.get_ammo_damage_modifier("laser"), f.get_gun_speed_modifier("laser")
-      check("techup: its level is the base game's, damage and shooting speed", want and spd > 0
+      -- (Its lasers take damage alone since 0.2.476, optics speed = false: the speed the ladder gives them is 0.)
+      check("techup: its level is the base game's, damage and shooting speed", want and want[2] == 0
         and math.abs(dmg - want[1]) < 1e-6 and math.abs(spd - want[2]) < 1e-6,
         string.format("level %d: damage %.2f speed %.2f, the ladder %s", lvl, dmg, spd, serpent.line(want)))
       local plate = 1

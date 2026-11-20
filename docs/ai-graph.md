@@ -31,7 +31,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `dev` | 622 | army, base, burstfx, cannon, cards, command, director_gui, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap, veterancy | control |  |  |  | chartcheck, cordon_off, dev_cannon, dev_platform, era_override, hq_fast, merit, ram_trace, trace |
 | `costmap` | 620 | firemap, threat | airraid, control, creep, faction, farm, herd, siege |  |  |  |  |
 | `creep` | 614 | costmap, tune | control, farm, studies |  |  |  | creep |
-| `rd` | 606 | know, tune | army, control, director, faction, ops, planner, war | ops.era |  |  | corps |
+| `rd` | 608 | know, tune | army, control, director, faction, ops, planner, war | ops.era |  |  | corps |
 | `crew` | 549 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `cards` | 471 | veterancy | control, dev | command.ammo_of, command.round_of |  |  | cards, cmd |
 | `ram` | 454 | (leaf) | control, dev, ops |  | 3, 6 |  | ram_breaches, ram_charges, ram_crushed, ram_early, ram_followers, ram_moved, rams |

@@ -246,20 +246,20 @@
     {
      "label": "Shooting speed research",
      "kind": "research",
-     "step": 3.2,
-     "power": 10.56
+     "step": 1,
+     "power": 3.3
     },
     {
      "label": "Plate",
      "kind": "round",
      "step": 1.3846,
-     "power": 14.6215
+     "power": 4.5692
     },
     {
      "label": "Rank 3",
      "kind": "rank",
      "step": 4.636,
-     "power": 67.7855
+     "power": 21.183
     }
    ],
    "plate": "physical"

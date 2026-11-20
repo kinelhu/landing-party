@@ -24,7 +24,7 @@ rd.CATEGORY = {["lp-infantry"] = "bullet", ["lp-buggy"] = "bullet", ["lp-harrier
 -- Each corporation's own infantry (units.lua): Serenity's Line troopers fire lasers, Grubstake's Shotgun hands shells.
 rd.CORP_CATEGORY = {serenity = {["lp-infantry"] = "laser", ["lp-lance"] = "laser", ["lp-shock"] = "electric",
   ["lp-railgunner"] = "lp-rail",
-  ["lp-aegis"] = "laser", ["lp-prism"] = "laser", ["lp-tesla"] = "electric", ["lp-skyguard"] = "laser", ["lp-laser-drone"] = "laser"},
+  ["lp-aegis"] = "laser", ["lp-prism"] = "laser", ["lp-tesla"] = "electric", ["lp-skyguard"] = "lp-anti-air", ["lp-laser-drone"] = "laser"},
   grubstake = {["lp-infantry"] = "shotgun-shell", ["lp-slug"] = "shotgun-shell", ["lp-sapper"] = "grenade",
     ["lp-scorcher"] = "bullet", ["lp-flak-buggy"] = "bullet"}}
 local know = require("__landing-party__.scripts.know")
@@ -278,7 +278,8 @@ local function gains(node, k)
     if l.top == 0 or node.step then return true end
     if k <= l.top then
       local a, b = l[k], l[k - 1] or {0, 0}
-      if a[1] ~= b[1] or a[2] ~= b[2] then return true end
+      -- (Damage alone on a track without speed, optics: laser shooting speed's levels give it nothing.)
+      if a[1] ~= b[1] or (node.speed ~= false and a[2] ~= b[2]) then return true end
     end
   end
   return false
@@ -294,7 +295,7 @@ local function tier_of(node, k)
     local l = ladder(c)
     if k <= l.top then
       local a, b = l[k], l[k - 1] or {0, 0}
-      if a[1] ~= b[1] or a[2] ~= b[2] then t = t == nil and l.tier[k] or math.min(t, l.tier[k]) end
+      if a[1] ~= b[1] or (node.speed ~= false and a[2] ~= b[2]) then t = t == nil and l.tier[k] or math.min(t, l.tier[k]) end
     end
   end
   return t or 0
@@ -315,6 +316,7 @@ local function set_level(f, node, c, k, tiers)
     local j = math.min(k, l.top)
     if tiers then while j > 0 and l.tier[j] > tiers do j = j - 1 end end
     local r = j > 0 and l[j] or {0, 0}
+    if node.speed == false then r = {r[1], 0} end
     f.set_ammo_damage_modifier(c, r[1])
     f.set_gun_speed_modifier(c, r[2])
   else
@@ -330,7 +332,7 @@ function rd.track_at(corp, id, k)
         local l = ladder(c)
         if l.top > 0 and not node.step then
           local r = k > 0 and l[math.min(k, l.top)] or {0, 0}
-          out[c] = {r[1], r[2]}
+          out[c] = {r[1], node.speed == false and 0 or r[2]}
         else
           out[c] = {(node.step or LEVEL_DAMAGE) * k, 0}
         end

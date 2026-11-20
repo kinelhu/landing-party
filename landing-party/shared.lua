@@ -167,7 +167,9 @@ shared.CORPS = {
       ["lp-laser-drone"] = 1},
     -- Its tech tree (scripts/rd.lua): energy weapons, range, discipline.
     tree = {
-      {id = "optics", branch = "optics", track = {"laser", "electric"}, cost = 400},
+      -- (Damage alone, speed = false, 0.2.476: laser damage and laser shooting speed together are the base game's steepest
+      -- ladder, x10.6 at its top, and its anti-air and heavy laser troopers beat all six of the player's units there.)
+      {id = "optics", branch = "optics", track = {"laser", "electric"}, speed = false, cost = 400},
       -- Siege: its mortars dig in (against sallies and the player's artillery).
       {id = "hardened", branch = "siege", era = 2, cost = 1200, ability = true, trigger = {damage = "explosion", min = 5}},
       -- Railguns: its railgunners' slugs heavier, against biters and their nests, when biters are what kill its units

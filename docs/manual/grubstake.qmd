@@ -171,7 +171,7 @@ A camp lands with buggies and shotgunners, and gets scrap copters at its {{< var
 in its workshop.
 
 ::: {.tree tree="grubstake-units"}
-A node can be bought with parts once what it counters has cost Grubstake enough. Eras are yours: no node comes before
+A node can be bought with parts once what it counters has cost Grubstake enough. Eras are yours (see [The threat curve](arrivals.qmd#sec-era)): no node comes before
 you reach its era. Dashed nodes are armor and abilities, not units.
 :::
 
