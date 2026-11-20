@@ -156,6 +156,11 @@ for item, key in (("lp-rally-beacon", "rally-beacon"), ("lp-threat-scanner", "th
 # The muster point: its mast and floodlight are thin and dark, and the film's matte lost the mast (a light floating free
 # of a box, 0.2.322): its own sprite, as the small modelled buildings above.
 write("lp-muster-point", Image.open(os.path.join(REPO, "landing-party", "graphics", "player", "muster", "body.png")).convert("RGBA"), thr=120)
+# The supply depot (player_buildings.py supply_depot, sheet.py: one direction, its robot door's 7 frames): the first, closed.
+_ds = json.load(open(os.path.join(REPO, "landing-party", "graphics", "player", "supply-depot", "sheet.json")))
+write("lp-supply-depot", Image.open(os.path.join(REPO, "landing-party", "graphics", "player", "supply-depot", "body.png"))
+      .convert("RGBA").crop((0, 0, _ds["width"], _ds["height"])), thr=120)
+done.append("lp-supply-depot")
 # (Since 0.2.326 its sheet carries its gas puff in every frame, solid at its core: a smudge beside the icon that no
 # frame or alpha cut removes. The icon of 0.2.322, the same model without the puff, kept: not installed from here.)
 write("lp-bait", north("pheromone-bait"), thr=120)

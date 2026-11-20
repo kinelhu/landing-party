@@ -216,20 +216,55 @@ end
 -- job done by logo bots"): a requester chest the player's robots, inserters or trains fill with ammunition; the player's
 -- units within shared.SUPPLY_RANGE rearm from it (command.lua). Built from a requester chest with the logistic system
 -- research: a cheaper requester before vanilla's would be a leak.
-local DEPOT_TINT = {r = 0.62, g = 0.72, b = 0.42}
 local depot = table.deepcopy(data.raw["logistic-container"]["requester-chest"])
 depot.name = "lp-supply-depot"
-depot.icons = {{icon = "__base__/graphics/icons/requester-chest.png", tint = DEPOT_TINT}}
-depot.icon = nil
+-- Its own model (tools/blender/player_buildings.py supply_depot, sheet.py; 2026-11-20, in place of the requester chest
+-- re-tinted green): a shell rack, slim two-part shells standing along its back and lying down its sides, vanilla magazines littered about, round an olive magazine whose robot hatch is the
+-- requester's robot door, its two leaves opening over the door's 7 frames (vanilla's opened_duration and sound kept).
+-- (Its icon: graphics/icons/lp-supply-depot.png, set by icons.lua with the others.)
 depot.minable = {mining_time = 0.2, result = "lp-supply-depot"}
 depot.max_health = 500
+-- (2x2 since 0.2.469: the requester chest's 1x1 remnants and explosion replaced by vanilla's generic 2x2 ones.)
+depot.corpse = "medium-remnants"
+depot.dying_explosion = "medium-explosion"
 depot.inventory_size = 32
 depot.fast_replaceable_group = nil
 depot.next_upgrade = nil
 depot.localised_description = {"entity-description.lp-supply-depot", tostring(shared.SUPPLY_RANGE)}
-for _, l in ipairs(depot.robot_door and depot.robot_door.animation and depot.robot_door.animation.layers or {}) do
-  if not l.draw_as_shadow then l.tint = DEPOT_TINT end
+do
+  local S = SHEETS["player/supply-depot"]
+  local function layer(file, extra)
+    local l = {filename = "__landing-party__/graphics/player/supply-depot/" .. file .. ".png", priority = "extra-high",
+      width = S.width, height = S.height, frame_count = S.frames, line_length = S.line_length, scale = 0.5, shift = S.shift}
+    for k, v in pairs(extra or {}) do l[k] = v end
+    return l
+  end
+  depot.robot_door.animation = {layers = {layer("body"), layer("shadow", {draw_as_shadow = true})}}
+  -- Robots deliver at the hatch on the magazine's top (0.47 tiles up, 0.12 south of the centre: 0.35 up the screen).
+  depot.robot_door.location_offset = {0, -0.35}
 end
+-- 2x2 (the user, 2026-11-20: 1x1 "unnecessarily tight"). What the requester carried for 1x1 goes or moves: its circuit
+-- connector onto the magazine's front plate (0.3 east, 0.3 up, 0.49 south: 0.19 down the screen), its water reflection (a
+-- chest's), its icon's draw scale (a chest's 0.7).
+depot.collision_box = {{-0.9, -0.9}, {0.9, 0.9}}
+depot.selection_box = {{-1, -1}, {1, 1}}
+-- (The requester's own connector moved, not rebuilt: its builder is a global the globals lint refuses.)
+do
+  local M, SH = {0.21, 0.0}, {0.21, 0.04}   -- from the chest's main offset (0.09, 0.19 with its LEDs) to the plate
+  local function move(v, d) if v then v[1], v[2] = v[1] + d[1], v[2] + d[2] end end
+  for _, c in ipairs(depot.circuit_connector or {}) do
+    for k, sp in pairs(c.sprites or {}) do
+      if k == "blue_led_light_offset" or k == "red_green_led_light_offset" then move(sp, M)
+      elseif type(sp) == "table" and sp.shift then move(sp.shift, sp.draw_as_shadow and SH or M) end
+    end
+    for _, col in ipairs({"red", "green"}) do
+      move(c.points and c.points.wire and c.points.wire[col], M)
+      move(c.points and c.points.shadow and c.points.shadow[col], SH)
+    end
+  end
+end
+depot.water_reflection = nil
+depot.icon_draw_specification = nil
 
 local function item(name, icon, place)
   return {type = "item", name = name, icon = icon, stack_size = 10, place_result = place, subgroup = "defensive-structure",
@@ -239,8 +274,7 @@ end
 data:extend({
   barracks, beacon, relay, scanner, muster, depot,
   (function()
-    local it = item("lp-supply-depot", "__base__/graphics/icons/requester-chest.png", "lp-supply-depot")
-    it.icon, it.icons = nil, depot.icons
+    local it = item("lp-supply-depot", "__landing-party__/graphics/icons/lp-supply-depot.png", "lp-supply-depot")
     it.localised_description = depot.localised_description
     return it
   end)(),

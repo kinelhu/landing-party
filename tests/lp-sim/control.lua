@@ -3622,7 +3622,7 @@ scenarios.depot = function()
     S.bk.get_inventory(defines.inventory.crafter_input).insert{name = "firearm-magazine", count = 30}
     -- North: a beacon, its depot, a roboport on its own power with logistic robots, a passive provider of magazines.
     S.N = put("lp-rally-beacon", 0.5, -45.5)
-    S.dn = put("lp-supply-depot", 4.5, -44.5)
+    S.dn = put("lp-supply-depot", 5, -45)
     S.dn.get_logistic_sections().add_section().set_slot(1, {value = "firearm-magazine", min = 20})
     put("electric-energy-interface", 14, -38)
     put("medium-electric-pole", 12.5, -40.5)
@@ -3632,7 +3632,7 @@ scenarios.depot = function()
     S.pp.get_inventory(defines.inventory.chest).insert{name = "firearm-magazine", count = 200}
     -- South: a beacon and an empty depot.
     S.S = put("lp-rally-beacon", 0.5, 45.5)
-    S.ds = put("lp-supply-depot", 4.5, 44.5)
+    S.ds = put("lp-supply-depot", 5, 45)
     S.TN = surface().create_entity{name = "lp-trooper", position = {-1, -47}, force = "player"}
     S.TS = surface().create_entity{name = "lp-trooper", position = {-1, 47}, force = "player"}
     lp("debug_enlist", {{-3, -49}, {1, -45}})

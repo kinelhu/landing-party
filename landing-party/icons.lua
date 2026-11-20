@@ -8,7 +8,7 @@ local NAMES = {"lp-bait", "lp-barracks", "lp-battle-tank-order", "lp-beacon-sche
   "lp-crystal-schematic", "lp-defoliant", "lp-drill-head", "lp-flak-turret", "lp-flame-trooper-order", "lp-fuze-schematic",
   "lp-gland-schematic", "lp-mortar-shell", "lp-muster-point", "lp-orbital-beacon", "lp-orbital-cannon", "lp-orbital-shell",
   "lp-pacifier-crystal", "lp-pact-breaker", "lp-pheromone-gland", "lp-player-dome", "lp-player-mortar", "lp-rail-coil",
-  "lp-rail-rifle", "lp-rail-slug", "lp-rally-beacon", "lp-rocket-trooper-order", "lp-strike-beacon", "lp-strip-drill",
+  "lp-rail-rifle", "lp-rail-slug", "lp-rally-beacon", "lp-rocket-trooper-order", "lp-strike-beacon", "lp-strip-drill", "lp-supply-depot",
   "lp-targeting-array", "lp-targeting-core", "lp-threat-scanner", "lp-trooper-order"}
 local function set(p, file)
   p.icon, p.icon_size, p.icons = file, 64, nil

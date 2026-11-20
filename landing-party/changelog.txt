@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.469
+Date: 2026-11-20
+  Graphics:
+    - The supply depot has its own model, a rack of ammunition round a robot hatch, and is now 2x2 (it was a re-tinted requester chest).
+---------------------------------------------------------------------------------------------------
 Version: 0.2.468
 Date: 2026-11-20
   Features:

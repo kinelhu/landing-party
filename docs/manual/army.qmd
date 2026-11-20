@@ -147,7 +147,7 @@ serve: a barracks making troopers holds magazines, but a squad of rocket trooper
 within reach, the unit stands where it is, and you are told once. Units within {{< var army.repair_tiles >}} tiles of a
 powered barracks top up from it as they fight.
 
-**Supply depots.** With the logistic system researched you can build a supply depot, a requester chest for your army.
+**Supply depots.** With the logistic system researched you can build a supply depot, a rack of ammunition round a hatch your robots land in.
 Set its requests to the ammunition your squads use, and your robots fill it; inserters and trains can fill it too. Your
 units within {{< var army.repair_tiles >}} tiles of a depot top up from it, and a unit that runs out walks to a depot as
 readily as to a barracks. A depot needs no power, but it heals nobody. Put one by a forward beacon and the squad there

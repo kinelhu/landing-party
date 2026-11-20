@@ -69,7 +69,7 @@ function steps.setup()
   S.bk = put("lp-barracks", 0.5, 0.5)
   S.bk.set_recipe("lp-trooper-order")
   S.bk.get_inventory(defines.inventory.crafter_input).insert{name = "firearm-magazine", count = 30}
-  S.depot = put("lp-supply-depot", -40.5, 0.5)
+  S.depot = put("lp-supply-depot", -41, 1)
   S.pole = put("small-electric-pole", -10.5, -30.5)
   S.B = put("lp-rally-beacon", 0.5, -45.5)
   S.T = surface().create_entity{name = "lp-trooper", position = {-1, -47}, force = "player"}

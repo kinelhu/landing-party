@@ -482,7 +482,7 @@ if MODE == "army" then
     -- An unpowered barracks 40 east, a depot 40 west with magazines in it (off the way north: the trooper rearms at the
     -- barracks).
     S.cold = put("lp-barracks", 40.5, 0.5)
-    S.depot = put("lp-supply-depot", -40.5, 0.5)
+    S.depot = put("lp-supply-depot", -41, 1)
     S.depot.get_inventory(defines.inventory.chest).insert{name = "firearm-magazine", count = 20}
     S.B = put("lp-rally-beacon", 0.5, -45.5)
     S.T = surface().create_entity{name = "lp-trooper", position = {-1, -47}, force = "player"}

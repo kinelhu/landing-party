@@ -308,7 +308,190 @@ def pheromone_bait(f):
     ANIM["pheromone-bait"] = drift
 
 
+# The supply depot's robot hatch opens over vanilla's requester chest's robot_door frames (7, its opened_duration 7 ticks):
+# a frame a step of the door, closed at the first.
+DEPOT_FRAMES = 7
+# (Metal 0.85 at first: it mirrored the grey sky and read as grey steel at 64 px, the one saturated element lost.)
+# (Then (0.62, 0.42, 0.13) at roughness 0.42: still dark posts at 1x, the coordinator; warmer, and smoother to catch the sun.)
+# (At metal 0.55 it still measured value 0.27 on the sheet, (68, 56, 38): the metal mirrored a dark sky. Mostly diffuse now.)
+# (Then (0.78, 0.47, 0.1) at metal 0.3: bright but cream-yellow, the squat rounds "a little like propane gas tanks", the
+# user. Deeper amber-bronze now, more metallic, smoother for a highlight.)
+# (At metal 0.6 it mirrored the dark sky again, brown at 1x: 0.45, still with a highlight.)
+BRASS = lpkit.mat("brass", (0.74, 0.45, 0.12), metal=0.45, rough=0.24, grime=0.2)     # worn amber-bronze
+lpkit.dirty(BRASS, dirt=0.12, dust=0.08, rust=0.02, scale=6.0)
+BAND = M("band", (0.6, 0.17, 0.06), 0.6, 0.3, grime=0.2)             # a shell's copper driving band
+SHELL = M("shell", (0.1, 0.115, 0.06), 0.3, 0.5)                     # its projectile, olive drab
+MAG_Y = M("mag-y", (0.75, 0.52, 0.02), 0.2, 0.5, grime=0.25)       # vanilla's firearm magazine
+MAG_R = M("mag-r", (0.6, 0.06, 0.03), 0.2, 0.5, grime=0.25)        # and its piercing one
+# The magazine's olive, greener than PAINT (the army's hue): PAINT's saturation read grey on so small a box.
+OLIVE = M("olive", (0.17, 0.27, 0.15), 0.3, 0.6)
+if os.path.isdir(lptex.TEX):
+    OLIVE = lptex.textured("olive-t", "PaintedMetal006", hue=0.45, sat=0.85, val=0.6, scale=2.5, edge=(0.45, 0.45, 0.42))
+# (The textured HAZ's edge wear, its bevel radius wider than the step's small blocks, turned them all off-white.)
+HAZ_STEP = M("haz-step", (0.68, 0.48, 0.06), 0.2, 0.6, grime=0.5)
+TIP = M("tip", (0.2, 0.15, 0.11), 0.8, 0.4)                                    # the projectile: dark copper-steel
+
+
+def lathe(profile, x, y, z, mats, split, steps=28, tilt=(0, 0)):
+    """A turned part from a profile of (r, h) points, its faces above h = split the second material: a cartridge."""
+    import bmesh
+    bm = bmesh.new()
+    vs = [bm.verts.new((r, 0, h)) for r, h in profile]
+    es = [bm.edges.new((vs[i], vs[i + 1])) for i in range(len(vs) - 1)]
+    bmesh.ops.spin(bm, geom=vs + es, axis=(0, 0, 1), cent=(0, 0, 0), steps=steps, angle=2 * math.pi, use_duplicate=False)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
+    me = bpy.data.meshes.new("lathe"); bm.to_mesh(me); bm.free()
+    for m in mats: me.materials.append(m)
+    for p in me.polygons:
+        p.material_index = 1 if p.center.z > split else 0
+        p.use_smooth = True
+    o = bpy.data.objects.new("lathe", me); scene.collection.objects.link(o)
+    o.location = (x, y, z); o.rotation_euler = (tilt[0], tilt[1], 0)
+    return o
+
+
+def supply_depot(f):
+    # (The coordinator's pick B of the clay candidates, 2026-11-20, a shell rack round a magazine; 2x2 since the user found
+    # 1x1 "unnecessarily tight".) A dark steel skid; slim two-part shells in a dark cradle, two rows standing along the back,
+    # stacked lying down each side noses out; the magazine in the middle in the army's olive, its robot hatch two leaves that
+    # open for a robot as vanilla's requester door does; a hazard step at the open front between two ammunition crates;
+    # vanilla's firearm and piercing magazines littered about. The brass and the magazines' yellow are its saturated parts.
+    bevel(B(1.94, 1.94, 0.08, 0, 0, 0, DARK), 0.015)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            cyl(0.03, 0.014, sx * 0.9, sy * 0.9, 0.08, STEEL, verts=8)
+    for x in (-0.5, 0.5):        # the skid's fork pockets
+        B(0.3, 0.02, 0.04, x, -0.965, 0.015, RUBBER, bevel=0.0)
+        B(0.02, 0.3, 0.04, -0.965 if x < 0 else 0.965, 0.1, 0.015, RUBBER, bevel=0.0)
+    for y in (-0.5, 0.2, 0.62):  # panel seams on the deck
+        B(1.86, 0.008, 0.004, 0, y, 0.08, RUBBER, bevel=0.0)
+    B(0.008, 1.86, 0.004, 0, 0, 0.08, RUBBER, bevel=0.0)
+    for k in range(9):
+        B(0.9 / 9, 0.2, 0.03, -0.45 + 0.9 / 9 * (k + 0.5), -0.8, 0.08, HAZ_STEP if k % 2 == 0 else POLE, bevel=0.0)
+    # The magazine: an olive box on a dark belt, seams, stencil plates, rivets, handles; its hatch on top.
+    zb = 0.08
+    bevel(B(0.9, 0.8, 0.05, 0, -0.12, zb, DARK), 0.01)
+    bevel(B(0.84, 0.74, 0.34, 0, -0.12, zb + 0.01, OLIVE), 0.035)
+    top = zb + 0.35
+    for x in (-0.14, 0.14):
+        B(0.006, 0.008, 0.3, x, -0.492, zb + 0.03, RUBBER, bevel=0.0)
+    B(0.22, 0.014, 0.12, -0.28, -0.492, zb + 0.16, DARK, bevel=0.0)
+    B(0.22, 0.014, 0.12, 0.28, -0.492, zb + 0.16, DARK, bevel=0.0)
+    for x in (-0.38, 0.38):
+        for z in (zb + 0.06, zb + 0.3):
+            cyl(0.012, 0.01, x, -0.495, z, STEEL, verts=6, rot=(math.pi / 2, 0, 0))
+    for s in (-1, 1):
+        rod((s * 0.43, -0.32, zb + 0.26), (s * 0.43, 0.06, zb + 0.26), 0.016, STEEL, verts=6)
+    bevel(B(0.62, 0.54, 0.04, 0, -0.12, top, DARK), 0.008)
+    B(0.5, 0.42, 0.004, 0, -0.12, top + 0.04, RUBBER, bevel=0.0)          # the well, seen when the leaves part
+    for (x, y) in ((-0.14, -0.2), (0.0, -0.06), (0.12, -0.2), (-0.1, 0.0), (0.16, 0.0)):
+        cyl(0.06, 0.006, x, y, top + 0.041, BRASS, verts=16)
+    leaves = []
+    for s in (-1, 1):
+        piv = bpy.data.objects.new("hinge", None); scene.collection.objects.link(piv)
+        piv.location = (s * 0.25, -0.12, top + 0.04)
+        leaf = bevel(B(0.248, 0.46, 0.03, 0, 0, 0, OLIVE), 0.008)
+        leaf.parent = piv; leaf.location = (-s * 0.125, 0, 0.015)
+        for dy in (-0.12, 0.12):
+            rib = B(0.2, 0.025, 0.014, 0, 0, 0, DARK, bevel=0.0); rib.parent = piv; rib.location = (-s * 0.125, dy, 0.037)
+        rod((s * 0.25, -0.36, top + 0.055), (s * 0.25, 0.12, top + 0.055), 0.016, DARK, verts=6)
+        leaves.append((s, piv))
+    # The rounds (the user, of the squat rounds before: "a little like propane gas tanks"): shells, two-part, slim (about
+    # 4:1), a case rim, a brass case, a copper driving band, an olive-drab projectile with a tangent-ogive nose and a fuze.
+    # Two rows stand along the back (the rear taller); down each side they lie in the cradle, stacked, noses outward.
+    def shell(R, L, x, y, z, rot=(0, 0)):
+        prof = [(0.0, 0.0), (R * 1.08, 0.0), (R * 1.08, 0.025 * L), (R * 0.9, 0.035 * L), (R * 0.9, 0.05 * L), (R, 0.06 * L),
+                (R, 0.4 * L), (R * 1.06, 0.401 * L), (R * 1.06, 0.44 * L), (R, 0.441 * L), (R, 0.5 * L)]
+        lo, tip = 0.47 * L, 0.08 * R              # the ogive: from 0.5 L to 0.97 L, its tangent arc closing to the fuze
+        rho = (R * R + lo * lo) / (2 * R)
+        for k in range(1, 9):
+            t = lo * k / 8
+            r = math.sqrt(max(0.0, rho * rho - t * t)) + R - rho      # (t from the base: R there, 0 at the nose; inverted first, a bulb)
+            prof.append((max(tip, r), 0.5 * L + t))
+        prof += [(tip * 0.9, 0.99 * L), (0.0, L)]
+        bands = [(0.4 * L, BRASS), (0.441 * L, BAND), (0.965 * L, SHELL), (9.0, STEEL)]
+        o = lathe(prof, x, y, z, [m for _, m in bands], 0.0, tilt=rot)
+        for p in o.data.polygons:
+            p.material_index = next(i for i, (h, _) in enumerate(bands) if p.center.z < h)
+        return o
+    for k, x in enumerate((-0.76, -0.38, 0.0, 0.38, 0.76)):
+        shell(0.085, 0.72, x, 0.8, zb, rot=((k % 3 - 1) * 0.02, ((k * 7) % 5 - 2) * 0.01))
+        lpkit.torus(0.09, 0.012, x, 0.8, zb + 0.05, DARK)
+    for k, x in enumerate((-0.57, -0.19, 0.19, 0.57)):
+        shell(0.08, 0.6, x, 0.5, zb, rot=(((k + 1) % 3 - 1) * 0.02, 0))
+        lpkit.torus(0.085, 0.012, x, 0.5, zb + 0.05, DARK)
+    for s in (-1, 1):
+        for xs in (0.56, 0.84):     # the saddles the lying rounds rest in
+            bevel(B(0.06, 0.66, 0.05, s * xs, 0.02, zb, DARK), 0.006)
+        R = 0.055
+        for k, y in enumerate((0.28, 0.15, 0.02, -0.11, -0.24)):
+            shell(R, 0.46, s * 0.46, y, zb + 0.05 + R, rot=(0, s * math.pi / 2))
+        for k, y in enumerate((0.215, 0.085, -0.045, -0.175)):
+            shell(R, 0.44, s * 0.47, y, zb + 0.05 + R + 0.11, rot=(0, s * math.pi / 2))
+    # Vanilla's magazines littered about (the user: "could we show some factorio style magazines littered on the building"):
+    # its firearm magazine's curved yellow body (the piercing one red), dark feed lips, a brass round showing at the top.
+    def magazine(x, y, z, yaw, pitch, body):
+        import bmesh
+        bm = bmesh.new()
+        n, arc, rad, d, t = 6, math.radians(32), 0.3, 0.085, 0.05
+        rings = []
+        for i in range(n + 1):
+            a = arc * i / n
+            c = V((rad * (1 - math.cos(a)), 0, rad * math.sin(a))); nn = V((math.cos(a), 0, -math.sin(a)))
+            rings.append([bm.verts.new(c + nn * u + V((0, v, 0))) for (u, v) in
+                          ((-d / 2, -t / 2), (d / 2, -t / 2), (d / 2, t / 2), (-d / 2, t / 2))])
+        for i in range(n):
+            for j in range(4):
+                bm.faces.new((rings[i][j], rings[i][(j + 1) % 4], rings[i + 1][(j + 1) % 4], rings[i + 1][j]))
+        bm.faces.new(rings[0][::-1]); bm.faces.new(rings[-1])
+        me = bpy.data.meshes.new("mag"); bm.to_mesh(me); bm.free()
+        me.materials.append(body); me.materials.append(DARK)
+        for p in me.polygons:      # the last segment dark: its feed lips
+            p.material_index = 1 if p.center.z > rad * math.sin(arc * (n - 1) / n) else 0
+        piv = bpy.data.objects.new("magazine", None); scene.collection.objects.link(piv)
+        piv.location = (x, y, z); piv.rotation_euler = (pitch, 0, yaw)
+        o = bpy.data.objects.new("mag", me); scene.collection.objects.link(o); o.parent = piv
+        bevel(o, 0.006, 2)
+        top = V((rad * (1 - math.cos(arc)), 0, rad * math.sin(arc))) + V((math.sin(arc), 0, math.cos(arc))) * 0.012
+        rd = cyl(0.017, 0.045, 0, 0, 0, BRASS, verts=10, rot=(math.pi / 2, 0, 0)); rd.parent = piv
+        rd.location = top
+        return piv
+    # (x, y, z, yaw, pitch: lying is pi/2 about x; leaning a little off vertical)
+    for (x, y, z, yaw, pitch, m) in ((-0.78, -0.72, zb + 0.2 + 0.025, 0.5, math.pi / 2, MAG_Y),
+                                     (-0.64, -0.8, zb + 0.2 + 0.025, 2.3, math.pi / 2, MAG_R),
+                                     (0.66, -0.7, zb + 0.34 + 0.025, -0.9, math.pi / 2, MAG_Y),
+                                     (-0.3, -0.55, zb, 0.0, -0.3, MAG_Y),
+                                     (0.27, -0.55, zb, 0.15, -0.35, MAG_Y),
+                                     (0.12, -0.76, zb + 0.03 + 0.025, 1.1, math.pi / 2, MAG_Y),
+                                     (-0.3, -0.82, zb + 0.025, -0.6, math.pi / 2, MAG_R)):
+        magazine(x, y, z, yaw, pitch, m)
+    # The cradle: rails at two heights round the back and sides, posts.
+    # (Low, at 0.06 and 0.15: at 0.24 the upper rail hid the standing rounds' brass cases.)
+    for z in (zb + 0.06, zb + 0.15):
+        rod((-0.95, -0.62, z), (-0.95, 0.95, z), 0.02, DARK, verts=6)
+        rod((-0.95, 0.95, z), (0.95, 0.95, z), 0.02, DARK, verts=6)
+        rod((0.95, 0.95, z), (0.95, -0.62, z), 0.02, DARK, verts=6)
+        rod((-0.95, 0.65, z), (0.95, 0.65, z), 0.016, DARK, verts=6)
+    for (x, y) in ((-0.95, -0.62), (-0.95, 0.95), (0.95, 0.95), (0.95, -0.62), (-0.95, 0.3), (0.95, 0.3), (0.0, 0.95), (-0.95, 0.65), (0.95, 0.65)):
+        rod((x, y, zb), (x, y, zb + 0.18), 0.024, DARK, verts=6)
+    # Two ammunition crates at the front corners, strapped, a lid each; the right one a second, smaller, on it.
+    for (x, y, yaw, w, d, h, z) in ((-0.72, -0.74, 0.12, 0.38, 0.28, 0.2, zb), (0.7, -0.74, -0.08, 0.4, 0.3, 0.2, zb),
+                                    (0.68, -0.72, 0.18, 0.28, 0.2, 0.14, zb + 0.2)):
+        bevel(B(w, d, h, x, y, z, OLIVE, rot=yaw), 0.015)
+        B(w + 0.01, d + 0.01, 0.025, x, y, z + h - 0.025, DARK, rot=yaw, bevel=0.0)
+        for t in (-0.3, 0.3):
+            B(0.025, d + 0.012, h - 0.03, x + t * w * math.cos(yaw), y + t * w * math.sin(yaw), z, DARK, rot=yaw, bevel=0.0)
+
+    def door(fr):
+        a = math.radians(105) * fr / (DEPOT_FRAMES - 1)
+        for s, piv in leaves:
+            piv.rotation_euler = (0, s * a, 0)
+        bpy.context.view_layer.update()
+    ANIM["supply-depot"] = door
+
+
 MODELS = {"rally-beacon": (rally_beacon, ["north", "east", "south", "west"]),
+          "supply-depot": (supply_depot, ["north"]),
           "threat-scanner": (threat_scanner, ["north", "east", "south", "west"]),
           "claim-marker": (claim_marker, ["north"]), "pact-breaker": (pact_breaker, ["north"]),
           "pheromone-bait": (pheromone_bait, ["north"])}
@@ -322,6 +505,7 @@ def glow(name, f):
     lpkit.emission(BLUE, 4.0 * max(0.0, math.sin(t * 2 * math.pi)) ** 4 + 0.2)
 
 
+FRAMES = {"supply-depot": DEPOT_FRAMES}   # a model's own frame count (else GLOW_FRAMES)
 YAW = {"north": 0, "east": 270, "south": 180, "west": 90}
 FILL = 0.38
 ground, sun, world = lpkit.stage(scene, 4, 1)   # (a margin: the claim marker's flag pole is two tiles tall, its shadow long)
@@ -345,7 +529,7 @@ for name, (fn, dirs) in MODELS.items():
         for k in ("body", "glow"): os.makedirs(f"{o}/{k}", exist_ok=True)
         moving = name in ANIM
         if moving: os.makedirs(f"{o}/shadow", exist_ok=True)
-        for f in range(GLOW_FRAMES):
+        for f in range(FRAMES.get(name, GLOW_FRAMES)):
             glow(name, f)
             if moving: ANIM[name](f)
             if f == 0 or moving:
