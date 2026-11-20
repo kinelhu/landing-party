@@ -32,7 +32,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `costmap` | 620 | firemap, threat | airraid, control, creep, faction, farm, herd, siege |  |  |  |  |
 | `creep` | 614 | costmap, tune | control, farm, studies |  |  |  | creep |
 | `crew` | 549 | base, ops, standing | control |  | 30 |  | crew_owner |
-| `cards` | 470 | veterancy | control, dev | command.ammo_of, command.round_of |  |  | cards, cmd |
+| `cards` | 471 | veterancy | control, dev | command.ammo_of, command.round_of |  |  | cards, cmd |
 | `ram` | 454 | (leaf) | control, dev, ops |  | 3, 6 |  | ram_breaches, ram_charges, ram_crushed, ram_early, ram_followers, ram_moved, rams |
 | `construction` | 446 | (leaf) | base |  |  |  |  |
 | `cell` | 438 | pods | control, farm |  |  |  | cell_sites, cells |

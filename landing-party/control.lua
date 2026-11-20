@@ -1046,7 +1046,7 @@ remote.add_interface("landing-party", {
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,
   -- Tests and showcases only: parts for a settlement (a young one has no surplus to export).
   -- Tests only: the command tool without a mouse (player index 1 need not exist).
-  debug_select_units = function(units) return command.select(1, units) end,
+  debug_select_units = function(units, pi) return command.select(pi or 1, units) end,
   debug_select = function(area)
     local s = game.surfaces[1]
     return command.select(1, s.find_entities_filtered{area = area, force = "player", type = "unit"})

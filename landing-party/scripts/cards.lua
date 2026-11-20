@@ -319,10 +319,11 @@ local function build(p, m)
     row.style.horizontal_spacing = 1
     row.style.vertical_align = "center"
     local ri = row.add{type = "sprite", name = "lp_card_round", sprite = c.round and ("item/" .. c.round) or nil}
-    ri.style.size = 9
+    -- (12 px: at 9 the windowed check, 2026-11-20, read the rounds by colour alone, their shapes lost.)
+    ri.style.size = 12
     ri.style.stretch_image_to_widget_size = true
     local am = row.add{type = "progressbar", name = "lp_card_ammo", style = "lp_card_hp_bar", value = c.ammo or 0}
-    am.style.width = 30
+    am.style.width = 27
     am.style.color = AMMO_COLOUR
     row.visible = c.ammo ~= nil
     -- (Its rank: the unit's own gold chevrons, inside the button's corner. A label under it with a negative margin

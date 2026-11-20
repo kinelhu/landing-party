@@ -1179,6 +1179,11 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     against 25.70 (seen failing without the data-stage values: no bonus). Arena at 0.33 (docs/arena-tiers.md): the tank's
     mean +8 to +38, 23 to 32 matchups of 44 won, as the uranium trooper (33) and gun buggy (32). Explosive rounds rank below their plain kin by
     direct damage and are left out: not a rung but a role (backlog).
+    **Windowed** (2026-11-20, `LP_ARMY=1 LP_CLIENTS=1 LP_TIERS=1 scripts/mp.sh` on the Studio, 5 checks ok, no desync):
+    for a real client the cards' round icons (uranium, uranium, yellow), the single pane's icon beside its line, the
+    alt-mode icon at each unit's lower left, a yellow trooper reloading uranium by a depot and its icon turning, a
+    stranded gun buggy's alert with the uranium magazine. Judged at full size: alt mode reads; the cards' icons at 9 px
+    read by colour alone, now 12. Not by script: the squad panel's row (a client's panel cannot be opened).
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the

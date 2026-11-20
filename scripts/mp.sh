@@ -21,7 +21,7 @@ profile() {
   local p="$1"
   mkdir -p "$p/config" "$p/mods" "$p/saves"
   printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n[graphics]\nfullscreen=false\n' "$p" > "$p/config/config.ini"
-  rm -rf "$p/mods/lp-sim" "$p/mods/lp-mp"
+  rm -rf "$p/mods/lp-sim" "$p/mods/lp-mp" "$p/script-output/lp-mp"
   ln -sfn "$REPO/landing-party" "$p/mods/landing-party"
   local extra=""
   if [ -n "${LP_ARMY:-}" ]; then ln -sfn "$REPO/tests/lp-mp" "$p/mods/lp-mp"; extra=', {"name": "lp-mp", "enabled": true}'; fi
@@ -80,6 +80,12 @@ if [ -n "${LP_ARMY:-}" ]; then
   fi
   [ "$(joined)" -ge "$NC" ] || { echo "MP FAILED: $(joined) of $NC clients joined"; tail -20 "$OUT/client.log" "$OUT/client2.log" 2>/dev/null; exit 1; }
   echo "$NC client(s) joined at tick $(tick)"
+  if [ -n "${LP_TIERS:-}" ]; then
+  # (LP_TIERS=1, 0.2.470: the ammunition tiers' icons for a real player; tests/lp-mp's t* steps, 5 checks.)
+  { step tsetup; sleep 2; step tdeploy1; sleep 2; step tdeploy2; sleep 2; step tdeploy3; sleep 15
+    step tcards; sleep 3; step tcards_read; step tsingle; sleep 3; step tsingle_read; step talt; sleep 2
+    step tdrain; sleep 4; step treload_read; step tstrand; sleep 4; step tstrand_read; } | tee "$OUT/army.txt"
+  else
   { step setup; sleep 3; step gui; sleep 3; step read_gui; step drain; } | tee "$OUT/army.txt"
   for _ in $(seq 1 "${LP_ARMY_POLLS:-120}"); do
     kill -0 $cpid 2>/dev/null && { [ -z "$c2pid" ] || kill -0 $c2pid 2>/dev/null; } || { echo "CHECK BAD clients: one quit" | tee -a "$OUT/army.txt"; break; }
@@ -87,6 +93,11 @@ if [ -n "${LP_ARMY:-}" ]; then
   done
   tail -1 "$OUT/poll.txt"
   step report | tee -a "$OUT/army.txt"
+  fi
+  # (A client writes a screenshot after its tick: the last one was missed when copied at once, 2026-11-20; and cp -R
+  # into an old copy kept the last run's pictures beside this one's.)
+  sleep 3
+  rm -rf "$OUT/client-a" "$OUT/client-b"
   cp -R "$C/script-output/lp-mp" "$OUT/client-a" 2>/dev/null; cp -R "$C2/script-output/lp-mp" "$OUT/client-b" 2>/dev/null
   MINUTES=0
 fi
@@ -160,8 +171,9 @@ fail=0
 grep -q "CHECK BAD" "$OUT/army.txt" 2>/dev/null && { grep "CHECK BAD" "$OUT/army.txt"; fail=1; }
 if [ -n "${LP_ARMY:-}" ]; then
   ok=$(grep -c "CHECK ok" "$OUT/army.txt"); sk=$(grep -c "CHECK skip" "$OUT/army.txt")
-  echo "army: $ok checks ok, $sk skipped of 7"; grep "CHECK skip" "$OUT/army.txt"
-  [ $((ok + sk)) -lt 7 ] && fail=1
+  need=7; [ -n "${LP_TIERS:-}" ] && need=5
+  echo "army: $ok checks ok, $sk skipped of $need"; grep "CHECK skip" "$OUT/army.txt"
+  [ $((ok + sk)) -lt $need ] && fail=1
 fi
 for f in "$OUT/server.log" "$OUT/client.log" "$OUT/client2.log"; do
   [ -f "$f" ] || continue
