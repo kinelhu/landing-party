@@ -215,6 +215,19 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   with 6 to 12 s between (scenario shotrate), so its 1,000 rounds never run dry: look at the unit first; stage 4 of
   docs/reviews/2026-11-19-army-logistics-consult.md (the threat with the factory); director armydefend with a depot by
   the D beacon and a roboport (the consult's readings: magazines drawn and packs used a beat).
+- Ammunition tiers (the user, 2026-11-20: "is there a missed opportunity wrt ammo tiers? ... a red ammo trooper or a
+  uranium shell tank?"; then "fable consult + think through the UI aspect (uranium spelled out seems like a misstep, we
+  have item icons)"). Not new units: a unit fires what it is loaded with, the best of its category a barracks or depot
+  holds (firearm, piercing, uranium magazines; cannon, explosive, uranium shells; rockets, explosive rockets), the
+  difference over its base round's damage dealt on each shot by the shot handler (on_script_trigger_effect, lp-army-shot),
+  research scaling as now. Shown by item icons, never the round's name in text. Consult:
+  docs/reviews/2026-11-20-ammo-tiers-consult.md (Fable): yes, after the beta; the bonus at the hit (a second script
+  trigger beside each damage effect, once per entity hit), not the shot (shells fly, areas have no single target), with
+  the target's flat resistance added back; one round kind a unit, upgraded only at a depot (a barracks holds the issue
+  round); bullets first (trooper, gun buggy: vanilla's ratios read from the prototypes), shells and rockets after on
+  named priors; the arena decides a TIER_SHARE (uranium's 4.8 overturns "rockets for hulls"). UI: item sprites with the
+  engine's names as tooltips, count badges on group cards and the squad panel, an alt-mode icon over each unit as
+  vanilla's turrets show theirs, the dry alert's icon the round it ran out of. Stages 0 (probes) to 3 in the consult.
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
