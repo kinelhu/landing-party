@@ -223,6 +223,8 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   corporations (-49 late, its infantry rows fell about 30); the reference-factory visits at the player's full research
   (razed within twice the calibration rows); fortress and siegetier against a researched camp; profile.sh on director
   climax for UPS; the Workshop's own look (a recoloured Siege works now).
+  The research pace: 20 a minute a branch gave Kessler-Hayashi optics 1 at minute 73 of scenario research; to be read
+  against a real game after the playtest.
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
@@ -2725,6 +2727,31 @@ if their units are upgraded also." `scripts/rd.lua`.
   - **Open.** The flame trooper falls further against corporations (-28 to -49; its rows against infantry from +56 and
     +30 to +27 and -3): its role (biters, Synthexis) holds, its corporate fights do not. The corporations' turrets rise
     with their units (the same force). The player's units still weigh a flat 0.5 in intel (the consult's section 4).
+
+- **The research preset, a tier cap, and the pictures (0.2.475; the user: "factor in the arms race into the difficulty
+  settings", "Agreed on difficulty. Do all viz and we judge doc in hand").**
+  - **lp-<corp>-research** (Grubstake's and Kessler-Hayashi's, very low to very high, times the difficulty as the other
+    levers): its labs' pace (shared.TUNE, x0.5 to x2) and how many tiers past the player's era its weapons may go
+    (shared.RESEARCH_AHEAD: -1, 0, 1, 1, 2; tune.ahead). The dropdown labels generated (settings_locale.py). Since
+    0.2.474 nothing in the difficulty touched research: its income lever is its fabricators', its research its labs'.
+  - **A track's level is capped by its technologies' science tier**, not its number: a level only once the base
+    game's technology of that level takes no more kinds of pack than the era and the preset's tiers ahead (rd.tier_of;
+    each category on a track at most its own tier, set_level: optics' electric weapons are Space Age's). Found drawing
+    the arms race: laser weapons damage 1 takes four kinds, so a corporation at the player's era 1 held lasers the
+    player reached at era 4. Kessler-Hayashi's lasers now wait for the player's era 3 at normal.
+  - **The research rule also runs on a busy queue** (base.lua, beside power and arcguard): its first lab at an early era
+    is now its siege works (railguns, its step track, the only one in reach), and with its queue at 300 to 500 jobs the
+    Optics lab never came in 160 minutes. Dormant where labs are off.
+  - Checks: techup behind (lasers held to the cap read from the base game's laser technologies: 0 at era 4 less one),
+    ahead (7), era0 (0: its lasers' first technology takes four kinds); workshop fast (its income doubled: 960); scenario
+    research (new: Kessler-Hayashi's research over a game, its eras rising, its Optics labs destroyed at minute 90:
+    no climb while none stands, rebuilt, never past its cap; its rows the manual's picture).
+  - **Pictures, all generated, no number typed:** the arms race by era (scripts/arms_race.py: six matchups, your
+    firepower from research with the tiers passed and the next one finished, theirs at normal with the preset's band;
+    the arrivals chapter), the counter matrix (the arena at no research and at the top of both, docs/arena/
+    late-results.jsonl; the Reference), the corporations' power ladder (power_ladder.py, the same scale as the player's;
+    the Reference), the research timeline (scripts/research_timeline.py from docs/manual/data/research-timeline.jsonl;
+    the Kessler-Hayashi chapter).
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers

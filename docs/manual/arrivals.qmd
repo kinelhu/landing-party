@@ -98,15 +98,28 @@ forces come on top of it. With the Director setting off, if none of their operat
 {{< var arrival.lab_rate >}} parts to its research fund every minute for each branch of research it serves. It buys at
 most one item every {{< var arrival.research_every_min >}} minutes. It picks what answers whatever has been killing its
 units over the last {{< var arrival.research_window_min >}} minutes: armor against your bullets, anti-air against your
-combat robots, heavier lasers against your troopers. It never researches past your era:
+combat robots, heavier lasers against your troopers. It never gets far ahead of you:
 
-- Its weapons go up a level at a time, to at most one level more than your era
-  ({{< var arrival.weapon_levels >}} at most). A level is your own technology of that level: at laser level 3 its
-  lasers have what Laser weapons damage 3 and Laser shooting speed 3 give yours, in damage and in rate of fire. Railgun
-  damage, which none of your technologies raises, goes up {{< var arrival.rail_level_pct >}}% a level.
+- Its weapons go up a level at a time ({{< var arrival.weapon_levels >}} at most), and a level is your own technology
+  of that level: at laser level 3 its lasers have what Laser weapons damage 3 and Laser shooting speed 3 give yours, in
+  damage and in rate of fire. It takes a level only once that technology is within its reach: a technology of a tier
+  no more than {{< var arrival.research_ahead >}} past your era, the tier you are researching now. Railgun damage,
+  which none of your technologies raises, goes up {{< var arrival.rail_level_pct >}}% a level, one level a tier.
 - New units and abilities each carry an era, and come only once you have reached it.
 
 A corporation that lands late in a game arrives with the research it would have bought by then.
+
+**The arms race.** Your research and theirs climb together, so a late fight is as close as an early one. The chart
+shows, for six matchups, what research gives your unit and its opposite as your era rises. Where the corporation's line
+meets your dashed one it holds what you would have once you finished the tier you are on.
+
+![The firepower research gives your units and the corporations', by your era](_generated/arms-race.png){#fig-arms-race}
+
+Each corporation's **Research** map setting sets its pace, from ×{{< var arrival.research_pace_low >}} to
+×{{< var arrival.research_pace_high >}}, and how far ahead of you it may get, from
+{{< var arrival.research_behind >}} tier behind your era to {{< var arrival.research_most >}} past it: the shaded band
+in the chart. At its lowest your army outgrows it late in the game; at its highest it fields weapons you have not
+reached.
 
 **Kessler-Hayashi armed.** From era {{< var arrival.armed_era >}}, Kessler-Hayashi lands as a walled fortress instead of
 a camp, already at level {{< var arrival.armed_level >}}.

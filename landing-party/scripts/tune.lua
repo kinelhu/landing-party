@@ -25,6 +25,15 @@ end
 function tune.strength(corp) return lever(corp, "strength") end
 function tune.aggression(corp) return lever(corp, "aggression") end
 function tune.income(corp) return lever(corp, "income") end
+function tune.research(corp) return lever(corp, "research") end
+-- How many levels past the player's era its weapons may go (shared.RESEARCH_AHEAD by its research preset; tests set
+-- storage.tune_ahead[corp]).
+function tune.ahead(corp)
+  local o = storage.tune_ahead and storage.tune_ahead[corp]
+  if o then return o end
+  local s = corp and settings.global["lp-" .. corp .. "-research"]
+  return shared.RESEARCH_AHEAD[s and s.value or "normal"] or 1
+end
 
 -- A span of ticks shortened by aggression (at least one tick), and by the director's tempo while a spree of this
 -- corporation's lasts (director.lua; never Synthexis's, decision 2; never its aggression, which also runs the ladder).

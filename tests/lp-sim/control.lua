@@ -7626,9 +7626,13 @@ end
 -- three gun turrets 120 tiles towards spawn; Serenity's fund is granted, choices every minute. Within six minutes it
 -- buys lasers (its Line troopers' weapon) to level 2 or more, and the raid it would need there falls (23 unresearched). LP_MIX=era0: the
 -- player at era 0, a fund of 20,000: nothing beyond level 1.
+-- LP_MIX=behind (0.2.475, the research preset): its research at very low, a level behind the era: lasers held to 3 at
+-- era 4 with a fund of 20,000; LP_MIX=ahead: very high, two ahead, to 6.
 scenarios.techup = function()
   local era = params.mix == "era0" and 0 or 4
-  schedule(60, function() lp("debug_tune", {rd_fast = true, rd_fund = {serenity = 20000}, era = era}) end)
+  local ahead = ({behind = -1, ahead = 2})[params.mix]
+  schedule(60, function() lp("debug_tune", {rd_fast = true, rd_fund = {serenity = ahead == 2 and 60000 or 20000}, era = era,
+    research_ahead = ahead and {serenity = ahead} or nil}) end)
   schedule(600, function()
     game.forces.player.set_ammo_damage_modifier("bullet", 0.8)
     local o = lp("stats", storage.id).origin
@@ -7661,8 +7665,27 @@ scenarios.techup = function()
     -- Serenity's Line troopers fire lasers: its main category.
     local lvl = (r.weapons or {}).laser or 0
     check("techup: the raid it needed unresearched", S.before and S.before.needed == 23, serpent.line(S.before))
-    if params.mix == "era0" then
-      check("techup: an era-0 player holds it to level 1", lvl == 1, tostring(lvl))
+    -- (Its cap, read here from the base game's own laser technologies: the highest level whose damage or speed
+    -- technology takes at most era + ahead kinds of science pack, 0.2.475.)
+    local function cap_for(tiers)
+      local cap = 0
+      for k = 1, 10 do
+        for _, n in ipairs({"laser-weapons-damage-" .. k, "laser-shooting-speed-" .. k}) do
+          local t = prototypes.technology[n]
+          if t and t.max_level < 4294967295 and #t.research_unit_ingredients <= tiers then cap = math.max(cap, k) end
+        end
+      end
+      return cap
+    end
+    local want = cap_for(era + (ahead or 1))
+    info(string.format("techup: lasers %d at era %d, ahead %s, the cap read %d", lvl, era, tostring(ahead or 1), want))
+    if ahead then
+      check("techup: its research preset holds it to the era " .. (ahead < 0 and "less one" or "plus two"),
+        lvl == want, string.format("lasers %d at era %d, the cap %d", lvl, era, want))
+    elseif params.mix == "era0" then
+      -- (Lasers' first technology takes four kinds of pack: an era-0 player holds it to none; before 0.2.475, to 1.)
+      check("techup: an era-0 player holds its lasers to what an era-0 player could research", lvl == want and want == 0,
+        string.format("lasers %d, the cap %d", lvl, want))
     else
       check("techup: it bought lasers to level 2 or more", lvl >= 2, tostring(lvl))
       check("techup: the raid it needs fell", after and after.needed < S.before.needed,
@@ -7778,10 +7801,13 @@ end
 -- (its exports no longer feed it), the research rule opens a workshop lot, and once it stands the fund fills by its labs'
 -- rate for each of its three branches and its tracks climb at the base game's levels; killed, the income and the climb
 -- stop until it is rebuilt.
+-- LP_MIX=fast (0.2.475): its research preset's pace at very high (x2): twice the income.
 scenarios.workshop = function()
   local G = "lp-grubstake"
+  local pace = params.mix == "fast" and 2 or 1
   schedule(60, function()
-    lp("debug_tune", {era = 4, rd_fast = true, history_off = true, raids_off = true, crews_off = true, mature_blocks = 2})
+    lp("debug_tune", {era = 4, rd_fast = true, history_off = true, raids_off = true, crews_off = true, mature_blocks = 2,
+      levers = pace ~= 1 and {grubstake = {research = pace}} or nil})
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     storage.id = S.g
     lp("debug_parts", S.g, 2000)
@@ -7836,7 +7862,8 @@ scenarios.workshop = function()
     -- Eight minutes standing at 20 a minute for each of three branches: 480 (a minute's slack either side; at six, 360
     -- bought nothing: its guns' first level is 400).
     local got = (S.funded_at_kill or 0) - (S.funded_at_built or 0)
-    check("workshop: standing, its fund filled at its labs' rate", got >= 420 and got <= 540, tostring(got))
+    check("workshop: standing, its fund filled at its labs' rate" .. (pace ~= 1 and " times its research preset" or ""),
+      got >= 420 * pace and got <= 540 * pace, tostring(got))
     check("workshop: standing, its guns climbed", (S.lvl_at_kill or 0) >= 1, tostring(S.lvl_at_kill))
     local f = game.forces[G]
     local want = lp("debug_rd_track", "grubstake", "handloads", S.lvl_end or 0).bullet
@@ -7847,6 +7874,64 @@ scenarios.workshop = function()
       and S.funded_dark == S.funded_at_kill, string.format("level %s -> %s, funded %s -> %s", tostring(S.lvl_at_kill),
       tostring(S.lvl_dark), tostring(S.funded_at_kill), tostring(S.funded_dark)))
     check("workshop: rebuilt", S.back ~= nil, S.back and string.format("minute %.1f", S.back / 3600) or "not yet")
+  end)
+end
+
+-- Research timeline (0.2.475, for the manual's picture: scripts/research_timeline.py): Kessler-Hayashi researching as in a
+-- game, its labs paying, its choices every ten minutes, the player's era rising (1, then 2 at minute 20, 3 at 40, 4 at
+-- 70, 5 at 110); at minute 90 its Optics labs destroyed, rebuilt by its crews. Each minute to research.jsonl: the era,
+-- each track's level and cap, the labs standing, the fund. Checked: the climb stops while no Optics lab stands.
+scenarios.research = function()
+  local quick = params.mix == "quick"
+  local ERAS = quick and {{0, 1}, {5, 2}, {10, 3}, {20, 4}} or {{0, 1}, {20, 2}, {40, 3}, {70, 4}, {110, 5}}
+  local KILL = quick and 30 or 90
+  if quick then
+    for m = 5, params.minutes - 1, 5 do
+      schedule(m * 3600 + 50, function() info("research rule at minute " .. m .. ": " .. serpent.line(lp("debug_research_rule", storage.id))) end)
+    end
+  end
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, raids_off = true, mature_blocks = 2})
+    lp("debug_parts", storage.id, 2000)
+  end)
+  for _, e in ipairs(ERAS) do
+    if e[1] > 0 then schedule(e[1] * 3600, function() lp("debug_tune", {era = e[2]}) end) end
+  end
+  local function optics() return surface().find_entities_filtered{name = "lp-optics-lab", force = FORCE} end
+  schedule(KILL * 3600, function()
+    S.kill_level = ((lp("rd", "serenity").weapons or {}).laser or 0)
+    for _, l in ipairs(optics()) do l.die("player") end
+    S.killed = true
+  end)
+  for m = 1, params.minutes - 1 do
+    schedule(m * 3600 + 30, function()
+      local r = lp("rd", "serenity")
+      -- (Parts kept up, as scenario labs: the picture is of its research, not its economy.)
+      local parts = lp("stats", storage.id).parts
+      if parts < 300 then lp("debug_parts", storage.id, 300 - parts) end
+      local labs = {}
+      for _, n in ipairs({"lp-optics-lab", "lp-line-lab", "lp-siege-lab"}) do
+        labs[n] = surface().count_entities_filtered{name = n, force = FORCE}
+      end
+      local row = {minute = m, era = r.era, fund = math.floor(r.fund), tracks = r.tracks, labs = labs,
+        lab_funded = math.floor(r.lab_funded or 0)}
+      helpers.write_file("landing-party/research.jsonl", helpers.table_to_json(row) .. "\n", true)
+      if S.killed and labs["lp-optics-lab"] == 0 then
+        S.dark_level = math.max(S.dark_level or 0, ((r.tracks or {}).optics or {}).level or 0)
+        S.was_dark = true
+      end
+      if S.killed and labs["lp-optics-lab"] > 0 and S.was_dark and not S.back then S.back = m end
+      S.last = r
+    end)
+  end
+  schedule(END - 60, function()
+    local t = (S.last or {}).tracks or {}
+    info("research: " .. serpent.line({kill = S.kill_level, dark = S.dark_level, back = S.back, tracks = t}))
+    check("research: its lasers climbed before the kill", (S.kill_level or 0) >= 1, tostring(S.kill_level))
+    check("research: no climb while no Optics lab stood", S.was_dark and S.dark_level == S.kill_level,
+      string.format("%s at the kill, %s dark", tostring(S.kill_level), tostring(S.dark_level)))
+    check("research: the lab rebuilt", S.back ~= nil, tostring(S.back))
+    check("research: never past its cap", ((t.optics or {}).level or 0) <= ((t.optics or {}).cap or 0), serpent.line(t.optics))
   end)
 end
 
@@ -22573,7 +22658,7 @@ end
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
 -- Labs (rd.lua) gate research only where a scenario asks for them: the rest test the tree's choices, not where it stands.
-local LABS = {labs = true, breach = true, factory = true, visit = true, workshop = true}
+local LABS = {labs = true, breach = true, factory = true, visit = true, workshop = true, research = true}
 if not LABS[params.scenario] then schedule(1, function() lp("debug_tune", {labs_off = true}) end) end
 -- The biotech lands only where it is the subject (its arrival needs nests and evolution, which some scenarios set up).
 -- (A visit lets it come as it would to the player's game: on evolution, to a nest field out from the factory; the

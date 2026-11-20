@@ -5,7 +5,7 @@ digraph ai {
   subgraph cluster_0 { label="Seams (leaves)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "stance" [label="stance\n80 lines", width=0.89, fillcolor="#eef2f7"];
     "pool" [label="pool\n142 lines", width=0.96, fillcolor="#d9f0d9"];
-    "tune" [label="tune\n42 lines", width=0.85, fillcolor="#d9f0d9"];
+    "tune" [label="tune\n51 lines", width=0.86, fillcolor="#d9f0d9"];
     "rng" [label="rng\n56 lines", width=0.86, fillcolor="#d9f0d9"];
     "names" [label="names\n54 lines", width=0.86, fillcolor="#eef2f7"];
     "chart" [label="chart\n114 lines", width=0.93, fillcolor="#d9f0d9"];
@@ -40,13 +40,13 @@ digraph ai {
     "standing" [label="standing\n114 lines", width=0.93, fillcolor="#eef2f7"];
     "pact" [label="pact\n112 lines", width=0.92, fillcolor="#eef2f7"];
     "ledger" [label="ledger\n317 lines", width=1.15, fillcolor="#eef2f7"];
-    "rd" [label="rd\n570 lines", width=1.43, fillcolor="#eef2f7"];
+    "rd" [label="rd\n606 lines", width=1.47, fillcolor="#eef2f7"];
     "phases" [label="phases\n303 lines", width=1.14, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
     "lifeline" [label="lifeline\n155 lines", width=0.97, fillcolor="#eef2f7"];
   }
   subgraph cluster_5 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n940 lines", width=1.84, fillcolor="#eef2f7"];
+    "base" [label="base\n944 lines", width=1.85, fillcolor="#eef2f7"];
     "construction" [label="construction\n446 lines", width=1.30, fillcolor="#d9f0d9"];
     "planner" [label="planner\n398 lines", width=1.24, fillcolor="#eef2f7"];
     "layout" [label="layout\n1749 lines", width=2.74, fillcolor="#f7dede"];
@@ -116,7 +116,7 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_11 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1530 lines", width=2.50, fillcolor="#f7dede"];
+    "control" [label="control\n1539 lines", width=2.51, fillcolor="#f7dede"];
     "dev" [label="dev\n622 lines", width=1.49, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n197 lines", width=1.02, fillcolor="#eef2f7"];
@@ -303,6 +303,7 @@ digraph ai {
   "prowl" -> "pool";
   "prowl" -> "threat";
   "rd" -> "know";
+  "rd" -> "tune";
   "road" -> "base";
   "road" -> "standing";
   "routing" -> "threat";

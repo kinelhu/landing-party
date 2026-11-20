@@ -231,6 +231,8 @@ def write(rp):
     if len(hq_levels) != 1:
         missed.append(f"the corporations' headquarters levels differ ({hq_levels}): the prose says one")
     tune = dict(re.findall(r'\[?"?([a-z-]+)"?\]? = ([\d.]+)', grab(shared_src, r"^shared\.TUNE = \{([^}]*)\}", "TUNE") or ""))
+    AHEAD = {k: int(v) for k, v in re.findall(r'\[?"?([a-z-]+)"?\]? = (-?\d+)',
+             grab(shared_src, r"^shared\.RESEARCH_AHEAD = \{([^}]*)\}", "RESEARCH_AHEAD") or "")}
     def director_vars():
         D = rp.data.get("director") or {}
         def need(k):
@@ -294,6 +296,12 @@ def write(rp):
             "lab_rate": fmt(num(rd_src, r"^local LAB_RATE, LAB_TICKS = (\d+)", "LAB_RATE")),
             "weapon_levels": fmt(max(track_levels(n, d) for c in CORPS_DATA.values() for n in c.get("tree", []) if n.get("track"))),
             "rail_level_pct": fmt(100 * next(n["step"] for c in CORPS_DATA.values() for n in c.get("tree", []) if n.get("step"))),
+            # The research preset (0.2.475, shared.RESEARCH_AHEAD and TUNE): tiers ahead at normal, the range, the pace.
+            "research_ahead": fmt(AHEAD["normal"]),
+            "research_behind": fmt(-AHEAD["very-low"]),
+            "research_most": fmt(AHEAD["very-high"]),
+            "research_pace_low": fmt(float(tune["very-low"])),
+            "research_pace_high": fmt(float(tune["very-high"])),
             # A landing's look (landfx.lua): the cargo pods that streak down round a lander as it crashes.
             "landing_pods": fmt(num(landfx_src, r"^local PODS = (\d+)", "landfx PODS")),
         },
@@ -574,7 +582,21 @@ def write(rp):
           "How far each of your units can grow. Strength is its damage a second times its health, against the unit as",
           "trained, on a scale where each step up the side multiplies it. Research counts every finite level of the damage",
           "and shooting speed technologies for the unit's weapon; the round is its best; the rank is its highest.", "",
-          "![Each unit's strength as research, a better round and veterancy multiply it](_generated/power-ladder.png)", ""]
+          "![Each unit's strength as research, a better round and veterancy multiply it](_generated/power-ladder.png){#fig-power-ladder fig-pos=\"H\"}", ""]
+    # The corporations' ladder and the counter matrix (scripts/power_ladder.py, scripts/arms_race.py; 0.2.475): stops
+    # without them, as the power ladder does.
+    for png, how in (("corp-ladder.png", "power_ladder.py"), ("counter-matrix.png", "arms_race.py"),
+                     ("arms-race.png", "arms_race.py"), ("research-timeline.png", "research_timeline.py")):
+        if not os.path.exists(os.path.join(GEN, png)):
+            raise SystemExit(f"manual: _generated/{png} missing: run uv run --with matplotlib python3 -I scripts/{how}")
+    L += ["The corporations' units climb the same way, on the same scale. Their research is their tree's track for the",
+          "unit's weapon at its top; a plate counts against the damage it answers.", "",
+          "![The corporations' units' strength as research, a plate and veterancy multiply it](_generated/corp-ladder.png){#fig-corp-ladder fig-pos=\"H\"}", "",
+          "### Who beats whom", "",
+          "Each of your units against each corporate unit at equal cost, fought in the arena: blue where yours wins,",
+          "orange where theirs does. On the left neither side has researched anything; on the right both are at the top",
+          "of their research and your units fire their best rounds.", "",
+          "![Your units against the corporations' at equal cost, without research and at its top](_generated/counter-matrix.png){#fig-counter-matrix fig-pos=\"H\"}", ""]
     out("units.qmd", L)
 
     # ---- buildings ----
@@ -622,11 +644,13 @@ def write(rp):
     # ---- eras ----
     max_lv = int(float(V["arrival"]["weapon_levels"]))
     # (Science-pack tiers since 0.2.384, ops.era: unbounded, so the rows stop at six with "and so on" in the prose.)
-    E = ["| Your era | Tiers passed | Corporation operations against you at once | Corporation weapon levels |",
-         "|:--|:--|--:|--:|", f"| 0 | none | 1 | up to {min(max_lv, 1)} |"]
+    # (Its weapon research: technologies of up to the era's tier and its preset's tiers ahead, rd.lua tier_of, 0.2.475.)
+    ahead = int(re.search(r"normal = (-?\d+)", grab(shared_src, r"^shared\.RESEARCH_AHEAD = \{([^}]*)\}", "RESEARCH_AHEAD")).group(1))
+    E = ["| Your era | Tiers passed | Corporation operations against you at once | Corporation weapon research up to tier |",
+         "|:--|:--|--:|--:|", f"| 0 | none | 1 | {ahead} |"]
     for i in range(1, 7):
         tiers = "1" if i == 1 else "1 and 2" if i == 2 else f"1 to {i}"
-        E.append(f"| {i} | {tiers} | {1 + i} | up to {min(max_lv, i + 1)} |")
+        E.append(f"| {i} | {tiers} | {1 + i} | {i + ahead} |")
     out("eras.qmd", E)
 
     # ---- corporation levels ----

@@ -28,6 +28,7 @@ rd.CORP_CATEGORY = {serenity = {["lp-infantry"] = "laser", ["lp-lance"] = "laser
   grubstake = {["lp-infantry"] = "shotgun-shell", ["lp-slug"] = "shotgun-shell", ["lp-sapper"] = "grenade",
     ["lp-scorcher"] = "bullet", ["lp-flak-buggy"] = "bullet"}}
 local know = require("__landing-party__.scripts.know")
+local tune = require("__landing-party__.scripts.tune")
 
 function rd.state(corp)
   storage.corps = storage.corps or {}
@@ -136,7 +137,8 @@ rd.branches_served = branches_served
 local function lab_income(corp)
   if not rd.gated(corp) then return 0 end
   local t = rd.state(corp)
-  local add = LAB_RATE * branches_served(corp) * LAB_TICKS / 3600
+  -- (Times its research preset and the difficulty, tune.research.)
+  local add = LAB_RATE * tune.research(corp) * branches_served(corp) * LAB_TICKS / 3600
   t.fund = math.min(FUND_CAP, t.fund + add)
   t.lab_funded = (t.lab_funded or 0) + add
   return add
@@ -241,18 +243,21 @@ local function ladder(c)
       for _, e in ipairs(t.effects or {}) do
         if (e.type == "ammo-damage" or e.type == "gun-speed") and e.ammo_category == c then
           local k = t.level
-          at[k] = at[k] or {0, 0}
+          at[k] = at[k] or {0, 0, 0}
+          -- (Its science tier: the kinds of pack it takes, as ops.era counts the player's eras.)
+          at[k][3] = math.max(at[k][3], #(t.research_unit_ingredients or {}))
           if e.type == "ammo-damage" then at[k][1] = at[k][1] + e.modifier else at[k][2] = at[k][2] + e.modifier end
           if k > top then top = k end
         end
       end
     end
   end
-  local l = {top = top}
+  local l = {top = top, tier = {}}
   local dmg, spd = 0, 0
   for k = 1, top do
     if at[k] then dmg, spd = dmg + at[k][1], spd + at[k][2] end
     l[k] = {dmg, spd}
+    l.tier[k] = at[k] and at[k][3] or 0
   end
   ladders[c] = l
   return l
@@ -278,18 +283,38 @@ local function gains(node, k)
   end
   return false
 end
+-- The science tier of level k of a track: the kinds of pack its technologies take for the categories that gain there
+-- (laser weapons damage 1 takes four: a corporation at the player's era 1 had lasers the player reached at 4, 0.2.474);
+-- the least where several gain (optics: lasers from four, electric weapons from seven, Space Age's: each category then
+-- takes only what its own tier allows, set_level); a track of its own step (railguns) takes k.
+local function tier_of(node, k)
+  if node.step then return k end
+  local t
+  for _, c in ipairs(node.track or {}) do
+    local l = ladder(c)
+    if k <= l.top then
+      local a, b = l[k], l[k - 1] or {0, 0}
+      if a[1] ~= b[1] or a[2] ~= b[2] then t = t == nil and l.tier[k] or math.min(t, l.tier[k]) end
+    end
+  end
+  return t or 0
+end
+rd.tier_of = tier_of
 -- The level a track buys next: the first past its own that gives anything, nil at its top.
 local function next_level(t, node)
   for k = (t.nodes[node.id] or 0) + 1, levels_of(node) do
     if gains(node, k) then return k end
   end
 end
--- Its force's modifiers for one category at level k of a track node.
-local function set_level(f, node, c, k)
+-- Its force's modifiers for one category at level k of a track node; tiers (the player's era and its preset's levels
+-- ahead): the category's own highest level at or under k whose technologies take no more kinds of pack (nil: none).
+local function set_level(f, node, c, k, tiers)
   if not f then return end
   local l = ladder(c)
   if l.top > 0 and not node.step then
-    local r = k > 0 and l[math.min(k, l.top)] or {0, 0}
+    local j = math.min(k, l.top)
+    if tiers then while j > 0 and l.tier[j] > tiers do j = j - 1 end end
+    local r = j > 0 and l[j] or {0, 0}
     f.set_ammo_damage_modifier(c, r[1])
     f.set_gun_speed_modifier(c, r[2])
   else
@@ -329,12 +354,15 @@ local function owned(t, node)
   for kind, p in pairs(node.plates or {}) do if t.plate[kind] ~= p then return false end end
   return true
 end
-local function allowed(t, node, era, corp)
+-- (ahead: how many levels past the era its tracks may go, its research preset's: tune.ahead; one by default.)
+local function allowed(t, node, era, corp, ahead)
   if owned(t, node) then return false end
   -- (corp given: its lab must stand; a history brought from orbit needs none.)
   if corp and not rd.lab(corp, node.branch) then return false end
   if node.requires and not t.nodes[node.requires] then return false end
-  if node.track then return next_level(t, node) <= era + 1 end
+  -- (Its next level's science tier at most the player's era and its preset's levels ahead: what a player that far
+  -- along could have researched.)
+  if node.track then return tier_of(node, next_level(t, node)) <= era + (ahead or 1) end
   return era >= (node.era or 0)
 end
 local function cost_of(t, node)
@@ -366,9 +394,13 @@ local function apply(corp, t, node)
   if node.track then
     local k = next_level(t, node)
     t.nodes[node.id] = k
-    for _, c in ipairs(node.track) do
-      t.weapons[c] = k
-      set_level(f, node, c, k)
+    local tiers = player_era() + tune.ahead(corp)
+    for _, cc in ipairs(shared.CORPS[corp].tree or {}) do
+      -- (Every track again at its level: a category held back by its tier gets what the era now allows.)
+      for _, c in ipairs(cc.track or {}) do
+        if cc == node then t.weapons[c] = k end
+        if t.weapons[c] then set_level(f, cc, c, t.weapons[c], tiers) end
+      end
     end
     notify(corp, "lp.node-" .. node.id, k)
   else
@@ -387,11 +419,11 @@ local function pick(corp, t, era)
   local best, bs, fallback
   local want, ws
   for _, node in ipairs(shared.CORPS[corp].tree or {}) do
-    if allowed(t, node, era, corp) then
+    if allowed(t, node, era, corp, tune.ahead(corp)) then
       local s = score(t, node)
       if s > 0 and (not bs or s > bs) then best, bs = node, s end
       if node.track and not fallback then fallback = node end
-    elseif allowed(t, node, era) then
+    elseif allowed(t, node, era, nil, tune.ahead(corp)) then
       local s = score(t, node)
       if s > 0 and (not ws or s > ws) then want, ws = node, s end
       if node.track and not want then want, ws = node, 0 end
@@ -521,7 +553,7 @@ function rd.history(corp, surface)
     local pickd, pr
     for _, node in ipairs(shared.CORPS[corp].tree or {}) do
       local r = rank(node)
-      if r and (not pr or r < pr) and allowed(t, node, era) and t.fund >= cost_of(t, node) then pickd, pr = node, r end
+      if r and (not pr or r < pr) and allowed(t, node, era, nil, tune.ahead(corp)) and t.fund >= cost_of(t, node) then pickd, pr = node, r end
     end
     if not pickd then break end
     t.fund = t.fund - cost_of(t, pickd)
@@ -544,7 +576,7 @@ function rd.reapply()
     if d and d.tech and f then
       for _, node in ipairs(c.tree or {}) do
         if node.track then
-          for _, cat in ipairs(node.track) do set_level(f, node, cat, d.tech.weapons[cat] or 0) end
+          for _, cat in ipairs(node.track) do set_level(f, node, cat, d.tech.weapons[cat] or 0, player_era() + tune.ahead(corp)) end
         end
       end
     end
@@ -560,7 +592,11 @@ function rd.summary(corp)
   -- (Where each track stands against its cap, the era + 1: whether its fund or the player's era holds it back.)
   local era, tracks = player_era(), {}
   for _, node in ipairs(shared.CORPS[corp].tree or {}) do
-    if node.track then tracks[node.id] = {level = t.nodes[node.id] or 0, cap = math.min(era + 1, levels_of(node)), top = levels_of(node)} end
+    if node.track then
+      local cap = 0
+      for k = 1, levels_of(node) do if gains(node, k) and tier_of(node, k) <= era + tune.ahead(corp) then cap = k end end
+      tracks[node.id] = {level = t.nodes[node.id] or 0, cap = cap, top = levels_of(node)}
+    end
   end
   return {tracks = tracks, era = era, served = branches_served(corp), lab_funded = t.lab_funded or 0,
     fund = t.fund, wants_lab = t.wants_lab, gated = rd.gated(corp), fielded = rd.mix(corp), salvaged = t.salvaged or 0, weapons = t.weapons, plate = t.plate, nodes = t.nodes, units = t.units, saving = t.saving, lost_by = by,

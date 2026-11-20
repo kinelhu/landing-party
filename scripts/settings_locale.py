@@ -26,7 +26,7 @@ def table(src, name):
     if not m:
         sys.exit(f"settings_locale: no shared.{name} in shared.lua")
     out = {}
-    for key1, key2, v in re.findall(r'(?:\["([\w-]+)"\]|(\w+))\s*=\s*([\d.]+)', m.group(1)):
+    for key1, key2, v in re.findall(r'(?:\["([\w-]+)"\]|(\w+))\s*=\s*(-?[\d.]+)', m.group(1)):
         out[key1 or key2] = float(v)
     return out
 
@@ -59,6 +59,16 @@ def section():
                 if key not in tune:
                     sys.exit(f"settings_locale: level {key} not in shared.TUNE")
                 lines.append(f"lp-{corp}-{lever}-{key}={label}{times(tune[key])}")
+    # Research (0.2.475): its pace (shared.TUNE) and how far past your era it may go (shared.RESEARCH_AHEAD).
+    ahead = table(src, "RESEARCH_AHEAD")
+    AHEAD = {-1: "a level behind you", 0: "level with you", 1: "a level ahead", 2: "two levels ahead"}
+    for corp in ["grubstake", "serenity"]:
+        for key, label in TUNE_NAMES.items():
+            a = int(ahead.get(key, 1))
+            if a not in AHEAD:
+                sys.exit(f"settings_locale: no words for research {a} levels ahead")
+            mult = "" if tune[key] == 1 else f"×{tune[key]:g}, "
+            lines.append(f"lp-{corp}-research-{key}={label} ({mult}{AHEAD[a]})")
     # The director's personalities (shared.DIRECTOR_PERSONALITIES, settings.lua's lp-director).
     m = re.search(r'^shared\.DIRECTOR_PERSONALITIES = \{([^}]*)\}', src, re.M)
     for key in re.findall(r'"([\w-]+)"', m.group(1) if m else ""):

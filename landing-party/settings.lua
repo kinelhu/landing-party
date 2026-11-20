@@ -61,6 +61,9 @@ for _, c in ipairs(corps) do
   end
   list[#list + 1] = preset("lp-" .. id .. "-aggression", o .. "-e", levels)
   list[#list + 1] = preset("lp-" .. id .. "-income", o .. "-f", levels)
+  -- Research (rd.lua, 0.2.475): its pace and how far past your era it may go (shared.RESEARCH_AHEAD); the corporations
+  -- only (Synthexis's learning is its own setting).
+  if a then list[#list + 1] = preset("lp-" .. id .. "-research", o .. "-g", levels) end
   for _, x in ipairs(c.extra) do list[#list + 1] = x end
   data:extend(list)
 end

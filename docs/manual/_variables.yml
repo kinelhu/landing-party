@@ -31,6 +31,11 @@ arrival:
   lab_rate: "20"
   weapon_levels: "7"
   rail_level_pct: "60"
+  research_ahead: "1"
+  research_behind: "1"
+  research_most: "2"
+  research_pace_low: "0.5"
+  research_pace_high: "2"
   landing_pods: "6"
 camp:
   yard_near_tiles: "16"
@@ -292,6 +297,6 @@ director:
   climax_times: "double"
   gentle_share: "half"
 mod:
-  version: "0.2.473"
+  version: "0.2.475"
   factorio: "2.1"
   needs: "base, space-age"

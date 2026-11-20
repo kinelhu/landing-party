@@ -14,14 +14,14 @@
 <title>Seams (leaves)</title>
 <path fill="#d9f0d9" stroke="black" d="M950.12,-746.25C950.12,-746.25 847.88,-746.25 847.88,-746.25 841.88,-746.25 835.88,-740.25 835.88,-734.25 835.88,-734.25 835.88,-722.25 835.88,-722.25 835.88,-716.25 841.88,-710.25 847.88,-710.25 847.88,-710.25 950.12,-710.25 950.12,-710.25 956.12,-710.25 962.12,-716.25 962.12,-722.25 962.12,-722.25 962.12,-734.25 962.12,-734.25 962.12,-740.25 956.12,-746.25 950.12,-746.25"/>
 <text xml:space="preserve" text-anchor="middle" x="899" y="-729.8" font-family="Helvetica,sans-Serif" font-size="11.00">Seams (leaves)</text>
-<text xml:space="preserve" text-anchor="middle" x="899" y="-717.8" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 1834 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="899" y="-717.8" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 1843 lines</text>
 </g>
 <!-- Settlement -->
 <g id="node6" class="node">
 <title>Settlement</title>
 <path fill="#f7dede" stroke="black" d="M950.12,-650.5C950.12,-650.5 847.88,-650.5 847.88,-650.5 841.88,-650.5 835.88,-644.5 835.88,-638.5 835.88,-638.5 835.88,-618.5 835.88,-618.5 835.88,-612.5 841.88,-606.5 847.88,-606.5 847.88,-606.5 950.12,-606.5 950.12,-606.5 956.12,-606.5 962.12,-612.5 962.12,-618.5 962.12,-618.5 962.12,-638.5 962.12,-638.5 962.12,-644.5 956.12,-650.5 950.12,-650.5"/>
 <text xml:space="preserve" text-anchor="middle" x="899" y="-636.05" font-family="Helvetica,sans-Serif" font-size="11.00">Settlement</text>
-<text xml:space="preserve" text-anchor="middle" x="899" y="-624.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 6501 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="899" y="-624.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 6505 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="899" y="-612.05" font-family="Helvetica,sans-Serif" font-size="11.00">layout 1749</text>
 </g>
 <!-- Seams (leaves)&#45;&gt;Settlement -->
@@ -101,7 +101,7 @@
 <title>Corporation</title>
 <path fill="#f7dede" stroke="black" d="M1094.12,-339.25C1094.12,-339.25 991.88,-339.25 991.88,-339.25 985.88,-339.25 979.88,-333.25 979.88,-327.25 979.88,-327.25 979.88,-307.25 979.88,-307.25 979.88,-301.25 985.88,-295.25 991.88,-295.25 991.88,-295.25 1094.12,-295.25 1094.12,-295.25 1100.12,-295.25 1106.12,-301.25 1106.12,-307.25 1106.12,-307.25 1106.12,-327.25 1106.12,-327.25 1106.12,-333.25 1100.12,-339.25 1094.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="1043" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="1043" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">10 modules, 3579 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="1043" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">10 modules, 3615 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="1043" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">faction 1207</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Corporation -->
@@ -136,9 +136,9 @@
 <!-- Corporation&#45;&gt;Seams (leaves) -->
 <g id="edge10" class="edge">
 <title>Corporation&#45;&gt;Seams (leaves)</title>
-<path fill="none" stroke="#8899aa" stroke-width="4" d="M1064.34,-339.64C1107.61,-385.69 1197.6,-496.91 1149,-581.5 1112.45,-645.12 1036.24,-683.58 977.52,-704.89"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="4" points="976.64,-701.49 968.34,-708.08 978.93,-708.1 976.64,-701.49"/>
-<text xml:space="preserve" text-anchor="middle" x="1168.26" y="-521.08" font-family="Helvetica,sans-Serif" font-size="9.00">12</text>
+<path fill="none" stroke="#8899aa" stroke-width="4.2" d="M1064.34,-339.64C1107.61,-385.69 1197.6,-496.91 1149,-581.5 1112.45,-645.12 1036.24,-683.58 977.52,-704.89"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="4.2" points="976.61,-701.32 968.37,-708.07 979.02,-708.26 976.61,-701.32"/>
+<text xml:space="preserve" text-anchor="middle" x="1168.26" y="-521.08" font-family="Helvetica,sans-Serif" font-size="9.00">13</text>
 </g>
 <!-- Corporation&#45;&gt;Perception and attempts (any attacker) -->
 <g id="edge9" class="edge">

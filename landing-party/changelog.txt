@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.475
+Date: 2026-11-20
+  Features:
+    - A Research setting for each corporation: how fast it researches and how far ahead of your technology its weapons may get, from a tier behind you to two tiers ahead.
+  Balancing:
+    - A corporation researches a weapon level only once that technology's science packs are within its reach: no more kinds of pack than your era allows, plus one at normal. Lasers no longer come before you could research them yourself.
+  Bugfixes:
+    - Kessler-Hayashi now builds its other labs while its camp is busy building. It could stay on one lab for hours.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.474
 Date: 2026-11-20
   Features:

@@ -835,6 +835,10 @@ function base.tick(tick)
           plan(b, "power")
           -- And its arc flamers where the biters hit it: under their waves its rebuilds are always due (planner arcguard).
           plan(b, "arcguard")
+          -- And the lab its research wants (0.2.475): with its labs paying for research and the first it could research
+          -- at an early era its siege works, its queue stayed busy and its Optics lab never came (scenario research: no
+          -- laser research in 160 minutes). Nothing where labs are off (rd.wanted_lab nil).
+          plan(b, "research")
           -- And its first fabricator (queued first, planner.fill): a camp whose queue waited on parts it could not make
           -- planned nothing more and never made a part (parked, 2026-10-24).
           if #b.fabs == 0 then plan(b, "fabricate") end

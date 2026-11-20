@@ -33,7 +33,9 @@ local function dump(v)
   elseif type(v) == "number" or type(v) == "boolean" then return tostring(v) end
   return "null"
 end
-print(dump({raw = s.TIER_RAW, exp = s.TIER_EXP, order_tiers = s.ORDER_TIERS, orders = s.ORDERS, rank = s.RANK}))
+local corps = {}
+for id, c in pairs(s.CORPS) do corps[id] = {name = c.name, tree = c.tree, names = c.names} end
+print(dump({raw = s.TIER_RAW, exp = s.TIER_EXP, order_tiers = s.ORDER_TIERS, orders = s.ORDERS, rank = s.RANK, corps = corps}))
 '''
 S = json.loads(subprocess.run(["luajit", "-e", LUA], cwd=MOD, capture_output=True, text=True, check=True).stdout)
 vet = open(os.path.join(MOD, "scripts", "veterancy.lua")).read()
@@ -108,8 +110,49 @@ for u in UNITS:
         total *= mult
         cum.append({"label": label, "kind": kind, "step": round(mult, 4), "power": round(total, 4)})
     ladders.append({"unit": u, "name": unit_name(u), "category": cat, "steps": cum})
+# The corporations' units (0.2.475, the arms race): trained, their tree's track for their weapon at its top (the base
+# game's finite levels, damage then speed, as rd.lua's ladder; railguns their own step), the plate their tree gives
+# them (its resistance to the damage it answers against the unplated one's, as health), and the top rank.
+def lst(x): return list(x.values()) if isinstance(x, dict) else (x or [])
+def tree_of(corp): return lst(S["corps"][corp]["tree"])
+def variant(corp, kind): return kind if corp == "serenity" else "lp-" + corp + "-" + kind[3:]
+def proto(name):
+    for t in ("unit", "car", "spider-unit"):
+        if name in d.get(t, {}):
+            return d[t][name]
+CORP_NAME = {"serenity": "Kessler-Hayashi", "grubstake": "Grubstake"}
+CORP_UNITS = [("serenity", "lp-infantry"), ("serenity", "lp-tank"), ("serenity", "lp-railgunner"),
+              ("grubstake", "lp-infantry"), ("grubstake", "lp-buggy"), ("grubstake", "lp-sapper")]
+corp_ladders = []
+for corp, kind in CORP_UNITS:
+    u = proto(variant(corp, kind))
+    cat = u["attack_parameters"]["ammo_category"]
+    track = next((n for n in tree_of(corp) if cat in lst(n.get("track"))), None)
+    dmg = spd = 0.0
+    if track and track.get("step"):
+        dmg = track["step"] * (track.get("levels") or 0)
+    elif track:
+        r = research[cat]
+        dmg, spd = r["ammo-damage"], r["gun-speed"]
+    plate = next((n for n in tree_of(corp) if kind in (n.get("plates") or {})), None)
+    pf = 1.0
+    if plate:
+        ptype = plate["plates"][kind]
+        def pct(p):
+            return next((x.get("percent", 0) for x in (p or {}).get("resistances") or [] if x["type"] == ptype), 0) / 100
+        pf = (1 - pct(u)) / (1 - pct(proto(variant(corp, kind) + "-" + ptype)))
+    steps = [("Trained", "base", 1.0), ("Damage research", "research", 1 + dmg),
+             ("Shooting speed research", "research", 1 + spd), ("Plate", "round", pf), (f"Rank {TOP_RANK}", "rank", rank_power)]
+    total, cum = 1.0, []
+    for label, k, mult in steps:
+        total *= mult
+        cum.append({"label": label, "kind": k, "step": round(mult, 4), "power": round(total, 4)})
+    own = (S["corps"][corp].get("names") or {}).get(kind)
+    corp_ladders.append({"unit": kind, "corp": corp, "name": unit_name(own or kind), "category": cat, "steps": cum,
+                         "plate": plate["plates"][kind] if plate else None})
 os.makedirs(OUT, exist_ok=True)
-json.dump({"top_rank": TOP_RANK, "units": ladders}, open(os.path.join(OUT, "power-ladder.json"), "w"), indent=1)
+json.dump({"top_rank": TOP_RANK, "units": ladders, "corporations": corp_ladders},
+          open(os.path.join(OUT, "power-ladder.json"), "w"), indent=1)
 
 import matplotlib
 matplotlib.use("Agg")
@@ -118,53 +161,67 @@ from matplotlib.ticker import FixedLocator, NullLocator
 
 # Colours named for what they encode (Okabe-Ito): what bought each step.
 SOURCE_COLOURS = {"base": "#000000", "research": "#0072B2", "round": "#E69F00", "rank": "#009E73"}
-SOURCE_WORDS = {"research": "Research", "round": "Better round", "rank": "Veterancy"}
 plt.rcParams.update({"font.family": "serif", "font.size": 7, "axes.linewidth": 0.5})
-fig, axes = plt.subplots(2, 3, figsize=(5.0, 3.5), sharey=True)
-top = max(l["steps"][-1]["power"] for l in ladders)
-ticks = [t for t in (1, 3, 10, 30, 100, 300) if t <= top * 1.5]
-SHORT = {"base": "Trained", "research": None, "round": "Round", "rank": None}
-for ax, lad in zip(axes.flat, ladders):
-    st = lad["steps"]
-    for i in range(1, len(st)):
-        y0, y1 = st[i - 1]["power"], st[i]["power"]
-        gains = st[i]["step"] > 1.0001
-        # (A step that buys nothing, grey and dashed: the breacher's and flame trooper's weapons take no shooting speed
-        # research and have no better round.)
-        ax.plot([i - 1, i], [y0, y1], color=SOURCE_COLOURS[st[i]["kind"]] if gains else "#bbbbbb",
-                linewidth=1.6 if gains else 0.9, linestyle="-" if gains else (0, (2, 2)), solid_capstyle="round")
-        if gains:
-            ax.text(i - 0.5, (y0 * y1) ** 0.5 / 1.25, f"×{st[i]['step']:.2g}", ha="left", va="top", fontsize=5.5,
-                    color=SOURCE_COLOURS[st[i]["kind"]])
-    ax.plot(range(len(st)), [s["power"] for s in st], "o", color="#000000", markersize=1.8)
-    ax.text(len(st) - 1, st[-1]["power"] * 1.25, f"×{st[-1]['power']:.0f}", ha="center", va="bottom", fontsize=7,
-            fontweight="bold")
-    ax.set_yscale("log")
-    ax.yaxis.set_major_locator(FixedLocator(ticks))
-    ax.yaxis.set_minor_locator(NullLocator())
-    ax.set_yticklabels([f"×{t}" for t in ticks])
-    ax.set_ylim(0.8, top * 2.6)
-    ax.set_xlim(-0.3, len(st) - 0.7)
-    ax.set_xticks(range(len(st)))
-    labels = []
-    for s_ in st:
-        if s_["kind"] == "research":
-            labels.append(s_["label"].replace(" research", "").replace("Shooting speed", "Speed"))
-        elif s_["kind"] == "round":
-            labels.append("Round")
-        else:
-            labels.append(s_["label"])
-    ax.set_xticklabels(labels, fontsize=5.3, rotation=35, ha="right", rotation_mode="anchor")
-    rd = next(s_ for s_ in st if s_["kind"] == "round")
-    ax.set_title(lad["name"], fontsize=7.5, pad=9)
-    ax.text(0.5, 1.0, rd["label"] if rd["step"] > 1.0001 else "no better round", transform=ax.transAxes,
-            ha="center", va="bottom", fontsize=5.2, color="#666666", style="italic")
-    for side in ("top", "right"):
-        ax.spines[side].set_visible(False)
-    ax.grid(axis="y", linewidth=0.3, color="#dddddd")
-handles = [plt.Line2D([], [], color=c, linewidth=1.6, label=SOURCE_WORDS[k]) for k, c in SOURCE_COLOURS.items() if k != "base"]
-fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False, fontsize=6.5)
-fig.supylabel("Strength against the unit as trained", fontsize=6.5)
-fig.tight_layout(rect=(0, 0.05, 1, 1), h_pad=1.6)
-fig.savefig(os.path.join(OUT, "power-ladder.png"), dpi=300)
-print(f"power ladder: {len(ladders)} units, top rank {TOP_RANK}, strongest ×{top:.0f}; {OUT}/power-ladder.png")
+LADDERS_ALL = ladders + corp_ladders
+
+
+def draw(group, path, words, subtitle):
+    fig, axes = plt.subplots(2, 3, figsize=(5.0, 3.5), sharey=True)
+    # (One scale for both figures: the player's and the corporations' ladders read against each other.)
+    top = max(l["steps"][-1]["power"] for l in LADDERS_ALL)
+    ticks = [t for t in (1, 3, 10, 30, 100, 300) if t <= top * 1.5]
+    for ax, lad in zip(axes.flat, group):
+        st = lad["steps"]
+        for i in range(1, len(st)):
+            y0, y1 = st[i - 1]["power"], st[i]["power"]
+            gains = st[i]["step"] > 1.0001
+            # (A step that buys nothing, grey and dashed: no research reaches that weapon, no better round or plate.)
+            ax.plot([i - 1, i], [y0, y1], color=SOURCE_COLOURS[st[i]["kind"]] if gains else "#bbbbbb",
+                    linewidth=1.6 if gains else 0.9, linestyle="-" if gains else (0, (2, 2)), solid_capstyle="round")
+            if gains:
+                ax.text(i - 0.5, (y0 * y1) ** 0.5 / 1.25, f"×{st[i]['step']:.2g}", ha="left", va="top", fontsize=5.5,
+                        color=SOURCE_COLOURS[st[i]["kind"]])
+        ax.plot(range(len(st)), [s_["power"] for s_ in st], "o", color="#000000", markersize=1.8)
+        ax.text(len(st) - 1, st[-1]["power"] * 1.25, f"×{st[-1]['power']:.0f}", ha="center", va="bottom", fontsize=7,
+                fontweight="bold")
+        ax.set_yscale("log")
+        ax.yaxis.set_major_locator(FixedLocator(ticks))
+        ax.yaxis.set_minor_locator(NullLocator())
+        ax.set_yticklabels([f"×{t}" for t in ticks])
+        ax.set_ylim(0.8, top * 2.6)
+        ax.set_xlim(-0.3, len(st) - 0.7)
+        ax.set_xticks(range(len(st)))
+        labels = []
+        for s_ in st:
+            if s_["kind"] == "research":
+                labels.append(s_["label"].replace(" research", "").replace("Shooting speed", "Speed"))
+            elif s_["kind"] == "round":
+                labels.append(words["round_tick"])
+            else:
+                labels.append(s_["label"])
+        ax.set_xticklabels(labels, fontsize=5.3, rotation=35, ha="right", rotation_mode="anchor")
+        ax.set_title(lad["name"], fontsize=7.5, pad=9)
+        ax.text(0.5, 1.0, subtitle(lad), transform=ax.transAxes, ha="center", va="bottom", fontsize=5.2,
+                color="#666666", style="italic")
+        for side in ("top", "right"):
+            ax.spines[side].set_visible(False)
+        ax.grid(axis="y", linewidth=0.3, color="#dddddd")
+    handles = [plt.Line2D([], [], color=c, linewidth=1.6, label=words[k]) for k, c in SOURCE_COLOURS.items() if k != "base"]
+    fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False, fontsize=6.5)
+    fig.supylabel("Strength against the unit as trained", fontsize=6.5)
+    fig.tight_layout(rect=(0, 0.05, 1, 1), h_pad=1.6)
+    fig.savefig(path, dpi=300)
+    return top
+
+
+def player_sub(lad):
+    r = next(s_ for s_ in lad["steps"] if s_["kind"] == "round")
+    return r["label"] if r["step"] > 1.0001 else "no better round"
+
+
+top = draw(ladders, os.path.join(OUT, "power-ladder.png"),
+           {"research": "Research", "round": "Better round", "round_tick": "Round", "rank": "Veterancy"}, player_sub)
+draw(corp_ladders, os.path.join(OUT, "corp-ladder.png"),
+     {"research": "Research", "round": "Plate", "round_tick": "Plate", "rank": "Veterancy"},
+     lambda lad: CORP_NAME[lad["corp"]] + ("" if lad["plate"] else ", no plate"))
+print(f"power ladder: {len(ladders)} units, {len(corp_ladders)} corporate units, top rank {TOP_RANK}, strongest x{top:.0f}; {OUT}")

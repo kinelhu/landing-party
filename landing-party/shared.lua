@@ -414,6 +414,10 @@ shared.JAM_RADIUS = 50       -- a jammer mast downs robots and blinds threat sca
 
 -- The strength and aggression presets (settings.lua, scripts/tune.lua): a multiplier each.
 shared.TUNE = {["very-low"] = 0.5, low = 0.75, normal = 1, high = 1.5, ["very-high"] = 2}
+-- The research preset's other half (settings.lua lp-<corp>-research, 0.2.475; the user: "factor in the arms race into
+-- the difficulty settings"): how many levels past the player's era a corporation's weapons may go (rd.lua's cap). Its
+-- pace is the preset's multiplier (shared.TUNE) on its labs' rate, times the difficulty.
+shared.RESEARCH_AHEAD = {["very-low"] = -1, low = 0, normal = 1, high = 1, ["very-high"] = 2}
 -- The difficulty preset (setting lp-difficulty, the user, 2026-11-08: presets and the levers under them, as vanilla's
 -- biters): a multiplier on every faction's strength, aggression and income (tune.lua), its own levers on top.
 shared.DIFFICULTY = {easy = 0.5, normal = 1, hard = 1.5, ["very-hard"] = 2}

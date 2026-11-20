@@ -694,6 +694,8 @@ remote.add_interface("landing-party", {
     if t.ladder_fast ~= nil then storage.ladder_fast = t.ladder_fast end
     -- The levers (tune.lua) over the settings: {grubstake = {strength = 2, aggression = 0.5}, ...}.
     if t.levers ~= nil then storage.tune_levers = t.levers end
+    -- Tests: research levels past the era by corporation (tune.ahead; the research preset's other half).
+    if t.research_ahead ~= nil then storage.tune_ahead = t.research_ahead end
     -- Tests: no operation of choice (the decider), answers still on.
     if t.choice_off ~= nil then storage.choice_off = t.choice_off end
     if t.gates_off ~= nil then storage.gates_off = t.gates_off end
@@ -1109,6 +1111,13 @@ remote.add_interface("landing-party", {
   debug_rd_max = function(corp) return rd.max_tracks(corp) end,
   -- Tests: what a track node gives at level k ({category = {damage, speed}}, the base game's ladder).
   debug_rd_track = function(corp, id, k) return rd.track_at(corp, id, k) end,
+  -- Tests: what the planner's research rule reads for settlement id (planner.lua "research").
+  debug_research_rule = function(id)
+    local b = storage.bases[id]
+    if not b then return nil end
+    return {wanted = rd.wanted_lab(b.corp), parts = b.parts, keep = b.posture and b.posture.keep or 0,
+      launch = b.launch_opened == true, wfc = b.wfc_job ~= nil, districts = layout.districts(b), queue = #(b.queue or {})}
+  end,
   debug_tier = function(u, round)
     storage.cmd.tier_test = storage.cmd.tier_test or {}
     storage.cmd.tier_test[u.unit_number] = round
