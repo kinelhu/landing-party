@@ -4,6 +4,8 @@ Date: 2026-11-20
   Balancing:
     - Kessler-Hayashi's anti-air troopers no longer gain from research. At the top of research they beat every one of your units from their long range.
     - Kessler-Hayashi's laser research raises laser damage only, not laser shooting speed. Its heavy laser troopers beat every one of your units at the top of research.
+  Bugfixes:
+    - Kessler-Hayashi builds its Optics lab first again. Since 0.2.475 its first lab could be its siege works.
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.475
 Date: 2026-11-20

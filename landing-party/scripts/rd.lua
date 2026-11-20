@@ -432,6 +432,14 @@ local function pick(corp, t, era)
     end
   end
   t.wants_lab = rd.gated(corp) and want and (not bs or ws > bs) and rd.lab_kind(corp, want.branch) or nil
+  -- With no lab at all, its first track's (the design's: Kessler-Hayashi's Optics lab), reachable yet or not: under the
+  -- science-tier cap (0.2.475) its lasers wait for the player's era 3, and at era 2 its first lab became its siege
+  -- works (scenario breach arty found no Optics lab to take).
+  if rd.gated(corp) and branches_served(corp) == 0 then
+    for _, node in ipairs(shared.CORPS[corp].tree or {}) do
+      if node.track then t.wants_lab = rd.lab_kind(corp, node.branch); break end
+    end
+  end
   return best or fallback, best ~= nil
 end
 
