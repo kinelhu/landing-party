@@ -8,7 +8,7 @@ Both corporations build from the same set, each in its own colors. Grubstake's t
 second turret it builds is a scrap cannon.
 
 | Building | Health (Kessler-Hayashi) | Health (Grubstake) | What it does |
-|:--|--:|--:|:--|
+|:--------------------|-------------:|-------------:|:------------------------------------------------------|
 | Lander | 12,000 | 12,000 | The center of a faction base. Destroying it destroys the base. Unharmed while half the generators near it stand: hover to see them. |
 | Uplink | 6,000 | 6,000 | The center of a faction's headquarters. Destroying it destroys the headquarters, and the faction withdraws. |
 | Generator | 400 | 400 |  |
@@ -34,7 +34,7 @@ second turret it builds is a scrap cannon.
 ### Kessler-Hayashi only
 
 | Building | Health | What it does |
-|:--|--:|:--|
+|:------------------------|---------:|:-------------------------------------------------------------------|
 | Optics lab | 600 |  |
 | Armory | 600 |  |
 | Siege works | 600 |  |
@@ -46,7 +46,7 @@ Each research lab advances one branch of Kessler-Hayashi's research, and only wh
 ### Grubstake only
 
 | Building | Health | What it does |
-|:--|--:|:--|
+|:------------------------|---------:|:-------------------------------------------------------------------|
 | Pacifier antenna | 1,500 | Keeps biters from attacking Grubstake. Drops pheromone glands, and sometimes a pacifier crystal. |
 | Grubstake yard | 600 | Stores what Grubstake has stolen. Drops its contents when destroyed. |
 | Grubstake claim stake | 150 | Grubstake claims the ore here when the lamp runs out, unless the ore is being mined or the stake is destroyed. |
@@ -56,7 +56,7 @@ Each research lab advances one branch of Kessler-Hayashi's research, and only wh
 ### Synthexis
 
 | Building | Health | What it does |
-|:--|--:|:--|
+|:------------------------|---------:|:-------------------------------------------------------------------|
 | Synthexis incubator | 350 | A biter spawner taken over by Synthexis. Drops pheromone glands. |
 | Synthexis biochamber | 300 | Feeds a Synthexis incubator so it can breed. |
 | Synthexis clinic | 1,500 | Makes Synthexis biters stronger. Without it, only small and medium biters are bred. |
@@ -68,7 +68,7 @@ Each research lab advances one branch of Kessler-Hayashi's research, and only wh
 ### Yours
 
 | Building | Health | What it does |
-|:--|--:|:--|
+|:------------------------|---------:|:-------------------------------------------------------------------|
 | Barracks | 350 | Trains units from orders. Heals your units within 30 tiles and rearms them from its input. |
 | Rally beacon | 120 | Gathers a squad and orders it by signal: A advance, R retreat, D defend, X and Y move its rally point, Z sets its reach. Squad size signals cap each unit it keeps. It outputs S its squad, H those at the rally point, M its ammunition and W while it is out defending. E, T and N count the enemy units, turrets and spawners within its reach. |
 | Command relay | 250 | Lets you command 10 more units while powered. Research raises how many relays count. |

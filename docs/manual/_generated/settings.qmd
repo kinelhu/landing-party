@@ -1,7 +1,7 @@
 <!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
 
 | Setting | Default | Choices | What it does |
-|:--|:--|:--|:--|
+|:----------------------|:-------------|:----------------------|:-------------------------------------------|
 | Chat notices | Off | On, Off | Show faction activity in chat and as alerts. First landings, destroyed bases and arriving threats are always shown. |
 | Army ammunition | On | On, Off | Your units spend the ammunition their orders carried and walk to a barracks or supply depot holding it to rearm. Off: they never run out. |
 | Difficulty | Normal | Easy (×0.5), Normal, Hard (×1.5), Very hard (×2) | Scales every faction's strength, aggression and income, and the corporations' research pace. Each faction's own settings apply on top. |

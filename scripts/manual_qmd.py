@@ -20,6 +20,13 @@ NON_ENTITY = {"item", "recipe", "technology", "item-with-entity-data", "ammo", "
               "repair-tool", "blueprint", "deconstruction-item", "upgrade-item", "blueprint-book", "copy-paste-tool"}
 
 
+# A wrapping table's separator row (the user, 2026-11-20: "inspect table column sizes"): pandoc sizes a pipe table that
+# wraps by the dashes under each column, and every column written ":--" was an even share, two health columns as wide
+# as the descriptions beside them. Each column (align "l" or "r", weight): its share of the text width.
+def sep(*cols):
+    return "|" + "|".join((":" + "-" * w) if a == "l" else ("-" * w + ":") for a, w in cols) + "|"
+
+
 # A corporate track's levels (rd.lua levels_of, the arms race of 0.2.474): its categories' deepest finite level of the
 # base game's damage and shooting speed technologies, else (railguns: a step of its own) its node's count.
 def track_levels(n, d):
@@ -523,7 +530,8 @@ def write(rp):
          "can touch a flying unit. Speed is in tiles a second, range in tiles and rate in shots a second. Corporations pay",
          "for units in parts, Synthexis in biomass, and you in command bandwidth.", ""]
     for title, items in groups:
-        L += [f"### {title}", "", "| Unit | Health | Speed | Range | Rate | Hits air | Cost |", "|:--|--:|--:|--:|--:|:--|:--|"]
+        L += [f"### {title}", "", "| Unit | Health | Speed | Range | Rate | Hits air | Cost |",
+              sep(("l", 30), ("r", 10), ("r", 9), ("r", 9), ("r", 8), ("l", 10), ("l", 14))]
         entries = []
         for kind, img, how, biomass in items:
             r = rows.get(kind)
@@ -539,7 +547,7 @@ def write(rp):
             # Each unit's shot, resistances and how it is fielded, in a second table: the faction chapters' cards carry
             # the portraits and words (the booklet's lp-data.json).
             entries.append(f"| {md(nm)} | {md(damage_word(w))} | {md(damage_word(res))} | {md(how or '-')} |")
-        L += ["", "| Unit | A shot | Resists | Fielded |", "|:--|:--|:--|:--|"] + entries + [""]
+        L += ["", "| Unit | A shot | Resists | Fielded |", sep(("l", 20), ("l", 28), ("l", 30), ("l", 22))] + entries + [""]
     if not probe:
         L.append("<!-- The runt is left out: Synthexis's probe is off in this version (shared.BIOTECH.mind.probe). -->")
     # Better rounds (ammunition tiers, 0.2.470 to 0.2.472): each tier order's damage against its base round's, as
@@ -596,23 +604,25 @@ def write(rp):
     B = ["## Buildings {#sec-buildings}", "", "### Corporation camps", "",
          "Both corporations build from the same set, each in its own colors. Grubstake's turret fires bullets, and every",
          f"{ordinal(int(num(shared_src, r'^\s*flak = (\d+)', 'flak') or 0))} turret it builds is a scrap cannon.", "",
-         "| Building | Health (Kessler-Hayashi) | Health (Grubstake) | What it does |", "|:--|--:|--:|:--|"]
+         "| Building | Health (Kessler-Hayashi) | Health (Grubstake) | What it does |",
+         sep(("l", 20), ("r", 13), ("r", 13), ("l", 54))]
     for n in camp:
         g = "lp-grubstake-" + n[3:]
         B.append(f"| {md(shown(n))} | {health(n)} | {health(g) if g in ENT else '-'} | {desc_of(n)} |")
     B.append(f"| {md(shown('lp-scrap-cannon'))} | - | {health('lp-grubstake-scrap-cannon')} | |")
-    B += ["", "### Kessler-Hayashi only", "", "| Building | Health | What it does |", "|:--|--:|:--|"]
+    B3 = sep(("l", 24), ("r", 9), ("l", 67))
+    B += ["", "### Kessler-Hayashi only", "", "| Building | Health | What it does |", B3]
     for n in ("lp-optics-lab", "lp-line-lab", "lp-siege-lab", "lp-jammer", "lp-invoice-post"):
         B.append(f"| {md(shown(n))} | {health(n)} | {desc_of(n)} |")
     B += ["", "Each research lab advances one branch of Kessler-Hayashi's research, and only while it stands.", "",
-          "### Grubstake only", "", "| Building | Health | What it does |", "|:--|--:|:--|"]
+          "### Grubstake only", "", "| Building | Health | What it does |", B3]
     for n, h in (("lp-pacifier", "lp-grubstake-pacifier"), ("lp-skim-yard", "lp-skim-yard"), ("lp-claim-stake", "lp-claim-stake"),
                  ("lp-claim-rig", "lp-claim-rig"), ("lp-power-tap", "lp-power-tap")):
         B.append(f"| {md(shown(n))} | {health(h)} | {desc_of(n)} |")
-    B += ["", "### Synthexis", "", "| Building | Health | What it does |", "|:--|--:|:--|"]
+    B += ["", "### Synthexis", "", "| Building | Health | What it does |", B3]
     for n in ("lp-pen", "lp-biochamber", "lp-clinic", "lp-heating-tower", "lp-tumor", "lp-bred-worm", "lp-cell-lamp"):
         B.append(f"| {md(shown(n))} | {health(n)} | {desc_of(n)} |")
-    B += ["", "### Yours", "", "| Building | Health | What it does |", "|:--|--:|:--|"]
+    B += ["", "### Yours", "", "| Building | Health | What it does |", B3]
     for n in ("lp-barracks", "lp-rally-beacon", "lp-command-relay", "lp-threat-scanner", "lp-player-mortar",
               "lp-strip-drill", "lp-claim-marker", "lp-pact-breaker", "lp-player-bait",
               "lp-player-dome", "lp-orbital-cannon", "lp-targeting-array"):  # (the strike beacon retired, 0.2.274)
@@ -676,7 +686,7 @@ def write(rp):
                         or lname("item-name." + rk)
                     uses.append(f"{n} per {rn}")
         return "; ".join(sorted(uses)) or "-"
-    S = ["| Salvage | Dropped by | How many | Used for |", "|:--|:--|:--|:--|"]
+    S = ["| Salvage | Dropped by | How many | Used for |", sep(("l", 22), ("l", 24), ("l", 14), ("l", 40))]
     seen = {}
     for ent, item, a, b, p in adds:
         how = a if a == b else f"{a} to {b}"
@@ -723,7 +733,7 @@ def write(rp):
         if base == "lp-command-bandwidth":
             return ("Unlocks " + ", ".join(names) + "." if names else dsc)
         return dsc
-    T = ["| Technology | What it gives | How you get it | After |", "|:--|:--|:--|:--|"]
+    T = ["| Technology | What it gives | How you get it | After |", sep(("l", 18), ("l", 32), ("l", 28), ("l", 22))]
     order = sorted(k for k in d["technology"] if k.startswith("lp-command-bandwidth")) + \
         sorted(k for k in d["technology"] if k.startswith("lp-") and (d["technology"][k].get("research_trigger") or {}).get("type") == "craft-item") + \
         sorted(k for k in d["technology"] if k.startswith("lp-") and any(q.startswith("lp-study-") for q in (d["technology"][k].get("prerequisites") or []))) + \
@@ -745,7 +755,7 @@ def write(rp):
     # order), in the game's order, named and described by the locale. (Read from settings.lua's text until 0.2.223's
     # levers: a bool, a range and a preset each needed a pattern of their own.)
     sdump = json.load(open(os.path.join(os.path.dirname(rp.roster.DUMP), "mod-settings-dump.json")))
-    St = ["| Setting | Default | Choices | What it does |", "|:--|:--|:--|:--|"]
+    St = ["| Setting | Default | Choices | What it does |", sep(("l", 22), ("l", 13), ("l", 22), ("l", 43))]
     level_names = re.findall(r'"([a-z-]+)"', grab(settings_src, r"^local levels = \{([^}]*)\}", "settings.lua levels") or "")
     settings_all = sorted(((e.get("order", ""), k, t, e) for t, v in sdump.items() for k, e in v.items() if k.startswith("lp-")))
     for _, key, typ, e in settings_all:
@@ -780,7 +790,7 @@ def write(rp):
     out("settings.qmd", St + ["", "All of them are map settings: an admin can change them in a running game."])
 
     # ---- commands ----
-    C = ["| Command | What it does |", "|:--|:--|"]
+    C = ["| Command | What it does |", sep(("l", 28), ("l", 72))]
     dev_key = None
     for name, key in re.findall(r'commands\.add_command\("([a-z-]+)", \{"lp\.([a-z-]+)"\}', control_src):
         text = loc.get(("lp", key), "")

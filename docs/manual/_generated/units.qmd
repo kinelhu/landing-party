@@ -11,7 +11,7 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 ### Kessler-Hayashi
 
 | Unit | Health | Speed | Range | Rate | Hits air | Cost |
-|:--|--:|--:|--:|--:|:--|:--|
+|:------------------------------|----------:|---------:|---------:|--------:|:----------|:--------------|
 | Laser trooper | 120 | 7.2 | 15 | 0.91 | yes | 11 parts |
 | Laser drone | 400 | 12.0 | 16 | 3 | yes | 70 parts |
 | Railgunner | 140 | 6.0 | 30 | 0.67 | no | 22 parts |
@@ -24,7 +24,7 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Lightning tank | 800 | 5.4 | 14 | 0.8 | no | 115 parts |
 
 | Unit | A shot | Resists | Fielded |
-|:--|:--|:--|:--|
+|:--------------------|:----------------------------|:------------------------------|:----------------------|
 | Laser trooper | 18.48 laser | physical -2 10%, laser 20% | From landing |
 | Laser drone | 12 laser | fire 100%, physical -3 40%, laser 20% | From its level 2 |
 | Railgunner | 250 physical over 0.5 tiles; 40 physical over 0.5 tiles; 10 physical over 0.5 tiles | physical -2 10%, laser 20% | From landing |
@@ -39,7 +39,7 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 ### Grubstake
 
 | Unit | Health | Speed | Range | Rate | Hits air | Cost |
-|:--|--:|--:|--:|--:|:--|:--|
+|:------------------------------|----------:|---------:|---------:|--------:|:----------|:--------------|
 | Buggy | 220 | 12.0 | 13 | 6 | yes | 15 parts |
 | Scrap copter | 80 | 15.0 | 12 | 3 | yes | 15 parts |
 | Shotgunner | 120 | 10.2 | 9 | 0.94 | yes | - |
@@ -51,7 +51,7 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Flame tank | 700 | 5.4 | 13 | 6 | no | 100 parts |
 
 | Unit | A shot | Resists | Fielded |
-|:--|:--|:--|:--|
+|:--------------------|:----------------------------|:------------------------------|:----------------------|
 | Buggy | 5 physical | physical -2 15% | From landing |
 | Scrap copter | 6 physical | fire 100% | From its level 1 |
 | Shotgunner | 9 physical (x3) | physical -2 10% | From landing |
@@ -65,17 +65,17 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 ### Both corporations
 
 | Unit | Health | Speed | Range | Rate | Hits air | Cost |
-|:--|--:|--:|--:|--:|:--|:--|
+|:------------------------------|----------:|---------:|---------:|--------:|:----------|:--------------|
 | Hauler | 1,500 | 3.9 | 10 | 2 | yes | 30 parts |
 
 | Unit | A shot | Resists | Fielded |
-|:--|:--|:--|:--|
+|:--------------------|:----------------------------|:------------------------------|:----------------------|
 | Hauler | 4 physical | physical -4 30%, fire 50%, explosion 20% | Both corporations |
 
 ### Synthexis
 
 | Unit | Health | Speed | Range | Rate | Hits air | Cost |
-|:--|--:|--:|--:|--:|:--|:--|
+|:------------------------------|----------:|---------:|---------:|--------:|:----------|:--------------|
 | Small biter (Synthexis) | 15 | 12.0 | 0.5 | 1.7 | yes | 2 biomass |
 | Medium biter (Synthexis) | 75 | 14.4 | 1 | 1.7 | yes | 7 biomass |
 | Big biter (Synthexis) | 375 | 13.8 | 1.5 | 1.7 | yes | 28 biomass |
@@ -91,7 +91,7 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Synthexis technician | 80 | 6.0 | 1 | 1 | yes | - |
 
 | Unit | A shot | Resists | Fielded |
-|:--|:--|:--|:--|
+|:--------------------|:----------------------------|:------------------------------|:----------------------|
 | Small biter (Synthexis) | 7 bite | - | Bred from evolution 0 |
 | Medium biter (Synthexis) | 15 bite | physical -4 10%, explosion 10% | Bred from evolution 0.2 |
 | Big biter (Synthexis) | 30 bite | physical -8 10%, explosion 10% | Bred from evolution 0.5 |
@@ -109,7 +109,7 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 ### Your army
 
 | Unit | Health | Speed | Range | Rate | Hits air | Cost |
-|:--|--:|--:|--:|--:|:--|:--|
+|:------------------------------|----------:|---------:|---------:|--------:|:----------|:--------------|
 | Trooper | 120 | 7.2 | 15 | 3 | yes | 1 bandwidth |
 | Breacher | 120 | 7.2 | 12 | 0.33 | no | 1 bandwidth |
 | Rocket trooper | 120 | 7.2 | 18 | 0.4 | yes | 2 bandwidth |
@@ -118,7 +118,7 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Battle tank | 900 | 5.4 | 18 | 0.33 | no | 8 bandwidth |
 
 | Unit | A shot | Resists | Fielded |
-|:--|:--|:--|:--|
+|:--------------------|:----------------------------|:------------------------------|:----------------------|
 | Trooper | 8 physical | physical -2 10%, acid 40% | Research: Command bandwidth 1 |
 | Breacher | 15 explosion over 2.5 tiles; 85 explosion over 2.5 tiles to buildings, on top of the hit | physical -2 10%, acid 40% | Research: Command bandwidth 1 |
 | Rocket trooper | 110 explosion | physical -2 10%, acid 40% | Research: Command bandwidth 2 |
