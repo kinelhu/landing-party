@@ -1091,6 +1091,11 @@ remote.add_interface("landing-party", {
   debug_paving_prof = function(on) storage.paving_prof = on; return paving.stats() end,
   -- Tests only: a unit's ammunition (rounds, its loadout's, dry, where it rearms).
   -- The arena only: a unit fighting unregistered given a round (ammunition tiers, LP_ARENA_TIER).
+  -- The arena and tests only: the tier power in force (an override of shared.TIER_EXP, or nil to read it).
+  debug_tier_exp = function(x)
+    if x then storage.cmd.tier_exp = x end
+    return storage.cmd.tier_exp or shared.TIER_EXP
+  end,
   debug_tier = function(u, round)
     storage.cmd.tier_test = storage.cmd.tier_test or {}
     storage.cmd.tier_test[u.unit_number] = round

@@ -215,9 +215,8 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   with 6 to 12 s between (scenario shotrate), so its 1,000 rounds never run dry: look at the unit first; stage 4 of
   docs/reviews/2026-11-19-army-logistics-consult.md (the threat with the factory); director armydefend with a depot by
   the D beacon and a roboport (the consult's readings: magazines drawn and packs used a beat).
-- Ammunition tiers, what stage 1 (0.2.470: bullets, built) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): the
-  arena at each tier, a report for the user to pick TIER_SHARE (uranium's 4.8 over yellow may overturn "rockets for
-  hulls"); stage 2, shells and rockets on named priors (uranium shells twice the direct damage, explosive shells and
+- Ammunition tiers, what stage 1 (0.2.470: bullets, built; TIER_EXP 0.33 from the arena, docs/arena-tiers.md) left
+  (docs/reviews/2026-11-20-ammo-tiers-consult.md): stage 2, shells and rockets on named priors (uranium shells twice the direct damage, explosive shells and
   rockets a blast), each an arena report; the corporations' pricing of the player's army (intel.lua) reading the
   squad's tier; the beacon's rounds as item signals; the UPS run with tiers on.
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
@@ -1149,7 +1148,11 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     once the base order and the round are (command.sync_tiers, on research, its reversal and an effects reset). The
     unit's round is its order's (t.round). Its ladder is the base round's ammo category's magazines ranked by their own
     prototypes' direct damage, each a factor over the base (firearm 5, piercing 8, uranium 24: a uranium trooper 4.8, a
-    uranium buggy 3, times TIER_SHARE, a named prior, 1). The bonus lands at the hit: data-final-fixes puts a script
+    uranium buggy 3), raised to TIER_EXP, a named prior: 0.33 (piercing trooper 1.17, uranium 1.68, uranium buggy 1.44).
+    **The arena chose it** (docs/arena-tiers.md, `LP_ARENA_TIER`, `LP_ARENA_TIER_EXP`; the user: "I don't want to wait for
+    beta"): at vanilla's ratio a uranium trooper won 40 of 44 matchups at equal spend (24 on yellow, mean +66 against -6),
+    a uranium gun buggy 40 (23): the counters gone; at 0.5, 37 and 40; at 0.33, 33 and 32, a uranium trooper still losing
+    to big biters, Shock troopers and the 0.95 waves, a piercing one 27. The bonus lands at the hit: data-final-fixes puts a script
     trigger "lp-hit:<amount>:<type>" beside each damage effect of their attacks, a projectile's own action followed (the
     trooper's tracer, lp-trooper-shot: the first build missed it and scored no bonus for the trooper), the buggy's blast
     included; command.on_hit deals that damage times the factor less one, TIER_SHARE, the force's ammo damage research and
@@ -1163,8 +1166,9 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     against vanilla's ratio's 25.84 past a spawner's 15%; the buggy's direct hit and blast each pay it, the blast once per
     entity (58 and 58); the yellow trooper's hits pay nothing; drained by a depot holding both, the yellow trooper loads
     uranium; the depot emptied, the uranium trooper walks to the yellow barracks and loads yellow; the panel counts three
-    on uranium; the icons follow. Seen failing with the flat decrease left out (24.14 against 25.84) and with the hit
-    trigger disconnected (no bonus). It caught a crash: the bonus can kill its target, and the target's name was read
+    on uranium; the icons follow. Seen failing with the flat decrease left out (24.14 against 25.84 at power 1; 2.91
+    against 4.61 at 0.33: the smaller the bonus, the more of it flat armour takes) and with the hit trigger disconnected
+    (no bonus). It caught a crash: the bonus can kill its target, and the target's name was read
     after (read first now).
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count

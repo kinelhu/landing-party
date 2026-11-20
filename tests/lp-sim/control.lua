@@ -3711,8 +3711,9 @@ scenarios.tiers = function()
     end)
   end
   schedule(2600 + 42 * 60, function()
-    local fU = dd("uranium-rounds-magazine") / dd("firearm-magazine")
-    local fB = dd("uranium-rounds-magazine") / dd("piercing-rounds-magazine")
+    local ex = lp("debug_tier_exp")
+    local fU = (dd("uranium-rounds-magazine") / dd("firearm-magazine")) ^ ex
+    local fB = (dd("uranium-rounds-magazine") / dd("piercing-rounds-magazine")) ^ ex
     local pp, pe = percent("biter-spawner", "physical"), percent("biter-spawner", "explosion")
     local function per(key) local b = S.by and S.by[key]; return b and b.n > 0 and b.dealt / b.n or nil, b and b.n or 0 end
     local tu, tun = per("lp-trooper|lp-hit:8:physical|biter-spawner")
@@ -3728,7 +3729,7 @@ scenarios.tiers = function()
     check("tiers: each unit leaves the barracks with its order's round", S.issued.tu == "uranium-rounds-magazine"
       and S.issued.ty == "firearm-magazine" and S.issued.gb == "uranium-rounds-magazine", serpent.line(S.issued))
     -- (Seen failing with the flat decrease left out: the spawner's physical 2 against 30.4 a hit, 7% short.)
-    check("tiers: a uranium trooper's bonus a hit is vanilla's ratio over yellow, past the target's percent, its flat added back",
+    check("tiers: a uranium trooper's bonus a hit is vanilla's ratio over yellow to the power TIER_EXP, past the target's percent, its flat added back",
       near(tu, want.tu), string.format("%s against %.2f over %d hits", tostring(tu), want.tu, tun))
     check("tiers: the yellow trooper's hits pay nothing (every bonus hit the uranium trooper's)",
       S.fired.tu and tun > 0 and tun <= S.fired.tu, string.format("%d bonus hits, the uranium trooper fired %s", tun, tostring(S.fired.tu)))

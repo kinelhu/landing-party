@@ -1079,7 +1079,7 @@ function command.empty(u)
 end
 
 -- A better round's bonus at each hit (0.2.470; data-final-fixes.lua names the damage effect it stands beside,
--- "lp-hit:<amount>:<type>"): that damage times the round's factor less one, TIER_SHARE, the force's ammo damage research
+-- "lp-hit:<amount>:<type>"): that damage times the round's factor (raised to TIER_EXP) less one, the force's ammo damage research
 -- for the category and the unit's rank (quality: the engine scales its own damage by it, not a script's), plus the
 -- target's flat decrease for the type: the bonus is a second damage and would pay it again (the consult's trap: red's
 -- gain against corporate infantry 42% lost, against a hull 62%).
@@ -1094,6 +1094,7 @@ function command.on_hit(e)
   local lad = ladder(u.name)
   local f = lad and lad.factor[round]
   if not (f and f > 1) then return end
+  f = f ^ (storage.cmd.tier_exp or shared.TIER_EXP)
   local h = hit_parse[e.effect_id]
   if not h then
     local amount, kind = e.effect_id:match("^lp%-hit:([^:]+):(.+)$")
@@ -1106,7 +1107,7 @@ function command.on_hit(e)
     for kind, r in pairs(tgt.prototype.resistances or {}) do flat[kind] = r.decrease or 0 end
     flat_cache[tgt.name] = flat
   end
-  local extra = h.amount * (f - 1) * shared.TIER_SHARE * (1 + u.force.get_ammo_damage_modifier(lad.category))
+  local extra = h.amount * (f - 1) * (1 + u.force.get_ammo_damage_modifier(lad.category))
     * (1 + shared.RANK.damage * (u.quality and u.quality.level or 0))
   -- (Its name read first: the bonus can kill it, and a dead entity's name crashed the first run of scenario tiers.)
   local key = u.name .. "|" .. e.effect_id .. "|" .. tgt.name

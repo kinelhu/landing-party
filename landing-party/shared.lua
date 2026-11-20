@@ -895,9 +895,13 @@ shared.ORDER_TIERS = {
 }
 -- The units whose round's tier raises their damage (bullets, stage 1 of the consult; shells and rockets wait for named
 -- priors: vanilla's explosive variants trade direct damage for area, no ratio to read). The bonus is the round's direct
--- damage over the base round's (read from the prototypes), times TIER_SHARE: a named prior, 1 until the arena says.
+-- damage over the base round's (read from the prototypes), raised to TIER_EXP: a named prior. At 1, vanilla's ratio, the
+-- arena (LP_ARENA_TIER, 2026-11-20) found a uranium trooper won 40 of 44 matchups at equal spend (24 on yellow), a
+-- uranium gun buggy 40 (23): the counters gone. The power keeps vanilla's order of the rounds and squeezes the gaps. At
+-- 0.5 a uranium trooper won 37, at 0.33 33 (a piercing one 27), still losing to big biters, Shock troopers and the 0.95
+-- waves; a uranium gun buggy 32. 0.33: a trooper's piercing round about 1.17 times its yellow, uranium about 1.68.
 shared.TIERED = {["lp-trooper"] = true, ["lp-gun-buggy"] = true}
-shared.TIER_SHARE = 1
+shared.TIER_EXP = 0.33
 -- The unit an order item makes, a tier's too.
 function shared.order_unit(item)
   local t = shared.ORDER_TIERS[item]

@@ -19,7 +19,7 @@ shard() {   # shard <i> <n>: one game's share, into its own profile
   ln -sfn "$REPO/landing-party" "$SIM/mods/landing-party"
   rm -rf "$SIM/mods/lp-arena"; cp -R "$REPO/tests/lp-arena" "$SIM/mods/lp-arena"
   local sh="nil"; [ "$n" -gt 1 ] && sh="{$i, $n}"
-  printf 'return {mode = "batch", only = "%s", rounds = %s, shard = %s, tier = "%s"}\n' "${LP_ARENA_ONLY:-}" "${LP_ARENA_ROUNDS:-3}" "$sh" "${LP_ARENA_TIER:-}" \
+  printf 'return {mode = "batch", only = "%s", rounds = %s, shard = %s, tier = "%s", tier_exp = "%s"}\n' "${LP_ARENA_ONLY:-}" "${LP_ARENA_ROUNDS:-3}" "$sh" "${LP_ARENA_TIER:-}" "${LP_ARENA_TIER_EXP:-}" \
     > "$SIM/mods/lp-arena/params.lua"
   cat > "$SIM/mods/mod-list.json" <<JSON
 {"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},
@@ -45,6 +45,7 @@ fail=0
 for p in "${pids[@]}"; do wait "$p" || fail=1; done
 [ "$fail" -eq 0 ] || { echo "ARENA FAILED: a shard failed"; exit 1; }
 merged="$BASE/results.jsonl"
+mkdir -p "$BASE"   # (with shards, nothing else makes it: a new LP_TAG failed here, 2026-11-20)
 : > "$merged"
 for d in "${dirs[@]}"; do
   [ -f "$d/done.txt" ] || { echo "ARENA FAILED: not every fight was decided in $d ($(wc -l < "$d/results.jsonl" 2>/dev/null || echo 0) written)"; exit 1; }

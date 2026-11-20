@@ -155,11 +155,14 @@ function arena.wave(n, evo)
 end
 
 -- (LP_ARENA_TIER, ammunition tiers: the player's tiered units fire that round, params.tier.)
-local tier = require("params").tier
+local tier, tier_exp = require("params").tier, tonumber(require("params").tier_exp or "")
 local function place(s, name, at, force, spread)
   local p = s.find_non_colliding_position(name, at, spread or 12, 0.5)
   local u = p and s.create_entity{name = name, position = p, force = force}
-  if u and tier and tier ~= "" and shared.TIERED[name] then remote.call("landing-party", "debug_tier", u, tier) end
+  if u and tier and tier ~= "" and shared.TIERED[name] then
+    if tier_exp then remote.call("landing-party", "debug_tier_exp", tier_exp) end
+    remote.call("landing-party", "debug_tier", u, tier)
+  end
   return u
 end
 
