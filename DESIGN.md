@@ -223,6 +223,9 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   corporations (-49 late, its infantry rows fell about 30); the reference-factory visits at the player's full research
   (razed within twice the calibration rows); fortress and siegetier against a researched camp; profile.sh on director
   climax for UPS; the Workshop's own look (a recoloured Siege works now).
+  The arms race's picture for the manual: the user chooses one before anything goes in (drafts: scripts/arms_race.py,
+  power_ladder.py, research_timeline.py and the paired ladders; the user, 2026-11-20: "I wanted to decide on the graphical
+  representation to use before putting it anywhere").
   The research pace: 20 a minute a branch gave Kessler-Hayashi optics 1 at minute 73 of scenario research; to be read
   against a real game after the playtest.
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
@@ -2763,6 +2766,17 @@ if their units are upgraded also." `scripts/rd.lua`.
   +23, flame trooper -44 (from +37, +44, +59, +42, +2, -49): the player leads late more than early (+0 to +47), nothing
   dominates. `director armylate`: the squad loses 50% (54%). techup: at lasers 5 the raid needs 10; its cap read from
   laser damage technologies (6 at the top).
+
+- **Fable's review of the arms race work (0.2.477, `docs/reviews/2026-11-20-arms-race-work-review.md`).** Fixed:
+  counters.lua, gutted in 0.2.476 by the late arena's report (restored; variant arena runs write their own rows and no
+  report; counters.lua now selects compose's area); the electric cap (a level with no technology between two that have
+  one read as tier 0: +70% from a Space Age technology at the player's era 3; the ladder now raw levels summed under the
+  tier cap); a category held back by its tier caught up only at the next purchase (every LAB_TICKS its tracks are set
+  again, not where research was set outright, rd.set and max_tracks: `fixed`). Scenario catchup (new): both seen
+  failing on 0.2.476. techup's bound a band (6 to 14), research's cap read against the prototypes; research quick and
+  catchup in the regression list; the manual's lab income per branch with a lab, tiers in the preset labels, the
+  difficulty preset's research. Open, the user's: the late band (0.2.476), Grubstake's research on old saves until it
+  builds a workshop, the tier cap and ordnance as calls made unasked.
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers

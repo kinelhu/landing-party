@@ -40,7 +40,7 @@ digraph ai {
     "standing" [label="standing\n114 lines", width=0.93, fillcolor="#eef2f7"];
     "pact" [label="pact\n112 lines", width=0.92, fillcolor="#eef2f7"];
     "ledger" [label="ledger\n317 lines", width=1.15, fillcolor="#eef2f7"];
-    "rd" [label="rd\n608 lines", width=1.48, fillcolor="#eef2f7"];
+    "rd" [label="rd\n638 lines", width=1.51, fillcolor="#eef2f7"];
     "phases" [label="phases\n303 lines", width=1.14, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
     "lifeline" [label="lifeline\n155 lines", width=0.97, fillcolor="#eef2f7"];

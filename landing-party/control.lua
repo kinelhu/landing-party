@@ -1110,7 +1110,7 @@ remote.add_interface("landing-party", {
   -- The arena only: a corporation's damage tracks at their top (rd.max_tracks).
   debug_rd_max = function(corp) return rd.max_tracks(corp) end,
   -- Tests: what a track node gives at level k ({category = {damage, speed}}, the base game's ladder).
-  debug_rd_track = function(corp, id, k) return rd.track_at(corp, id, k) end,
+  debug_rd_track = function(corp, id, k, tiers) return rd.track_at(corp, id, k, tiers) end,
   -- Tests: what the planner's research rule reads for settlement id (planner.lua "research").
   debug_research_rule = function(id)
     local b = storage.bases[id]

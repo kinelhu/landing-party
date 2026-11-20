@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.477
+Date: 2026-11-20
+  Bugfixes:
+    - Kessler-Hayashi's electric weapons could take a Space Age research bonus long before you could research it.
+    - A corporation's weapons held back by your era now catch up within a minute of your era rising, not at its next research.
+    - The corporations' choice of units to counter yours stopped working in 0.2.476.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.476
 Date: 2026-11-20
   Balancing:

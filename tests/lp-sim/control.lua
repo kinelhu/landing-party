@@ -7693,7 +7693,9 @@ scenarios.techup = function()
         string.format("%s -> %s", S.before and S.before.needed, after and after.needed))
       -- The consult's bound: at lasers 5 with speed counted, at most 10 (14 on damage alone).
       if lvl >= 5 then
-        check("techup: at lasers 5 the raid it needs is one a garrison fields", after and after.needed <= 10,
+        -- (10 at 0.2.476, lasers on damage alone; a band, not the edge: Fable's review.)
+        check("techup: at lasers 5 the raid it needs is one a garrison fields (6 to 14)", after and after.needed >= 6
+          and after.needed <= 14,
           tostring(after and after.needed))
       end
       check("techup: the corporation's force carries it", game.forces["lp-serenity"].get_ammo_damage_modifier("laser") >= 0.4,
@@ -7704,7 +7706,7 @@ scenarios.techup = function()
       local f = game.forces["lp-serenity"]
       local dmg, spd = f.get_ammo_damage_modifier("laser"), f.get_gun_speed_modifier("laser")
       -- (Its lasers take damage alone since 0.2.476, optics speed = false: the speed the ladder gives them is 0.)
-      check("techup: its level is the base game's, damage and shooting speed", want and want[2] == 0
+      check("techup: its lasers at the base game's laser damage of its level, and no shooting speed", want and want[2] == 0
         and math.abs(dmg - want[1]) < 1e-6 and math.abs(spd - want[2]) < 1e-6,
         string.format("level %d: damage %.2f speed %.2f, the ladder %s", lvl, dmg, spd, serpent.line(want)))
       local plate = 1
@@ -7795,6 +7797,45 @@ scenarios.labs = function()
     check("labs: no Lance fielded without it", S.killed and not S.lance_fielded_dark, tostring(S.lance_fielded_dark))
     check("labs: the lab rebuilt", S.back ~= nil, S.back and string.format("minute %.1f", S.back / 3600) or "not yet")
     check("labs: back, the climb went on", (S.lvl_end or 0) > (S.lvl_at_kill or 0), string.format("%s -> %s", tostring(S.lvl_at_kill), tostring(S.lvl_end)))
+  end)
+end
+
+-- Catch-up (Fable's review of 0.2.476): Grubstake at the player's era 0 buys hand-loads 1; its sappers' grenades, whose
+-- first technology takes two kinds of pack, stay at 0. The player passes era 1 with no fund to buy again: within a
+-- minute the grenades take what hand-loads 1 now allows (before, nothing until its next purchase). And the electric
+-- cap: optics at every level up to 6 gives electric weapons nothing at tiers 4 (+70% at level 4 before: a level with
+-- no technology stopped the walk down to the Space Age one).
+scenarios.catchup = function()
+  local G = "lp-grubstake"
+  schedule(60, function()
+    lp("debug_tune", {era = 0, rd_fast = true, history_off = true, raids_off = true, rd_fund = {grubstake = 400}})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    storage.id = S.g
+  end)
+  schedule(5 * 3600, function()
+    local f = game.forces[G]
+    S.before = {level = (lp("rd", "grubstake").nodes or {}).handloads, bullet = f.get_ammo_damage_modifier("bullet"),
+      grenade = f.get_ammo_damage_modifier("grenade")}
+    lp("debug_tune", {era = 1, rd_fund = {grubstake = 0}})
+  end)
+  schedule(5 * 3600 + 3700, function()
+    local f = game.forces[G]
+    S.after = {level = (lp("rd", "grubstake").nodes or {}).handloads, grenade = f.get_ammo_damage_modifier("grenade")}
+    local want = lp("debug_rd_track", "grubstake", "handloads", S.after.level or 0, 2).grenade
+    info("catchup: " .. serpent.line({before = S.before, after = S.after, want = want}))
+    check("catchup: at era 0 hand-loads 1 raised its guns, not its grenades", S.before.level == 1 and S.before.bullet > 0
+      and S.before.grenade == 0, serpent.line(S.before))
+    check("catchup: the era passed, its grenades took what the same level now allows within a minute",
+      S.after.level == S.before.level and want and want[1] > 0 and math.abs(S.after.grenade - want[1]) < 1e-6,
+      serpent.line({after = S.after, want = want}))
+    local leak = {}
+    for k = 1, 6 do
+      local e = lp("debug_rd_track", "serenity", "optics", k, 4).electric
+      if not e or e[1] ~= 0 then leak[#leak + 1] = k .. ":" .. tostring(e and e[1]) end
+    end
+    local full = lp("debug_rd_track", "serenity", "optics", 3, 7).electric
+    check("catchup: optics gives electric weapons nothing at tiers 4, at any level; their own tier 7 gives it",
+      #leak == 0 and full and full[1] > 0, table.concat(leak, ", ") .. "; at tiers 7: " .. serpent.line(full))
   end)
 end
 
@@ -7933,7 +7974,19 @@ scenarios.research = function()
     check("research: no climb while no Optics lab stood", S.was_dark and S.dark_level == S.kill_level,
       string.format("%s at the kill, %s dark", tostring(S.kill_level), tostring(S.dark_level)))
     check("research: the lab rebuilt", S.back ~= nil, tostring(S.back))
-    check("research: never past its cap", ((t.optics or {}).level or 0) <= ((t.optics or {}).cap or 0), serpent.line(t.optics))
+    -- (Against the prototypes, not rd.summary's own cap: the force's laser damage at most what every laser damage
+    -- technology taking no more kinds of pack than the era and one gives.)
+    local era = (S.last or {}).era or 0
+    local most = 0
+    for k = 1, 10 do
+      local tp = prototypes.technology["laser-weapons-damage-" .. k]
+      if tp and tp.max_level < 4294967295 and #tp.research_unit_ingredients <= era + 1 then
+        for _, e in ipairs(tp.effects) do if e.type == "ammo-damage" and e.ammo_category == "laser" then most = most + e.modifier end end
+      end
+    end
+    local got = game.forces[FORCE].get_ammo_damage_modifier("laser")
+    check("research: its lasers never past what your era allows", got <= most + 1e-6,
+      string.format("laser damage %.2f, at most %.2f at era %d", got, most, era))
   end)
 end
 

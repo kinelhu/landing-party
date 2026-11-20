@@ -61,7 +61,7 @@ def section():
                 lines.append(f"lp-{corp}-{lever}-{key}={label}{times(tune[key])}")
     # Research (0.2.475): its pace (shared.TUNE) and how far past your era it may go (shared.RESEARCH_AHEAD).
     ahead = table(src, "RESEARCH_AHEAD")
-    AHEAD = {-1: "a level behind you", 0: "level with you", 1: "a level ahead", 2: "two levels ahead"}
+    AHEAD = {-1: "a tier behind you", 0: "level with you", 1: "a tier ahead", 2: "two tiers ahead"}
     for corp in ["grubstake", "serenity"]:
         for key, label in TUNE_NAMES.items():
             a = int(ahead.get(key, 1))

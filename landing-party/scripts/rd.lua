@@ -252,22 +252,41 @@ local function ladder(c)
       end
     end
   end
-  local l = {top = top, tier = {}}
-  local dmg, spd = 0, 0
+  -- (Each level's own modifiers and tier, raw, not summed: a level with no technology between two that have one, the
+  -- electric weapons' 4 and 5, read as tier 0 and let a summed cap through to the Space Age technology under it, +70%
+  -- at the player's era 3; Fable's review of 0.2.476.)
+  local l = {top = top, raw = {}}
   for k = 1, top do
-    if at[k] then dmg, spd = dmg + at[k][1], spd + at[k][2] end
-    l[k] = {dmg, spd}
-    l.tier[k] = at[k] and at[k][3] or 0
+    if at[k] then l.raw[k] = {at[k][1], at[k][2], at[k][3]} end
   end
   ladders[c] = l
   return l
 end
 rd.ladder = ladder
--- A track's levels: its categories' deepest ladder, else its node's own count.
+-- What a category gains to level k: the sum of each level at or under it whose technologies take at most `tiers` kinds
+-- of pack (nil: any), damage and speed (speed nil on a track without it).
+local function sum(l, k, tiers, speed)
+  local dmg, spd = 0, 0
+  for j = 1, math.min(k, l.top) do
+    local r = l.raw[j]
+    if r and (not tiers or r[3] <= tiers) then dmg, spd = dmg + r[1], spd + r[2] end
+  end
+  return dmg, speed == false and 0 or spd
+end
+-- What level k of a category gives on a track: something (damage, or speed where the track takes it).
+local function gives(node, l, k)
+  local r = l.raw[k]
+  return r ~= nil and (r[1] ~= 0 or (node.speed ~= false and r[2] ~= 0))
+end
+-- A track's levels: the deepest level any of its categories gains at, else its node's own count (railguns).
 local function levels_of(node)
+  if node.step then return node.levels or MAX_LEVEL end
   local top = 0
-  for _, c in ipairs(node.track or {}) do top = math.max(top, ladder(c).top) end
-  if top > 0 and not node.step then return top end
+  for _, c in ipairs(node.track or {}) do
+    local l = ladder(c)
+    for k = 1, l.top do if gives(node, l, k) then top = math.max(top, k) end end
+  end
+  if top > 0 then return top end
   return node.levels or MAX_LEVEL
 end
 -- Whether level k of a track gives anything: the base game's cannon shells gain only from its fifth level, rockets from
@@ -276,11 +295,7 @@ local function gains(node, k)
   for _, c in ipairs(node.track or {}) do
     local l = ladder(c)
     if l.top == 0 or node.step then return true end
-    if k <= l.top then
-      local a, b = l[k], l[k - 1] or {0, 0}
-      -- (Damage alone on a track without speed, optics: laser shooting speed's levels give it nothing.)
-      if a[1] ~= b[1] or (node.speed ~= false and a[2] ~= b[2]) then return true end
-    end
+    if gives(node, l, k) then return true end
   end
   return false
 end
@@ -293,10 +308,7 @@ local function tier_of(node, k)
   local t
   for _, c in ipairs(node.track or {}) do
     local l = ladder(c)
-    if k <= l.top then
-      local a, b = l[k], l[k - 1] or {0, 0}
-      if a[1] ~= b[1] or (node.speed ~= false and a[2] ~= b[2]) then t = t == nil and l.tier[k] or math.min(t, l.tier[k]) end
-    end
+    if gives(node, l, k) then t = t == nil and l.raw[k][3] or math.min(t, l.raw[k][3]) end
   end
   return t or 0
 end
@@ -307,32 +319,28 @@ local function next_level(t, node)
     if gains(node, k) then return k end
   end
 end
--- Its force's modifiers for one category at level k of a track node; tiers (the player's era and its preset's levels
--- ahead): the category's own highest level at or under k whose technologies take no more kinds of pack (nil: none).
+-- Its force's modifiers for one category at level k of a track node; tiers (the player's era and its preset's tiers
+-- ahead): only the levels at or under k whose technologies take no more kinds of pack (nil: all of them).
 local function set_level(f, node, c, k, tiers)
   if not f then return end
   local l = ladder(c)
   if l.top > 0 and not node.step then
-    local j = math.min(k, l.top)
-    if tiers then while j > 0 and l.tier[j] > tiers do j = j - 1 end end
-    local r = j > 0 and l[j] or {0, 0}
-    if node.speed == false then r = {r[1], 0} end
-    f.set_ammo_damage_modifier(c, r[1])
-    f.set_gun_speed_modifier(c, r[2])
+    local dmg, spd = sum(l, k, tiers, node.speed)
+    f.set_ammo_damage_modifier(c, dmg)
+    f.set_gun_speed_modifier(c, spd)
   else
     f.set_ammo_damage_modifier(c, (node.step or LEVEL_DAMAGE) * k)
   end
 end
--- What a track node gives at level k: {category = {damage, speed}} (tests, the manual).
-function rd.track_at(corp, id, k)
+-- What a track node gives at level k: {category = {damage, speed}} (tests, the manual); tiers as set_level's.
+function rd.track_at(corp, id, k, tiers)
   local out = {}
   for _, node in ipairs(shared.CORPS[corp].tree or {}) do
     if node.id == id then
       for _, c in ipairs(node.track or {}) do
         local l = ladder(c)
         if l.top > 0 and not node.step then
-          local r = k > 0 and l[math.min(k, l.top)] or {0, 0}
-          out[c] = {r[1], node.speed == false and 0 or r[2]}
+          out[c] = {sum(l, k, tiers, node.speed)}
         else
           out[c] = {(node.step or LEVEL_DAMAGE) * k, 0}
         end
@@ -482,6 +490,7 @@ function rd.tick(tick)
     for corp in pairs(shared.CORPS) do
       local d = storage.corps and storage.corps[corp]
       if d and not d.withdrawing then lab_income(corp) end
+      if d then rd.reapply_corp(corp) end
     end
   end
   local every = storage.rd_fast and 3600 or CHOICE_TICKS
@@ -496,6 +505,7 @@ end
 -- at the end of its research fights. Returns the categories and modifiers set.
 function rd.max_tracks(corp)
   local f = game.forces[shared.CORPS[corp].force]
+  rd.state(corp).fixed = true
   local set = {}
   for _, node in ipairs(shared.CORPS[corp].tree or {}) do
     for _, c in ipairs(node.track or {}) do
@@ -513,6 +523,7 @@ end
 
 function rd.set(corp, tech)
   local t = rd.state(corp)
+  t.fixed = true
   -- A node set outright takes effect as if bought (its units join the mix, its plates are worn).
   for id, k in pairs(tech.nodes or {}) do
     t.nodes[id] = k
@@ -579,18 +590,29 @@ end
 
 -- Every corporation's forces set again from the levels it holds (on_configuration_changed: a save from before the arms
 -- race held +20% a level and no speed).
-function rd.reapply()
-  for corp, c in pairs(shared.CORPS) do
-    local d = storage.corps and storage.corps[corp]
-    local f = game.forces[c.force]
-    if d and d.tech and f then
-      for _, node in ipairs(c.tree or {}) do
-        if node.track then
-          for _, cat in ipairs(node.track) do set_level(f, node, cat, d.tech.weapons[cat] or 0, player_era() + tune.ahead(corp)) end
-        end
+-- (One corporation's, its tracks at the levels its nodes hold: also each LAB_TICKS, rd.tick, so a category its tier
+-- held back rises once the player's era does, not at its next purchase, Fable's review of 0.2.476; from a track's node
+-- level, as t.weapons on a save before 0.2.474 had no grenades or rockets.)
+-- (Not a research set outright, rd.set and the arena's rd.max_tracks: tests and the arena hold what they set.)
+local function reapply_corp(corp)
+  local c = shared.CORPS[corp]
+  local d = storage.corps and storage.corps[corp]
+  local f = game.forces[c.force]
+  if not (d and d.tech and f) or d.tech.fixed then return end
+  local tiers = player_era() + tune.ahead(corp)
+  for _, node in ipairs(c.tree or {}) do
+    if node.track then
+      local k = d.tech.nodes[node.id] or 0
+      for _, cat in ipairs(node.track) do
+        if k > 0 then d.tech.weapons[cat] = k end
+        set_level(f, node, cat, d.tech.weapons[cat] or 0, tiers)
       end
     end
   end
+end
+rd.reapply_corp = reapply_corp
+function rd.reapply()
+  for corp in pairs(shared.CORPS) do reapply_corp(corp) end
 end
 
 -- For stats and tests.

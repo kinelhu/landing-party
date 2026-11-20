@@ -94,8 +94,8 @@ your artillery are never held back. A surge or a spree from the headquarters rai
 forces come on top of it. With the Director setting off, if none of their operations has come at you for
 {{< var arrival.floor_min >}} minutes, your buildings count for more when they choose a target.
 
-**Research.** A corporation's labs pay for its research, not its exports. Each lab standing adds
-{{< var arrival.lab_rate >}} parts to its research fund every minute for each branch of research it serves. It buys at
+**Research.** A corporation's labs pay for its research, not its exports. Its research fund gains
+{{< var arrival.lab_rate >}} parts every minute for each branch of its research that has a lab standing. It buys at
 most one item every {{< var arrival.research_every_min >}} minutes. It picks what answers whatever has been killing its
 units over the last {{< var arrival.research_window_min >}} minutes: armor against your bullets, anti-air against your
 combat robots, heavier lasers against your troopers. It never gets far ahead of you:
