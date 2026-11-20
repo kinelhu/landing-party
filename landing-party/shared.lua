@@ -892,6 +892,8 @@ shared.ORDER_TIERS = {
   ["lp-trooper-order-piercing"] = {base = "lp-trooper-order", round = "piercing-rounds-magazine"},
   ["lp-trooper-order-uranium"] = {base = "lp-trooper-order", round = "uranium-rounds-magazine"},
   ["lp-gun-buggy-order-uranium"] = {base = "lp-gun-buggy-order", round = "uranium-rounds-magazine"},
+  -- (Stage 2, 0.2.471: the battle tank on uranium shells, twice a plain shell's direct damage in vanilla.)
+  ["lp-battle-tank-order-uranium"] = {base = "lp-battle-tank-order", round = "uranium-cannon-shell"},
 }
 -- The units whose round's tier raises their damage (bullets, stage 1 of the consult; shells and rockets wait for named
 -- priors: vanilla's explosive variants trade direct damage for area, no ratio to read). The bonus is the round's direct
@@ -900,7 +902,7 @@ shared.ORDER_TIERS = {
 -- uranium gun buggy 40 (23): the counters gone. The power keeps vanilla's order of the rounds and squeezes the gaps. At
 -- 0.5 a uranium trooper won 37, at 0.33 33 (a piercing one 27), still losing to big biters, Shock troopers and the 0.95
 -- waves; a uranium gun buggy 32. 0.33: a trooper's piercing round about 1.17 times its yellow, uranium about 1.68.
-shared.TIERED = {["lp-trooper"] = true, ["lp-gun-buggy"] = true}
+shared.TIERED = {["lp-trooper"] = true, ["lp-gun-buggy"] = true, ["lp-battle-tank"] = true}
 shared.TIER_EXP = 0.33
 -- The unit an order item makes, a tier's too.
 function shared.order_unit(item)

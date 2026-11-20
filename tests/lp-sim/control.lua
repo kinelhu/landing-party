@@ -3656,10 +3656,14 @@ scenarios.tiers = function()
     S.rec.buggy0 = f.recipes["lp-gun-buggy-order-uranium"].enabled
     f.technologies["lp-command-bandwidth-2"].researched = true
     S.rec.buggy1 = f.recipes["lp-gun-buggy-order-uranium"].enabled
+    -- (Stage 2, 0.2.471: the battle tank on uranium shells, with the third level.)
+    S.rec.tank0 = f.recipes["lp-battle-tank-order-uranium"].enabled
+    f.technologies["lp-command-bandwidth-3"].researched = true
+    S.rec.tank1 = f.recipes["lp-battle-tank-order-uranium"].enabled
   end)
   -- (A barracks' output takes its recipe's order alone: each order finished under its own recipe, as a player sets it;
   -- the yellow one last, its input magazines put back, so the barracks ends on yellow.)
-  for i, n in ipairs({"lp-trooper-order-uranium", "lp-gun-buggy-order-uranium", "lp-trooper-order"}) do
+  for i, n in ipairs({"lp-trooper-order-uranium", "lp-gun-buggy-order-uranium", "lp-battle-tank-order-uranium", "lp-trooper-order"}) do
     schedule(40 + i * 80, function()
       S.bk.set_recipe(n)
       S.bk.get_inventory(defines.inventory.crafter_output).insert{name = n, count = 1}
@@ -3672,17 +3676,18 @@ scenarios.tiers = function()
     schedule(120 + k * 10, function() if S.foe.valid then S.foe.health = S.foe.max_health end end)
   end
   -- (Who is who: by the round each left the barracks with.)
-  schedule(420, function()
-    for _, u in ipairs(surface().find_entities_filtered{force = "player", name = {"lp-trooper", "lp-gun-buggy"}}) do
+  schedule(500, function()
+    for _, u in ipairs(surface().find_entities_filtered{force = "player", name = {"lp-trooper", "lp-gun-buggy", "lp-battle-tank"}}) do
       local a = lp("debug_ammo", u)
       if a then
         if u.name == "lp-gun-buggy" then S.GB = u
+        elseif u.name == "lp-battle-tank" then S.BT = u
         elseif a.round == "uranium-rounds-magazine" then S.TU = u
         else S.TY = u end
       end
     end
     S.issued = {tu = S.TU and lp("debug_ammo", S.TU).round, ty = S.TY and lp("debug_ammo", S.TY).round,
-      gb = S.GB and lp("debug_ammo", S.GB).round}
+      gb = S.GB and lp("debug_ammo", S.GB).round, bt = S.BT and lp("debug_ammo", S.BT).round}
   end)
   -- The fight: 30 s at the spawner, topping up from the depot (each its own round).
   schedule(2400, function()
@@ -3714,20 +3719,32 @@ scenarios.tiers = function()
     local ex = lp("debug_tier_exp")
     local fU = (dd("uranium-rounds-magazine") / dd("firearm-magazine")) ^ ex
     local fB = (dd("uranium-rounds-magazine") / dd("piercing-rounds-magazine")) ^ ex
+    -- (A shell's damage is in its projectile, which the runtime cannot read: vanilla's 2,200 over 1,100, read in the
+    -- data stage and checked there, data-final-fixes lp-ammo-direct.)
+    local md = prototypes.mod_data["lp-ammo-direct"].data
+    local fT = (md["uranium-cannon-shell"] / md["cannon-shell"]) ^ ex
     local pp, pe = percent("biter-spawner", "physical"), percent("biter-spawner", "explosion")
     local function per(key) local b = S.by and S.by[key]; return b and b.n > 0 and b.dealt / b.n or nil, b and b.n or 0 end
     local tu, tun = per("lp-trooper|lp-hit:8:physical|biter-spawner")
     local gd, gdn = per("lp-gun-buggy|lp-hit:20:explosion|biter-spawner")
     local gbl, gbn = per("lp-gun-buggy|lp-hit:6:explosion|biter-spawner")
-    local want = {tu = 8 * (fU - 1) * (1 - pp), gd = 20 * (fB - 1) * (1 - pe), gb = 6 * (fB - 1) * (1 - pe)}
+    local bt, btn = per("lp-battle-tank|lp-hit:100:explosion|biter-spawner")
+    local want = {tu = 8 * (fU - 1) * (1 - pp), gd = 20 * (fB - 1) * (1 - pe), gb = 6 * (fB - 1) * (1 - pe),
+      bt = 100 * (fT - 1) * (1 - pe)}
     info("tiers: " .. serpent.line({rec = S.rec, issued = S.issued, fU = fU, fB = fB, pp = pp, pe = pe, per = {tu = tu, gd = gd,
       gb = gbl}, n = {tun, gdn, gbn}, want = want, fired = S.fired, ty = {S.ty_before, S.ty_after}, panel = S.panel,
       shown = S.shown, tu_dry = S.tu_dry, tu_back = S.tu_back}))
     local function near(a, b) return a and b and b > 0 and math.abs(a / b - 1) <= 0.03 end
     check("tiers: a tier's order appears once its base order and its round are researched",
-      S.rec.trooper0 == false and S.rec.trooper1 == true and S.rec.buggy0 == false and S.rec.buggy1 == true, serpent.line(S.rec))
+      S.rec.trooper0 == false and S.rec.trooper1 == true and S.rec.buggy0 == false and S.rec.buggy1 == true
+      and S.rec.tank0 == false and S.rec.tank1 == true, serpent.line(S.rec))
     check("tiers: each unit leaves the barracks with its order's round", S.issued.tu == "uranium-rounds-magazine"
-      and S.issued.ty == "firearm-magazine" and S.issued.gb == "uranium-rounds-magazine", serpent.line(S.issued))
+      and S.issued.ty == "firearm-magazine" and S.issued.gb == "uranium-rounds-magazine"
+      and S.issued.bt == "uranium-cannon-shell", serpent.line(S.issued))
+    check("tiers: a uranium battle tank's shell pays a shell's ratio at its hit (stage 2: the projectile's damage read at the data stage)",
+      near(bt, want.bt) and md["cannon-shell"] == 1100 and md["uranium-cannon-shell"] == 2200,
+      string.format("%s against %.2f over %d hits; shells %s and %s", tostring(bt), want.bt, btn, md["cannon-shell"],
+        md["uranium-cannon-shell"]))
     -- (Seen failing with the flat decrease left out: the spawner's physical 2 against 30.4 a hit, 7% short.)
     check("tiers: a uranium trooper's bonus a hit is vanilla's ratio over yellow to the power TIER_EXP, past the target's percent, its flat added back",
       near(tu, want.tu), string.format("%s against %.2f over %d hits", tostring(tu), want.tu, tun))

@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.471
+Date: 2026-11-20
+  Features:
+    - Battle tanks can be trained with uranium cannon shells, a recipe of their own at the barracks, and fire them harder, as troopers and gun buggies do with better magazines.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.470
 Date: 2026-11-20
   Features:

@@ -885,6 +885,10 @@ command.loadout = loadout
 -- mod's magazines join), each with its factor over the base round. One kind a unit (t.round; nil: the base round): it
 -- tops up only with its own; dry, it loads the best a source holds. No hand-back, so nothing it was issued is refunded.
 local function direct_damage(ip)
+  -- (Read at the data stage, a projectile's own action followed: data-final-fixes, lp-ammo-direct, 0.2.471.)
+  local md = prototypes.mod_data["lp-ammo-direct"]
+  local v = md and md.data[ip.name]
+  if v then return v end
   local sum = 0
   local function walk(x)
     if type(x) ~= "table" then return end

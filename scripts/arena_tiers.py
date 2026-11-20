@@ -6,7 +6,8 @@ import glob, json, os, re, sys
 from collections import defaultdict
 
 d = sys.argv[1]
-SHORT = {"none": "yellow", "piercing-rounds-magazine": "red", "uranium-rounds-magazine": "green"}
+SHORT = {"none": "base", "piercing-rounds-magazine": "red", "uranium-rounds-magazine": "green",
+         "uranium-cannon-shell": "uranium shell"}
 KEY = ["tank", "battle tank", "aegis", "bred behemoth", "bred big", "shock", "biters 0.95", "rocket trooper", "lance"]
 
 
@@ -22,7 +23,7 @@ def score(r):
 
 rows = []
 for p in sorted(glob.glob(os.path.join(d, "lp-arena-*.jsonl"))):
-    m = re.match(r"lp-arena-(trooper|gun-buggy)-([a-z-]+?)(?:@([0-9.]+))?\.jsonl$", os.path.basename(p))
+    m = re.match(r"lp-arena-(trooper|gun-buggy|battle-tank)-([a-z-]+?)(?:@([0-9.]+))?\.jsonl$", os.path.basename(p))
     if not m:
         continue
     kind, tier, exp = m.group(1), m.group(2), m.group(3) or "1"
@@ -44,6 +45,6 @@ for p in sorted(glob.glob(os.path.join(d, "lp-arena-*.jsonl"))):
 
 print("| unit | round | power | mean | won | " + " | ".join(KEY) + " |")
 print("|---|---|---|---|---|" + "---|" * len(KEY))
-for squad, tier, exp, mean, won, n, keys in sorted(rows, key=lambda r: (r[0], r[1] != "yellow", r[1], r[2])):
+for squad, tier, exp, mean, won, n, keys in sorted(rows, key=lambda r: (r[0], r[1] != "base", r[1], r[2])):
     print(f"| {squad} | {tier} | {exp} | {mean:+.0f} | {won}/{n} | " +
           " | ".join("" if v is None else f"{v:+.0f}" for v in keys) + " |")

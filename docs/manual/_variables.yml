@@ -291,6 +291,6 @@ director:
   climax_times: "double"
   gentle_share: "half"
 mod:
-  version: "0.2.470"
+  version: "0.2.471"
   factorio: "2.1"
   needs: "base, space-age"

@@ -215,10 +215,11 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   with 6 to 12 s between (scenario shotrate), so its 1,000 rounds never run dry: look at the unit first; stage 4 of
   docs/reviews/2026-11-19-army-logistics-consult.md (the threat with the factory); director armydefend with a depot by
   the D beacon and a roboport (the consult's readings: magazines drawn and packs used a beat).
-- Ammunition tiers, what stage 1 (0.2.470: bullets, built; TIER_EXP 0.33 from the arena, docs/arena-tiers.md) left
-  (docs/reviews/2026-11-20-ammo-tiers-consult.md): stage 2, shells and rockets on named priors (uranium shells twice the direct damage, explosive shells and
-  rockets a blast), each an arena report; the corporations' pricing of the player's army (intel.lua) reading the
-  squad's tier; the beacon's rounds as item signals; the UPS run with tiers on.
+- Ammunition tiers, what stages 1 and 2a (0.2.470 bullets, 0.2.471 the battle tank's uranium shells; TIER_EXP 0.33 from
+  the arena, docs/arena-tiers.md) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): the explosive rounds (explosive
+  and explosive uranium shells, explosive rockets), a role, not a rung: less direct damage for an area, so the ladder's
+  direct ranking leaves them out; a design call (how a depot holding both chooses); the corporations' pricing of the
+  player's army (intel.lua) reading the squad's tier; the beacon's rounds as item signals; the UPS run with tiers on.
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
@@ -1170,6 +1171,14 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     against 4.61 at 0.33: the smaller the bonus, the more of it flat armour takes) and with the hit trigger disconnected
     (no bonus). It caught a crash: the bonus can kill its target, and the target's name was read
     after (read first now).
+    **Stage 2a: the battle tank on uranium shells** (0.2.471). A shell's damage is in its projectile, which the runtime
+    cannot read: data-final-fixes sums each round's direct damage (its direct deliveries' damage, a projectile's own
+    action followed; no areas, no nested results) into mod-data lp-ammo-direct (cannon shell 1,100, uranium 2,200,
+    explosive 180, explosive uranium 350, rocket 200, explosive rocket 50), the ladder reads it. The tank's hits pay a
+    shell's ratio to the power (2 to 0.33: 1.26), its direct blast and its siege blast. Scenario `tiers`: 25.70 a hit
+    against 25.70 (seen failing without the data-stage values: no bonus). Arena at 0.33 (docs/arena-tiers.md): the tank's
+    mean +8 to +38, 23 to 32 matchups of 44 won, as the uranium trooper (33) and gun buggy (32). Explosive rounds rank below their plain kin by
+    direct damage and are left out: not a rung but a role (backlog).
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the

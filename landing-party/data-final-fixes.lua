@@ -660,6 +660,30 @@ if settings.startup["lp-army-ammo"].value then
     local at = u and u.attack_parameters and u.attack_parameters.ammo_type
     if at and at.action then at.action = hits(at.action) end
   end
+  -- Each round's direct damage (0.2.471), for the ladder (command.lua): a shell's or rocket's is in its projectile, which
+  -- the runtime cannot read. The damage effects of its direct deliveries, a projectile's own action followed; areas and
+  -- nested results are not direct.
+  local direct = {}
+  local function sum(action, seen)
+    local n = 0
+    for _, it in ipairs(list(action)) do
+      if it.type == "direct" then
+        for _, d in ipairs(list(it.action_delivery)) do
+          for _, ef in ipairs(list(d.target_effects)) do
+            if ef.type == "damage" and ef.damage then n = n + ef.damage.amount end
+          end
+          local pr = d.type == "projectile" and data.raw.projectile[d.projectile]
+          if pr and not seen[pr.name] then seen[pr.name] = true; n = n + sum(pr.action, seen) end
+        end
+      end
+    end
+    return n
+  end
+  for name, a in pairs(data.raw.ammo) do
+    local at = a.ammo_type
+    if at and at.action then direct[name] = sum(at.action, {}) end
+  end
+  data:extend({{type = "mod-data", name = "lp-ammo-direct", data = direct}})
 end
 
 -- Repair by construction robots (0.2.466; stage 3 of the army-logistics consult, the user: "Rearming and repairing seems
