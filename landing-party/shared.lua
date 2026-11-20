@@ -894,6 +894,11 @@ shared.ORDER_TIERS = {
   ["lp-gun-buggy-order-uranium"] = {base = "lp-gun-buggy-order", round = "uranium-rounds-magazine"},
   -- (Stage 2, 0.2.471: the battle tank on uranium shells, twice a plain shell's direct damage in vanilla.)
   ["lp-battle-tank-order-uranium"] = {base = "lp-battle-tank-order", round = "uranium-cannon-shell"},
+  -- (Stage 2b, 0.2.472, the user: explosive rounds "as second option but giving higher base damage, not just blast"):
+  -- rungs on the same ladder, not a role, so a source still hands out the best it holds.
+  ["lp-battle-tank-order-explosive"] = {base = "lp-battle-tank-order", round = "explosive-cannon-shell"},
+  ["lp-battle-tank-order-explosive-uranium"] = {base = "lp-battle-tank-order", round = "explosive-uranium-cannon-shell"},
+  ["lp-rocket-trooper-order-explosive"] = {base = "lp-rocket-trooper-order", round = "explosive-rocket"},
 }
 -- The units whose round's tier raises their damage (bullets, stage 1 of the consult; shells and rockets wait for named
 -- priors: vanilla's explosive variants trade direct damage for area, no ratio to read). The bonus is the round's direct
@@ -902,7 +907,17 @@ shared.ORDER_TIERS = {
 -- uranium gun buggy 40 (23): the counters gone. The power keeps vanilla's order of the rounds and squeezes the gaps. At
 -- 0.5 a uranium trooper won 37, at 0.33 33 (a piercing one 27), still losing to big biters, Shock troopers and the 0.95
 -- waves; a uranium gun buggy 32. 0.33: a trooper's piercing round about 1.17 times its yellow, uranium about 1.68.
-shared.TIERED = {["lp-trooper"] = true, ["lp-gun-buggy"] = true, ["lp-battle-tank"] = true}
+shared.TIERED = {["lp-trooper"] = true, ["lp-gun-buggy"] = true, ["lp-battle-tank"] = true, ["lp-rocket-trooper"] = true}
+-- The explosive rounds' rungs (0.2.472): vanilla's explosive variants deal less direct damage than their plain kin (an
+-- explosive shell 180 against 1,100), so no ratio can be read and each is a named prior, its factor over the base round
+-- before TIER_EXP, placed in vanilla's research order: plain, explosive, uranium (read: 2), explosive uranium. The rocket
+-- trooper's only rung, its explosive rocket, is mostly its blast: its direct hit stays under the corporations' infantry's
+-- 120 health (110 a rocket, 1.25 to the power 0.33 is 118). At 2 or 3 one rocket killed a rifleman where two had
+-- (Serenity's infantry -32 to +86 whatever the rung or the blast, the arena, 2026-11-20); at 1.25, +76 by the blast.
+shared.TIER_RAW = {["explosive-cannon-shell"] = 1.5, ["explosive-uranium-cannon-shell"] = 2.5, ["explosive-rocket"] = 1.25}
+-- And their blast, so the name tells the truth: from the round's main hit, the enemies within `radius` of its target
+-- (the target aside) take `share` of that hit's damage, explosion (command.on_hit). Named priors.
+shared.TIER_BLAST = {radius = 2, share = 0.35}
 shared.TIER_EXP = 0.33
 -- The unit an order item makes, a tier's too.
 function shared.order_unit(item)

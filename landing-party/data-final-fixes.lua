@@ -629,6 +629,7 @@ end
 if settings.startup["lp-army-ammo"].value then
   local function list(x) if x == nil then return {} end if x.type then return {x} end return x end
   local done = {}
+  local primary   -- (The first damage effect of a unit's attack is its main hit, ":p": an explosive round's blast is from it.)
   local hits
   hits = function(action)
     local items = list(action)
@@ -644,7 +645,9 @@ if settings.startup["lp-army-ammo"].value then
         local add = {}
         for _, ef in ipairs(te) do
           if ef.type == "damage" and ef.damage then
-            add[#add + 1] = {type = "script", effect_id = string.format("lp-hit:%g:%s", ef.damage.amount, ef.damage.type)}
+            add[#add + 1] = {type = "script", effect_id = string.format("lp-hit:%g:%s%s", ef.damage.amount, ef.damage.type,
+              primary and "" or ":p")}
+            primary = true
           elseif ef.type == "nested-result" and ef.action then
             ef.action = hits(ef.action)
           end
@@ -658,6 +661,7 @@ if settings.startup["lp-army-ammo"].value then
   for name in pairs(require("__landing-party__.shared").TIERED) do
     local u = data.raw.unit[name]
     local at = u and u.attack_parameters and u.attack_parameters.ammo_type
+    primary = false
     if at and at.action then at.action = hits(at.action) end
   end
   -- Each round's direct damage (0.2.471), for the ladder (command.lua): a shell's or rocket's is in its projectile, which

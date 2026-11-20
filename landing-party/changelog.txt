@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.472
+Date: 2026-11-20
+  Features:
+    - Explosive rounds as better rounds: battle tanks can be trained with explosive or explosive uranium cannon shells, rocket troopers with explosive rockets. Each hits harder than the round below it and adds a small blast round its target.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.471
 Date: 2026-11-20
   Features:

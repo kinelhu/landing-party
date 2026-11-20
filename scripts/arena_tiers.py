@@ -7,7 +7,8 @@ from collections import defaultdict
 
 d = sys.argv[1]
 SHORT = {"none": "base", "piercing-rounds-magazine": "red", "uranium-rounds-magazine": "green",
-         "uranium-cannon-shell": "uranium shell"}
+         "uranium-cannon-shell": "uranium shell", "explosive-cannon-shell": "explosive shell",
+         "explosive-uranium-cannon-shell": "explosive uranium shell", "explosive-rocket": "explosive rocket"}
 KEY = ["tank", "battle tank", "aegis", "bred behemoth", "bred big", "shock", "biters 0.95", "rocket trooper", "lance"]
 
 
@@ -23,7 +24,7 @@ def score(r):
 
 rows = []
 for p in sorted(glob.glob(os.path.join(d, "lp-arena-*.jsonl"))):
-    m = re.match(r"lp-arena-(trooper|gun-buggy|battle-tank)-([a-z-]+?)(?:@([0-9.]+))?\.jsonl$", os.path.basename(p))
+    m = re.match(r"lp-arena-(rocket-trooper|trooper|gun-buggy|battle-tank)-([a-z-]+?)(?:@([0-9.]+))?\.jsonl$", os.path.basename(p))
     if not m:
         continue
     kind, tier, exp = m.group(1), m.group(2), m.group(3) or "1"

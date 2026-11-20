@@ -215,11 +215,9 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   with 6 to 12 s between (scenario shotrate), so its 1,000 rounds never run dry: look at the unit first; stage 4 of
   docs/reviews/2026-11-19-army-logistics-consult.md (the threat with the factory); director armydefend with a depot by
   the D beacon and a roboport (the consult's readings: magazines drawn and packs used a beat).
-- Ammunition tiers, what stages 1 and 2a (0.2.470 bullets, 0.2.471 the battle tank's uranium shells; TIER_EXP 0.33 from
-  the arena, docs/arena-tiers.md) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): the explosive rounds (explosive
-  and explosive uranium shells, explosive rockets), a role, not a rung: less direct damage for an area, so the ladder's
-  direct ranking leaves them out; a design call (how a depot holding both chooses); the corporations' pricing of the
-  player's army (intel.lua) reading the squad's tier; the beacon's rounds as item signals; the UPS run with tiers on.
+- Ammunition tiers, what stages 1 and 2 (0.2.470 bullets, 0.2.471 uranium shells, 0.2.472 the explosive rungs; TIER_EXP
+  0.33 from the arena, docs/arena-tiers.md) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): the corporations' pricing of the player's army (intel.lua) reading the squad's
+  tier; the beacon's rounds as item signals; the UPS run with tiers on.
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
@@ -1184,6 +1182,21 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     alt-mode icon at each unit's lower left, a yellow trooper reloading uranium by a depot and its icon turning, a
     stranded gun buggy's alert with the uranium magazine. Judged at full size: alt mode reads; the cards' icons at 9 px
     read by colour alone, now 12. Not by script: the squad panel's row (a client's panel cannot be opened).
+    **Stage 2b: the explosive rungs** (0.2.472; the user: explosive rounds "as second option but giving higher base damage,
+    not just blast? (or no blast at all)"; kept a small blast, so the name tells the truth). Rungs on the same ladder, not a
+    role, so a source still hands out the best it holds: the battle tank on explosive, uranium or explosive uranium
+    shells, the rocket trooper on explosive rockets (shared.ORDER_TIERS; TIERED gains the rocket trooper). Vanilla's
+    explosive rounds deal less direct damage than their plain kin, so their rungs are named priors (shared.TIER_RAW, before
+    the power: explosive shell 1.5, explosive uranium 2.5 about uranium's read 2, explosive rocket 1.25: a rocket's 110
+    stays under the corporations' infantry's 120 health, 118; at 2 or 3 one rocket killed a rifleman where two had, and
+    the rocket trooper won 37 or 38 of 44 whatever the rung or the blast). Their blast (shared.TIER_BLAST, radius 2 from the target's edge, a spawner's centre being inside the
+    spawner; 0.35 of the main hit, explosion, its own damage): from the attack's first damage effect, marked ":p" by
+    data-final-fixes, on the enemies round the target; the target's position read before the bonus can kill it. Scenario
+    `tiers`, 12 checks: the tank's ladder in that order; an explosive rocket's main hit 48.07 against 48.07, its blast on a
+    wall beside the spawner (seen failing with the blast off: none). Arena at 0.33 (docs/arena-tiers.md): the battle
+    tank on explosive 32 of 44 won (mean +46), on explosive uranium 33 (+50), on uranium 32 (+38); the rocket trooper on
+    explosive rockets 37 (+42, from 29 and +22), ahead of a uranium trooper on 6 hulls of 10 (2 on plain rockets),
+    Serenity's infantry -32 to +76 by its blast. So the trooper keeps 0.33.
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the

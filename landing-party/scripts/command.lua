@@ -916,8 +916,11 @@ local function ladder(name)
     local cat = category_of(base)
     out = {category = cat, base = base.name, factor = {}, best = {}, own = {}}
     for n, ip in pairs(prototypes.get_item_filtered{{filter = "type", type = "ammo"}}) do
-      local d = category_of(ip) == cat and direct_damage(ip) or 0
-      if d >= b then out.factor[n] = d / b; out.best[#out.best + 1] = {name = n, per = ip.magazine_size} end
+      if category_of(ip) == cat then
+        -- (An explosive round's rung is a named prior, shared.TIER_RAW, 0.2.472: its direct damage is below its plain kin's.)
+        local raw = shared.TIER_RAW[n] or direct_damage(ip) / b
+        if raw >= 1 then out.factor[n] = raw; out.best[#out.best + 1] = {name = n, per = ip.magazine_size} end
+      end
     end
     table.sort(out.best, function(x, y)
       if out.factor[x.name] ~= out.factor[y.name] then return out.factor[x.name] > out.factor[y.name] end
@@ -1101,8 +1104,8 @@ function command.on_hit(e)
   f = f ^ (storage.cmd.tier_exp or shared.TIER_EXP)
   local h = hit_parse[e.effect_id]
   if not h then
-    local amount, kind = e.effect_id:match("^lp%-hit:([^:]+):(.+)$")
-    h = {amount = tonumber(amount) or 0, type = kind}
+    local amount, kind, main = e.effect_id:match("^lp%-hit:([^:]+):([^:]+)(:?p?)$")
+    h = {amount = tonumber(amount) or 0, type = kind, main = main == ":p"}
     hit_parse[e.effect_id] = h
   end
   local flat = flat_cache[tgt.name]
@@ -1111,12 +1114,37 @@ function command.on_hit(e)
     for kind, r in pairs(tgt.prototype.resistances or {}) do flat[kind] = r.decrease or 0 end
     flat_cache[tgt.name] = flat
   end
-  local extra = h.amount * (f - 1) * (1 + u.force.get_ammo_damage_modifier(lad.category))
-    * (1 + shared.RANK.damage * (u.quality and u.quality.level or 0))
+  local scale = (1 + u.force.get_ammo_damage_modifier(lad.category)) * (1 + shared.RANK.damage * (u.quality and u.quality.level or 0))
+  local extra = h.amount * (f - 1) * scale
   -- (Its name read first: the bonus can kill it, and a dead entity's name crashed the first run of scenario tiers.)
   local key = u.name .. "|" .. e.effect_id .. "|" .. tgt.name
+  local at, surf = e.target_position or tgt.position, tgt.surface   -- (for the blast: the target may die of the bonus)
+  -- (Its reach from the target's edge, not its centre: a radius of 2 from a spawner's centre is inside the spawner.)
+  local bb = tgt.bounding_box
+  local edge = math.max(bb.right_bottom.x - bb.left_top.x, bb.right_bottom.y - bb.left_top.y) / 2
   local dealt = tgt.damage(extra + (flat[h.type] or 0), u.force, h.type, u, u)
   storage.cmd.tier_bonus = (storage.cmd.tier_bonus or 0) + dealt
+  -- An explosive round's blast (0.2.472, shared.TIER_BLAST), from its main hit: the enemies within its radius of the
+  -- target's edge take a share
+  -- of that hit, explosion; its own damage, so armour takes its bite as a vanilla blast's.
+  if h.main and shared.TIER_RAW[round] then
+    local blast = h.amount * f * shared.TIER_BLAST.share * scale
+    local foes = {}
+    for _, fo in pairs(game.forces) do if u.force.is_enemy(fo) then foes[#foes + 1] = fo end end
+    local alive = tgt.valid and tgt or nil
+    for _, x in pairs(surf.find_entities_filtered{position = at, radius = shared.TIER_BLAST.radius + edge, force = foes}) do
+      if x.valid and x ~= alive and x.is_entity_with_health and x.health and x.health > 0 then
+        local name = x.name
+        local d = x.damage(blast, u.force, "explosion", u, u)
+        local bk = u.name .. "|blast|" .. name
+        local by = storage.cmd.tier_by or {}
+        storage.cmd.tier_by = by
+        local bb = by[bk] or {n = 0, dealt = 0}
+        by[bk] = bb
+        bb.n, bb.dealt = bb.n + 1, bb.dealt + d
+      end
+    end
+  end
   -- (By unit, effect and target, for scenario tiers: a bonus a hit, read against the round's own ratio.)
   local by = storage.cmd.tier_by or {}
   storage.cmd.tier_by = by

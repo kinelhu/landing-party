@@ -1096,6 +1096,15 @@ remote.add_interface("landing-party", {
     if x then storage.cmd.tier_exp = x end
     return storage.cmd.tier_exp or shared.TIER_EXP
   end,
+  -- Tests only: a unit's ladder, best round first (ammunition tiers).
+  debug_ladder = function(name)
+    local lad = command.ladder(name)
+    if not lad then return nil end
+    local out = {}
+    for _, it in ipairs(lad.best) do out[#out + 1] = it.name end
+    return out
+  end,
+  debug_tier_raw = function(item) return shared.TIER_RAW[item] end,
   debug_tier = function(u, round)
     storage.cmd.tier_test = storage.cmd.tier_test or {}
     storage.cmd.tier_test[u.unit_number] = round

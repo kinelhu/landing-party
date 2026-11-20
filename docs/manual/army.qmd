@@ -155,14 +155,15 @@ fights on as long as the depot is fed. It is a chest on the front line, and the 
 barracks or a depot to see where your units heal and rearm: green round a powered barracks, amber round a depot. The
 squad panel beside a beacon's window counts its squad's rounds.
 
-**Better rounds.** Troopers, gun buggies and battle tanks fire what they are loaded with. Once you can make piercing or
-uranium rounds, the barracks offers a trooper trained with them, a gun buggy with uranium magazines and a battle tank
-with uranium shells, beside the plain order: the
-same unit, its order's icon showing the round. A better round deals more, uranium most, though less than the
-same round would add to a turret. A unit tops up only with the round it holds; when it runs out, it loads the best round its barracks or depot
-holds. So to raise a squad already in the field, change its depot's requests to the better magazine, and each unit
-takes it as it empties. The round each unit holds is shown by its icon: on its card, in the squad panel, on its
-out-of-ammunition alert, and over it in alt mode, as a turret shows its ammunition.
+**Better rounds.** Troopers, gun buggies, battle tanks and rocket troopers fire what they are loaded with. Once you can
+make the round, the barracks offers the unit trained with it beside the plain order: a trooper with piercing or uranium
+magazines, a gun buggy with uranium magazines, a battle tank with explosive, uranium or explosive uranium shells, a
+rocket trooper with explosive rockets. It is the same unit, its order's icon showing the round. A better round deals
+more, though less than the same round would add to a turret, and an explosive one also bursts round what it hits. A
+unit tops up only with the round it holds; when it runs out, it loads the best round its barracks or depot holds. So to
+raise a squad already in the field, change its depot's requests to the better round, and each unit takes it as it
+empties. The round each unit holds is shown by its icon: on its card, in the squad panel, on its out-of-ammunition
+alert, and over it in alt mode, as a turret shows its ammunition.
 
 The setting *Army ammunition* turns all of this off.
 
