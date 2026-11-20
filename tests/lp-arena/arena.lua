@@ -154,9 +154,13 @@ function arena.wave(n, evo)
   return out
 end
 
+-- (LP_ARENA_TIER, ammunition tiers: the player's tiered units fire that round, params.tier.)
+local tier = require("params").tier
 local function place(s, name, at, force, spread)
   local p = s.find_non_colliding_position(name, at, spread or 12, 0.5)
-  return p and s.create_entity{name = name, position = p, force = force}
+  local u = p and s.create_entity{name = name, position = p, force = force}
+  if u and tier and tier ~= "" and shared.TIERED[name] then remote.call("landing-party", "debug_tier", u, tier) end
+  return u
 end
 
 -- A defence line of the player's facing west at x, n turrets along y, a wall line 4 tiles in front.

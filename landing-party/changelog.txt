@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.470
+Date: 2026-11-20
+  Features:
+    - Ammunition tiers: troopers can be trained with piercing or uranium magazines and gun buggies with uranium magazines, each a recipe of its own at the barracks once the unit and the round are researched. A better round deals more damage, in proportion to vanilla's own rounds, and armour does not take a second bite of it.
+    - A unit tops up only with the round it holds; out of ammunition, it loads the best round its barracks or supply depot holds. Change a depot's requests to upgrade the squad beside it as each unit empties.
+    - The round a unit holds is shown by its icon: on the cards, in the squad panel, on the out-of-ammunition alert, and over each unit in alt mode, as turrets show theirs.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.469
 Date: 2026-11-20
   Graphics:

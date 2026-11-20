@@ -137,6 +137,9 @@ local function build(p)
   f.add{type = "label", name = "stance", style = "bold_label"}
   f.add{type = "label", name = "doing"}
   f.add{type = "label", name = "ammo"}
+  -- (The squad's units by the round they hold, 0.2.470: the round's icon and a count, never its name in our text.)
+  local rounds = f.add{type = "flow", name = "rounds", direction = "horizontal"}
+  rounds.style.vertical_align = "center"
   f.add{type = "line"}
   local t = f.add{type = "table", name = "units", column_count = 5}
   t.style.horizontal_spacing = 6
@@ -159,6 +162,8 @@ local function refresh(p)
   local b = p.opened
   if not (b and type(b) == "userdata" and b.valid and b.object_name == "LuaEntity" and b.name == BEACON) then return end
   local f = p.gui.relative[NAME] or build(p)
+  -- (A panel built before 0.2.470 has no rounds row: built again.)
+  if not f.rounds then f = build(p) end
   local v = command.beacon_view(b)
   f.stance.caption = {"lp.squad-stance-" .. v.stance}
   local a = v.answering
@@ -169,6 +174,19 @@ local function refresh(p)
   local am = v.ammo
   f.ammo.caption = am and (am.dry > 0 and {"lp.squad-ammo-dry", am.rounds, am.full, am.dry} or {"lp.squad-ammo", am.rounds, am.full}) or ""
   f.ammo.visible = am ~= nil
+  local rf = f.rounds
+  rf.clear()
+  local names = {}
+  for r in pairs(am and am.by_round or {}) do names[#names + 1] = r end
+  table.sort(names)
+  for _, r in ipairs(names) do
+    local s = rf.add{type = "sprite", sprite = "item/" .. r, tooltip = prototypes.item[r].localised_name}
+    s.style.size = 20
+    s.style.stretch_image_to_widget_size = true
+    local l = rf.add{type = "label", caption = "× " .. am.by_round[r]}
+    l.style.right_margin = 8
+  end
+  rf.visible = #names > 0
   local w = wired(b)
   f.wired.visible = w
   local t = f.units

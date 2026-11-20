@@ -89,6 +89,7 @@ end)
 script.on_event(defines.events.on_entity_spawned, farm.on_spawned)
 script.on_event(defines.events.on_script_trigger_effect, function(e)
   if e.effect_id == "lp-army-shot" then return command.on_shot(e) end
+  if e.effect_id:sub(1, 7) == "lp-hit:" then return command.on_hit(e) end
   aim.on_trigger(e); studies.on_trigger(e); burstfx.on_trigger(e)
 end)
 script.on_nth_tick(3600, aim.sweep)
@@ -112,9 +113,15 @@ local function init()
   pact.apply()
   herd.init()
   command.init()
+  for _, f in pairs(game.forces) do command.sync_tiers(f) end
 end
 
 script.on_init(init)
+-- (A tier's order once its base order and its round are both researched, 0.2.470.)
+script.on_event({defines.events.on_research_finished, defines.events.on_research_reversed},
+  function(e) command.sync_tiers(e.research.force) end)
+-- (A reset re-applies the technologies' effects and drops what a script enabled.)
+script.on_event(defines.events.on_technology_effects_reset, function(e) command.sync_tiers(e.force) end)
 script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs(); cell.refloor(); command.drop_musters() end)
 
 -- The watchdog's view of a settlement (scripts/watch.lua).
@@ -317,6 +324,11 @@ script.on_event(defines.events.on_gui_opened, function(e) squadgui.on_opened(e) 
 -- The selection's cards and control groups (scripts/cards.lua).
 cards.on_select = function(pi) command.rings(pi) end
 cards.ammo_of = command.ammo_of
+cards.round_of = command.round_of
+cards.round_factor = function(unit, item)
+  local lad = command.ladder(unit)
+  return lad and lad.factor[item] or 1
+end
 for n = 1, cards.GROUPS do
   script.on_event("lp-group-keep-" .. n, function(e)
     local k = cards.keep_group(e.player_index, n)
@@ -1078,11 +1090,17 @@ remote.add_interface("landing-party", {
   end,
   debug_paving_prof = function(on) storage.paving_prof = on; return paving.stats() end,
   -- Tests only: a unit's ammunition (rounds, its loadout's, dry, where it rearms).
+  -- The arena only: a unit fighting unregistered given a round (ammunition tiers, LP_ARENA_TIER).
+  debug_tier = function(u, round)
+    storage.cmd.tier_test = storage.cmd.tier_test or {}
+    storage.cmd.tier_test[u.unit_number] = round
+  end,
   debug_ammo = function(u)
     local t = storage.cmd.troopers[u.unit_number]
     if not t then return nil end
     local a, full = command.ammo_of(t)
-    return {ammo = a, full = full, dry = t.dry == true, key = t.key, fired = t.fired or 0, alerted = t.alerted == true}
+    return {ammo = a, full = full, dry = t.dry == true, key = t.key, fired = t.fired or 0, alerted = t.alerted == true,
+      round = command.round_of(t), shown = t.round_mark and t.round_mark.valid and t.round_shown or nil}
   end,
   -- Tests only: a beacon's squad's ammunition, as its panel shows it (0.2.465).
   debug_beacon_ammo = function(b) return command.beacon_view(b).ammo end,
@@ -1102,7 +1120,7 @@ remote.add_interface("landing-party", {
       rank = m.single.rank, order = m.single.order} or nil}
     for _, c in ipairs(m.cards) do
       out.cards[#out.cards + 1] = {kind = c.kind, name = c.name, count = c.count, share = c.share, rank = c.rank,
-        unit_number = c.unit_number}
+        unit_number = c.unit_number, round = c.round, by_round = c.by_round}
     end
     local bars = storage.cards and storage.cards.bars and storage.cards.bars[1] or {}
     out.bar_share = {}

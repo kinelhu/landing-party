@@ -3597,6 +3597,157 @@ scenarios.rearm = function()
   end)
 end
 
+-- Ammunition tiers (0.2.470; the Fable consult, docs/reviews/2026-11-20-ammo-tiers-consult.md; the user: "waiting is too
+-- expensive", the barracks issuing the round: "I think that is okay yes"). A powered barracks on yellow magazines, a beacon
+-- 45 tiles north by a spawner healed every 10 ticks, a supply depot beside the beacon holding uranium and yellow. Three
+-- orders finish at once: a trooper on uranium, one on yellow, a gun buggy on uranium. Checked: the tier recipes appear
+-- when their base order and round are researched; each unit leaves the barracks with its order's round; a uranium round's
+-- bonus a hit is the base damage times its factor less one past the spawner's percent (its flat decrease added back),
+-- the factors read from the rounds' own prototypes; the gun buggy's blast pays it once per entity it hits; the yellow
+-- trooper's hits pay nothing; drained dry by the depot, the yellow trooper loads the best it holds (uranium); the depot
+-- emptied, the uranium trooper drained walks to the barracks and loads yellow; the squad panel counts its units by
+-- round; each unit's alt-mode icon shows its round.
+scenarios.tiers = function()
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  local function dd(n)
+    local sum = 0
+    local function walk(x)
+      if type(x) ~= "table" then return end
+      if x.type == "damage" and x.damage then sum = sum + x.damage.amount; return end
+      if x.type == "nested-result" then return end
+      for _, v in pairs(x) do walk(v) end
+    end
+    walk(prototypes.item[n].get_ammo_type().action)
+    return sum
+  end
+  local function percent(name, kind)
+    local r = (prototypes.entity[name].resistances or {})[kind]
+    local p = r and r.percent or 0
+    return p > 1 and p / 100 or p
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-40, -75, 40, 30)
+    local f = game.forces.player
+    f.technologies["lp-command-bandwidth-1"].researched = true
+    S.rec = {trooper0 = f.recipes["lp-trooper-order-uranium"].enabled}
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("lp-command-relay", 4.5, 6.5)
+    put("lp-command-relay", 8.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    put("medium-electric-pole", 6.5, 5.5)
+    S.bk = put("lp-barracks", 0.5, 0.5)
+    S.bk.set_recipe("lp-trooper-order")
+    S.bk.get_inventory(defines.inventory.crafter_input).insert{name = "firearm-magazine", count = 30}
+    S.B = put("lp-rally-beacon", 0.5, -45.5)
+    S.D = put("lp-supply-depot", 6, -45)
+    S.D.get_inventory(defines.inventory.chest).insert{name = "uranium-rounds-magazine", count = 20}
+    S.D.get_inventory(defines.inventory.chest).insert{name = "firearm-magazine", count = 20}
+    S.foe = surface().create_entity{name = "biter-spawner", position = {0.5, -59}, force = "enemy"}
+  end)
+  schedule(90, function()
+    local f = game.forces.player
+    f.technologies["uranium-ammo"].researched = true
+    S.rec.trooper1 = f.recipes["lp-trooper-order-uranium"].enabled
+    S.rec.buggy0 = f.recipes["lp-gun-buggy-order-uranium"].enabled
+    f.technologies["lp-command-bandwidth-2"].researched = true
+    S.rec.buggy1 = f.recipes["lp-gun-buggy-order-uranium"].enabled
+  end)
+  -- (A barracks' output takes its recipe's order alone: each order finished under its own recipe, as a player sets it;
+  -- the yellow one last, its input magazines put back, so the barracks ends on yellow.)
+  for i, n in ipairs({"lp-trooper-order-uranium", "lp-gun-buggy-order-uranium", "lp-trooper-order"}) do
+    schedule(40 + i * 80, function()
+      S.bk.set_recipe(n)
+      S.bk.get_inventory(defines.inventory.crafter_output).insert{name = n, count = 1}
+      if n == "lp-trooper-order" then
+        S.bk.get_inventory(defines.inventory.crafter_input).insert{name = "firearm-magazine", count = 30}
+      end
+    end)
+  end
+  for k = 1, 380 do
+    schedule(120 + k * 10, function() if S.foe.valid then S.foe.health = S.foe.max_health end end)
+  end
+  -- (Who is who: by the round each left the barracks with.)
+  schedule(420, function()
+    for _, u in ipairs(surface().find_entities_filtered{force = "player", name = {"lp-trooper", "lp-gun-buggy"}}) do
+      local a = lp("debug_ammo", u)
+      if a then
+        if u.name == "lp-gun-buggy" then S.GB = u
+        elseif a.round == "uranium-rounds-magazine" then S.TU = u
+        else S.TY = u end
+      end
+    end
+    S.issued = {tu = S.TU and lp("debug_ammo", S.TU).round, ty = S.TY and lp("debug_ammo", S.TY).round,
+      gb = S.GB and lp("debug_ammo", S.GB).round}
+  end)
+  -- The fight: 30 s at the spawner, topping up from the depot (each its own round).
+  schedule(2400, function()
+    S.by = lp("army").tier_by
+    S.fired = {tu = S.TU.valid and lp("debug_ammo", S.TU).fired, gb = S.GB.valid and lp("debug_ammo", S.GB).fired}
+    S.ty_before = lp("debug_ammo", S.TY).round
+    -- Drained through the shot handler: dry by the depot, it loads the best the depot holds.
+    local a = lp("debug_ammo", S.TY)
+    lp("debug_shots", S.TY, a.ammo)
+  end)
+  schedule(2460, function()
+    S.ty_after = lp("debug_ammo", S.TY)
+    S.panel = lp("debug_beacon_ammo", S.B)
+  end)
+  schedule(2600, function()
+    S.shown = {tu = lp("debug_ammo", S.TU).shown, ty = lp("debug_ammo", S.TY).shown, gb = lp("debug_ammo", S.GB).shown}
+    S.D.get_inventory(defines.inventory.chest).clear()
+    local a = lp("debug_ammo", S.TU)
+    lp("debug_shots", S.TU, a.ammo)
+    S.tu_dry = lp("debug_ammo", S.TU)
+  end)
+  for sec = 1, 40 do
+    schedule(2600 + sec * 60, function()
+      local a = S.TU.valid and lp("debug_ammo", S.TU)
+      if a and not a.dry and not S.tu_back then S.tu_back = a end
+    end)
+  end
+  schedule(2600 + 42 * 60, function()
+    local fU = dd("uranium-rounds-magazine") / dd("firearm-magazine")
+    local fB = dd("uranium-rounds-magazine") / dd("piercing-rounds-magazine")
+    local pp, pe = percent("biter-spawner", "physical"), percent("biter-spawner", "explosion")
+    local function per(key) local b = S.by and S.by[key]; return b and b.n > 0 and b.dealt / b.n or nil, b and b.n or 0 end
+    local tu, tun = per("lp-trooper|lp-hit:8:physical|biter-spawner")
+    local gd, gdn = per("lp-gun-buggy|lp-hit:20:explosion|biter-spawner")
+    local gbl, gbn = per("lp-gun-buggy|lp-hit:6:explosion|biter-spawner")
+    local want = {tu = 8 * (fU - 1) * (1 - pp), gd = 20 * (fB - 1) * (1 - pe), gb = 6 * (fB - 1) * (1 - pe)}
+    info("tiers: " .. serpent.line({rec = S.rec, issued = S.issued, fU = fU, fB = fB, pp = pp, pe = pe, per = {tu = tu, gd = gd,
+      gb = gbl}, n = {tun, gdn, gbn}, want = want, fired = S.fired, ty = {S.ty_before, S.ty_after}, panel = S.panel,
+      shown = S.shown, tu_dry = S.tu_dry, tu_back = S.tu_back}))
+    local function near(a, b) return a and b and b > 0 and math.abs(a / b - 1) <= 0.03 end
+    check("tiers: a tier's order appears once its base order and its round are researched",
+      S.rec.trooper0 == false and S.rec.trooper1 == true and S.rec.buggy0 == false and S.rec.buggy1 == true, serpent.line(S.rec))
+    check("tiers: each unit leaves the barracks with its order's round", S.issued.tu == "uranium-rounds-magazine"
+      and S.issued.ty == "firearm-magazine" and S.issued.gb == "uranium-rounds-magazine", serpent.line(S.issued))
+    -- (Seen failing with the flat decrease left out: the spawner's physical 2 against 30.4 a hit, 7% short.)
+    check("tiers: a uranium trooper's bonus a hit is vanilla's ratio over yellow, past the target's percent, its flat added back",
+      near(tu, want.tu), string.format("%s against %.2f over %d hits", tostring(tu), want.tu, tun))
+    check("tiers: the yellow trooper's hits pay nothing (every bonus hit the uranium trooper's)",
+      S.fired.tu and tun > 0 and tun <= S.fired.tu, string.format("%d bonus hits, the uranium trooper fired %s", tun, tostring(S.fired.tu)))
+    check("tiers: the gun buggy's direct hit and its blast each pay the bonus, the blast once per entity",
+      near(gd, want.gd) and near(gbl, want.gb) and gdn > 0 and math.abs(gbn - gdn) <= 2,
+      string.format("direct %s (%.2f) x%d, blast %s (%.2f) x%d", tostring(gd), want.gd, gdn, tostring(gbl), want.gb, gbn))
+    check("tiers: drained by the depot, the yellow trooper loads the best it holds", S.ty_before == "firearm-magazine"
+      and S.ty_after and S.ty_after.round == "uranium-rounds-magazine" and S.ty_after.ammo > 0,
+      serpent.line({S.ty_before, S.ty_after}))
+    check("tiers: the squad panel counts its units by round", S.panel and S.panel.by_round
+      and S.panel.by_round["uranium-rounds-magazine"] == 3, serpent.line(S.panel))
+    check("tiers: each unit's alt-mode icon shows its round", S.shown and S.shown.tu == "uranium-rounds-magazine"
+      and S.shown.ty == "uranium-rounds-magazine" and S.shown.gb == "uranium-rounds-magazine", serpent.line(S.shown))
+    check("tiers: the depot emptied, the uranium trooper drained walks to the barracks and loads yellow",
+      S.tu_dry and S.tu_dry.dry and S.tu_back and S.tu_back.round == "firearm-magazine" and S.tu_back.ammo == S.tu_back.full,
+      serpent.line({S.tu_dry, S.tu_back}))
+  end)
+end
+
 -- The supply depot (0.2.465; stage 2 of the army-logistics consult, the user: "Rearming and repairing seems like it could
 -- also be a job done by logo bots"): two beacons 45 tiles north and south of a powered barracks whose input holds 30
 -- magazines, a trooper on each by a spawner healed each second, a supply depot beside each beacon. The north depot asks

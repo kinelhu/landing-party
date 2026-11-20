@@ -106,17 +106,17 @@ digraph ai {
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "command" [label="command\n1790 lines", width=2.79, fillcolor="#f7dede"];
-    "squadgui" [label="squadgui\n212 lines", width=1.04, fillcolor="#eef2f7"];
+    "command" [label="command\n1926 lines", width=2.94, fillcolor="#f7dede"];
+    "squadgui" [label="squadgui\n230 lines", width=1.06, fillcolor="#eef2f7"];
     "paving" [label="paving\n272 lines", width=1.10, fillcolor="#d9f0d9"];
-    "cards" [label="cards\n431 lines", width=1.28, fillcolor="#eef2f7"];
+    "cards" [label="cards\n470 lines", width=1.32, fillcolor="#eef2f7"];
     "scanner" [label="scanner\n98 lines", width=0.91, fillcolor="#eef2f7"];
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
     "achievements" [label="achievements\n34 lines", width=0.84, fillcolor="#d9f0d9"];
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_11 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1494 lines", width=2.46, fillcolor="#f7dede"];
+    "control" [label="control\n1512 lines", width=2.48, fillcolor="#f7dede"];
     "dev" [label="dev\n622 lines", width=1.49, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n197 lines", width=1.02, fillcolor="#eef2f7"];
@@ -360,6 +360,7 @@ digraph ai {
   "war" -> "standing" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="forgive"];
   "rd" -> "ops" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="era"];
   "cards" -> "command" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="ammo_of"];
+  "cards" -> "command" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="round_of"];
   "base" -> "cordon" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="cordon_ring"];
   "ops" -> "cordon" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="cordon_check"];
   "ops" -> "cordon" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="cordon_step"];

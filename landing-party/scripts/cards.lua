@@ -51,6 +51,13 @@ local function ammo(u)
   if not t then return nil end
   return cards.ammo_of(t)
 end
+-- The round it holds (0.2.470, ammunition tiers): its item, shown by its icon, never named in our text (the user:
+-- "uranium spelled out seems like a misstep, we have item icons"). command.round_of and the ladder's factor, set by
+-- control.lua as cards.round_of and cards.round_factor.
+local function round(u)
+  local t = cards.round_of and cmd().troopers[u.unit_number]
+  return t and cards.round_of(t)
+end
 
 -- A health share's colour: green, yellow at half, red at a quarter (vanilla's own health bars' steps).
 local function hp_colour(s)
@@ -79,18 +86,26 @@ function cards.model(player_index)
       k.health, k.max_health = k.health + u.health, k.max_health + u.max_health
       k.rank = math.max(k.rank, veterancy.rank(u))
       local have, full = ammo(u)
-      if have then k.rounds, k.full = k.rounds + have, k.full + full end
+      if have then
+        k.rounds, k.full = k.rounds + have, k.full + full
+        local r = round(u)
+        if r then k.by_round = k.by_round or {}; k.by_round[r] = (k.by_round[r] or 0) + 1 end
+      end
     end
     for _, k in ipairs(m.cards) do
       k.share = k.max_health > 0 and k.health / k.max_health or 0
       k.ammo = k.full > 0 and k.rounds / k.full or nil
+      -- (A group's icon is its weakest round: what is left to upgrade; the tooltip counts each.)
+      for r in pairs(k.by_round or {}) do
+        if not k.round or (cards.round_factor(k.name, r) < cards.round_factor(k.name, k.round)) then k.round = r end
+      end
     end
   else
     for _, u in ipairs(units) do
       local have, full = ammo(u)
       m.cards[#m.cards + 1] = {kind = "unit", name = u.name, count = 1, units = {u}, unit_number = u.unit_number,
         health = u.health, max_health = u.max_health, share = share(u), rank = veterancy.rank(u),
-        rounds = have, full = full, ammo = have and full > 0 and have / full or nil}
+        rounds = have, full = full, ammo = have and full > 0 and have / full or nil, round = have and round(u)}
     end
   end
   if #units == 1 then
@@ -99,7 +114,8 @@ function cards.model(player_index)
     local order = t and t.manual and t.manual.kind or (t and t.key and t.key:gsub(":.*", "")) or "idle"
     local have, full = ammo(u)
     m.single = {unit = u, rank = veterancy.rank(u), merit = (storage.merit or {})[u.unit_number] or 0,
-      order = order, offline = t and t.offline or false, rounds = have, full = full, dry = t and t.dry or false}
+      order = order, offline = t and t.offline or false, rounds = have, full = full, dry = t and t.dry or false,
+      round = have and round(u)}
   end
   return m
 end
@@ -268,7 +284,11 @@ end
 local function card_tooltip(c)
   local name = prototypes.entity[c.name].localised_name
   if c.kind == "group" then
-    return {"lp.card-group-tooltip", name, c.count, math.floor(c.health + 0.5), math.floor(c.max_health + 0.5)}
+    local tip = {"lp.card-group-tooltip", name, c.count, math.floor(c.health + 0.5), math.floor(c.max_health + 0.5)}
+    if not c.by_round then return tip end
+    local rounds = {""}
+    for r, n in pairs(c.by_round) do rounds[#rounds + 1] = string.format("  [item=%s] %d", r, n) end
+    return {"", tip, "\n", rounds}
   end
   return {"lp.card-unit-tooltip", name, math.floor(c.health + 0.5), math.floor(c.max_health + 0.5), rank_text(c.rank)}
 end
@@ -294,9 +314,17 @@ local function build(p, m)
     local bar = f.add{type = "progressbar", name = "lp_card_hp", style = "lp_card_hp_bar", value = c.share}
     bar.style.color = hp_colour(c.share)
     -- (Its ammunition under its health, 0.2.465: amber, red when out; none for a unit that keeps no rounds.)
-    local am = f.add{type = "progressbar", name = "lp_card_ammo", style = "lp_card_hp_bar", value = c.ammo or 0}
+    -- (Its round's icon before the bar, 0.2.470.)
+    local row = f.add{type = "flow", name = "lp_card_ammo_row", direction = "horizontal"}
+    row.style.horizontal_spacing = 1
+    row.style.vertical_align = "center"
+    local ri = row.add{type = "sprite", name = "lp_card_round", sprite = c.round and ("item/" .. c.round) or nil}
+    ri.style.size = 9
+    ri.style.stretch_image_to_widget_size = true
+    local am = row.add{type = "progressbar", name = "lp_card_ammo", style = "lp_card_hp_bar", value = c.ammo or 0}
+    am.style.width = 30
     am.style.color = AMMO_COLOUR
-    am.visible = c.ammo ~= nil
+    row.visible = c.ammo ~= nil
     -- (Its rank: the unit's own gold chevrons, inside the button's corner. A label under it with a negative margin
     -- pushed the card out of its row, 2026-11-12.)
     if c.rank > 0 then
@@ -317,7 +345,12 @@ local function build(p, m)
     info.style.left_margin = 6
     info.add{type = "label", name = "lp_cards_name", style = "heading_2_label", caption = s.unit.localised_name}
     info.add{type = "label", name = "lp_cards_health"}
-    info.add{type = "label", name = "lp_cards_ammo"}
+    local ar = info.add{type = "flow", name = "lp_cards_ammo_row", direction = "horizontal"}
+    ar.style.vertical_align = "center"
+    local ri = ar.add{type = "sprite", name = "lp_cards_round"}
+    ri.style.size = 16
+    ri.style.stretch_image_to_widget_size = true
+    ar.add{type = "label", name = "lp_cards_ammo"}
     info.add{type = "label", name = "lp_cards_rank"}
     info.add{type = "label", name = "lp_cards_order"}
   end
@@ -330,11 +363,14 @@ local function update(frame, m)
   local grid = grid_of(frame)
   for i, c in ipairs(m.cards) do
     local f = grid["lp_card_" .. i]
-    if f then
+    -- (A card built before 0.2.470 has no ammunition row: left as it is until the next selection rebuilds it.)
+    if f and f.lp_card_ammo_row then
       f.lp_card_hp.value = c.share
       f.lp_card_hp.style.color = hp_colour(c.share)
-      f.lp_card_ammo.value = c.ammo or 0
-      f.lp_card_ammo.visible = c.ammo ~= nil
+      local row = f.lp_card_ammo_row
+      row.lp_card_ammo.value = c.ammo or 0
+      row.lp_card_round.sprite = c.round and ("item/" .. c.round) or nil
+      row.visible = c.ammo ~= nil
       f.lp_card_button.tooltip = card_tooltip(c)
     end
   end
@@ -342,8 +378,11 @@ local function update(frame, m)
   if pane and m.single then
     local s, info = m.single, pane.lp_cards_info
     info.lp_cards_health.caption = {"lp.card-health", math.floor(s.unit.health + 0.5), math.floor(s.unit.max_health + 0.5)}
-    info.lp_cards_ammo.caption = s.rounds and (s.dry and {"lp.card-ammo-dry"} or {"lp.card-ammo", s.rounds, s.full}) or ""
-    info.lp_cards_ammo.visible = s.rounds ~= nil
+    local ar = info.lp_cards_ammo_row or {lp_cards_ammo = {}, lp_cards_round = {}}
+    ar.lp_cards_ammo.caption = s.rounds and (s.dry and {"lp.card-ammo-dry"} or {"lp.card-ammo", s.rounds, s.full}) or ""
+    ar.lp_cards_round.sprite = s.round and ("item/" .. s.round) or nil
+    ar.lp_cards_round.tooltip = s.round and prototypes.item[s.round].localised_name or nil
+    ar.visible = s.rounds ~= nil
     info.lp_cards_rank.caption = s.rank > 0 and {"lp.card-rank", rank_text(s.rank), {"lp.rank-" .. s.rank}, s.merit}
       or {"lp.card-merit", s.merit}
     info.lp_cards_order.caption = s.offline and {"lp.card-offline"} or {"lp.card-order-" .. s.order}

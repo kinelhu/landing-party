@@ -153,11 +153,12 @@ local function deploy(at, inv, room, squads)
   -- normal unit and retired as a normal order; the army consult, 2026-11-16.)
   local stacks = {}
   for _, c in ipairs(inv and inv.get_contents() or {}) do
-    if shared.ORDERS[c.name] then stacks[#stacks + 1] = c end
+    if shared.order_unit(c.name) then stacks[#stacks + 1] = c end
   end
   table.sort(stacks, function(a, b) if a.name ~= b.name then return a.name < b.name end return a.quality < b.quality end)
   for _, c in ipairs(stacks) do
-    local item, name, quality = c.name, shared.ORDERS[c.name], c.quality
+    local item, name, quality = c.name, shared.order_unit(c.name), c.quality
+    local tier = shared.ORDER_TIERS[item]
     for _ = 1, c.count do
       local need = shared.POPULATION[name]
       if room[f.index] < need then break end
@@ -173,7 +174,8 @@ local function deploy(at, inv, room, squads)
           c[name] = (c[name] or 0) + 1
           squads.count[beacon.unit_number] = c
         end
-        storage.cmd.troopers[u.unit_number] = {unit = u, beacon = beacon and beacon.unit_number}
+        -- (A tier's order issues its round, 0.2.470: the unit fires it from the start.)
+        storage.cmd.troopers[u.unit_number] = {unit = u, beacon = beacon and beacon.unit_number, round = tier and tier.round}
         -- The first unit a force deploys with no beacon in reach stands where it is: told once why (the tutorial).
         if not beacon then hint(f, "no-beacon", at) end
         storage.cmd.trained = (storage.cmd.trained or 0) + 1
@@ -878,6 +880,63 @@ local function loadout(name)
   return loadouts[name]
 end
 command.loadout = loadout
+-- Ammunition tiers (0.2.470; the Fable consult, docs/reviews/2026-11-20-ammo-tiers-consult.md): a tiered unit's
+-- (shared.TIERED) rounds are its base round's ammo category's, ranked by the direct damage their own prototypes deal (a
+-- mod's magazines join), each with its factor over the base round. One kind a unit (t.round; nil: the base round): it
+-- tops up only with its own; dry, it loads the best a source holds. No hand-back, so nothing it was issued is refunded.
+local function direct_damage(ip)
+  local sum = 0
+  local function walk(x)
+    if type(x) ~= "table" then return end
+    if x.type == "damage" and x.damage then sum = sum + x.damage.amount; return end
+    if x.type == "nested-result" then return end
+    for _, v in pairs(x) do walk(v) end
+  end
+  local at = ip.get_ammo_type()
+  walk(at and at.action)
+  return sum
+end
+local function category_of(ip)
+  local c = ip.ammo_category
+  return type(c) == "string" and c or (c and c.name)
+end
+local ladders = {}
+local function ladder(name)
+  local out = ladders[name]
+  if out ~= nil then return out or nil end
+  out = false
+  local l = shared.TIERED[name] and loadout(name)
+  local base = l and l.items[1] and prototypes.item[l.items[1].name]
+  local b = base and base.type == "ammo" and direct_damage(base) or 0
+  if b > 0 then
+    local cat = category_of(base)
+    out = {category = cat, base = base.name, factor = {}, best = {}, own = {}}
+    for n, ip in pairs(prototypes.get_item_filtered{{filter = "type", type = "ammo"}}) do
+      local d = category_of(ip) == cat and direct_damage(ip) or 0
+      if d >= b then out.factor[n] = d / b; out.best[#out.best + 1] = {name = n, per = ip.magazine_size} end
+    end
+    table.sort(out.best, function(x, y)
+      if out.factor[x.name] ~= out.factor[y.name] then return out.factor[x.name] > out.factor[y.name] end
+      return x.name < y.name
+    end)
+    for _, it in ipairs(out.best) do out.own[it.name] = {it} end
+  end
+  ladders[name] = out
+  return out or nil
+end
+command.ladder = ladder
+-- What a unit may draw: its own round, or, empty, any of its ladder best first; an untiered unit its loadout.
+local function kinds(t, empty)
+  local lad = ladder(t.unit.name)
+  if not lad then return loadout(t.unit.name).items end
+  return empty and lad.best or lad.own[t.round or lad.base] or lad.own[lad.base]
+end
+-- The round a unit holds (its item name), for the cards, the panel and the alert.
+local function round_of(t)
+  local l = loadout(t.unit.name)
+  return t.round or (l and l.items[1] and l.items[1].name)
+end
+command.round_of = round_of
 -- A unit's rounds and its loadout's (nil: no ammunition kept for it).
 local function ammo_of(t)
   if not AMMO_ON then return nil end
@@ -895,11 +954,17 @@ local function draw(t, b, topup)
   local inv = b.get_inventory(b.name == "lp-supply-depot" and defines.inventory.chest or defines.inventory.crafter_input)
   if not inv then return 0 end
   local got = 0
-  for _, it in ipairs(loadout(t.unit.name).items) do
+  local lad = ladder(t.unit.name)
+  for _, it in ipairs(kinds(t, have == 0)) do
     local need = full - have - got
     if need <= 0 then break end
     local n = math.min(topup and math.floor(need / it.per) or math.ceil(need / it.per), inv.get_item_count(it.name))
     if n > 0 then got = got + inv.remove{name = it.name, count = n} * it.per end
+    -- (A tiered unit loads one kind: empty, the best the source holds.)
+    if lad and got > 0 then
+      if have == 0 then t.round = it.name ~= lad.base and it.name or nil end
+      break
+    end
   end
   if got > 0 then
     t.ammo = math.min(full, have + got)
@@ -911,8 +976,9 @@ end
 local function live_source(b)
   return b and b.valid and (b.name == "lp-supply-depot" or b.energy > 0)
 end
-local function ammo_source(u)
-  local l = loadout(u.name)
+local function ammo_source(t)
+  local u = t.unit
+  local l = {items = kinds(t, true)}
   local best, bd
   for _, list in ipairs({storage.cmd.barracks, storage.cmd.depots or {}}) do
     for _, b in pairs(list) do
@@ -948,8 +1014,8 @@ local function dry_alert(t, on)
   for _, p in pairs(u.force.connected_players) do
     local have = has_alert(p, u)
     if on and not have then
-      local l = loadout(u.name)
-      p.add_custom_alert(u, {type = "item", name = l.items[1].name}, {"lp.alert-unit-dry", u.localised_name}, true) -- notice-ok: an alert on a thing in the world, as a turret's
+      -- (The round it ran out of, 0.2.470.)
+      p.add_custom_alert(u, {type = "item", name = round_of(t)}, {"lp.alert-unit-dry", u.localised_name}, true) -- notice-ok: an alert on a thing in the world, as a turret's
     elseif not on and have then
       p.remove_alert{entity = u, type = defines.alert_type.custom}
     end
@@ -961,7 +1027,7 @@ local function rearm(t)
   dry_alert(t, true)
   local b = t.rearm_at and (storage.cmd.barracks[t.rearm_at] or (storage.cmd.depots or {})[t.rearm_at])
   if not live_source(b) then
-    b = ammo_source(u)
+    b = ammo_source(t)
     t.rearm_at = b and b.unit_number
   end
   if not b then
@@ -1010,6 +1076,71 @@ function command.empty(u)
   t.ammo = 1
   command.on_shot{source_entity = u}
   return t.dry == true
+end
+
+-- A better round's bonus at each hit (0.2.470; data-final-fixes.lua names the damage effect it stands beside,
+-- "lp-hit:<amount>:<type>"): that damage times the round's factor less one, TIER_SHARE, the force's ammo damage research
+-- for the category and the unit's rank (quality: the engine scales its own damage by it, not a script's), plus the
+-- target's flat decrease for the type: the bonus is a second damage and would pay it again (the consult's trap: red's
+-- gain against corporate infantry 42% lost, against a hull 62%).
+local hit_parse, flat_cache = {}, {}
+function command.on_hit(e)
+  local u, tgt = e.cause_entity or e.source_entity, e.target_entity
+  if not (u and u.valid and tgt and tgt.valid) then return end
+  local t = storage.cmd.troopers[u.unit_number]
+  -- (Or a unit the arena marked, debug_tier: it fights unregistered.)
+  local round = t and t.round or (storage.cmd.tier_test and storage.cmd.tier_test[u.unit_number])
+  if not round then return end
+  local lad = ladder(u.name)
+  local f = lad and lad.factor[round]
+  if not (f and f > 1) then return end
+  local h = hit_parse[e.effect_id]
+  if not h then
+    local amount, kind = e.effect_id:match("^lp%-hit:([^:]+):(.+)$")
+    h = {amount = tonumber(amount) or 0, type = kind}
+    hit_parse[e.effect_id] = h
+  end
+  local flat = flat_cache[tgt.name]
+  if not flat then
+    flat = {}
+    for kind, r in pairs(tgt.prototype.resistances or {}) do flat[kind] = r.decrease or 0 end
+    flat_cache[tgt.name] = flat
+  end
+  local extra = h.amount * (f - 1) * shared.TIER_SHARE * (1 + u.force.get_ammo_damage_modifier(lad.category))
+    * (1 + shared.RANK.damage * (u.quality and u.quality.level or 0))
+  -- (Its name read first: the bonus can kill it, and a dead entity's name crashed the first run of scenario tiers.)
+  local key = u.name .. "|" .. e.effect_id .. "|" .. tgt.name
+  local dealt = tgt.damage(extra + (flat[h.type] or 0), u.force, h.type, u, u)
+  storage.cmd.tier_bonus = (storage.cmd.tier_bonus or 0) + dealt
+  -- (By unit, effect and target, for scenario tiers: a bonus a hit, read against the round's own ratio.)
+  local by = storage.cmd.tier_by or {}
+  storage.cmd.tier_by = by
+  local b = by[key] or {n = 0, dealt = 0}
+  by[key] = b
+  b.n, b.dealt = b.n + 1, b.dealt + dealt
+end
+-- A tier's order is offered once its base order and its round can be made (research of either, either order).
+function command.sync_tiers(force)
+  for name, tier in pairs(shared.ORDER_TIERS) do
+    local r, b, a = force.recipes[name], force.recipes[tier.base], force.recipes[tier.round]
+    if r and b and a then r.enabled = b.enabled and a.enabled end
+  end
+end
+-- The round a unit holds, in alt mode over its lower left, as a turret shows its ammunition (0.2.470; the consult: the
+-- base round too, the yellow icon is the decision). Remade when its round changes or its entity does (a promotion).
+local function round_mark(t)
+  local u = t.unit
+  local want = AMMO_ON and ammo_of(t) and round_of(t)
+  local m = t.round_mark
+  if m and m.valid and t.round_shown == want then return end
+  if m and m.valid then m.destroy() end
+  t.round_mark, t.round_shown = nil, nil
+  if not want then return end
+  local sb = u.prototype.selection_box
+  t.round_mark = rendering.draw_sprite{sprite = "item/" .. want, surface = u.surface, forces = {u.force},
+    target = {entity = u, offset = {sb.left_top.x + 0.2, sb.right_bottom.y - 0.25}}, only_in_alt_mode = true,
+    x_scale = 0.4, y_scale = 0.4, render_layer = "entity-info-icon"}
+  t.round_shown = want
 end
 
 local function lead()
@@ -1070,6 +1201,7 @@ local function lead()
   local offline = offline_set()
   for k, t in pairs(storage.cmd.troopers) do
     local u = t.unit
+    if u.valid then round_mark(t) end
     if not u.valid then
       storage.cmd.troopers[k] = nil
     elseif t.manual and t.manual.kind == "retire" then
@@ -1636,6 +1768,7 @@ local function waiting(force)
     if b.valid and b.force == force then
       local inv = b.get_inventory(defines.inventory.crafter_output)
       for item in pairs(shared.ORDERS) do n = n + (inv and inv.get_item_count(item) or 0) end
+      for item in pairs(shared.ORDER_TIERS) do n = n + (inv and inv.get_item_count(item) or 0) end
     end
   end
   return n
@@ -1700,7 +1833,7 @@ end
 function command.beacon_view(beacon)
   local p = plan(beacon)
   local count, units = {}, {}
-  local ammo = {rounds = 0, full = 0, dry = 0}
+  local ammo = {rounds = 0, full = 0, dry = 0, by_round = {}}
   for _, t in pairs(storage.cmd.troopers) do
     if t.beacon == beacon.unit_number and t.unit.valid and not (t.manual and t.manual.kind == "retire") then
       count[t.unit.name] = (count[t.unit.name] or 0) + 1
@@ -1709,6 +1842,9 @@ function command.beacon_view(beacon)
       if have then
         ammo.rounds, ammo.full = ammo.rounds + have, ammo.full + full
         if t.dry then ammo.dry = ammo.dry + 1 end
+        -- (Its units by the round they hold, 0.2.470: the panel's icons.)
+        local r = round_of(t)
+        if r then ammo.by_round[r] = (ammo.by_round[r] or 0) + 1 end
       end
     end
   end
@@ -1746,7 +1882,7 @@ function command.stats()
     route_searches = storage.cmd.route_searches or 0, razing = storage.cmd.razing or 0, kept_fighting = storage.cmd.kept_fighting or 0, routes_taken = storage.cmd.routes_taken or 0, hints = hints, alive = alive, offline = offline, capacity = command.capacity(f),
     level = research_level(f), orders = orders, locks = storage.cmd.locks, charted = storage.cmd.charted or 0,
     shots = storage.cmd.shots or 0, dried = storage.cmd.dried or 0, rearmed = storage.cmd.rearmed or 0,
-    drawn = storage.cmd.drawn or 0}
+    drawn = storage.cmd.drawn or 0, tier_bonus = storage.cmd.tier_bonus or 0, tier_by = storage.cmd.tier_by or {}}
 end
 
 -- Muster points taken off the map (0.2.448: retired with packing, above): each placed one removed, what it held laid where it
@@ -1764,7 +1900,7 @@ function command.drop_musters()
           force = f, allow_belts = false} end
       end
       for _, c in ipairs(m.get_inventory(defines.inventory.chest).get_contents()) do
-        local r = shared.ORDERS[c.name] and prototypes.recipe[c.name]
+        local r = shared.order_unit(c.name) and prototypes.recipe[c.name]
         if r then
           for _, ing in ipairs(r.ingredients) do
             if ing.type == "item" then lay(ing.name, ing.amount * c.count, c.quality) end

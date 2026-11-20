@@ -884,6 +884,25 @@ shared.POPULATION = {["lp-trooper"] = 1, ["lp-breacher"] = 1, ["lp-rocket-troope
 shared.ORDERS = {["lp-trooper-order"] = "lp-trooper", ["lp-breacher-order"] = "lp-breacher",
   ["lp-battle-tank-order"] = "lp-battle-tank", ["lp-rocket-trooper-order"] = "lp-rocket-trooper",
   ["lp-flame-trooper-order"] = "lp-flame-trooper", ["lp-gun-buggy-order"] = "lp-gun-buggy"}
+-- Ammunition tiers (0.2.470; the user, 2026-11-20: "a missed opportunity wrt ammo tiers?", the Fable consult,
+-- docs/reviews/2026-11-20-ammo-tiers-consult.md): an order of the same unit issued with a better round (a recipe of its
+-- own at the barracks, the user: "I think that is okay yes"). The unit is the base order's; the round is what it fires.
+-- A tier recipe is enabled once its base order's and its round's recipes are (command.sync_tiers).
+shared.ORDER_TIERS = {
+  ["lp-trooper-order-piercing"] = {base = "lp-trooper-order", round = "piercing-rounds-magazine"},
+  ["lp-trooper-order-uranium"] = {base = "lp-trooper-order", round = "uranium-rounds-magazine"},
+  ["lp-gun-buggy-order-uranium"] = {base = "lp-gun-buggy-order", round = "uranium-rounds-magazine"},
+}
+-- The units whose round's tier raises their damage (bullets, stage 1 of the consult; shells and rockets wait for named
+-- priors: vanilla's explosive variants trade direct damage for area, no ratio to read). The bonus is the round's direct
+-- damage over the base round's (read from the prototypes), times TIER_SHARE: a named prior, 1 until the arena says.
+shared.TIERED = {["lp-trooper"] = true, ["lp-gun-buggy"] = true}
+shared.TIER_SHARE = 1
+-- The unit an order item makes, a tier's too.
+function shared.order_unit(item)
+  local t = shared.ORDER_TIERS[item]
+  return shared.ORDERS[item] or (t and shared.ORDERS[t.base])
+end
 -- A rally beacon's squad sizes (scripts/command.lua): a virtual signal a unit, its count the most of that unit the
 -- beacon's squad keeps.
 shared.SQUAD_SIGNALS = {}

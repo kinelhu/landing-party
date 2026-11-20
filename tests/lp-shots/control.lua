@@ -534,7 +534,7 @@ if MODE == "army" then
     local fr = P().gui.screen.lp_cards
     local bars = {}
     local function walk(el)
-      if el.name == "lp_card_ammo" then bars[#bars + 1] = string.format("%.2f%s", el.value, el.visible and "" or "(hidden)") end
+      if el.name == "lp_card_ammo" then bars[#bars + 1] = string.format("%.2f%s", el.value, el.parent.visible and "" or "(hidden)") end
       for _, c in pairs(el.children) do walk(c) end
     end
     if fr then walk(fr) end

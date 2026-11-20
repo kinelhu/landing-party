@@ -155,6 +155,14 @@ fights on as long as the depot is fed. It is a chest on the front line, and the 
 barracks or a depot to see where your units heal and rearm: green round a powered barracks, amber round a depot. The
 squad panel beside a beacon's window counts its squad's rounds.
 
+**Better rounds.** Troopers and gun buggies fire what they are loaded with. Once you can make piercing or uranium
+magazines, the barracks offers a trooper trained with them, and a gun buggy with uranium, beside the plain order: the
+same unit, its order's icon showing the round. A better round deals more, in the proportion vanilla's own
+rounds do. A unit tops up only with the round it holds; when it runs out, it loads the best round its barracks or depot
+holds. So to raise a squad already in the field, change its depot's requests to the better magazine, and each unit
+takes it as it empties. The round each unit holds is shown by its icon: on its card, in the squad panel, on its
+out-of-ammunition alert, and over it in alt mode, as a turret shows its ammunition.
+
 The setting *Army ammunition* turns all of this off.
 
 **The selection panel.** While you have units selected, each one shows a health bar over its head, and a panel above

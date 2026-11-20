@@ -622,6 +622,46 @@ if settings.startup["lp-army-ammo"].value then
   end
 end
 
+-- Ammunition tiers (0.2.470, the Fable consult, docs/reviews/2026-11-20-ammo-tiers-consult.md): beside each damage effect
+-- of a tiered unit's attack (shared.TIERED), direct or nested, a script trigger naming that effect's damage, so the script
+-- adds a better round's bonus at the hit, once per entity the engine's own area and force filters let through
+-- (command.on_hit). At the shot it would land before a shell does, and an area has no one target there.
+if settings.startup["lp-army-ammo"].value then
+  local function list(x) if x == nil then return {} end if x.type then return {x} end return x end
+  local done = {}
+  local hits
+  hits = function(action)
+    local items = list(action)
+    for _, it in ipairs(items) do
+      for _, d in ipairs(list(it.action_delivery)) do
+        -- (A projectile's damage is in its own prototype: the trooper's tracer, lp-trooper-shot. Once a projectile.)
+        local pr = d.type == "projectile" and data.raw.projectile[d.projectile]
+        if pr and not done[pr.name] then
+          done[pr.name] = true
+          if pr.action then pr.action = hits(pr.action) end
+        end
+        local te = list(d.target_effects)
+        local add = {}
+        for _, ef in ipairs(te) do
+          if ef.type == "damage" and ef.damage then
+            add[#add + 1] = {type = "script", effect_id = string.format("lp-hit:%g:%s", ef.damage.amount, ef.damage.type)}
+          elseif ef.type == "nested-result" and ef.action then
+            ef.action = hits(ef.action)
+          end
+        end
+        for _, a in ipairs(add) do te[#te + 1] = a end
+        if #te > 0 then d.target_effects = te end
+      end
+    end
+    return items
+  end
+  for name in pairs(require("__landing-party__.shared").TIERED) do
+    local u = data.raw.unit[name]
+    local at = u and u.attack_parameters and u.attack_parameters.ammo_type
+    if at and at.action then at.action = hits(at.action) end
+  end
+end
+
 -- Repair by construction robots (0.2.466; stage 3 of the army-logistics consult, the user: "Rearming and repairing seems
 -- like it could also be a job done by logo bots"): the player's six lose not-repairable, the engine's own flag, so a
 -- roboport's robots mend them with repair packs in its construction area, as they do turrets (scenario robotrepair: a

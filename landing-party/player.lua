@@ -375,6 +375,38 @@ data:extend({
     results = {{type = "item", name = "lp-battle-tank-order", amount = 1}}},
 })
 
+-- Ammunition tiers (0.2.470, shared.ORDER_TIERS): each a copy of its base order's item and recipe, its round in place of
+-- the base round (the ingredient of the same ammo category), the same name, its icon the round's (or the base's with the
+-- round as a badge). Hidden like the base orders; enabled by script once the base order and the round are.
+for name, tier in pairs(shared.ORDER_TIERS) do
+  local bi, br = data.raw.item[tier.base], data.raw.recipe[tier.base]
+  local round = data.raw.ammo[tier.round]
+  local it = table.deepcopy(bi)
+  it.name = name
+  it.localised_name = {"item-name." .. tier.base}
+  it.localised_description = {"item-description." .. tier.base}
+  local base_round
+  local r = table.deepcopy(br)
+  r.name = name
+  r.localised_name = {"recipe-name." .. tier.base}
+  for _, ing in ipairs(r.ingredients) do
+    local a = data.raw.ammo[ing.name]
+    if a and a.ammo_category == round.ammo_category then base_round = ing.name; ing.name = tier.round end
+  end
+  assert(base_round, "no round of " .. round.ammo_category .. " in " .. tier.base)
+  -- (Its icon: the round's own where the base order shows its base round, else the base's with the round in a corner.)
+  if bi.icon == data.raw.ammo[base_round].icon then
+    it.icon, it.icons = round.icon, nil
+  else
+    it.icons, it.icon = {{icon = bi.icon, icon_size = bi.icon_size or 64},
+      {icon = round.icon, icon_size = round.icon_size or 64, scale = 0.25, shift = {8, 8}}}, nil
+  end
+  r.icon, r.icons = it.icon, it.icons
+  r.results = {{type = "item", name = name, amount = 1}}
+  r.order = (br.order or tier.base) .. "-" .. name
+  data:extend({it, r})
+end
+
 -- The command tool (scripts/command.lua): drag over your units to select them (shift: release them to their
 -- beacons); right-click or right-drag on the ground to move them, on a faction building to attack it (shift:
 -- attack-move). For players who would rather not wire a beacon; beacons keep every unit not picked by hand.

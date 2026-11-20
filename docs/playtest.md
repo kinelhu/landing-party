@@ -52,6 +52,9 @@ kit (items 4 and 6 to 10) is left to the beta's players.
   to the nearest powered barracks holding its ammunition, rearms from the barracks' input and goes back; with none, it
   stands and you get one hint. A dry unit raises an alert, shown on the map, until it rearms (0.2.467). `/lp dry` empties your units near you at once. Open a rally beacon and read the squad panel's ammunition line: the one part no windowed check could open. Did you notice units going dry, and know why? Is walking back a fair cost, or a chore?
   Would you leave it on?
+- **Better rounds** (0.2.470). Once you make piercing or uranium magazines, set a barracks to a trooper on them, and switch
+  a depot's requests to uranium: does the squad's alt-mode icon turn as each unit empties? Is the icon on the cards and in
+  the squad panel enough to tell which squad is still on yellow? Does a uranium squad feel too strong against tanks?
 - **Supply depot and ranges** (0.2.465; the save has no logistic system: `/c game.player.force.technologies["logistic-system"].researched = true`).
   Hover over a barracks: rings show where units heal and rearm. Put a depot by a forward beacon with magazines in it.
   Does the squad fight on without walking back? Are the rings and the cards' amber bar readable?

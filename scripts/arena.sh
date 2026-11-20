@@ -3,6 +3,7 @@
 # docs/arena/results.jsonl and the table in docs/arena.md (scripts/arena_report.py).
 #   scripts/arena.sh
 # LP_ARENA_ONLY: a trial of the matchups whose label holds that text; LP_ARENA_ROUNDS: rounds (3).
+# LP_ARENA_TIER: the player's tiered units (shared.TIERED) fire that round (an item name: ammunition tiers, 0.2.470).
 # LP_ARENA_JOBS: games in parallel (4), each with its own profile and every n-th matchup (batch.lua's shard); their
 # results merged. The machine-load rule holds: 4 at most, none while a game window is open.
 set -euo pipefail
@@ -18,7 +19,7 @@ shard() {   # shard <i> <n>: one game's share, into its own profile
   ln -sfn "$REPO/landing-party" "$SIM/mods/landing-party"
   rm -rf "$SIM/mods/lp-arena"; cp -R "$REPO/tests/lp-arena" "$SIM/mods/lp-arena"
   local sh="nil"; [ "$n" -gt 1 ] && sh="{$i, $n}"
-  printf 'return {mode = "batch", only = "%s", rounds = %s, shard = %s}\n' "${LP_ARENA_ONLY:-}" "${LP_ARENA_ROUNDS:-3}" "$sh" \
+  printf 'return {mode = "batch", only = "%s", rounds = %s, shard = %s, tier = "%s"}\n' "${LP_ARENA_ONLY:-}" "${LP_ARENA_ROUNDS:-3}" "$sh" "${LP_ARENA_TIER:-}" \
     > "$SIM/mods/lp-arena/params.lua"
   cat > "$SIM/mods/mod-list.json" <<JSON
 {"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},
