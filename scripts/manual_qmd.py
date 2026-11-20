@@ -571,18 +571,6 @@ def write(rp):
         for r, f in sorted(rows_t, key=lambda x: x[1]):
             L.append(f"| {md(shown(unit))} | {md(lname('item-name.' + r))} | {f:.2f} × | {'yes' if r in T['blasts'] else '-'} |")
     L.append("")
-    # The power ladder (scripts/power_ladder.py, matplotlib: run it before this when the units, rounds, research or ranks
-    # change): each unit's strength, damage a second times health, as research, its best round and its top rank multiply
-    # it. Stops here without it, as a missing number does.
-    ladder = os.path.join(GEN, "power-ladder.png")
-    if not os.path.exists(ladder):
-        raise SystemExit("manual: _generated/power-ladder.png missing: run "
-                         "uv run --with matplotlib python3 -I scripts/power_ladder.py")
-    L += ["### The power ladder", "",
-          "How far each of your units can grow. Strength is its damage a second times its health, against the unit as",
-          "trained, on a scale where each step up the side multiplies it. Research counts every finite level of the damage",
-          "and shooting speed technologies for the unit's weapon; the round is its best; the rank is its highest.", "",
-          "![Each unit's strength as research, a better round and veterancy multiply it](_generated/power-ladder.png){#fig-power-ladder fig-pos=\"H\"}", ""]
     out("units.qmd", L)
 
     # ---- buildings ----
