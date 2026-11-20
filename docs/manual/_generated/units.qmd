@@ -144,3 +144,11 @@ An explosive round's blast hits the enemies within 2 tiles of what it struck for
 | Trooper | Firearm magazine | 1.00 × | - |
 | Trooper | Piercing rounds magazine | 1.17 × | - |
 | Trooper | Uranium rounds magazine | 1.68 × | - |
+
+### The power ladder
+
+How far each of your units can grow. Strength is its damage a second times its health, against the unit as
+trained, on a scale where each step up the side multiplies it. Research counts every finite level of the damage
+and shooting speed technologies for the unit's weapon; the round is its best; the rank is its highest.
+
+![Each unit's strength as research, a better round and veterancy multiply it](_generated/power-ladder.png)

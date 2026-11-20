@@ -1,0 +1,227 @@
+{
+ "top_rank": 3,
+ "units": [
+  {
+   "unit": "lp-trooper",
+   "name": "Trooper",
+   "category": "bullet",
+   "steps": [
+    {
+     "label": "Trained",
+     "kind": "base",
+     "step": 1.0,
+     "power": 1.0
+    },
+    {
+     "label": "Damage research",
+     "kind": "research",
+     "step": 2.0,
+     "power": 2.0
+    },
+    {
+     "label": "Shooting speed research",
+     "kind": "research",
+     "step": 2.5,
+     "power": 5.0
+    },
+    {
+     "label": "Uranium rounds magazine",
+     "kind": "round",
+     "step": 1.6781,
+     "power": 8.3903
+    },
+    {
+     "label": "Rank 3",
+     "kind": "rank",
+     "step": 4.636,
+     "power": 38.8976
+    }
+   ]
+  },
+  {
+   "unit": "lp-breacher",
+   "name": "Breacher",
+   "category": "grenade",
+   "steps": [
+    {
+     "label": "Trained",
+     "kind": "base",
+     "step": 1.0,
+     "power": 1.0
+    },
+    {
+     "label": "Damage research",
+     "kind": "research",
+     "step": 2.25,
+     "power": 2.25
+    },
+    {
+     "label": "Shooting speed research",
+     "kind": "research",
+     "step": 1.0,
+     "power": 2.25
+    },
+    {
+     "label": "No better round",
+     "kind": "round",
+     "step": 1.0,
+     "power": 2.25
+    },
+    {
+     "label": "Rank 3",
+     "kind": "rank",
+     "step": 4.636,
+     "power": 10.431
+    }
+   ]
+  },
+  {
+   "unit": "lp-rocket-trooper",
+   "name": "Rocket trooper",
+   "category": "rocket",
+   "steps": [
+    {
+     "label": "Trained",
+     "kind": "base",
+     "step": 1.0,
+     "power": 1.0
+    },
+    {
+     "label": "Damage research",
+     "kind": "research",
+     "step": 2.8,
+     "power": 2.8
+    },
+    {
+     "label": "Shooting speed research",
+     "kind": "research",
+     "step": 4.4,
+     "power": 12.32
+    },
+    {
+     "label": "Explosive rocket",
+     "kind": "round",
+     "step": 1.0764,
+     "power": 13.2614
+    },
+    {
+     "label": "Rank 3",
+     "kind": "rank",
+     "step": 4.636,
+     "power": 61.4801
+    }
+   ]
+  },
+  {
+   "unit": "lp-gun-buggy",
+   "name": "Gun buggy",
+   "category": "bullet",
+   "steps": [
+    {
+     "label": "Trained",
+     "kind": "base",
+     "step": 1.0,
+     "power": 1.0
+    },
+    {
+     "label": "Damage research",
+     "kind": "research",
+     "step": 2.0,
+     "power": 2.0
+    },
+    {
+     "label": "Shooting speed research",
+     "kind": "research",
+     "step": 2.5,
+     "power": 5.0
+    },
+    {
+     "label": "Uranium rounds magazine",
+     "kind": "round",
+     "step": 1.437,
+     "power": 7.1849
+    },
+    {
+     "label": "Rank 3",
+     "kind": "rank",
+     "step": 4.636,
+     "power": 33.3091
+    }
+   ]
+  },
+  {
+   "unit": "lp-flame-trooper",
+   "name": "Flame trooper",
+   "category": "flamethrower",
+   "steps": [
+    {
+     "label": "Trained",
+     "kind": "base",
+     "step": 1.0,
+     "power": 1.0
+    },
+    {
+     "label": "Damage research",
+     "kind": "research",
+     "step": 2.6,
+     "power": 2.6
+    },
+    {
+     "label": "Shooting speed research",
+     "kind": "research",
+     "step": 1.0,
+     "power": 2.6
+    },
+    {
+     "label": "No better round",
+     "kind": "round",
+     "step": 1.0,
+     "power": 2.6
+    },
+    {
+     "label": "Rank 3",
+     "kind": "rank",
+     "step": 4.636,
+     "power": 12.0536
+    }
+   ]
+  },
+  {
+   "unit": "lp-battle-tank",
+   "name": "Battle tank",
+   "category": "cannon-shell",
+   "steps": [
+    {
+     "label": "Trained",
+     "kind": "base",
+     "step": 1.0,
+     "power": 1.0
+    },
+    {
+     "label": "Damage research",
+     "kind": "research",
+     "step": 3.2,
+     "power": 3.2
+    },
+    {
+     "label": "Shooting speed research",
+     "kind": "research",
+     "step": 3.3,
+     "power": 10.56
+    },
+    {
+     "label": "Explosive uranium cannon shell",
+     "kind": "round",
+     "step": 1.3531,
+     "power": 14.2884
+    },
+    {
+     "label": "Rank 3",
+     "kind": "rank",
+     "step": 4.636,
+     "power": 66.2411
+    }
+   ]
+  }
+ ]
+}
