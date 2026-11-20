@@ -3666,7 +3666,7 @@ scenarios.tiers = function()
     S.rec.rocket0 = f.recipes["lp-rocket-trooper-order-explosive"].enabled
     f.technologies["explosive-rocketry"].researched = true
     S.rec.rocket1 = f.recipes["lp-rocket-trooper-order-explosive"].enabled
-    S.ladder = lp("debug_ladder", "lp-battle-tank")
+    S.ladder = lp("debug_ammo_ladder", "lp-battle-tank")
   end)
   -- (A barracks' output takes its recipe's order alone: each order finished under its own recipe, as a player sets it;
   -- the yellow one last, its input magazines put back, so the barracks ends on yellow.)

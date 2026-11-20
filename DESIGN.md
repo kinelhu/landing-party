@@ -1196,7 +1196,10 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     wall beside the spawner (seen failing with the blast off: none). Arena at 0.33 (docs/arena-tiers.md): the battle
     tank on explosive 32 of 44 won (mean +46), on explosive uranium 33 (+50), on uranium 32 (+38); the rocket trooper on
     explosive rockets 37 (+42, from 29 and +22), ahead of a uranium trooper on 6 hulls of 10 (2 on plain rockets),
-    Serenity's infantry -32 to +76 by its blast. So the trooper keeps 0.33.
+    Serenity's infantry -32 to +76 by its blast. So the trooper keeps 0.33. The before/after regression caught a bug of
+    its own: its test remote debug_ladder had the name of tactics' own, the later key of the remote table won without a
+    word, and scenario farm's tactics checks read the ammunition ladder (renamed debug_ammo_ladder; scripts/lint_remotes.py
+    in check.sh now fails on a remote named twice, seen failing on the committed code).
   - **The squad panel and hover links** (`scripts/squadgui.lua`): a relative GUI beside the constant combinator's window,
     rally beacons only: the stance in words, what a defending squad answers (its place, a map link), each unit's count
     against its size with -, + and clear, which write the beacon's own size signals (wired: the network's, the

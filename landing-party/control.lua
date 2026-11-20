@@ -1097,7 +1097,7 @@ remote.add_interface("landing-party", {
     return storage.cmd.tier_exp or shared.TIER_EXP
   end,
   -- Tests only: a unit's ladder, best round first (ammunition tiers).
-  debug_ladder = function(name)
+  debug_ammo_ladder = function(name)
     local lad = command.ladder(name)
     if not lad then return nil end
     local out = {}

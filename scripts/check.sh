@@ -6,6 +6,8 @@ set -euo pipefail
 source "$(dirname "$0")/env.sh"
 "$(dirname "$0")/lint_notices.sh"
 "$(dirname "$0")/lint_globals.sh"
+# A remote function named twice keeps the last, silently (0.2.472's debug_ladder hid tactics').
+python3 -I "$(dirname "$0")/lint_remotes.py" "$REPO/landing-party/control.lua"
 # The AI's generated graph (docs/ai-graph.md) must match the code: regenerate with scripts/ai_graph.py.
 python3 -I "$(dirname "$0")/ai_graph.py" --check
 # The settings' dropdown labels are written from shared.lua (no typed multiplier): scripts/settings_locale.py.
