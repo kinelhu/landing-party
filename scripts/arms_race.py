@@ -9,7 +9,7 @@ the base game's level, each category at most the era plus the preset's levels ah
 set_level; shared.RESEARCH_AHEAD), normal drawn, very low to very high shaded. Firepower is (1 + damage) x (1 + speed).
 
 counter-matrix.png: the arena's score for each of the player's units against each corporate unit at equal spend, with
-no research (docs/arena/results.jsonl) and with both sides at the top of their research (docs/arena/late-results.jsonl,
+no research (docs/arena/results.jsonl) and with both sides at the top of their research (docs/arena/late-best-results.jsonl,
 LP_ARENA_TECH=late LP_ARENA_TIER=best).
 
 No number is typed: the dump, shared.lua and the arena's rows. Run scripts/check.sh first (the dump), then:
@@ -220,7 +220,7 @@ def cells(path):
                 by[(r["squad"], r["against"])].append(100 * (b["parts_lost"] / b["parts"] - a["parts_lost"] / a["parts"]))
     return {k: sum(v) / len(v) for k, v in by.items()}
 early = cells(os.path.join(REPO, "docs", "arena", "results.jsonl"))
-late = cells(os.path.join(REPO, "docs", "arena", "late-results.jsonl"))
+late = cells(os.path.join(REPO, "docs", "arena", "late-best-results.jsonl"))
 cols = sorted({k[1] for k in late} | {k[1] for k in early})
 cols = [c for c in cols if owner(c)[0]]
 cols.sort(key=lambda c: (owner(c)[0] != "serenity", shown(*owner(c))))

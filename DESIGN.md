@@ -2749,7 +2749,7 @@ if their units are upgraded also." `scripts/rd.lua`.
   - **Pictures, all generated, no number typed:** the arms race by era (scripts/arms_race.py: six matchups, your
     firepower from research with the tiers passed and the next one finished, theirs at normal with the preset's band;
     the arrivals chapter), the counter matrix (the arena at no research and at the top of both, docs/arena/
-    late-results.jsonl; the Reference), the corporations' power ladder (power_ladder.py, the same scale as the player's;
+    late-best-results.jsonl; the Reference), the corporations' power ladder (power_ladder.py, the same scale as the player's;
     the Reference), the research timeline (scripts/research_timeline.py from docs/manual/data/research-timeline.jsonl;
     the Kessler-Hayashi chapter).
 

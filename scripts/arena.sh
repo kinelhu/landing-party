@@ -56,5 +56,14 @@ done
 echo "$(wc -l < "$merged") results from $JOBS games"
 [ -z "${LP_ARENA_ONLY:-}" ] || { cat "$merged"; exit 0; }
 mkdir -p "$REPO/docs/arena"
+# A variant (research or rounds set, LP_ARENA_TECH, LP_ARENA_TIER) writes its own rows and no report: the report
+# regenerates landing-party/counters.lua, the game's counter table, from the plain fights, and a late run through it
+# left that table with one column of six rows in 0.2.476 (Fable's review; scenario compose caught it).
+if [ -n "${LP_ARENA_TECH:-}${LP_ARENA_TIER:-}${LP_ARENA_TIER_EXP:-}" ]; then
+  name="${LP_ARENA_TECH:-plain}${LP_ARENA_TIER:+-$LP_ARENA_TIER}${LP_ARENA_TIER_EXP:+@$LP_ARENA_TIER_EXP}"
+  cp "$merged" "$REPO/docs/arena/$name-results.jsonl"
+  echo "variant rows: docs/arena/$name-results.jsonl (no report, counters.lua untouched)"
+  exit 0
+fi
 cp "$merged" "$REPO/docs/arena/results.jsonl"
 uv run --with matplotlib --with scipy python3 -I "$REPO/scripts/arena_report.py" "$REPO/docs/arena/results.jsonl" "$REPO/docs/arena.md"

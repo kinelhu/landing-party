@@ -81,7 +81,10 @@ areas_of_file() {
   case "$1" in
     landing-party/info.json|docs/*|*.md|scripts/*.py|tests/*) ;;
     scripts/*) echo quick;;
-    landing-party/biotech.lua|landing-party/counters.lua|landing-party/burstlook.lua) echo biotech;;
+    # (counters.lua: its readers are the corporations' mixes and strike forces too, and scenario compose, perception,
+    # is what saw it broken, 0.2.476.)
+    landing-party/counters.lua) echo biotech perception ops;;
+    landing-party/biotech.lua|landing-party/burstlook.lua) echo biotech;;
     landing-party/player.lua) echo player;;
     landing-party/scripts/*.lua)
       m="${1##*/}"; m="${m%.lua}"
