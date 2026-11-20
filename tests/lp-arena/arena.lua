@@ -161,7 +161,9 @@ local function place(s, name, at, force, spread)
   local u = p and s.create_entity{name = name, position = p, force = force}
   if u and tier and tier ~= "" and shared.TIERED[name] then
     if tier_exp then remote.call("landing-party", "debug_tier_exp", tier_exp) end
-    remote.call("landing-party", "debug_tier", u, tier)
+    -- ("best": each unit its own best round, the top of its ladder.)
+    local r = tier == "best" and remote.call("landing-party", "debug_ammo_ladder", name)[1] or tier
+    remote.call("landing-party", "debug_tier", u, r)
   end
   return u
 end

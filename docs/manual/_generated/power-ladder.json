@@ -41,7 +41,7 @@
   {
    "unit": "lp-breacher",
    "name": "Breacher",
-   "category": "grenade",
+   "category": "lp-charge",
    "steps": [
     {
      "label": "Trained",
@@ -58,20 +58,20 @@
     {
      "label": "Shooting speed research",
      "kind": "research",
-     "step": 1.0,
-     "power": 2.25
+     "step": 2.5,
+     "power": 5.625
     },
     {
-     "label": "No better round",
+     "label": "Cluster grenade",
      "kind": "round",
-     "step": 1.0,
-     "power": 2.25
+     "step": 1.257,
+     "power": 7.0707
     },
     {
      "label": "Rank 3",
      "kind": "rank",
      "step": 4.636,
-     "power": 10.431
+     "power": 32.7798
     }
    ]
   },
@@ -152,7 +152,7 @@
   {
    "unit": "lp-flame-trooper",
    "name": "Flame trooper",
-   "category": "flamethrower",
+   "category": "lp-flame",
    "steps": [
     {
      "label": "Trained",
@@ -169,20 +169,20 @@
     {
      "label": "Shooting speed research",
      "kind": "research",
-     "step": 1.0,
-     "power": 2.6
+     "step": 2.5,
+     "power": 6.5
     },
     {
      "label": "No better round",
      "kind": "round",
      "step": 1.0,
-     "power": 2.6
+     "power": 6.5
     },
     {
      "label": "Rank 3",
      "kind": "rank",
      "step": 4.636,
-     "power": 12.0536
+     "power": 30.134
     }
    ]
   },

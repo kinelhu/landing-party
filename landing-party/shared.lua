@@ -899,6 +899,9 @@ shared.ORDER_TIERS = {
   ["lp-battle-tank-order-explosive"] = {base = "lp-battle-tank-order", round = "explosive-cannon-shell"},
   ["lp-battle-tank-order-explosive-uranium"] = {base = "lp-battle-tank-order", round = "explosive-uranium-cannon-shell"},
   ["lp-rocket-trooper-order-explosive"] = {base = "lp-rocket-trooper-order", round = "explosive-rocket"},
+  -- (0.2.473, the user: "1 and 2 is fun also": the breacher's charges on cluster grenades, vanilla's own grenade upgrade;
+  -- a capsule, not ammunition, so the grenade it replaces is named.)
+  ["lp-breacher-order-cluster"] = {base = "lp-breacher-order", round = "cluster-grenade", replaces = "grenade"},
 }
 -- The units whose round's tier raises their damage (bullets, stage 1 of the consult; shells and rockets wait for named
 -- priors: vanilla's explosive variants trade direct damage for area, no ratio to read). The bonus is the round's direct
@@ -907,14 +910,21 @@ shared.ORDER_TIERS = {
 -- uranium gun buggy 40 (23): the counters gone. The power keeps vanilla's order of the rounds and squeezes the gaps. At
 -- 0.5 a uranium trooper won 37, at 0.33 33 (a piercing one 27), still losing to big biters, Shock troopers and the 0.95
 -- waves; a uranium gun buggy 32. 0.33: a trooper's piercing round about 1.17 times its yellow, uranium about 1.68.
-shared.TIERED = {["lp-trooper"] = true, ["lp-gun-buggy"] = true, ["lp-battle-tank"] = true, ["lp-rocket-trooper"] = true}
+shared.TIERED = {["lp-trooper"] = true, ["lp-gun-buggy"] = true, ["lp-battle-tank"] = true, ["lp-rocket-trooper"] = true,
+  ["lp-breacher"] = true}
 -- The explosive rounds' rungs (0.2.472): vanilla's explosive variants deal less direct damage than their plain kin (an
 -- explosive shell 180 against 1,100), so no ratio can be read and each is a named prior, its factor over the base round
 -- before TIER_EXP, placed in vanilla's research order: plain, explosive, uranium (read: 2), explosive uranium. The rocket
 -- trooper's only rung, its explosive rocket, is mostly its blast: its direct hit stays under the corporations' infantry's
 -- 120 health (110 a rocket, 1.25 to the power 0.33 is 118). At 2 or 3 one rocket killed a rifleman where two had
 -- (Serenity's infantry -32 to +86 whatever the rung or the blast, the arena, 2026-11-20); at 1.25, +76 by the blast.
-shared.TIER_RAW = {["explosive-cannon-shell"] = 1.5, ["explosive-uranium-cannon-shell"] = 2.5, ["explosive-rocket"] = 1.25}
+shared.TIER_RAW = {["explosive-cannon-shell"] = 1.5, ["explosive-uranium-cannon-shell"] = 2.5, ["explosive-rocket"] = 1.25,
+  ["cluster-grenade"] = 2}
+-- A capsule's rung names the capsule it stands on (no ammunition category to read; the breacher's charges, 0.2.473).
+shared.TIER_KIN = {["cluster-grenade"] = "grenade"}
+-- The rungs whose round bursts round its target (the breacher's charge is a burst already: a blast from each entity it
+-- hits would compound).
+shared.TIER_BLASTS = {["explosive-cannon-shell"] = true, ["explosive-uranium-cannon-shell"] = true, ["explosive-rocket"] = true}
 -- And their blast, so the name tells the truth: from the round's main hit, the enemies within `radius` of its target
 -- (the target aside) take `share` of that hit's damage, explosion (command.on_hit). Named priors.
 shared.TIER_BLAST = {radius = 2, share = 0.35}

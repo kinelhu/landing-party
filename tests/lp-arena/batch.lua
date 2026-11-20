@@ -79,9 +79,66 @@ local function counts(ca, cb)
   return best[1], best[2]
 end
 
+-- The late game as it is played (LP_ARENA_TECH=late, the user, 2026-11-20: "factions have research too ... general
+-- balancing"): each of the player's six on the player's force (every finite level of vanilla's damage and shooting
+-- speed research, control.lua; its best round, LP_ARENA_TIER=best) against every corporate kind on its own corporation's
+-- force with its tree's damage tracks at their top (rd.max_tracks) and, where its tree has one, the plate that answers
+-- the player unit's damage (a corporation's research picks plates from what it loses to); the biotech's breeds and the
+-- biter waves as they are.
+local PLAYER = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-gun-buggy", "lp-flame-trooper", "lp-battle-tank"}
+-- (What each deals, for the plate it meets: units.lua.)
+local PLAYER_DAMAGE = {["lp-trooper"] = "physical", ["lp-breacher"] = "explosion", ["lp-rocket-trooper"] = "explosion",
+  ["lp-gun-buggy"] = "explosion", ["lp-flame-trooper"] = "fire", ["lp-battle-tank"] = "explosion"}
+local function corp_of(proto)
+  local g = proto:match("^lp%-grubstake%-(.+)$")
+  if g then return "grubstake", "lp-" .. g end
+  for corp, c in pairs(shared.CORPS) do
+    if c.mix and c.mix[proto] then return corp, proto end
+    for _, n in ipairs(c.tree or {}) do if n.unit and n.unit.kind == proto then return corp, proto end end
+  end
+  return nil, proto
+end
+local function plated_for(corp, kind, dmg)
+  for _, n in ipairs(shared.CORPS[corp].tree or {}) do
+    if n.plates and n.plates[kind] == dmg then
+      local nm = shared.plated(corp, kind, dmg)
+      if prototypes.entity[nm] then return nm end
+    end
+  end
+  return shared.variant(corp, kind)
+end
+local function late_matchups()
+  local out, label = {}, {}
+  for _, k in ipairs(KINDS) do label[k[2]] = label[k[2]] or k[1] end
+  local mine = {}
+  for _, p in ipairs(PLAYER) do mine[p] = true end
+  for _, p in ipairs(PLAYER) do
+    for _, k in ipairs(KINDS) do
+      local proto = k[2]
+      if not mine[proto] then
+        local corp, kind = corp_of(proto)
+        local name, force = proto, "enemy"
+        if corp and not proto:find("^lp%-bred") then
+          name, force = plated_for(corp, kind, PLAYER_DAMAGE[p]), arena.FORCES[corp]
+        end
+        local na, nb = counts(cost(p), cost(proto))
+        table.insert(out, {kind = "pair", squad = label[p], against = k[1], creep_b = k[3] == "creep",
+          a = {{"raw", p, na, "player"}}, b = {{"raw", name, nb, force}}})
+      end
+    end
+    local n = math.max(1, math.floor(BUDGET / cost(p) + 0.5))
+    for _, evo in ipairs(EVOS) do
+      table.insert(out, {kind = "fixed", squad = label[p], against = string.format("biters %.2f", evo),
+        a = {{"raw", p, n, "player"}}, b = {{"biters", "wave", WAVE, evo}}})
+    end
+  end
+  return out
+end
+
 local function matchups()
-  local out = {}
-  for _, a in ipairs(KINDS) do
+  local late = params.tech == "late"
+  local out = late and late_matchups() or {}
+  for _, a in ipairs(late and {} or KINDS) do
     for _, b in ipairs(KINDS) do
       local na, nb = counts(cost(a[2]), cost(b[2]))
       table.insert(out, {kind = "pair", squad = a[1], against = b[1], creep_a = a[3] == "creep", creep_b = b[3] == "creep",
@@ -104,7 +161,7 @@ local function matchups()
   -- Mixed arms (the user, 2026-10-21: ground-only weapons "very problematic in mixed arms encounters?"): a ground army
   -- against the same army with part of its spend in fliers, both ways round. A flier that soaked the ground side's fire
   -- would turn these into routs; with each side's ground fire on ground targets they stay close.
-  for _, mx in ipairs(MIXES) do
+  for _, mx in ipairs(late and {} or MIXES) do
     for flip = 0, 1 do
       local x, y = mx[2], mx[3]
       if flip == 1 then x, y = y, x end
@@ -117,7 +174,7 @@ local function matchups()
         flip = flip, a = side(x, "lp-serenity"), b = side(y, "lp-grubstake")})
     end
   end
-  for _, br in ipairs(BREACH) do
+  for _, br in ipairs(late and {} or BREACH) do
     local side = {}
     for _, e in ipairs(br[2]) do table.insert(side, {"raw", e[1], e[2], "lp-serenity"}) end
     table.insert(out, {kind = "breach", squad = br[1], against = "breach line", a = side, b = BREACH_LINE})

@@ -137,6 +137,8 @@ An explosive round's blast hits the enemies within 2 tiles of what it struck for
 | Battle tank | Explosive cannon shell | 1.14 × | yes |
 | Battle tank | Uranium cannon shell | 1.26 × | - |
 | Battle tank | Explosive uranium cannon shell | 1.35 × | yes |
+| Breacher | Grenade | 1.00 × | - |
+| Breacher | Cluster grenade | 1.26 × | - |
 | Gun buggy | Piercing rounds magazine | 1.00 × | - |
 | Gun buggy | Uranium rounds magazine | 1.44 × | - |
 | Rocket trooper | Rocket | 1.00 × | - |

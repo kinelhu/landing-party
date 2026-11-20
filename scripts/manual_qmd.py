@@ -530,15 +530,19 @@ def write(rp):
     for base in sorted(by_unit, key=lambda b: shown(T["orders"][b])):
         unit = T["orders"][base]
         ammo = d["ammo"]
-        cat = ammo[by_unit[base][0]]["ammo_category"]
-        base_round = next(i["name"] for i in d["recipe"][base]["ingredients"]
-                          if i["name"] in ammo and ammo[i["name"]]["ammo_category"] == cat)
+        rep = next((t["replaces"] for t in T["order_tiers"].values() if t["base"] == base and t.get("replaces")), None)
+        if rep:   # (a capsule's rung, the cluster grenade: the grenade it replaces is named)
+            base_round = rep
+        else:
+            cat = ammo[by_unit[base][0]]["ammo_category"]
+            base_round = next(i["name"] for i in d["recipe"][base]["ingredients"]
+                              if i["name"] in ammo and ammo[i["name"]]["ammo_category"] == cat)
         rows_t = [(base_round, 1.0)]
         for r in by_unit[base]:
             raw = T["raw"].get(r) or direct[r] / direct[base_round]
             rows_t.append((r, raw ** T["exp"]))
         for r, f in sorted(rows_t, key=lambda x: x[1]):
-            L.append(f"| {md(shown(unit))} | {md(lname('item-name.' + r))} | {f:.2f} × | {'yes' if r in T['raw'] else '-'} |")
+            L.append(f"| {md(shown(unit))} | {md(lname('item-name.' + r))} | {f:.2f} × | {'yes' if r in T['blasts'] else '-'} |")
     L.append("")
     # The power ladder (scripts/power_ladder.py, matplotlib: run it before this when the units, rounds, research or ranks
     # change): each unit's strength, damage a second times health, as research, its best round and its top rank multiply

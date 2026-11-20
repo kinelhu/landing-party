@@ -912,9 +912,25 @@ local function ladder(name)
   local l = shared.TIERED[name] and loadout(name)
   local base = l and l.items[1] and prototypes.item[l.items[1].name]
   local b = base and base.type == "ammo" and direct_damage(base) or 0
-  if b > 0 then
+  -- (The research that scales a hit is the unit's weapon's category, its own since 0.2.473 for the breacher and the
+  -- flame trooper, not its round's.)
+  local ap = prototypes.entity[name] and prototypes.entity[name].attack_parameters
+  local weapon = ap and ap.ammo_categories and ap.ammo_categories[1]
+  if base and base.type == "capsule" then
+    -- A capsule's rungs (shared.TIER_KIN, the breacher's cluster grenade): named, no category to read.
+    out = {category = weapon or "grenade", base = base.name, factor = {[base.name] = 1}, best = {{name = base.name, per = 1}},
+      own = {}}
+    for n, kin in pairs(shared.TIER_KIN) do
+      if kin == base.name and prototypes.item[n] then
+        out.factor[n] = shared.TIER_RAW[n] or 1
+        out.best[#out.best + 1] = {name = n, per = 1}
+      end
+    end
+    table.sort(out.best, function(x, y) return out.factor[x.name] > out.factor[y.name] end)
+    for _, it in ipairs(out.best) do out.own[it.name] = {it} end
+  elseif b > 0 then
     local cat = category_of(base)
-    out = {category = cat, base = base.name, factor = {}, best = {}, own = {}}
+    out = {category = weapon or cat, base = base.name, factor = {}, best = {}, own = {}}
     for n, ip in pairs(prototypes.get_item_filtered{{filter = "type", type = "ammo"}}) do
       if category_of(ip) == cat then
         -- (An explosive round's rung is a named prior, shared.TIER_RAW, 0.2.472: its direct damage is below its plain kin's.)
@@ -1127,7 +1143,7 @@ function command.on_hit(e)
   -- An explosive round's blast (0.2.472, shared.TIER_BLAST), from its main hit: the enemies within its radius of the
   -- target's edge take a share
   -- of that hit, explosion; its own damage, so armour takes its bite as a vanilla blast's.
-  if h.main and shared.TIER_RAW[round] then
+  if h.main and shared.TIER_BLASTS[round] then
     local blast = h.amount * f * shared.TIER_BLAST.share * scale
     local foes = {}
     for _, fo in pairs(game.forces) do if u.force.is_enemy(fo) then foes[#foes + 1] = fo end end

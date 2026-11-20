@@ -316,6 +316,21 @@ function rd.tick(tick)
 end
 
 -- Tests: a research history set outright ({weapons = {cat = level}, plate = {kind = plate}}).
+-- The arena only (LP_ARENA_TECH=late): every damage track of the corporation's tree at its top level, as a corporation
+-- at the end of its research fights. Returns the categories and modifiers set.
+function rd.max_tracks(corp)
+  local f = game.forces[shared.CORPS[corp].force]
+  local set = {}
+  for _, node in ipairs(shared.CORPS[corp].tree or {}) do
+    for _, c in ipairs(node.track or {}) do
+      local m = (node.step or LEVEL_DAMAGE) * (node.levels or MAX_LEVEL)
+      if f then f.set_ammo_damage_modifier(c, math.max(f.get_ammo_damage_modifier(c), m)) end
+      set[c] = math.max(set[c] or 0, m)
+    end
+  end
+  return set
+end
+
 function rd.set(corp, tech)
   local t = rd.state(corp)
   -- A node set outright takes effect as if bought (its units join the mix, its plates are worn).

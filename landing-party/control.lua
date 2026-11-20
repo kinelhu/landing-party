@@ -1105,6 +1105,8 @@ remote.add_interface("landing-party", {
     return out
   end,
   debug_tier_raw = function(item) return shared.TIER_RAW[item] end,
+  -- The arena only: a corporation's damage tracks at their top (rd.max_tracks).
+  debug_rd_max = function(corp) return rd.max_tracks(corp) end,
   debug_tier = function(u, round)
     storage.cmd.tier_test = storage.cmd.tier_test or {}
     storage.cmd.tier_test[u.unit_number] = round

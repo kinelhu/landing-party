@@ -35,7 +35,8 @@ of biters and bunched infantry but are outranged. Battle tanks take bases apart 
 bandwidth is full, finished orders wait inside the barracks, and it stops once its output is full.
 
 **Research.** Your military research upgrades your units as it does your own weapons. Physical projectile damage and
-weapon shooting speed raise troopers, gun buggies and battle tanks, whatever round they fire; stronger explosives raise breachers and rocket
+weapon shooting speed raise troopers, gun buggies and battle tanks, whatever round they fire; weapon shooting speed
+also raises breachers and flame troopers; stronger explosives raise breachers and rocket
 troopers; refined flammables raise flame troopers. Each unit's description names its research. Infantry trained
 from heavy armor also take its resistance to acid, so worms and spitters hurt them less. Without military research, a
 squad that clears corporation outposts will struggle against a large biter nest.
@@ -156,10 +157,10 @@ fights on as long as the depot is fed. It is a store on the front line, and the 
 barracks or a depot to see where your units heal and rearm: green round a powered barracks, amber round a depot. The
 squad panel beside a beacon's window counts its squad's rounds.
 
-**Better rounds.** Troopers, gun buggies, battle tanks and rocket troopers fire what they are loaded with. Once you can
+**Better rounds.** Troopers, gun buggies, battle tanks, rocket troopers and breachers fire what they are loaded with. Once you can
 make the round, the barracks offers the unit trained with it beside the plain order: a trooper with piercing or uranium
 magazines, a gun buggy with uranium magazines, a battle tank with explosive, uranium or explosive uranium shells, a
-rocket trooper with explosive rockets. It is the same unit, its order's icon showing the round. A better round deals
+rocket trooper with explosive rockets, a breacher with cluster grenades. It is the same unit, its order's icon showing the round. A better round deals
 more, though less than the same round would add to a turret, and an explosive one also bursts round what it hits. A
 unit tops up only with the round it holds; when it runs out, it loads the best round its barracks or depot holds. So to
 raise a squad already in the field, change its depot's requests to the better round, and each unit takes it as it

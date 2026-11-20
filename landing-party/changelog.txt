@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.473
+Date: 2026-11-20
+  Features:
+    - Breachers can be trained with cluster grenades.
+  Balancing:
+    - Weapon shooting speed research now also speeds up breachers' charges and flame troopers' streams (it reached neither, and both fell far behind late in the game). Vanilla's grenades and flamethrowers are unchanged.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.472
 Date: 2026-11-20
   Features:

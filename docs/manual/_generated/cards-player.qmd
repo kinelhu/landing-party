@@ -1,7 +1,7 @@
 <!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
 
 ::: {.unit unit="lp-breacher"}
-The breacher carries demolition charges for walls and turrets. Against units the charges do little, and a breacher alone dies quickly. Send breachers in behind troopers and aim them at the pillboxes first.
+The breacher carries demolition charges for walls and turrets. Against units the charges do little, and a breacher alone dies quickly. Send breachers in behind troopers and aim them at the pillboxes first. Trained on cluster grenades, their charges hit harder.
 :::
 
 ::: {.unit unit="lp-trooper"}

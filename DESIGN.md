@@ -1196,7 +1196,17 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
     wall beside the spawner (seen failing with the blast off: none). Arena at 0.33 (docs/arena-tiers.md): the battle
     tank on explosive 32 of 44 won (mean +46), on explosive uranium 33 (+50), on uranium 32 (+38); the rocket trooper on
     explosive rockets 37 (+42, from 29 and +22), ahead of a uranium trooper on 6 hulls of 10 (2 on plain rockets),
-    Serenity's infantry -32 to +76 by its blast. So the trooper keeps 0.33. The before/after regression caught a bug of
+    Serenity's infantry -32 to +76 by its blast. So the trooper keeps 0.33.
+    **The breacher and the flame trooper** (0.2.473; the power ladder: ×10 and ×12 at full research and top rank against
+    ×33 to ×66; the arena with every force at full finite research, LP_ARENA_TECH=full, LP_ARENA_TIER=best: breacher +9 to
+    -6, flame trooper -3 to -22, the rest +25 to +55; the user: "1 and 2 is fun also"). No shooting speed research reaches
+    grenades or flamethrowers in vanilla. Their attacks now have their own categories (player.lua: lp-charge,
+    lp-flame), given what grenades and flamethrowers had and weapon shooting speed at the bullets' steps; vanilla's
+    categories untouched (the flamethrower turret, the engineer's grenades). The breacher's cluster grenade, vanilla's own
+    grenade upgrade, a rung (shared.TIER_RAW 2, a capsule's kin named in TIER_KIN, ORDER_TIERS' `replaces`; no blast: its
+    charge is a burst already, TIER_BLASTS). The ladder's research is the unit's weapon category, not its round's.
+    Scenario `tiers`: the breacher's bonus a hit at its value, weapon shooting speed reaching lp-charge and lp-flame and not
+    grenade or flamethrower (seen failing with the copy broken). The before/after regression caught a bug of
     its own: its test remote debug_ladder had the name of tactics' own, the later key of the remote table won without a
     word, and scenario farm's tactics checks read the ammunition ladder (renamed debug_ammo_ladder; scripts/lint_remotes.py
     in check.sh now fails on a remote named twice, seen failing on the committed code).

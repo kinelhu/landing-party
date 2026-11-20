@@ -391,11 +391,16 @@ for name, tier in pairs(shared.ORDER_TIERS) do
   r.localised_name = {"recipe-name." .. tier.base}
   for _, ing in ipairs(r.ingredients) do
     local a = data.raw.ammo[ing.name]
-    if a and a.ammo_category == round.ammo_category then base_round = ing.name; ing.name = tier.round end
+    if (tier.replaces and ing.name == tier.replaces) or (not tier.replaces and a and round
+        and a.ammo_category == round.ammo_category) then
+      base_round = ing.name; ing.name = tier.round
+    end
   end
-  assert(base_round, "no round of " .. round.ammo_category .. " in " .. tier.base)
+  assert(base_round, "no round for " .. tier.round .. " in " .. tier.base)
+  round = round or data.raw.capsule[tier.round]
+  local base_item = data.raw.ammo[base_round] or data.raw.capsule[base_round]
   -- (Its icon: the round's own where the base order shows its base round, else the base's with the round in a corner.)
-  if bi.icon == data.raw.ammo[base_round].icon then
+  if bi.icon == base_item.icon then
     it.icon, it.icons = round.icon, nil
   else
     it.icons, it.icon = {{icon = bi.icon, icon_size = bi.icon_size or 64},
@@ -550,6 +555,31 @@ data:extend({
 -- its damage and rate of fire (the engine applies the force's ammo damage and gun speed modifiers of its attack's ammo
 -- category: techprobe, +100% each, a trooper 24 a second to 96), read from the technologies' own effects.
 local function unit_proto(name) return data.raw.unit[name] or data.raw.car[name] end
+-- Their own weapons' categories (0.2.473; the power ladder and the arena, 2026-11-20: at full research the breacher fell
+-- from +9 to -6 and the flame trooper from -3 to -22 while the rest rose 25 to 55, as no shooting speed research reaches
+-- grenades or flamethrowers). The breacher's charges take what grenades took and the flame trooper's stream what
+-- flamethrowers took, and both weapon shooting speed at the steps bullets take. Vanilla's own categories untouched: the
+-- flamethrower turret and the engineer's grenades keep theirs.
+do
+  local OWN = {["lp-breacher"] = {cat = "lp-charge", from = "grenade"}, ["lp-flame-trooper"] = {cat = "lp-flame", from = "flamethrower"}}
+  for name, o in pairs(OWN) do
+    data:extend({{type = "ammo-category", name = o.cat, hidden = true}})
+    data.raw.unit[name].attack_parameters.ammo_category = o.cat
+  end
+  for _, t in pairs(data.raw.technology) do
+    local add = {}
+    for _, e in ipairs(t.effects or {}) do
+      for _, o in pairs(OWN) do
+        if e.type == "ammo-damage" and e.ammo_category == o.from then
+          add[#add + 1] = {type = "ammo-damage", ammo_category = o.cat, modifier = e.modifier}
+        elseif e.type == "gun-speed" and e.ammo_category == "bullet" then
+          add[#add + 1] = {type = "gun-speed", ammo_category = o.cat, modifier = e.modifier}
+        end
+      end
+    end
+    for _, e in ipairs(add) do table.insert(t.effects, e) end
+  end
+end
 local by_category = {}
 for _, t in pairs(data.raw.technology) do
   if not t.hidden then

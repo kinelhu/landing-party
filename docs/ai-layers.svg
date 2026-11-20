@@ -101,7 +101,7 @@
 <title>Corporation</title>
 <path fill="#f7dede" stroke="black" d="M1094.12,-339.25C1094.12,-339.25 991.88,-339.25 991.88,-339.25 985.88,-339.25 979.88,-333.25 979.88,-327.25 979.88,-327.25 979.88,-307.25 979.88,-307.25 979.88,-301.25 985.88,-295.25 991.88,-295.25 991.88,-295.25 1094.12,-295.25 1094.12,-295.25 1100.12,-295.25 1106.12,-301.25 1106.12,-307.25 1106.12,-307.25 1106.12,-327.25 1106.12,-327.25 1106.12,-333.25 1100.12,-339.25 1094.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="1043" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="1043" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">10 modules, 3405 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="1043" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">10 modules, 3420 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="1043" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">faction 1207</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Corporation -->
@@ -208,8 +208,8 @@
 <title>The player&#39;s army</title>
 <path fill="#f7dede" stroke="black" d="M462.12,-546.75C462.12,-546.75 365.88,-546.75 365.88,-546.75 359.88,-546.75 353.88,-540.75 353.88,-534.75 353.88,-534.75 353.88,-514.75 353.88,-514.75 353.88,-508.75 359.88,-502.75 365.88,-502.75 365.88,-502.75 462.12,-502.75 462.12,-502.75 468.12,-502.75 474.12,-508.75 474.12,-514.75 474.12,-514.75 474.12,-534.75 474.12,-534.75 474.12,-540.75 468.12,-546.75 462.12,-546.75"/>
 <text xml:space="preserve" text-anchor="middle" x="414" y="-532.3" font-family="Helvetica,sans-Serif" font-size="11.00">The player&#39;s army</text>
-<text xml:space="preserve" text-anchor="middle" x="414" y="-520.3" font-family="Helvetica,sans-Serif" font-size="11.00">8 modules, 3170 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="414" y="-508.3" font-family="Helvetica,sans-Serif" font-size="11.00">command 1959</text>
+<text xml:space="preserve" text-anchor="middle" x="414" y="-520.3" font-family="Helvetica,sans-Serif" font-size="11.00">8 modules, 3186 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="414" y="-508.3" font-family="Helvetica,sans-Serif" font-size="11.00">command 1975</text>
 </g>
 <!-- Settlement&#45;&gt;The player&#39;s army -->
 <g id="edge22" class="edge">

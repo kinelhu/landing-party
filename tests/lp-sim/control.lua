@@ -3667,11 +3667,20 @@ scenarios.tiers = function()
     f.technologies["explosive-rocketry"].researched = true
     S.rec.rocket1 = f.recipes["lp-rocket-trooper-order-explosive"].enabled
     S.ladder = lp("debug_ammo_ladder", "lp-battle-tank")
+    -- (0.2.473: the breacher on cluster grenades; its charges and the flame trooper's stream in their own categories,
+    -- reached by weapon shooting speed as bullets are.)
+    S.rec.cluster0 = f.recipes["lp-breacher-order-cluster"].enabled
+    f.technologies["military-4"].researched = true
+    S.rec.cluster1 = f.recipes["lp-breacher-order-cluster"].enabled
+    f.technologies["weapon-shooting-speed-1"].researched = true
+    S.speed = {bullet = f.get_gun_speed_modifier("bullet"), charge = f.get_gun_speed_modifier("lp-charge"),
+      flame = f.get_gun_speed_modifier("lp-flame"), grenade = f.get_gun_speed_modifier("grenade"),
+      flamethrower = f.get_gun_speed_modifier("flamethrower")}
   end)
   -- (A barracks' output takes its recipe's order alone: each order finished under its own recipe, as a player sets it;
   -- the yellow one last, its input magazines put back, so the barracks ends on yellow.)
   for i, n in ipairs({"lp-trooper-order-uranium", "lp-gun-buggy-order-uranium", "lp-battle-tank-order-uranium",
-    "lp-rocket-trooper-order-explosive", "lp-trooper-order"}) do
+    "lp-rocket-trooper-order-explosive", "lp-breacher-order-cluster", "lp-trooper-order"}) do
     schedule(40 + i * 80, function()
       S.bk.set_recipe(n)
       S.bk.get_inventory(defines.inventory.crafter_output).insert{name = n, count = 1}
@@ -3689,10 +3698,11 @@ scenarios.tiers = function()
   -- (Who is who: by the round each left the barracks with.)
   schedule(580, function()
     for _, u in ipairs(surface().find_entities_filtered{force = "player",
-      name = {"lp-trooper", "lp-gun-buggy", "lp-battle-tank", "lp-rocket-trooper"}}) do
+      name = {"lp-trooper", "lp-gun-buggy", "lp-battle-tank", "lp-rocket-trooper", "lp-breacher"}}) do
       local a = lp("debug_ammo", u)
       if a then
         if u.name == "lp-gun-buggy" then S.GB = u
+        elseif u.name == "lp-breacher" then S.BR = u
         elseif u.name == "lp-rocket-trooper" then S.RT = u
         elseif u.name == "lp-battle-tank" then S.BT = u
         elseif a.round == "uranium-rounds-magazine" then S.TU = u
@@ -3701,7 +3711,7 @@ scenarios.tiers = function()
     end
     S.issued = {tu = S.TU and lp("debug_ammo", S.TU).round, ty = S.TY and lp("debug_ammo", S.TY).round,
       gb = S.GB and lp("debug_ammo", S.GB).round, bt = S.BT and lp("debug_ammo", S.BT).round,
-      rt = S.RT and lp("debug_ammo", S.RT).round}
+      rt = S.RT and lp("debug_ammo", S.RT).round, br = S.BR and lp("debug_ammo", S.BR).round}
   end)
   -- The fight: 30 s at the spawner, topping up from the depot (each its own round).
   schedule(2400, function()
@@ -3745,13 +3755,17 @@ scenarios.tiers = function()
     local bt, btn = per("lp-battle-tank|lp-hit:100:explosion:p|biter-spawner")
     local rt, rtn = per("lp-rocket-trooper|lp-hit:110:explosion:p|biter-spawner")
     local rb, rbn = per("lp-rocket-trooper|blast|stone-wall")
+    local brk, brn = per("lp-breacher|lp-hit:15:explosion:p|biter-spawner")
+    local fC = lp("debug_tier_raw", "cluster-grenade") ^ ex
     local fR = lp("debug_tier_raw", "explosive-rocket") ^ ex
     local ep = percent("stone-wall", "explosion")
     local wd = (prototypes.entity["stone-wall"].resistances or {}).explosion
     wd = wd and wd.decrease or 0
     local want = {tu = 8 * (fU - 1) * (1 - pp), gd = 20 * (fB - 1) * (1 - pe), gb = 6 * (fB - 1) * (1 - pe),
       bt = 100 * (fT - 1) * (1 - pe), rt = 110 * (fR - 1) * (1 - pe),
-      rb = math.max(0, 110 * fR * 0.35 - wd) * (1 - ep)}
+      rb = math.max(0, 110 * fR * 0.35 - wd) * (1 - ep),
+      -- (The research a breacher's hit takes is its own category's: weapon shooting speed only, no damage, researched here.)
+      br = 15 * (fC - 1) * (1 - pe)}
     info("tiers: " .. serpent.line({rec = S.rec, issued = S.issued, fU = fU, fB = fB, pp = pp, pe = pe, per = {tu = tu, gd = gd,
       gb = gbl}, n = {tun, gdn, gbn}, want = want, fired = S.fired, ty = {S.ty_before, S.ty_after}, panel = S.panel,
       shown = S.shown, tu_dry = S.tu_dry, tu_back = S.tu_back}))
@@ -3768,7 +3782,15 @@ scenarios.tiers = function()
       string.format("hit %s (%.2f) x%d, blast on the wall %s (%.2f) x%d", tostring(rt), want.rt, rtn, tostring(rb), want.rb, rbn))
     check("tiers: each unit leaves the barracks with its order's round", S.issued.tu == "uranium-rounds-magazine"
       and S.issued.ty == "firearm-magazine" and S.issued.gb == "uranium-rounds-magazine"
-      and S.issued.bt == "uranium-cannon-shell" and S.issued.rt == "explosive-rocket", serpent.line(S.issued))
+      and S.issued.bt == "uranium-cannon-shell" and S.issued.rt == "explosive-rocket" and S.issued.br == "cluster-grenade",
+      serpent.line(S.issued))
+    check("tiers: a breacher on cluster grenades pays its rung at each charge's hit", near(brk, want.br),
+      string.format("%s against %.2f over %d hits", tostring(brk), want.br, brn))
+    -- (0.2.473: at full research the breacher and flame trooper fell behind, no shooting speed reaching their weapons.)
+    check("tiers: weapon shooting speed reaches the breacher's charges and the flame trooper's stream, not vanilla's grenades",
+      S.speed and S.speed.bullet > 0 and S.speed.charge == S.speed.bullet and S.speed.flame == S.speed.bullet
+      and S.speed.grenade == 0 and S.speed.flamethrower == 0 and S.rec.cluster0 == false and S.rec.cluster1 == true,
+      serpent.line({S.speed, S.rec.cluster0, S.rec.cluster1}))
     check("tiers: a uranium battle tank's shell pays a shell's ratio at its hit (stage 2: the projectile's damage read at the data stage)",
       near(bt, want.bt) and md["cannon-shell"] == 1100 and md["uranium-cannon-shell"] == 2200,
       string.format("%s against %.2f over %d hits; shells %s and %s", tostring(bt), want.bt, btn, md["cannon-shell"],

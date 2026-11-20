@@ -80,9 +80,12 @@ best = {}
 for item, tier in S["order_tiers"].items():
     base_order = tier["base"]
     unit = S["orders"][base_order]
-    cat = d["ammo"][tier["round"]]["ammo_category"]
-    base_round = next(i["name"] for i in d["recipe"][base_order]["ingredients"]
-                      if i["name"] in d["ammo"] and d["ammo"][i["name"]]["ammo_category"] == cat)
+    if tier.get("replaces"):   # (a capsule's rung: the cluster grenade, named)
+        base_round = tier["replaces"]
+    else:
+        cat = d["ammo"][tier["round"]]["ammo_category"]
+        base_round = next(i["name"] for i in d["recipe"][base_order]["ingredients"]
+                          if i["name"] in d["ammo"] and d["ammo"][i["name"]]["ammo_category"] == cat)
     raw = S["raw"].get(tier["round"]) or direct[tier["round"]] / direct[base_round]
     f = raw ** S["exp"]
     if f > best.get(unit, (None, 1.0))[1]:
