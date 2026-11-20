@@ -54,7 +54,7 @@ return {
   ["player/strip-drill/north"] = {width = 398, height = 410, frames = 16, line_length = 8, shift = {0.78125, -0.46875}},
   ["player/strip-drill/south"] = {width = 398, height = 406, frames = 16, line_length = 8, shift = {0.78125, -0.453125}},
   ["player/strip-drill/west"] = {width = 397, height = 399, frames = 16, line_length = 8, shift = {0.7421875, -0.5078125}},
-  ["player/supply-depot"] = {width = 183, height = 181, frames = 7, line_length = 8, shift = {0.2578125, -0.25}},
+  ["player/supply-depot"] = {width = 178, height = 174, frames = 7, line_length = 8, shift = {0.21875, -0.1953125}},
   ["player/targeting-array"] = {width = 346, height = 328, frames = 8, line_length = 8, shift = {0.859375, -0.6640625}},
   ["player/threat-scanner"] = {east = {width = 122, height = 128, shift = {0.359375, -0.2734375}, frames = 8, line_length = 4}, north = {width = 116, height = 122, shift = {0.25, -0.2734375}, frames = 8, line_length = 4}, south = {width = 128, height = 102, shift = {0.34375, -0.1171875}, frames = 8, line_length = 4}, west = {width = 104, height = 114, shift = {0.203125, -0.1640625}, frames = 8, line_length = 4}, posts = {east = {wire = {red = {0.22, -0.39}, green = {0.22, -0.17}}, shadow = {red = {0.814, 0.08}, green = {0.814, 0.3}}}, north = {wire = {red = {0.15, -0.76}, green = {0.37, -0.76}}, shadow = {red = {0.744, -0.29}, green = {0.964, -0.29}}}, south = {wire = {red = {-0.15, -0.32}, green = {-0.37, -0.32}}, shadow = {red = {0.444, 0.15}, green = {0.224, 0.15}}}, west = {wire = {red = {-0.22, -0.69}, green = {-0.22, -0.91}}, shadow = {red = {0.374, -0.22}, green = {0.374, -0.44}}}}},
   ["serenity/depot"] = {width = 405, height = 390, frames = 1, line_length = 8, shift = {0.765625, -0.6015625}},

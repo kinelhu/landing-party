@@ -346,7 +346,7 @@ def lathe(profile, x, y, z, mats, split, steps=28, tilt=(0, 0)):
         p.material_index = 1 if p.center.z > split else 0
         p.use_smooth = True
     o = bpy.data.objects.new("lathe", me); scene.collection.objects.link(o)
-    o.location = (x, y, z); o.rotation_euler = (tilt[0], tilt[1], 0)
+    o.location = (x, y, z); o.rotation_euler = (tilt[0], tilt[1], tilt[2] if len(tilt) > 2 else 0)
     return o
 
 
@@ -398,36 +398,60 @@ def supply_depot(f):
         leaves.append((s, piv))
     # The rounds (the user, of the squat rounds before: "a little like propane gas tanks"): shells, two-part, slim (about
     # 4:1), a case rim, a brass case, a copper driving band, an olive-drab projectile with a tangent-ogive nose and a fuze.
-    # Two rows stand along the back (the rear taller); down each side they lie in the cradle, stacked, noses outward.
-    def shell(R, L, x, y, z, rot=(0, 0)):
+    def shell(R, L, x, y, z, rot=(0, 0), cf=0.4):
         prof = [(0.0, 0.0), (R * 1.08, 0.0), (R * 1.08, 0.025 * L), (R * 0.9, 0.035 * L), (R * 0.9, 0.05 * L), (R, 0.06 * L),
-                (R, 0.4 * L), (R * 1.06, 0.401 * L), (R * 1.06, 0.44 * L), (R, 0.441 * L), (R, 0.5 * L)]
-        lo, tip = 0.47 * L, 0.08 * R              # the ogive: from 0.5 L to 0.97 L, its tangent arc closing to the fuze
+                (R, cf * L), (R * 1.06, (cf + 0.001) * L), (R * 1.06, (cf + 0.04) * L), (R, (cf + 0.041) * L), (R, (cf + 0.1) * L)]
+        lo, tip = (0.87 - cf) * L, 0.08 * R        # the ogive: from (cf + 0.1) L to 0.97 L, its tangent arc closing to the fuze
         rho = (R * R + lo * lo) / (2 * R)
         for k in range(1, 9):
             t = lo * k / 8
             r = math.sqrt(max(0.0, rho * rho - t * t)) + R - rho      # (t from the base: R there, 0 at the nose; inverted first, a bulb)
-            prof.append((max(tip, r), 0.5 * L + t))
+            prof.append((max(tip, r), (cf + 0.1) * L + t))
         prof += [(tip * 0.9, 0.99 * L), (0.0, L)]
-        bands = [(0.4 * L, BRASS), (0.441 * L, BAND), (0.965 * L, SHELL), (9.0, STEEL)]
+        bands = [(cf * L, BRASS), ((cf + 0.041) * L, BAND), (0.965 * L, SHELL), (9.0, STEEL)]
         o = lathe(prof, x, y, z, [m for _, m in bands], 0.0, tilt=rot)
         for p in o.data.polygons:
             p.material_index = next(i for i, (h, _) in enumerate(bands) if p.center.z < h)
         return o
-    for k, x in enumerate((-0.76, -0.38, 0.0, 0.38, 0.76)):
-        shell(0.085, 0.72, x, 0.8, zb, rot=((k % 3 - 1) * 0.02, ((k * 7) % 5 - 2) * 0.01))
-        lpkit.torus(0.09, 0.012, x, 0.8, zb + 0.05, DARK)
-    for k, x in enumerate((-0.57, -0.19, 0.19, 0.57)):
-        shell(0.08, 0.6, x, 0.5, zb, rot=(((k + 1) % 3 - 1) * 0.02, 0))
-        lpkit.torus(0.085, 0.012, x, 0.5, zb + 0.05, DARK)
+    # (Two standing rows along the back first, 0.2.469: "back row is weird", the user, and "a little too symmetrical and
+    # evenly spaced?": dark spikes, the projectiles' paint covering the brass, the front row shading the back's. Now the
+    # back is a lying stack on a pallet at the left, a short standing group at the right with more case showing, a gap
+    # between where a load has gone; the sides uneven, one full, one half-emptied; strays out of line.)
+    # Lying: (x of its base, y, z of its axis, R, L, yaw, nose +1 east / -1 west)
+    def lying(x, y, z, R, L, nose, yaw=0.0):
+        return shell(R, L, x, y, z, rot=(0, nose * math.pi / 2, yaw))
+    # The back's stack, on a dark pallet, noses east: three below, two in their grooves above, one pulled half out.
+    bevel(B(0.66, 0.44, 0.04, -0.6, 0.72, zb, POLE), 0.006)
+    for xs in (-0.82, -0.42):
+        bevel(B(0.05, 0.42, 0.04, xs, 0.72, zb + 0.04, DARK), 0.005)
+    R = 0.07
+    for k, y in enumerate((0.87, 0.725, 0.58)):
+        lying(-0.92 + (0.06 if k == 1 else 0.0), y, zb + 0.08 + R, R, 0.6, 1, yaw=(0.04 if k == 1 else 0.0))
+    for y in (0.8, 0.655):
+        lying(-0.9, y, zb + 0.08 + R + 0.12, R, 0.58, 1)
+    # A short standing group at the back right, the case tall above the cradle (case to 0.6 of its length).
+    for k, (x, y, rx, ry) in enumerate(((0.44, 0.84, 0.02, -0.03), (0.63, 0.83, -0.01, 0.02), (0.82, 0.85, 0.03, 0.0),
+                                        (0.56, 0.63, -0.09, 0.05))):
+        shell(0.08, 0.6 if k < 3 else 0.56, x, y, zb, rot=(rx, ry), cf=0.6)
+        lpkit.torus(0.085, 0.011, x, y, zb + 0.04, DARK)
+    # One loose in the gap, lying across, noses west.
+    lying(0.24, 0.66, zb + 0.065, 0.065, 0.52, -1, yaw=0.35)
+    # The sides: saddles, the right full (five below, four above, one pushed out), the left half-emptied (a gap below,
+    # two above at one end).
     for s in (-1, 1):
-        for xs in (0.56, 0.84):     # the saddles the lying rounds rest in
+        for xs in (0.56, 0.84):
             bevel(B(0.06, 0.66, 0.05, s * xs, 0.02, zb, DARK), 0.006)
-        R = 0.055
-        for k, y in enumerate((0.28, 0.15, 0.02, -0.11, -0.24)):
-            shell(R, 0.46, s * 0.46, y, zb + 0.05 + R, rot=(0, s * math.pi / 2))
-        for k, y in enumerate((0.215, 0.085, -0.045, -0.175)):
-            shell(R, 0.44, s * 0.47, y, zb + 0.05 + R + 0.11, rot=(0, s * math.pi / 2))
+    R = 0.055
+    for k, y in enumerate((0.28, 0.15, 0.02, -0.11, -0.24)):
+        lying(0.46 + (0.05 if k == 2 else 0.0), y, zb + 0.05 + R, R, 0.46, 1, yaw=(-0.05 if k == 2 else 0.0))
+    for y in (0.215, 0.085, -0.045, -0.175):
+        lying(0.47, y, zb + 0.05 + R + 0.11, R, 0.44, 1)
+    for y in (0.28, 0.15, -0.24):
+        lying(-0.46, y, zb + 0.05 + R, R, 0.46, -1)
+    for y in (0.215, 0.085):
+        lying(-0.47, y, zb + 0.05 + R + 0.11, R, 0.44, -1, yaw=0.03)
+    # And one on the skid at the front, set down askew.
+    lying(-0.1, -0.91, zb + 0.05, 0.05, 0.42, 1, yaw=-0.12)
     # Vanilla's magazines littered about (the user: "could we show some factorio style magazines littered on the building"):
     # its firearm magazine's curved yellow body (the piercing one red), dark feed lips, a brass round showing at the top.
     def magazine(x, y, z, yaw, pitch, body):
@@ -471,12 +495,11 @@ def supply_depot(f):
         rod((-0.95, -0.62, z), (-0.95, 0.95, z), 0.02, DARK, verts=6)
         rod((-0.95, 0.95, z), (0.95, 0.95, z), 0.02, DARK, verts=6)
         rod((0.95, 0.95, z), (0.95, -0.62, z), 0.02, DARK, verts=6)
-        rod((-0.95, 0.65, z), (0.95, 0.65, z), 0.016, DARK, verts=6)
-    for (x, y) in ((-0.95, -0.62), (-0.95, 0.95), (0.95, 0.95), (0.95, -0.62), (-0.95, 0.3), (0.95, 0.3), (0.0, 0.95), (-0.95, 0.65), (0.95, 0.65)):
+    for (x, y) in ((-0.95, -0.62), (-0.95, 0.95), (0.95, 0.95), (0.95, -0.62), (-0.95, 0.3), (0.95, 0.3), (0.1, 0.95)):
         rod((x, y, zb), (x, y, zb + 0.18), 0.024, DARK, verts=6)
     # Two ammunition crates at the front corners, strapped, a lid each; the right one a second, smaller, on it.
-    for (x, y, yaw, w, d, h, z) in ((-0.72, -0.74, 0.12, 0.38, 0.28, 0.2, zb), (0.7, -0.74, -0.08, 0.4, 0.3, 0.2, zb),
-                                    (0.68, -0.72, 0.18, 0.28, 0.2, 0.14, zb + 0.2)):
+    for (x, y, yaw, w, d, h, z) in ((-0.73, -0.72, 0.22, 0.38, 0.28, 0.2, zb), (0.7, -0.76, -0.14, 0.4, 0.3, 0.2, zb),
+                                    (0.66, -0.73, 0.32, 0.28, 0.2, 0.14, zb + 0.2)):
         bevel(B(w, d, h, x, y, z, OLIVE, rot=yaw), 0.015)
         B(w + 0.01, d + 0.01, 0.025, x, y, z + h - 0.025, DARK, rot=yaw, bevel=0.0)
         for t in (-0.3, 0.3):

@@ -1095,7 +1095,7 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
   - **Ammunition, stage 2: the supply depot, and showing it** (0.2.465; the user: "Yes we definitely need to continue that
     thread", "could use a UI overlay on the barracks and depot showing healing/rearming range? perhaps on hover?").
     `lp-supply-depot` (player.lua): vanilla's requester chest re-tinted (until 0.2.469: now its own 2x2 model, the shell
-    rack, tools/blender/player_buildings.py supply_depot: two-part shells (brass case, copper band, olive projectile, pointed nose; nine standing at the back, nine lying down each side, noses out: upright pale rounds read as "propane gas tanks", the user) and seven of vanilla's magazines littered on it (the user's idea), round an olive magazine
+    rack, tools/blender/player_buildings.py supply_depot: two-part shells (brass case, copper band, olive projectile, pointed nose; lying stacks and a short standing group, uneven and half-emptied in places: upright pale rounds read as "propane gas tanks", an even parade "too symmetrical", the user) and seven of vanilla's magazines littered on it (the user's idea), round an olive magazine
     whose robot hatch opens over vanilla's seven frames, a hazard step and ammunition crates at the front; chosen from four
     clay candidates; 2x2 on the user's word, "1x1 unnecessarily tight"; shadow near-solid 1.00, vanilla's requester 0.90;
     generic 2x2 remnants), 32 slots, 500 health, made from a requester

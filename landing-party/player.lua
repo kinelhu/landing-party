@@ -219,7 +219,7 @@ end
 local depot = table.deepcopy(data.raw["logistic-container"]["requester-chest"])
 depot.name = "lp-supply-depot"
 -- Its own model (tools/blender/player_buildings.py supply_depot, sheet.py; 2026-11-20, in place of the requester chest
--- re-tinted green): a shell rack, slim two-part shells standing along its back and lying down its sides, vanilla magazines littered about, round an olive magazine whose robot hatch is the
+-- re-tinted green): a shell rack, slim two-part shells stacked and standing in uneven groups, strays out of line, vanilla magazines littered about, round an olive magazine whose robot hatch is the
 -- requester's robot door, its two leaves opening over the door's 7 frames (vanilla's opened_duration and sound kept).
 -- (Its icon: graphics/icons/lp-supply-depot.png, set by icons.lua with the others.)
 depot.minable = {mining_time = 0.2, result = "lp-supply-depot"}
