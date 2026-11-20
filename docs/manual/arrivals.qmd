@@ -109,16 +109,9 @@ combat robots, heavier lasers against your troopers. It never gets far ahead of 
 
 A corporation that lands late in a game arrives with the research it would have bought by then.
 
-**The arms race.** Your research and theirs climb together, so a late fight is as close as an early one. The chart
-shows, for six matchups, what research gives your unit and its opposite as your era rises. Where the corporation's line
-meets your dashed one it holds what you would have once you finished the tier you are on.
-
-![The firepower research gives your units and the corporations', by your era](_generated/arms-race.png){#fig-arms-race}
-
 Each corporation's **Research** map setting sets its pace, from ×{{< var arrival.research_pace_low >}} to
 ×{{< var arrival.research_pace_high >}}, and how far ahead of you it may get, from
-{{< var arrival.research_behind >}} tier behind your era to {{< var arrival.research_most >}} past it: the shaded band
-in the chart. At its lowest your army outgrows it late in the game; at its highest it fields weapons you have not
+{{< var arrival.research_behind >}} tier behind your era to {{< var arrival.research_most >}} past it. At its lowest your army outgrows it late in the game; at its highest it fields weapons you have not
 reached.
 
 **Kessler-Hayashi armed.** From era {{< var arrival.armed_era >}}, Kessler-Hayashi lands as a walled fortress instead of

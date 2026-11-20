@@ -215,12 +215,6 @@ A branch advances only while one of its labs stands in some Kessler-Hayashi camp
 stops. Its units are no longer built, and its armor and siege abilities are off. Weapon levels already researched stay.
 Its crews rebuild the lab like any building. Labs are military targets.
 
-The chart follows one camp through a game. Its weapons climb only as far as your era lets them, its dotted cap, and
-only while the lab for that branch stands. Destroying the Optics lab holds its lasers where they were until the lab is
-rebuilt.
-
-![A Kessler-Hayashi camp's research over a game: each branch's level, its cap at your era, and the time without an Optics lab](_generated/research-timeline.png){#fig-research-timeline}
-
 ## Its units {#sec-kh-units}
 
 A camp lands with troopers, tanks and railgunners, and gets laser drones at its {{< var kh.drone_level_nth >}} level. Everything else is

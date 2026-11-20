@@ -583,20 +583,6 @@ def write(rp):
           "trained, on a scale where each step up the side multiplies it. Research counts every finite level of the damage",
           "and shooting speed technologies for the unit's weapon; the round is its best; the rank is its highest.", "",
           "![Each unit's strength as research, a better round and veterancy multiply it](_generated/power-ladder.png){#fig-power-ladder fig-pos=\"H\"}", ""]
-    # The corporations' ladder and the counter matrix (scripts/power_ladder.py, scripts/arms_race.py; 0.2.475): stops
-    # without them, as the power ladder does.
-    for png, how in (("corp-ladder.png", "power_ladder.py"), ("counter-matrix.png", "arms_race.py"),
-                     ("arms-race.png", "arms_race.py"), ("research-timeline.png", "research_timeline.py")):
-        if not os.path.exists(os.path.join(GEN, png)):
-            raise SystemExit(f"manual: _generated/{png} missing: run uv run --with matplotlib python3 -I scripts/{how}")
-    L += ["The corporations' units climb the same way, on the same scale. Their research is their tree's track for the",
-          "unit's weapon at its top; a plate counts against the damage it answers.", "",
-          "![The corporations' units' strength as research, a plate and veterancy multiply it](_generated/corp-ladder.png){#fig-corp-ladder fig-pos=\"H\"}", "",
-          "### Who beats whom", "",
-          "Each of your units against each corporate unit at equal cost, fought in the arena: blue where yours wins,",
-          "orange where theirs does. On the left neither side has researched anything; on the right both are at the top",
-          "of their research and your units fire their best rounds.", "",
-          "![Your units against the corporations' at equal cost, without research and at its top](_generated/counter-matrix.png){#fig-counter-matrix fig-pos=\"H\"}", ""]
     out("units.qmd", L)
 
     # ---- buildings ----
