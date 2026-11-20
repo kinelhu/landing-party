@@ -35,7 +35,7 @@ of biters and bunched infantry but are outranged. Battle tanks take bases apart 
 bandwidth is full, finished orders wait inside the barracks, and it stops once its output is full.
 
 **Research.** Your military research upgrades your units as it does your own weapons. Physical projectile damage and
-weapon shooting speed raise troopers, gun buggies and battle tanks; stronger explosives raise breachers and rocket
+weapon shooting speed raise troopers, gun buggies and battle tanks, whatever round they fire; stronger explosives raise breachers and rocket
 troopers; refined flammables raise flame troopers. Each unit's description names its research. Infantry trained
 from heavy armor also take its resistance to acid, so worms and spitters hurt them less. Without military research, a
 squad that clears corporation outposts will struggle against a large biter nest.
@@ -143,7 +143,8 @@ the units too far away to see the enemy.
 Every shot spends a round. A unit that runs out stops firing and walks to the nearest powered barracks whose input holds
 its ammunition, takes what it lacks, and goes back to its orders. While it is dry it raises an alert, as a turret out
 of ammunition does. Feed your barracks the ammunition of the units they
-serve: a barracks making troopers holds magazines, but a squad of rocket troopers needs one holding rockets. With none
+serve: a barracks making troopers holds magazines, but a squad of rocket troopers needs one holding rockets, and a gun
+buggy takes piercing rounds or better, never firearm magazines. With none
 within reach, the unit stands where it is, and you are told once. Units within {{< var army.repair_tiles >}} tiles of a
 powered barracks top up from it as they fight.
 
@@ -151,7 +152,7 @@ powered barracks top up from it as they fight.
 Set its requests to the ammunition your squads use, and your robots fill it; inserters and trains can fill it too. Your
 units within {{< var army.repair_tiles >}} tiles of a depot top up from it, and a unit that runs out walks to a depot as
 readily as to a barracks. A depot needs no power, but it heals nobody. Put one by a forward beacon and the squad there
-fights on as long as the depot is fed. It is a chest on the front line, and the enemy will find it. Hover over a
+fights on as long as the depot is fed. It is a store on the front line, and the enemy will find it. Hover over a
 barracks or a depot to see where your units heal and rearm: green round a powered barracks, amber round a depot. The
 squad panel beside a beacon's window counts its squad's rounds.
 

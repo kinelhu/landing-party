@@ -513,6 +513,33 @@ def write(rp):
         L += ["", "| Unit | A shot | Resists | Fielded |", "|:--|:--|:--|:--|"] + entries + [""]
     if not probe:
         L.append("<!-- The runt is left out: Synthexis's probe is off in this version (shared.BIOTECH.mind.probe). -->")
+    # Better rounds (ammunition tiers, 0.2.470 to 0.2.472): each tier order's damage against its base round's, as
+    # command.lua computes it: the round's direct damage over the base's (the dump's lp-ammo-direct), or its named rung
+    # (shared.TIER_RAW), raised to shared.TIER_EXP; the explosive rungs' blast from shared.TIER_BLAST.
+    T = rp.data["tiers"]
+    direct = d["mod-data"]["lp-ammo-direct"]["data"]
+    blast = T["blast"]
+    L += ["### Better rounds", "",
+          "A unit trained on a better round deals this much of each hit its plain order's round deals, before research.",
+          f"An explosive round's blast hits the enemies within {blast['radius']:g} tiles of what it struck for "
+          f"{blast['share'] * 100:.0f}% of the hit.", "",
+          "| Unit | Round | Damage | Blast |", "|:--|:--|--:|:--|"]
+    by_unit = {}
+    for item, tier in T["order_tiers"].items():
+        by_unit.setdefault(tier["base"], []).append(tier["round"])
+    for base in sorted(by_unit, key=lambda b: shown(T["orders"][b])):
+        unit = T["orders"][base]
+        ammo = d["ammo"]
+        cat = ammo[by_unit[base][0]]["ammo_category"]
+        base_round = next(i["name"] for i in d["recipe"][base]["ingredients"]
+                          if i["name"] in ammo and ammo[i["name"]]["ammo_category"] == cat)
+        rows_t = [(base_round, 1.0)]
+        for r in by_unit[base]:
+            raw = T["raw"].get(r) or direct[r] / direct[base_round]
+            rows_t.append((r, raw ** T["exp"]))
+        for r, f in sorted(rows_t, key=lambda x: x[1]):
+            L.append(f"| {md(shown(unit))} | {md(lname('item-name.' + r))} | {f:.2f} × | {'yes' if r in T['raw'] else '-'} |")
+    L.append("")
     out("units.qmd", L)
 
     # ---- buildings ----

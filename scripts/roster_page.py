@@ -40,7 +40,8 @@ local function dump(v)
   return "null"
 end
 local out = {corps = {}, unlock = s.UNLOCK, units = s.units, lab_icon = s.LAB_ICON, breeds = s.BREEDS,
-  biotech = {name = s.BIOTECH.name, color = s.BIOTECH.color, mind = s.BIOTECH.mind}, director = s.DIRECTOR}
+  biotech = {name = s.BIOTECH.name, color = s.BIOTECH.color, mind = s.BIOTECH.mind}, director = s.DIRECTOR,
+  tiers = {raw = s.TIER_RAW, exp = s.TIER_EXP, blast = s.TIER_BLAST, order_tiers = s.ORDER_TIERS, orders = s.ORDERS}}
 for corp, c in pairs(s.CORPS) do
   out.corps[corp] = {name = c.name, tree = c.tree, mix = c.mix, labs = c.labs, tint = c.tint, bases = c.bases, names = c.names,
     orbital_drop = c.orbital_drop}

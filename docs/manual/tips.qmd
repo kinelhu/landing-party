@@ -21,6 +21,8 @@
 - **Keep ammunition in your barracks.** A unit that runs dry walks to the nearest barracks holding its ammunition, so
   a barracks training troopers should hold spare magazines, and one near rocket troopers spare rockets. Further out, a
   supply depot your robots fill lets a squad fight on without walking back.
+- **Upgrade a squad from its depot.** Change a depot's requests to a better round, uranium magazines or explosive
+  shells, and the squad beside it loads them as each unit runs out. Alt mode shows each unit's round over it.
 - **Put a threat scanner at each outpost.** Wired to a programmable speaker or a lamp, it tells you a raid has come
   before the turrets start firing.
 - **Turn on Chat notices** in the map settings if you want to hear about raids and sieges as they start. Without it,

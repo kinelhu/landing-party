@@ -126,3 +126,21 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Battle tank | 100 explosion; 240 explosion over 1.5 tiles to buildings, on top of the hit | physical -3 20%, fire -2 60%, explosion -5 30%, laser -5, electric -5, bite 60% | Research: Command bandwidth 3 |
 
 <!-- The runt is left out: Synthexis's probe is off in this version (shared.BIOTECH.mind.probe). -->
+### Better rounds
+
+A unit trained on a better round deals this much of each hit its plain order's round deals, before research.
+An explosive round's blast hits the enemies within 2 tiles of what it struck for 35% of the hit.
+
+| Unit | Round | Damage | Blast |
+|:--|:--|--:|:--|
+| Battle tank | Cannon shell | 1.00 × | - |
+| Battle tank | Explosive cannon shell | 1.14 × | yes |
+| Battle tank | Uranium cannon shell | 1.26 × | - |
+| Battle tank | Explosive uranium cannon shell | 1.35 × | yes |
+| Gun buggy | Piercing rounds magazine | 1.00 × | - |
+| Gun buggy | Uranium rounds magazine | 1.44 × | - |
+| Rocket trooper | Rocket | 1.00 × | - |
+| Rocket trooper | Explosive rocket | 1.08 × | yes |
+| Trooper | Firearm magazine | 1.00 × | - |
+| Trooper | Piercing rounds magazine | 1.17 × | - |
+| Trooper | Uranium rounds magazine | 1.68 × | - |
