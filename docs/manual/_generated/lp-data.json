@@ -682,6 +682,7 @@
    "name": "Gun buggy",
    "faction": "player",
    "health": 380,
+   "portrait": "lp-gun-buggy",
    "damage": 20,
    "damage_text": "20 explosion, 6 explosion, 2 shots/s",
    "range": 16,
@@ -1300,6 +1301,7 @@
      "band": "cb2",
      "column": "vehicles",
      "label": "Gun buggy",
+     "portrait": "lp-gun-buggy",
      "note": "4 bandwidth"
     },
     {

@@ -20,7 +20,7 @@ local units = {
   {"lp-bred-big-burster", "sx"}, {"lp-sweeper", "sx"}, {"lp-bred-scout", "sx"}, {"lp-bred-carrier", "sx"},
   {"lp-technician", "sx"},
   {"lp-breacher", "pl"}, {"lp-trooper", "pl"}, {"lp-rocket-trooper", "pl"}, {"lp-battle-tank", "pl"},
-  {"lp-flame-trooper", "pl"},
+  {"lp-flame-trooper", "pl"}, {"lp-gun-buggy", "pl"},
 }
 local GAP, FACINGS, ZOOMS = 20, 8, {3, 5, 8}
 local WHITE_X = GAP * FACINGS + 60

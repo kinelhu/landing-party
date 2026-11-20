@@ -573,6 +573,17 @@ def write(rp):
         for r, f in sorted(rows_t, key=lambda x: x[1]):
             L.append(f"| {md(shown(unit))} | {md(lname('item-name.' + r))} | {f:.2f} × | {'yes' if r in T['blasts'] else '-'} |")
     L.append("")
+    # The arms race (scripts/ladder_pairs.py, 0.2.477; the user chose it): after the unit tables. Stops without it.
+    pairs = os.path.join(GEN, "ladder-pairs.png")
+    if not os.path.exists(pairs):
+        raise SystemExit("manual: _generated/ladder-pairs.png missing: run "
+                         "uv run --with matplotlib --with numpy python3 -I scripts/ladder_pairs.py")
+    L += ["### The arms race", "",
+          "Your research and the corporations' climb together. Each line below is a unit and its opposite as research, a",
+          "better round or armor, and veterancy make it stronger, against the unit as trained; strength is its damage a",
+          "second times its health.", "",
+          "![At the top of both sides' research, every step taken. Earlier the corporation is often ahead: its levels are "
+          "yours, up to a tier past your era.](_generated/ladder-pairs.png){#fig-ladder-pairs fig-pos=\"H\"}", ""]
     out("units.qmd", L)
 
     # ---- buildings ----

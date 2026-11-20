@@ -33,7 +33,12 @@ How they are made:
   `uv run --with pillow python docs/manual/shots/cut.py docs/sim docs/manual/media [preview dir]` cuts them all and
   writes each plan's callout JSON (and, with a preview dir, a copy with its numbered dots drawn, for checking).
 
-## Unit portraits: `portraits/<prototype>.png` (41)
+## Unit portraits: `portraits/<prototype>.png` (42)
+
+- 2026-11-20: `lp-gun-buggy.png` (missing since 0.2.438), filmed alone: `scripts/film.sh gallery fresh.zip` with a copy of
+  `portraits-matte-hauler.lua` for the gun buggy, `matte.py`, its facing-0 stills copied into `portraits-in` by hand
+  (matte.py passes on only units the manual already prints a card for), then `portraits.py`. The gun buggy is now in
+  `portraits.lua` and `portraits-matte.lua` for the next full film.
 
 One for every unit in `_generated/lp-data.json`, named by prototype: 760 x 760 PNG, each unit alone on a flat grey lab
 tile, on its own force, faced south-east (the three-quarter view the sprites are drawn in), at noon, its shadow kept,
