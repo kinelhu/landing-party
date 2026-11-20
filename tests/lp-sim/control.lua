@@ -3358,7 +3358,7 @@ scenarios.pavedsquad = function()
   end)
   for t = 60 + 6 * 60 + 10, 60 * 60, 10 do
     schedule(t, function()
-      if not S.am_go then return end
+      if not S.go then return end
       for lane, bx in pairs(LANES) do
         if not S.t[lane] then
           local n = surface().count_entities_filtered{area = {{bx - 14, -LEN - 12}, {bx + 14, -LEN + 12}}, name = "lp-trooper"}
