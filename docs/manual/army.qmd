@@ -15,6 +15,8 @@ troopers and breachers. It also gives you one command core. A barracks is built 
 2, steel, electronic circuits and a command core. Cores cannot be crafted, so every barracks after the first needs one
 from faction wreckage (see [Command cores](spoils.qmd#command-cores)).
 
+![Your army's buildings at one scale: the barracks trains units, the supply depot rearms them, the command relay raises how many you command, and the rally beacon gathers and orders a squad.](media/buildings/army.png)
+
 The barracks is a training plant. It works like an assembling machine: it needs power, you pick what it trains as you
 would pick a recipe, and a new barracks starts on troopers. What it makes is an *order*, built from your own kit:
 

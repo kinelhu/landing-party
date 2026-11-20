@@ -147,3 +147,11 @@ Close, by day, one subject each.
 - **media/buildings**: the three labs' icons at the head of the corporations' tree columns (the generator copies them
   from docs/guide/img). The Reference's gallery of building squares is gone.
 - `python3 -I docs/manual/check_images.py`, after a PDF render, fails on any picture printed twice or never.
+
+## Your army's buildings: `buildings/army.png`
+
+2026-11-21 (the user: "Shouldn't we show buildings?", then "Good"): the barracks, the supply depot, the command relay
+and the rally beacon at one scale on the manual's paper, for the army chapter. Filmed by difference matting as the unit
+portraits are (`docs/manual/shots/buildings-matte.lua`, the rally beacon alone in `buildings-matte-beacon.lua`: its hold
+ring crossed the relays' frames), cut by `matte.py`, composed by `docs/manual/shots/building_row.py` (names from the
+locale; the faintest matting veil, a light's glow, dropped; shadows kept). Commands in the script's docstring.
