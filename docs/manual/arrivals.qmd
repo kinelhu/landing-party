@@ -94,13 +94,16 @@ your artillery are never held back. A surge or a spree from the headquarters rai
 forces come on top of it. With the Director setting off, if none of their operations has come at you for
 {{< var arrival.floor_min >}} minutes, your buildings count for more when they choose a target.
 
-**Research.** Each corporation puts {{< var arrival.fund_share_pct >}}% of its exports into research and buys at most
-one item every {{< var arrival.research_every_min >}} minutes. It picks what answers whatever has been killing its units
-over the last {{< var arrival.research_window_min >}} minutes: armor against your bullets, anti-air against your
+**Research.** A corporation's labs pay for its research, not its exports. Each lab standing adds
+{{< var arrival.lab_rate >}} parts to its research fund every minute for each branch of research it serves. It buys at
+most one item every {{< var arrival.research_every_min >}} minutes. It picks what answers whatever has been killing its
+units over the last {{< var arrival.research_window_min >}} minutes: armor against your bullets, anti-air against your
 combat robots, heavier lasers against your troopers. It never researches past your era:
 
-- Weapon damage goes up a level at a time, to at most one level more than your era
-  ({{< var arrival.weapon_levels >}} at most). For most weapons a level adds {{< var arrival.weapon_level_pct >}}%.
+- Its weapons go up a level at a time, to at most one level more than your era
+  ({{< var arrival.weapon_levels >}} at most). A level is your own technology of that level: at laser level 3 its
+  lasers have what Laser weapons damage 3 and Laser shooting speed 3 give yours, in damage and in rate of fire. Railgun
+  damage, which none of your technologies raises, goes up {{< var arrival.rail_level_pct >}}% a level.
 - New units and abilities each carry an era, and come only once you have reached it.
 
 A corporation that lands late in a game arrives with the research it would have bought by then.

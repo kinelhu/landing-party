@@ -295,7 +295,7 @@
    "range": 15,
    "speed": 12,
    "cost": "30 parts",
-   "era": "Era 1, Scrap arms",
+   "era": "Era 1, Siege works",
    "era_level": 1,
    "role": "A buggy with a slug gun, used against your vehicles.",
    "counters": "your vehicles",
@@ -312,7 +312,7 @@
    "range": 11,
    "speed": 7.8,
    "cost": "30 parts",
-   "era": "Era 2, Scrap arms",
+   "era": "Era 2, Siege works",
    "era_level": 2,
    "role": "Throws dynamite at groups of units and at walls in its way. Spares its own side.",
    "counters": "your infantry",
@@ -330,7 +330,7 @@
    "speed": 18,
    "air": true,
    "cost": "28 parts",
-   "era": "Era 2, Wheels",
+   "era": "Era 2, Siege works",
    "era_level": 2,
    "role": "A flying bomb that targets artillery, mortars and radars.",
    "counters": "artillery and explosives",
@@ -347,7 +347,7 @@
    "range": 2,
    "speed": 4.2,
    "cost": "120 parts",
-   "era": "Era 3, Wheels",
+   "era": "Era 3, Siege works",
    "era_level": 3,
    "role": "A bulldozer with an armored cab that charges walls and drives through them.",
    "counters": "walls",
@@ -364,7 +364,7 @@
    "range": 22,
    "speed": 12,
    "cost": "20 parts",
-   "era": "Era 1, Wheels",
+   "era": "Era 1, Siege works",
    "era_level": 1,
    "role": "Fires flak at flying units. Weak against ground targets.",
    "counters": "fliers, combat robots",
@@ -381,7 +381,7 @@
    "range": 13,
    "speed": 5.4,
    "cost": "100 parts",
-   "era": "Era 2, Scrap arms",
+   "era": "Era 2, Siege works",
    "era_level": 2,
    "role": "An old tank hull with a machine gun and a flamethrower that fires a burst every few seconds.",
    "counters": "turret lines",
@@ -809,7 +809,7 @@
      "column": "optics",
      "label": "Better optics",
      "kind": "upgrade",
-     "note": "5 levels, 400 parts each"
+     "note": "7 levels, 400 parts a level"
     },
     {
      "id": "hardened",
@@ -827,7 +827,7 @@
      "answers": "biters",
      "label": "Heavier railguns",
      "kind": "upgrade",
-     "note": "5 levels, 600 parts each"
+     "note": "5 levels, 600 parts a level"
     },
     {
      "id": "jammer",
@@ -837,6 +837,14 @@
      "label": "Jamming mast",
      "kind": "ability",
      "note": "1,500 parts"
+    },
+    {
+     "id": "ordnance",
+     "band": "track",
+     "column": "line",
+     "label": "ordnance",
+     "kind": "upgrade",
+     "note": "6 levels, 400 parts a level"
     },
     {
      "id": "counter",
@@ -932,15 +940,18 @@
    "columns": [
     {
      "id": "scrap-arms",
-     "label": "Scrap arms"
+     "label": "Siege works",
+     "icon": "media/buildings/lp-siege-lab.png"
     },
     {
      "id": "loot",
-     "label": "Loot"
+     "label": "Siege works",
+     "icon": "media/buildings/lp-siege-lab.png"
     },
     {
      "id": "wheels",
-     "label": "Wheels"
+     "label": "Siege works",
+     "icon": "media/buildings/lp-siege-lab.png"
     }
    ],
    "bands": [
@@ -994,7 +1005,7 @@
      "column": "scrap-arms",
      "label": "Hand-loaded shells",
      "kind": "upgrade",
-     "note": "5 levels, 400 parts each"
+     "note": "6 levels, 400 parts a level"
     },
     {
      "id": "salvage",

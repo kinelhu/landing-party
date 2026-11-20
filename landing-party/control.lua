@@ -122,7 +122,7 @@ script.on_event({defines.events.on_research_finished, defines.events.on_research
   function(e) command.sync_tiers(e.research.force) end)
 -- (A reset re-applies the technologies' effects and drops what a script enabled.)
 script.on_event(defines.events.on_technology_effects_reset, function(e) command.sync_tiers(e.force) end)
-script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs(); cell.refloor(); command.drop_musters() end)
+script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs(); cell.refloor(); command.drop_musters(); rd.reapply() end)
 
 -- The watchdog's view of a settlement (scripts/watch.lua).
 local WATCH_DEPS = {
@@ -1107,6 +1107,8 @@ remote.add_interface("landing-party", {
   debug_tier_raw = function(item) return shared.TIER_RAW[item] end,
   -- The arena only: a corporation's damage tracks at their top (rd.max_tracks).
   debug_rd_max = function(corp) return rd.max_tracks(corp) end,
+  -- Tests: what a track node gives at level k ({category = {damage, speed}}, the base game's ladder).
+  debug_rd_track = function(corp, id, k) return rd.track_at(corp, id, k) end,
   debug_tier = function(u, round)
     storage.cmd.tier_test = storage.cmd.tier_test or {}
     storage.cmd.tier_test[u.unit_number] = round

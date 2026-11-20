@@ -21,8 +21,8 @@
 <title>Settlement</title>
 <path fill="#f7dede" stroke="black" d="M950.12,-650.5C950.12,-650.5 847.88,-650.5 847.88,-650.5 841.88,-650.5 835.88,-644.5 835.88,-638.5 835.88,-638.5 835.88,-618.5 835.88,-618.5 835.88,-612.5 841.88,-606.5 847.88,-606.5 847.88,-606.5 950.12,-606.5 950.12,-606.5 956.12,-606.5 962.12,-612.5 962.12,-618.5 962.12,-618.5 962.12,-638.5 962.12,-638.5 962.12,-644.5 956.12,-650.5 950.12,-650.5"/>
 <text xml:space="preserve" text-anchor="middle" x="899" y="-636.05" font-family="Helvetica,sans-Serif" font-size="11.00">Settlement</text>
-<text xml:space="preserve" text-anchor="middle" x="899" y="-624.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 6484 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="899" y="-612.05" font-family="Helvetica,sans-Serif" font-size="11.00">layout 1747</text>
+<text xml:space="preserve" text-anchor="middle" x="899" y="-624.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 6501 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="899" y="-612.05" font-family="Helvetica,sans-Serif" font-size="11.00">layout 1749</text>
 </g>
 <!-- Seams (leaves)&#45;&gt;Settlement -->
 <g id="edge39" class="edge">
@@ -64,8 +64,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M771.88,-235.5C771.88,-235.5 620.12,-235.5 620.12,-235.5 614.12,-235.5 608.12,-229.5 608.12,-223.5 608.12,-223.5 608.12,-203.5 608.12,-203.5 608.12,-197.5 614.12,-191.5 620.12,-191.5 620.12,-191.5 771.88,-191.5 771.88,-191.5 777.88,-191.5 783.88,-197.5 783.88,-203.5 783.88,-203.5 783.88,-223.5 783.88,-223.5 783.88,-229.5 777.88,-235.5 771.88,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="696" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="696" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">22 modules, 9893 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="696" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">army 1078, ops 2530, siege 2146</text>
+<text xml:space="preserve" text-anchor="middle" x="696" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">22 modules, 9896 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="696" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">army 1078, ops 2533, siege 2146</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
 <g id="edge16" class="edge">
@@ -101,7 +101,7 @@
 <title>Corporation</title>
 <path fill="#f7dede" stroke="black" d="M1094.12,-339.25C1094.12,-339.25 991.88,-339.25 991.88,-339.25 985.88,-339.25 979.88,-333.25 979.88,-327.25 979.88,-327.25 979.88,-307.25 979.88,-307.25 979.88,-301.25 985.88,-295.25 991.88,-295.25 991.88,-295.25 1094.12,-295.25 1094.12,-295.25 1100.12,-295.25 1106.12,-301.25 1106.12,-307.25 1106.12,-307.25 1106.12,-327.25 1106.12,-327.25 1106.12,-333.25 1100.12,-339.25 1094.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="1043" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="1043" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">10 modules, 3420 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="1043" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">10 modules, 3579 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="1043" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">faction 1207</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Corporation -->

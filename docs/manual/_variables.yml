@@ -28,9 +28,9 @@ arrival:
   floor_min: "20"
   research_every_min: "10"
   research_window_min: "30"
-  fund_share_pct: "30"
-  weapon_levels: "5"
-  weapon_level_pct: "20"
+  lab_rate: "20"
+  weapon_levels: "7"
+  rail_level_pct: "60"
   landing_pods: "6"
 camp:
   yard_near_tiles: "16"
@@ -145,6 +145,7 @@ cannon:
   width: "12"
   depth: "18"
 desc:
+  entity_workshop: "Grubstake's research: better guns, new units and vehicles, salvage. While none stands, its research stops."
   entity_orbital_cannon: "Charges strikes from shells, thruster fuel and oxidizer: up to 2, one each 3 minutes. Built at a platform's edge."
   entity_targeting_array: "Lets the cannons of its platform fire on Nauvis while the platform is stopped there."
   entity_player_dome: "Stops enemy artillery shells within its radius while powered. Goes down for a time after too many hits."

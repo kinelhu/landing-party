@@ -95,7 +95,7 @@ end
 -- A lab's look: its body at work (data.lua: lp-lab-busy, drawn by script since its research is) and its sign, its branch,
 -- over it, for everyone; both gone with it. Once a lab (labs from 0.1.40 got theirs on the update: init).
 function base.lab_look(e)
-  local icon = shared.LAB_ICON[shared.kind_of(e.name)]
+  local icon = shared.LAB_ICON[e.name] or shared.LAB_ICON[shared.kind_of(e.name)]
   if not icon then return end
   storage.lab_look = storage.lab_look or {}
   if storage.lab_look[e.unit_number] then return end

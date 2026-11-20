@@ -154,7 +154,11 @@ after losing it, as long as its lander stands, and the pact holds again.
 Grubstake researches as the other corporations do, answering what has been killing its units and never going past
 your era (see [Arrivals](arrivals.qmd)). Its units are in the [Reference](reference.qmd#sec-units).
 
-- **Scrap arms.** Damage for its bullets and shells, scrap plating against your bullets, asbestos against your fire.
+Its research is done in a workshop, a building on one of its town's streets, which serves all three branches. While
+no workshop stands in any Grubstake camp its research stops: the units, armor and abilities it researched are no longer
+fielded, and weapon levels already researched stay. Its crews rebuild the workshop like any building.
+
+- **Scrap arms.** Damage and rate of fire for its guns, shotguns, dynamite and rockets, scrap plating against your bullets, asbestos against your fire.
   Slug buggies against your vehicles, dynamite sappers against your troopers, flame tanks against turret lines.
 - **Wheels.** Flak buggies against fliers and combat robots, bomb drones (they go for artillery, mortars and radars)
   against your explosives, dozers once its raids keep meeting walls.
@@ -163,8 +167,8 @@ your era (see [Arrivals](arrivals.qmd)). Its units are in the [Reference](refere
 
 ## Its units {#sec-gs-units}
 
-A camp lands with buggies and shotgunners, and gets scrap copters at its {{< var grubstake.copter_level_nth >}} level. Everything else is researched,
-with no lab you can raid.
+A camp lands with buggies and shotgunners, and gets scrap copters at its {{< var grubstake.copter_level_nth >}} level. Everything else is researched
+in its workshop.
 
 ::: {.tree tree="grubstake-units"}
 A node can be bought with parts once what it counters has cost Grubstake enough. Eras are yours: no node comes before

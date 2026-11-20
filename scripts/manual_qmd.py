@@ -20,6 +20,22 @@ NON_ENTITY = {"item", "recipe", "technology", "item-with-entity-data", "ammo", "
               "repair-tool", "blueprint", "deconstruction-item", "upgrade-item", "blueprint-book", "copy-paste-tool"}
 
 
+# A corporate track's levels (rd.lua levels_of, the arms race of 0.2.474): its categories' deepest finite level of the
+# base game's damage and shooting speed technologies, else (railguns: a step of its own) its node's count.
+def track_levels(n, d):
+    if n.get("step"):
+        return n.get("levels")
+    top = 0
+    for t in d["technology"].values():
+        if t.get("max_level") == "infinite":
+            continue
+        for e in t.get("effects") or []:
+            if e.get("type") in ("ammo-damage", "gun-speed") and e.get("ammo_category") in n["track"]:
+                m = re.search(r"-(\d+)$", t["name"])
+                top = max(top, int(m.group(1)) if m else 1)
+    return top
+
+
 def write(rp):
     M = os.path.join(rp.REPO, "docs", "manual")
     GEN = os.path.join(M, "_generated")
@@ -28,6 +44,7 @@ def write(rp):
     os.makedirs(os.path.join(M, "media", "vistas"), exist_ok=True)
     d = rp.roster.d
     loc = dict(rp.locale)
+    CORPS_DATA = rp.data["corps"]
     # A description that takes its numbers from shared.lua (__1__, given by the prototype's localised_description, e.g.
     # the strike beacon's radius) reads here with them filled in, as the game shows it.
     for protos in d.values():
@@ -272,9 +289,11 @@ def write(rp):
             "floor_min": fmt(minutes(perim_src, "FLOOR_TICKS", "FLOOR_TICKS")),
             "research_every_min": fmt(minutes(rd_src, "CHOICE_TICKS", "CHOICE_TICKS")),
             "research_window_min": fmt(minutes(rd_src, "WINDOW_TICKS", "WINDOW_TICKS")),
-            "fund_share_pct": fmt(100 * (num(rd_src, r"^local FUND_SHARE, FUND_CAP = ([\d.]+)", "FUND_SHARE") or 0)),
-            "weapon_levels": fmt(num(rd_src, r"^local LEVEL_COST, LEVEL_DAMAGE, MAX_LEVEL = \d+, [\d.]+, (\d+)", "MAX_LEVEL")),
-            "weapon_level_pct": fmt(100 * (num(rd_src, r"^local LEVEL_COST, LEVEL_DAMAGE, MAX_LEVEL = \d+, ([\d.]+)", "LEVEL_DAMAGE") or 0)),
+            # (Its labs' income since 0.2.474, rd.lua LAB_RATE; its weapon levels the base game's, read from the dump as
+            # rd.ladder reads the prototypes: the deepest track's levels.)
+            "lab_rate": fmt(num(rd_src, r"^local LAB_RATE, LAB_TICKS = (\d+)", "LAB_RATE")),
+            "weapon_levels": fmt(max(track_levels(n, d) for c in CORPS_DATA.values() for n in c.get("tree", []) if n.get("track"))),
+            "rail_level_pct": fmt(100 * next(n["step"] for c in CORPS_DATA.values() for n in c.get("tree", []) if n.get("step"))),
             # A landing's look (landfx.lua): the cargo pods that streak down round a lander as it crashes.
             "landing_pods": fmt(num(landfx_src, r"^local PODS = (\d+)", "landfx PODS")),
         },
@@ -603,7 +622,7 @@ def write(rp):
     # ---- eras ----
     max_lv = int(float(V["arrival"]["weapon_levels"]))
     # (Science-pack tiers since 0.2.384, ops.era: unbounded, so the rows stop at six with "and so on" in the prose.)
-    E = ["| Your era | Tiers passed | Corporation operations against you at once | Corporation weapon damage levels |",
+    E = ["| Your era | Tiers passed | Corporation operations against you at once | Corporation weapon levels |",
          "|:--|:--|--:|--:|", f"| 0 | none | 1 | up to {min(max_lv, 1)} |"]
     for i in range(1, 7):
         tiers = "1" if i == 1 else "1 and 2" if i == 2 else f"1 to {i}"
@@ -1111,7 +1130,7 @@ def booklet(rp, M, GEN, d, loc, V, shown, lname, copy_png, src, out):
                 node.update({"label": U.get(uid, {}).get("name", kind), "portrait": pic_or_none(pic), "note": f"{fmt_n(n['cost'])} parts"})
             elif n.get("track"):
                 node.update({"label": rp.node_name(n["id"]), "kind": "upgrade",
-                             "note": f"{n.get('levels')} levels, {fmt_n(n['cost'])} parts each"})
+                             "note": f"{track_levels(n, rp.roster.d)} levels, {fmt_n(n['cost'])} parts a level"})
             else:
                 node.update({"label": rp.node_name(n["id"]), "kind": "ability" if n.get("ability") else "upgrade",
                              "note": f"{fmt_n(n['cost'])} parts"})

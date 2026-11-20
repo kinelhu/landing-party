@@ -151,7 +151,7 @@ document still says Serenity where it records history.
 | Dev tools: `/lp` forces operations, perimeter steps, landings, grudges | built | `dev` |
 | Weighted defence: turrets by kind and research, units at the staging look | built | `weigh` |
 | Siege tiers: mortars, resupply convoys, moving up, assault | built | `siegetier` (four) |
-| Corporate research: a fund from exports, weapons levels capped by the player's era, plates against what kills it | built | `techup` (two), `plate` |
+| Corporate research: funded by its standing labs (0.2.474; by exports before, and still where labs are off), weapon levels the base game's own (damage and shooting speed, 0.2.474, the arms race), capped by the player's era, plates against what kills it; Grubstake's workshop | built | `techup` (two), `plate`, `labs`, `workshop`, `director armylate` |
 | Identity: Line troopers (beams) and Shotgun hands (pellets); each corporation's own tree (Serenity: Optics, Warden, Lance, Shock troops, Aegis, Hardened siege, Counter-battery; Grubstake: Hand-loads, Scrap plating, Asbestos, Slug buggy, Dynamite sappers, Scavenger harriers, Dozer, Salvage rights, Prospector's eye); Grubstake loots | built (slices 1-6) | `arms`, `arc`, `plate` (two), `techup` (two), `unitnode` (eight), `ability` (three) |
 | Staggered arrival: Grubstake at chemical science, Serenity at the first rocket (base: utility science) | built | `phases` |
 | Landing by approach (at most 6 spawners on the way), Grubstake 60 tiles from turrets | built | `country` |
@@ -218,6 +218,11 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - Ammunition tiers, what stages 1 and 2 (0.2.470 bullets, 0.2.471 uranium shells, 0.2.472 the explosive rungs; TIER_EXP
   0.33 from the arena, docs/arena-tiers.md) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): the corporations' pricing of the player's army (intel.lua) reading the squad's
   tier; the beacon's rounds as item signals; the UPS run with tiers on.
+- The arms race's remainder (0.2.474, docs/reviews/2026-11-20-arms-race-consult.md): the player's units weighed in intel
+  by their arena price, research and rank (a flat 0.5 each now; with the tier item above); the flame trooper against
+  corporations (-49 late, its infantry rows fell about 30); the reference-factory visits at the player's full research
+  (razed within twice the calibration rows); fortress and siegetier against a researched camp; profile.sh on director
+  climax for UPS; the Workshop's own look (a recoloured Siege works now).
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
@@ -2683,6 +2688,43 @@ if their units are upgraded also." `scripts/rd.lua`.
   "now fields reflective infantry"). A plate answering what a target's turrets mostly deal (`ops.weigh` returns it)
   makes the corporation read that defence 1.4 times weaker, any plate 1.15. Scenario `plate`: fifteen infantry die
   to a laser turret; the laser plate for infantry is bought; 8 reflective infantry built; the 4 plain ones kept.
+
+- **The arms race and labs as income (0.2.474; the user: "Arms race is attractive", then "decouple tech budget from
+  the current parts corps use ... balancing too much on a single point of consumption"; Fable:
+  `docs/reviews/2026-11-20-arms-race-consult.md`).** The finding (the arena's late setting, 0.2.473): the player at full
+  research, each unit on its best round, against each corporation at the top of its tree (+100% damage, no speed, the
+  answering plate) won 20 of 20 matchups with the trooper, gun buggy and rocket trooper (+72, +84, +76 mean) and 17
+  of 20 with the battle tank. Their research multiplied a trooper's damage a second about 5 times, a corporation's 2.
+  - **A track's level k is the base game's technology level k**, damage and shooting speed together, for each of its
+    categories: the summed modifiers of every finite technology of level k or below naming it, read from the
+    prototypes (rd.ladder). Optics 3 is laser weapons damage 3 and laser shooting speed 3. A level that gives nothing
+    (cannon shells gain from vanilla's fifth, rockets from its third) is skipped, not bought. Railguns (no vanilla
+    technology) keep their step, damage only. Capped as before at the player's era + 1. Kessler-Hayashi gains
+    ordnance (the Armory: cannon shells) and Grubstake's hand-loads take its dynamite and rockets too: without them a
+    third of Kessler-Hayashi's strike force (its tanks) took no research and `director armylate`'s squad lost 4%.
+  - **rd.strength counts speed** ((1 + damage) x (1 + speed), as intel weighs the player's turrets): raids shrink to
+    match instead of growing in both size and fire. Learned prices are stored research-free (the sample times the
+    strength then), divided once at reading. `techup`: at lasers 5 the raid against its three guns needs 8 (23
+    unresearched; 12 with speed left out of the strength, seen failing). Its first run razed the target: a raid at
+    research now fits a garrison, as the consult said the late game's would.
+  - **Labs pay for research** (rd.lua LAB_RATE, a named prior: 30% of contact-12345's 68 parts a minute of exports was
+    20 a minute): 20 a minute for each branch a standing lab serves, its exports no longer (they still raise its
+    level). Where labs are off (no labs, `labs_off` in most scenarios, `wfc_core_off`, `town_off`) the old 30% of
+    exports stays. Grubstake gains a workshop (`lp-grubstake-siege-lab`, named Workshop, a shotgun sign): one lab for
+    its three branches, a town lot (grubstake.tiles `workshop`, letter B), its research rule opening it on a street end;
+    gated as Kessler-Hayashi's labs are (its units, plates and abilities only while one stands). Scenario `workshop`:
+    no income and no share of an export of 1,000 while none stands (300 before, seen failing), built at minute 4, 480
+    in eight minutes for its three branches, its guns at the base game's level, killed: no income, no climb, rebuilt.
+  - **Measured.** Arena late (corporations at their new tops), against corporations: trooper +37 (16 of 20), gun buggy
+    +44 (16), rocket trooper +59 (18), battle tank +42 (13), breacher +2 (10), flame trooper -49 (4); against bred
+    units and biters unchanged (+71 to +94). The four main units are back near the early matrix (+8 to +47). Lasers
+    gain the most (vanilla's steepest research, x10.6 at its top): the lance, skyguard, prism and aegis now beat the gun
+    buggy. `director armylate` (new): armydefend with both at the top of their research, the strike force still breaks
+    and A is razed 0 against B's 16; the squad of 24 loses 54% (46% in armydefend unresearched; 4% before ordnance,
+    seen failing).
+  - **Open.** The flame trooper falls further against corporations (-28 to -49; its rows against infantry from +56 and
+    +30 to +27 and -3): its role (biters, Synthexis) holds, its corporate fights do not. The corporations' turrets rise
+    with their units (the same force). The player's units still weigh a flat 0.5 in intel (the consult's section 4).
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers

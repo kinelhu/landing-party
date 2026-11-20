@@ -10,6 +10,11 @@ local shared = require("__landing-party__.shared")
 local rd = {}
 
 local FUND_SHARE, FUND_CAP = 0.3, 10000
+-- Its labs' income (0.2.474; the user: "decouple tech budget from the current parts corps use ... balancing too much on a
+-- single point of consumption"): a corporation with labs (rd.gated) funds its research from them, not from its exports:
+-- LAB_RATE a minute for each branch of its tree a standing lab of its serves. A named prior: 30% of the exports of a
+-- camp of contact-12345 (68 parts a minute over two hours) was 20 a minute. Its exports still raise its era (faction).
+local LAB_RATE, LAB_TICKS = 20, 3600
 local LEVEL_COST, LEVEL_DAMAGE, MAX_LEVEL = 400, 0.2, 5
 local CHOICE_TICKS = 10 * 3600
 local WINDOW_TICKS = 30 * 3600
@@ -36,8 +41,10 @@ function rd.state(corp)
   return d.tech
 end
 
--- Exports feed the fund (faction.develop), apart from the level they also raise.
+-- Exports feed the fund (faction.develop), apart from the level they also raise: only a corporation whose research is
+-- not its labs' (no labs, or labs off: rd.gated), as before 0.2.474.
 function rd.fund(corp, parts)
+  if rd.gated(corp) then return end
   local t = rd.state(corp)
   t.fund = math.min(FUND_CAP, t.fund + FUND_SHARE * parts)
 end
@@ -90,7 +97,11 @@ rd.categories = categories
 -- corporation without labs, for camps laid out by blocks (storage.wfc_core_off: labs come in districts) and for
 -- scenarios of other mechanics (storage.labs_off).
 function rd.gated(corp)
-  return shared.CORPS[corp].labs ~= nil and not storage.labs_off and not storage.wfc_core_off
+  local c = shared.CORPS[corp]
+  if c.labs == nil or storage.labs_off then return false end
+  -- (Labs come in its districts or, in a town, a workshop lot: off with whichever lays its camps.)
+  if (c.arch or {}).town then return not storage.town_off end
+  return not storage.wfc_core_off
 end
 function rd.lab_kind(corp, branch)
   return (shared.CORPS[corp].labs or {})[branch]
@@ -108,6 +119,29 @@ function rd.lab(corp, branch)
   end
   return false
 end
+-- The branches of its tree a standing lab serves (its income: LAB_RATE each).
+local function branches_served(corp)
+  local seen, n = {}, 0
+  for _, node in ipairs(shared.CORPS[corp].tree or {}) do
+    local br = node.branch
+    if br and not seen[br] then
+      seen[br] = true
+      if rd.lab_kind(corp, br) and rd.lab(corp, br) then n = n + 1 end
+    end
+  end
+  return n
+end
+rd.branches_served = branches_served
+-- Its labs' income, each LAB_TICKS (rd.tick).
+local function lab_income(corp)
+  if not rd.gated(corp) then return 0 end
+  local t = rd.state(corp)
+  local add = LAB_RATE * branches_served(corp) * LAB_TICKS / 3600
+  t.fund = math.min(FUND_CAP, t.fund + add)
+  t.lab_funded = (t.lab_funded or 0) + add
+  return add
+end
+
 local function node_of(corp, id)
   for _, node in ipairs(shared.CORPS[corp].tree or {}) do if node.id == id then return node end end
 end
@@ -156,12 +190,16 @@ function rd.unit(corp, kind)
   return shared.plated(corp, kind, plate)
 end
 
--- What its units have over the defence they read: (1 + its damage modifier for its main category), times 1.4 when
+-- What its units have over the defence they read: (1 + its damage modifier for its main category) x (1 + its shooting
+-- speed modifier), times 1.4 when
 -- one of its plates answers the damage the target's turrets mostly deal (dmg, from ops.weigh), 1.15 for any plate.
 function rd.strength(corp, dmg)
   local f = game.forces[shared.CORPS[corp].force]
   local main = categories(corp)[1]
-  local s = 1 + ((f and main) and f.get_ammo_damage_modifier(main) or 0)
+  -- Damage times rate of fire, as the turrets it reads are weighed (intel.lua: (1 + damage) x (1 + speed)). On damage
+  -- alone, the arms race's speed would have gone uncounted and its raids grown in number and fire at once.
+  local s = (1 + ((f and main) and f.get_ammo_damage_modifier(main) or 0))
+    * (1 + ((f and main) and f.get_gun_speed_modifier(main) or 0))
   local plates = storage.corps and storage.corps[corp] and storage.corps[corp].tech and storage.corps[corp].tech.plate
   local a = 1
   for _, p in pairs(plates or {}) do
@@ -187,15 +225,105 @@ local function notify(corp, key, ...)
   end
 end
 
+-- The arms race (docs/reviews/2026-11-20-arms-race-consult.md; the user: "Arms race is attractive"): a track's level k is
+-- the base game's own technology level k for each of its categories, damage and shooting speed together: the summed
+-- ammo-damage and gun-speed modifiers of every finite technology of level k or below naming the category, read from the
+-- prototypes (Kessler-Hayashi's optics 3 is laser weapons damage 3 and laser shooting speed 3). Before, +20% damage a
+-- level to five and no speed: at full research the player's army won 20 of 20 matchups against its units (the arena's
+-- late setting). A category no technology names (railguns) climbs by its node's own step, damage only.
+local ladders = {}
+local function ladder(c)
+  if ladders[c] then return ladders[c] end
+  local at = {}
+  local top = 0
+  for _, t in pairs(prototypes.technology) do
+    if t.max_level < 4294967295 then
+      for _, e in ipairs(t.effects or {}) do
+        if (e.type == "ammo-damage" or e.type == "gun-speed") and e.ammo_category == c then
+          local k = t.level
+          at[k] = at[k] or {0, 0}
+          if e.type == "ammo-damage" then at[k][1] = at[k][1] + e.modifier else at[k][2] = at[k][2] + e.modifier end
+          if k > top then top = k end
+        end
+      end
+    end
+  end
+  local l = {top = top}
+  local dmg, spd = 0, 0
+  for k = 1, top do
+    if at[k] then dmg, spd = dmg + at[k][1], spd + at[k][2] end
+    l[k] = {dmg, spd}
+  end
+  ladders[c] = l
+  return l
+end
+rd.ladder = ladder
+-- A track's levels: its categories' deepest ladder, else its node's own count.
+local function levels_of(node)
+  local top = 0
+  for _, c in ipairs(node.track or {}) do top = math.max(top, ladder(c).top) end
+  if top > 0 and not node.step then return top end
+  return node.levels or MAX_LEVEL
+end
+-- Whether level k of a track gives anything: the base game's cannon shells gain only from its fifth level, rockets from
+-- its third, electric weapons at its third (a level bought for nothing spent a choice and its fund).
+local function gains(node, k)
+  for _, c in ipairs(node.track or {}) do
+    local l = ladder(c)
+    if l.top == 0 or node.step then return true end
+    if k <= l.top then
+      local a, b = l[k], l[k - 1] or {0, 0}
+      if a[1] ~= b[1] or a[2] ~= b[2] then return true end
+    end
+  end
+  return false
+end
+-- The level a track buys next: the first past its own that gives anything, nil at its top.
+local function next_level(t, node)
+  for k = (t.nodes[node.id] or 0) + 1, levels_of(node) do
+    if gains(node, k) then return k end
+  end
+end
+-- Its force's modifiers for one category at level k of a track node.
+local function set_level(f, node, c, k)
+  if not f then return end
+  local l = ladder(c)
+  if l.top > 0 and not node.step then
+    local r = k > 0 and l[math.min(k, l.top)] or {0, 0}
+    f.set_ammo_damage_modifier(c, r[1])
+    f.set_gun_speed_modifier(c, r[2])
+  else
+    f.set_ammo_damage_modifier(c, (node.step or LEVEL_DAMAGE) * k)
+  end
+end
+-- What a track node gives at level k: {category = {damage, speed}} (tests, the manual).
+function rd.track_at(corp, id, k)
+  local out = {}
+  for _, node in ipairs(shared.CORPS[corp].tree or {}) do
+    if node.id == id then
+      for _, c in ipairs(node.track or {}) do
+        local l = ladder(c)
+        if l.top > 0 and not node.step then
+          local r = k > 0 and l[math.min(k, l.top)] or {0, 0}
+          out[c] = {r[1], r[2]}
+        else
+          out[c] = {(node.step or LEVEL_DAMAGE) * k, 0}
+        end
+      end
+    end
+  end
+  return out
+end
+
 -- The tree (shared.CORPS[corp].tree): nodes in the corporation's voice. A track node raises the damage of its
--- ammunition categories a level at a time (LEVEL_COST x k for level k, +LEVEL_DAMAGE each or its own step, at most the player's
--- era + 1); a plate node sets plates on unit kinds (rd.unit builds them), from its era. A trigger reads the ledger:
+-- ammunition categories a level at a time (LEVEL_COST x k for level k, the base game's level k or its own step, at most the
+-- player's era + 1); a plate node sets plates on unit kinds (rd.unit builds them), from its era. A trigger reads the ledger:
 -- {damage = d, min = n} (n or more of its units killed by damage d in the window), {turned_back = n} (raids turned
 -- back for want of force). The node whose trigger fires hardest wins (tree order breaks ties); with none, the first
 -- track climbs. A winner it cannot yet afford is saved for: nothing else is bought meanwhile.
 local function level_of(t, node) return (t.nodes[node.id] or 0) end
 local function owned(t, node)
-  if node.track then return level_of(t, node) >= (node.levels or MAX_LEVEL) end
+  if node.track then return next_level(t, node) == nil end
   if node.unit then return t.units[node.unit.kind] ~= nil end
   if node.ability then return t.nodes[node.id] ~= nil end
   for kind, p in pairs(node.plates or {}) do if t.plate[kind] ~= p then return false end end
@@ -206,11 +334,11 @@ local function allowed(t, node, era, corp)
   -- (corp given: its lab must stand; a history brought from orbit needs none.)
   if corp and not rd.lab(corp, node.branch) then return false end
   if node.requires and not t.nodes[node.requires] then return false end
-  if node.track then return level_of(t, node) + 1 <= era + 1 end
+  if node.track then return next_level(t, node) <= era + 1 end
   return era >= (node.era or 0)
 end
 local function cost_of(t, node)
-  if node.track then return node.cost * (level_of(t, node) + 1) end
+  if node.track then return node.cost * next_level(t, node) end
   return node.cost
 end
 local function score(t, node)
@@ -236,11 +364,11 @@ end
 local function apply(corp, t, node)
   local f = game.forces[shared.CORPS[corp].force]
   if node.track then
-    local k = level_of(t, node) + 1
+    local k = next_level(t, node)
     t.nodes[node.id] = k
     for _, c in ipairs(node.track) do
       t.weapons[c] = k
-      f.set_ammo_damage_modifier(c, (node.step or LEVEL_DAMAGE) * k)
+      set_level(f, node, c, k)
     end
     notify(corp, "lp.node-" .. node.id, k)
   else
@@ -308,6 +436,12 @@ function rd.choose(corp)
 end
 
 function rd.tick(tick)
+  if tick % LAB_TICKS == 777 % LAB_TICKS then
+    for corp in pairs(shared.CORPS) do
+      local d = storage.corps and storage.corps[corp]
+      if d and not d.withdrawing then lab_income(corp) end
+    end
+  end
   local every = storage.rd_fast and 3600 or CHOICE_TICKS
   if tick % every ~= 1234 % every then return end
   for corp in pairs(shared.CORPS) do
@@ -316,16 +450,20 @@ function rd.tick(tick)
 end
 
 -- Tests: a research history set outright ({weapons = {cat = level}, plate = {kind = plate}}).
--- The arena only (LP_ARENA_TECH=late): every damage track of the corporation's tree at its top level, as a corporation
+-- The arena only (LP_ARENA_TECH=late): every track of the corporation's tree at its top level, damage and speed, as a corporation
 -- at the end of its research fights. Returns the categories and modifiers set.
 function rd.max_tracks(corp)
   local f = game.forces[shared.CORPS[corp].force]
   local set = {}
   for _, node in ipairs(shared.CORPS[corp].tree or {}) do
     for _, c in ipairs(node.track or {}) do
-      local m = (node.step or LEVEL_DAMAGE) * (node.levels or MAX_LEVEL)
-      if f then f.set_ammo_damage_modifier(c, math.max(f.get_ammo_damage_modifier(c), m)) end
-      set[c] = math.max(set[c] or 0, m)
+      local k = levels_of(node)
+      local r = rd.track_at(corp, node.id, k)[c]
+      if f then
+        f.set_ammo_damage_modifier(c, math.max(f.get_ammo_damage_modifier(c), r[1]))
+        f.set_gun_speed_modifier(c, math.max(f.get_gun_speed_modifier(c), r[2]))
+      end
+      set[c] = math.max(set[c] or 0, r[1])
     end
   end
   return set
@@ -346,12 +484,11 @@ function rd.set(corp, tech)
   local f = game.forces[shared.CORPS[corp].force]
   for c, k in pairs(tech.weapons or {}) do
     t.weapons[c] = k
-    -- (A track's own step per level, node.step: railguns.)
-    local step = LEVEL_DAMAGE
+    local owner = {}
     for _, node in ipairs(shared.CORPS[corp].tree or {}) do
-      for _, cc in ipairs(node.track or {}) do if cc == c and node.step then step = node.step end end
+      for _, cc in ipairs(node.track or {}) do if cc == c then owner = node end end
     end
-    f.set_ammo_damage_modifier(c, step * k)
+    set_level(f, owner, c, k)
   end
   for kind, p in pairs(tech.plate or {}) do t.plate[kind] = p end
 end
@@ -398,13 +535,35 @@ function rd.history(corp, surface)
   return bought
 end
 
+-- Every corporation's forces set again from the levels it holds (on_configuration_changed: a save from before the arms
+-- race held +20% a level and no speed).
+function rd.reapply()
+  for corp, c in pairs(shared.CORPS) do
+    local d = storage.corps and storage.corps[corp]
+    local f = game.forces[c.force]
+    if d and d.tech and f then
+      for _, node in ipairs(c.tree or {}) do
+        if node.track then
+          for _, cat in ipairs(node.track) do set_level(f, node, cat, d.tech.weapons[cat] or 0) end
+        end
+      end
+    end
+  end
+end
+
 -- For stats and tests.
 function rd.summary(corp)
   local t = rd.state(corp)
   local by = {}
   t.losses = losses_of(corp)
   for _, l in ipairs(t.losses) do by[l.damage .. ":" .. tostring(l.killer)] = (by[l.damage .. ":" .. tostring(l.killer)] or 0) + 1 end
-  return {fund = t.fund, wants_lab = t.wants_lab, gated = rd.gated(corp), fielded = rd.mix(corp), salvaged = t.salvaged or 0, weapons = t.weapons, plate = t.plate, nodes = t.nodes, units = t.units, saving = t.saving, lost_by = by,
+  -- (Where each track stands against its cap, the era + 1: whether its fund or the player's era holds it back.)
+  local era, tracks = player_era(), {}
+  for _, node in ipairs(shared.CORPS[corp].tree or {}) do
+    if node.track then tracks[node.id] = {level = t.nodes[node.id] or 0, cap = math.min(era + 1, levels_of(node)), top = levels_of(node)} end
+  end
+  return {tracks = tracks, era = era, served = branches_served(corp), lab_funded = t.lab_funded or 0,
+    fund = t.fund, wants_lab = t.wants_lab, gated = rd.gated(corp), fielded = rd.mix(corp), salvaged = t.salvaged or 0, weapons = t.weapons, plate = t.plate, nodes = t.nodes, units = t.units, saving = t.saving, lost_by = by,
     turned_back = #t.turned_back, walls_met = #t.walls_met, bought = t.bought, strength = rd.strength(corp)}
 end
 

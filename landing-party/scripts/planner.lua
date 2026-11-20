@@ -303,12 +303,19 @@ local function plan(b, only)
         return block and string.format("opened %s block at %.0f,%.0f", block.kind, block.center[1], block.center[2]) end},
     -- Research (rd.lua: a branch climbs only while its lab stands): its exports flowing (launch pad open), the lab its
     -- research wants and has nowhere, a district of its own planned for it, the lab at its heart.
+    -- A town (Grubstake) opens a workshop lot on a street end instead (layout.open_role "lab").
     {"research", function()
-      if not (layout.districts(b) and b.launch_opened and not b.wfc_job and b.parts > LAB_PARTS + keep(b)) then return false end
+      if not ((layout.districts(b) or layout.town(b)) and b.launch_opened and not b.wfc_job
+        and b.parts > LAB_PARTS + keep(b)) then return false end
       local kind = rd.wanted_lab(b.corp)
       b.target = kind and not lab_coming(b, kind) and kind or nil
       return b.target ~= nil end,
       function()
+        if layout.town(b) then
+          local block = layout.open_role(b, "lab")
+          return block and string.format("opened %s lot at %.0f,%.0f for %s", block.lot or block.kind, block.center[1],
+            block.center[2], b.target)
+        end
         local d = layout.district(b, "lab", b.target)
         return d and string.format("district planned at %.0f,%.0f for %s", d.center[1], d.center[2], b.target)
       end},

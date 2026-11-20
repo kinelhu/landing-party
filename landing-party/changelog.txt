@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.474
+Date: 2026-11-20
+  Features:
+    - Grubstake researches in a workshop, a building on one of its town's streets. While none stands, its research stops and the units, armor and abilities it researched are no longer fielded.
+  Balancing:
+    - Corporations research weapons at your own technologies' levels, damage and shooting speed together, still never past one level beyond your era. Before, a level was +20% damage and nothing else, and late in the game your army won almost every fight.
+    - Kessler-Hayashi's tanks and Grubstake's sappers and bomb drones now gain from research.
+    - Corporations' labs now pay for their research. Exports still raise their level.
+    - Corporations size their raids by their units' rate of fire as well as their damage.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.473
 Date: 2026-11-20
   Features:

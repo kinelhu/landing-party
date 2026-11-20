@@ -207,12 +207,12 @@ owed, in electronic circuits. Each billed spawner is marked with Kessler-Hayashi
 Kessler-Hayashi researches as the other corporations do (see [Arrivals](arrivals.qmd)), in labs you can see and
 destroy. Each branch has its own, at the heart of a walled district:
 
-- **Optics lab.** Laser damage, heavy laser troopers, shock troopers and laser tanks.
-- **Armory.** Armor for its troopers, anti-air troopers and railgun tanks.
+- **Optics lab.** Laser damage and rate of fire, heavy laser troopers, shock troopers and laser tanks.
+- **Armory.** Armor for its troopers, its tanks' shells, anti-air troopers and railgun tanks.
 - **Siege works.** Railgun damage, dug-in siege sites, shock troopers against your artillery, and lightning tanks.
 
 A branch advances only while one of its labs stands in some Kessler-Hayashi camp. Destroy the last one and the branch
-stops. Its units are no longer built, and its armor and siege abilities are off. Damage levels already researched stay.
+stops. Its units are no longer built, and its armor and siege abilities are off. Weapon levels already researched stay.
 Its crews rebuild the lab like any building. Labs are military targets.
 
 ## Its units {#sec-kh-units}

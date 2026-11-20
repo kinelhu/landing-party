@@ -50,10 +50,11 @@ shared.CORPS = {
     doctrines = {sprawl = 1}, bases = {["lp-turret"] = "lp-gun-turret", ["lp-infantry"] = "lp-shotgun-hand", ["lp-flamer"] = "lp-flamer-oil"},
     props = {["lp-wall"] = {max_health = 225}},
     -- Its own names for kinds (entity-name.<name>): the Shotgun hand.
-    names = {["lp-infantry"] = "lp-shotgun-hand", ["lp-turret"] = "lp-gun-turret", ["lp-harrier"] = "lp-scrap-copter"},
+    names = {["lp-infantry"] = "lp-shotgun-hand", ["lp-turret"] = "lp-gun-turret", ["lp-harrier"] = "lp-scrap-copter",
+      ["lp-siege-lab"] = "lp-workshop"},
     -- Its tech tree (scripts/rd.lua; docs/reviews/2026-10-14-identity-trees-consult.md): never a fair fight.
     tree = {
-      {id = "handloads", branch = "scrap-arms", track = {"shotgun-shell", "bullet"}, levels = 5, cost = 400},
+      {id = "handloads", branch = "scrap-arms", track = {"shotgun-shell", "bullet", "grenade", "rocket"}, cost = 400},
       -- Loot: the thief funds itself from its victim, then picks its fights.
       {id = "salvage", branch = "loot", era = 1, cost = 800, ability = true, trigger = {turned_back = 2}},
       {id = "prospector", branch = "loot", era = 2, requires = "salvage", cost = 1000, ability = true,
@@ -82,6 +83,9 @@ shared.CORPS = {
     },
     -- Its sky is scrap drones, cheap and many (the user, 2026-10-23: "a more scrappy opponent").
     mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 2}, arch = {pad = "drop", town = true},
+    -- Its research in the world (rd.lua; 0.2.474, the user: "decouple tech budget from the current parts"): one workshop
+    -- for all its branches, a lot in its town (layout.lua, grubstake.tiles workshop); every branch stops while none stands.
+    labs = {["scrap-arms"] = "lp-siege-lab", loot = "lp-siege-lab", wheels = "lp-siege-lab"},
     -- A buggy round the player's base for soft ground (scripts/prowl.lua, behind debug_tune prowl).
     prowls = true,
     -- Development (docs/campaign.md section 6): the level at which each capability comes; absent, never.
@@ -163,7 +167,7 @@ shared.CORPS = {
       ["lp-laser-drone"] = 1},
     -- Its tech tree (scripts/rd.lua): energy weapons, range, discipline.
     tree = {
-      {id = "optics", branch = "optics", track = {"laser", "electric"}, levels = 5, cost = 400},
+      {id = "optics", branch = "optics", track = {"laser", "electric"}, cost = 400},
       -- Siege: its mortars dig in (against sallies and the player's artillery).
       {id = "hardened", branch = "siege", era = 2, cost = 1200, ability = true, trigger = {damage = "explosion", min = 5}},
       -- Railguns: its railgunners' slugs heavier, against biters and their nests, when biters are what kill its units
@@ -174,6 +178,9 @@ shared.CORPS = {
       -- The jammer (scripts/jammer.lua): a mast in the emplacement whose arcs down the player's robots, once a siege's
       -- hits were mended by them.
       {id = "jammer", branch = "siege", era = 2, cost = 1500, ability = true, trigger = {mended = 1}},
+      -- Ordnance (0.2.474, the arms race): its tanks' shells, at the base game's levels (cannon shells gain from its
+      -- fifth). Before, no track raised them: a third of its strike force was untouched by any research.
+      {id = "ordnance", branch = "line", track = {"cannon-shell"}, cost = 400},
       {id = "counter", branch = "siege", era = 3, requires = "hardened", cost = 1000, ability = true,
         trigger = {killer = {"artillery-turret", "artillery-wagon"}, min = 3}},
       {id = "warden", branch = "line", era = 1, cost = 1500, plates = {["lp-infantry"] = "physical"},
@@ -266,7 +273,7 @@ shared.POST_GUNS = {-2, 2}
 shared.HOWITZER_DOWN = 30 * 3600
 -- The sign over each research lab: what its branch fields.
 shared.LAB_ICON = {["lp-optics-lab"] = "item/laser-turret", ["lp-line-lab"] = "item/heavy-armor",
-  ["lp-siege-lab"] = "item/artillery-shell"}
+  ["lp-siege-lab"] = "item/artillery-shell", ["lp-grubstake-siege-lab"] = "item/shotgun"}
 -- A landing's look (descent.lua, scripts/landfx.lua), all drawn: the cargo pod's animation, the suffix of each lander's
 -- falling hull ("lp-lander-fall", "lp-grubstake-lander-fall"), its ground shadow, the explosions' animations (copied from
 -- the base game's big and massive explosions: their frames, at half a frame a tick, checked in descent.lua) and sound.

@@ -169,7 +169,8 @@ layout.clear_ground = clear_ground
 local LOT = 12
 local LOTS = {grubstake = require("__landing-party__.scripts.lots_grubstake")}
 local ROLE_LOTS = {fab = {fab = 1, fab_row = 1, fab3 = 1, corner_fab = 1, tee_fab = 1, corner_yard = 0.5},
-  gen = {power = 1, power2 = 1, corner_power = 1, tee_power = 1}, depot = {depot = 1, depot2 = 1}, compound = {compound = 1}}
+  gen = {power = 1, power2 = 1, corner_power = 1, tee_power = 1}, depot = {depot = 1, depot2 = 1}, compound = {compound = 1},
+  lab = {workshop = 1}}
 -- (guardpost: two of its guns either side of a street, behind junk: turrets in the town, not only at its ends.)
 local CONNECT_LOTS = {straight = 3, straight_lamp = 2, corner = 2, tee = 2, cross = 1, guardpost = 0.6, parking = 1,
   radar = 0.4}
@@ -183,7 +184,8 @@ local STREETS_PER_LOT, STREETS_FREE = 2, 4
 local CAPITAL_PER_LOT, CAPITAL_FREE = 3, 12
 local NEST_EVERY = 4           -- every this many lots with machines, a turret nest closes its farthest street end
 local TOWN_CAP = 14            -- lots with machines in a town hub before a new hub is founded
-local LETTER = {F = {"lp-fabricator", 3}, G = {"lp-generator", 2}, D = {"lp-depot", 4}, R = {"lp-radar", 3},
+-- (B: its research lab, the workshop: shared.CORPS.grubstake.labs.)
+local LETTER = {F = {"lp-fabricator", 3}, G = {"lp-generator", 2}, D = {"lp-depot", 4}, R = {"lp-radar", 3}, B = {"lp-siege-lab", 4},
   T = {"lp-turret", 2}, P = {"lp-pylon", 1}, L = {"lp-post-lamp", 1}}
 local DECOR = {W = 2, X = 1, C = 1, O = 2, K = 3, I = 1, V = 2, M = 3, U = 1}
 -- Waterfront lots (the user, 2026-10-26, "water-incorporating WFC tiles"): a street end on a shore, its pier over the

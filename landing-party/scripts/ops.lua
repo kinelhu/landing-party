@@ -1070,7 +1070,10 @@ local function finish(b, outcome, trace, army)
     end
     local owner = (t and t.owner) or op.owner or "player"
     for name, n in pairs(op.guns_at) do
-      know.learn_price(b.corp, owner, name, (lost_to[name] or 0) / n, op.gun_prior[name], alive(op) == 0,
+      -- (Learned as research-free units: what it lost times its strength then, as the turret weights it is set beside;
+      -- read, defence() divides by its strength now. Unnormalised, the strength was divided twice: by the arms race's x10
+      -- at lasers 7, the consult's section 4.)
+      know.learn_price(b.corp, owner, name, (lost_to[name] or 0) / n * rd.strength(b.corp, t and t.dmg), op.gun_prior[name], alive(op) == 0,
         math.min(1, (op.launched or 1) / 30))
     end
   end

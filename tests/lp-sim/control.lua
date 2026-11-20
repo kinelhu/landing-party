@@ -7644,9 +7644,19 @@ scenarios.techup = function()
   schedule(700, function()
     S.before = lp("debug_needed", storage.id, S.guns)
   end)
+  -- (Read each minute, the last kept: researched, the raid became one a garrison fields, and the arms race's first run
+  -- razed the assembler, its reading then nil.)
+  for tk = 1300, END - 120, 600 do
+    schedule(tk, function()
+      local n = lp("debug_needed", storage.id, S.guns)
+      -- (Only while its three guns stand: after the raid the reading is of a bare assembler.)
+      local guns = surface().count_entities_filtered{name = "gun-turret", force = "player", position = S.guns, radius = 12}
+      if n and n.kind == "assembling-machine-1" and guns == 3 then S.after = n end
+    end)
+  end
   schedule(END - 60, function()
     local r = lp("rd", "serenity")
-    local after = lp("debug_needed", storage.id, S.guns)
+    local after = S.after
     info("techup: " .. serpent.line({rd = r, before = S.before, after = after}))
     -- Serenity's Line troopers fire lasers: its main category.
     local lvl = (r.weapons or {}).laser or 0
@@ -7657,8 +7667,26 @@ scenarios.techup = function()
       check("techup: it bought lasers to level 2 or more", lvl >= 2, tostring(lvl))
       check("techup: the raid it needs fell", after and after.needed < S.before.needed,
         string.format("%s -> %s", S.before and S.before.needed, after and after.needed))
+      -- The consult's bound: at lasers 5 with speed counted, at most 10 (14 on damage alone).
+      if lvl >= 5 then
+        check("techup: at lasers 5 the raid it needs is one a garrison fields", after and after.needed <= 10,
+          tostring(after and after.needed))
+      end
       check("techup: the corporation's force carries it", game.forces["lp-serenity"].get_ammo_damage_modifier("laser") >= 0.4,
         tostring(game.forces["lp-serenity"].get_ammo_damage_modifier("laser")))
+      -- The arms race (0.2.474): its level is the base game's, damage and shooting speed together (laser weapons damage
+      -- and laser shooting speed to that level), and its strength counts both. Seen failing on 0.2.473: speed 0.
+      local want = lp("debug_rd_track", "serenity", "optics", lvl).laser
+      local f = game.forces["lp-serenity"]
+      local dmg, spd = f.get_ammo_damage_modifier("laser"), f.get_gun_speed_modifier("laser")
+      check("techup: its level is the base game's, damage and shooting speed", want and spd > 0
+        and math.abs(dmg - want[1]) < 1e-6 and math.abs(spd - want[2]) < 1e-6,
+        string.format("level %d: damage %.2f speed %.2f, the ladder %s", lvl, dmg, spd, serpent.line(want)))
+      local plate = 1
+      for _, p in pairs(r.plate or {}) do plate = 1.15; break end
+      check("techup: its strength counts both", math.abs(r.strength - (1 + dmg) * (1 + spd) * plate) < 1e-6
+        or math.abs(r.strength - (1 + dmg) * (1 + spd) * 1.4) < 1e-6,
+        string.format("%.3f against (1 + %.2f) x (1 + %.2f)", r.strength, dmg, spd))
     end
   end)
 end
@@ -7742,6 +7770,83 @@ scenarios.labs = function()
     check("labs: no Lance fielded without it", S.killed and not S.lance_fielded_dark, tostring(S.lance_fielded_dark))
     check("labs: the lab rebuilt", S.back ~= nil, S.back and string.format("minute %.1f", S.back / 3600) or "not yet")
     check("labs: back, the climb went on", (S.lvl_end or 0) > (S.lvl_at_kill or 0), string.format("%s -> %s", tostring(S.lvl_at_kill), tostring(S.lvl_end)))
+  end)
+end
+
+-- Workshop (0.2.474; the user: "decouple tech budget from the current parts corps use"): Grubstake's research is its
+-- workshop's, one lab for all its branches, a lot in its town. Its fund fills from nothing while no workshop stands
+-- (its exports no longer feed it), the research rule opens a workshop lot, and once it stands the fund fills by its labs'
+-- rate for each of its three branches and its tracks climb at the base game's levels; killed, the income and the climb
+-- stop until it is rebuilt.
+scenarios.workshop = function()
+  local G = "lp-grubstake"
+  schedule(60, function()
+    lp("debug_tune", {era = 4, rd_fast = true, history_off = true, raids_off = true, crews_off = true, mature_blocks = 2})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    storage.id = S.g
+    lp("debug_parts", S.g, 2000)
+  end)
+  local function shop() return surface().find_entities_filtered{name = "lp-grubstake-siege-lab", force = G}[1] end
+  for t = 2 * 3600, END - 120, 600 do
+    schedule(t, function()
+      local r = lp("rd", "grubstake")
+      local w = shop()
+      local lvl = (r.weapons or {}).bullet or 0
+      if not S.built and not w then
+        local parts = lp("stats", S.g).parts
+        if parts < 300 then lp("debug_parts", S.g, 300 - parts) end
+        -- An export of 1,000 while none stands: before 0.2.474 30% of it went to the fund (seen failing: fund 300).
+        if not S.exported then S.exported = true; lp("debug_export", S.g, 1000); r = lp("rd", "grubstake") end
+        S.fund_dark0, S.funded_dark0 = r.fund, r.lab_funded
+      end
+      if not S.built and w then
+        S.built, S.lvl_at_built, S.funded_at_built = game.tick, lvl, r.lab_funded
+        S.served = r.served
+        S.name = w.localised_name
+        local signs = 0
+        for _, o in pairs(rendering.get_all_objects("landing-party")) do
+          if o.valid and o.type == "sprite" and o.target and o.target.entity == w then signs = signs + 1 end
+        end
+        S.signs = signs
+        info(string.format("workshop: stood at %.0f,%.0f at minute %.1f, fund %d", w.position.x, w.position.y,
+          game.tick / 3600, r.fund))
+      end
+      if S.built and not S.killed and game.tick > S.built + 8 * 3600 and w then
+        S.killed, S.lvl_at_kill, S.funded_at_kill = game.tick, lvl, r.lab_funded
+        w.die("player")
+      end
+      if S.killed and not S.back then
+        if shop() then S.back = game.tick else S.lvl_dark, S.funded_dark = lvl, r.lab_funded end
+      end
+      S.lvl_end, S.r = lvl, r
+    end)
+  end
+  schedule(END - 60, function()
+    local r = S.r or {}
+    info("workshop: " .. serpent.line({built = S.built and S.built / 3600, killed = S.killed and S.killed / 3600,
+      back = S.back and S.back / 3600, lvl = {S.lvl_at_built, S.lvl_at_kill, S.lvl_dark, S.lvl_end},
+      funded = {S.funded_dark0, S.funded_at_built, S.funded_at_kill, S.funded_dark}, fund0 = S.fund_dark0,
+      tracks = r.tracks, nodes = r.nodes}))
+    check("workshop: no income and no export share while no workshop stood", (S.funded_dark0 or 0) == 0
+      and (S.fund_dark0 or 0) == 0, string.format("funded %s, fund %s", tostring(S.funded_dark0), tostring(S.fund_dark0)))
+    check("workshop: its research rule built one", S.built ~= nil, S.built and string.format("minute %.1f", S.built / 3600) or "none")
+    check("workshop: named Grubstake's workshop, with its sign", S.name and serpent.line(S.name):find("lp%-workshop") ~= nil
+      and S.signs == 1, serpent.line(S.name) .. ", signs " .. tostring(S.signs))
+    check("workshop: it serves its three branches", S.served == 3, tostring(S.served))
+    -- Eight minutes standing at 20 a minute for each of three branches: 480 (a minute's slack either side; at six, 360
+    -- bought nothing: its guns' first level is 400).
+    local got = (S.funded_at_kill or 0) - (S.funded_at_built or 0)
+    check("workshop: standing, its fund filled at its labs' rate", got >= 420 and got <= 540, tostring(got))
+    check("workshop: standing, its guns climbed", (S.lvl_at_kill or 0) >= 1, tostring(S.lvl_at_kill))
+    local f = game.forces[G]
+    local want = lp("debug_rd_track", "grubstake", "handloads", S.lvl_end or 0).bullet
+    check("workshop: its level the base game's, damage and shooting speed", want
+      and math.abs(f.get_gun_speed_modifier("bullet") - want[2]) < 1e-6 and want[2] > 0,
+      string.format("%.2f against %s", f.get_gun_speed_modifier("bullet"), serpent.line(want)))
+    check("workshop: killed, no income and no climb until it was back", S.killed and S.lvl_dark == S.lvl_at_kill
+      and S.funded_dark == S.funded_at_kill, string.format("level %s -> %s, funded %s -> %s", tostring(S.lvl_at_kill),
+      tostring(S.lvl_dark), tostring(S.funded_at_kill), tostring(S.funded_dark)))
+    check("workshop: rebuilt", S.back ~= nil, S.back and string.format("minute %.1f", S.back / 3600) or "not yet")
   end)
 end
 
@@ -9682,7 +9787,11 @@ scenarios.director = function()
   -- did): two of its squads (24 units) at a rally beacon set to D, 100 tiles beyond A from B, with a radar covering A's
   -- ground and six command relays: it holds there till the strike force's pods are seen, goes out, breaks it, saves more of A than
   -- B keeps, and walks back. LP_MIX=armyhold: the same beacon on hold: the squad stays home and A is razed as B is.
-  local defend = params.mix == "armydefend" or params.mix == "armyhold"
+  -- LP_MIX=armylate (0.2.474, the arms race consult's check): armydefend late, the player at every finite level of the
+  -- damage and shooting speed technologies and Kessler-Hayashi's tracks at their top (rd.max_tracks): the strike force
+  -- still breaks and A keeps more than B, and the fight is contested: the squad loses between 20% and 70% of its units.
+  local late = params.mix == "armylate"
+  local defend = params.mix == "armydefend" or params.mix == "armyhold" or late
   -- LP_MIX=radarlead (0.2.437; the user: "Yes to radar distance"): no squad; a radar beside A and one 80 tiles off B, away
   -- from the camp: each strike force is told ahead by its best radar's distance in chunks from where its pods land, the
   -- full warning over the landing chunk, warn_edge of it at the edge of the radar's reach. Checked against the formula
@@ -9744,7 +9853,7 @@ scenarios.director = function()
         put("electric-energy-interface", R[1] + 3, R[2])
         put("medium-electric-pole", R[1] + 1.5, R[2] + 2.5)
         S.beacon = put("lp-rally-beacon", P[1] + 0.5, P[2] - 6.5)
-        if params.mix == "armydefend" then
+        if params.mix == "armydefend" or late then
           local cb = S.beacon.get_or_create_control_behavior()
           ;(cb.get_section(1) or cb.add_section()).set_slot(1, {value = {type = "virtual", name = "signal-D",
             quality = "normal"}, min = 1})
@@ -9754,6 +9863,17 @@ scenarios.director = function()
         S.place(P)
         S.place({P[1] + 12, P[2]})
         S.enlisted = lp("debug_enlist", {{P[1] - 20, P[2] - 20}, {P[1] + 24, P[2] + 20}})
+        if late then
+          for _, t in pairs(game.forces.player.technologies) do
+            local weapons = false
+            for _, e in ipairs(t.prototype.effects or {}) do
+              if e.type == "ammo-damage" or e.type == "gun-speed" then weapons = true end
+            end
+            if weapons and t.prototype.max_level < 4294967295 then t.researched = true end
+          end
+          S.tracks = lp("debug_rd_max", "serenity")
+          S.placed = #surface().find_entities_filtered{force = "player", name = {"lp-trooper", "lp-rocket-trooper", "lp-battle-tank"}}
+        end
       elseif radarlead then
         local function radar(at)
           flatten(at[1] - 4, at[2] - 4, at[1] + 4, at[2] + 4)
@@ -9860,6 +9980,17 @@ scenarios.director = function()
         local got = string.format("A: razed %.0f, repelled %s; B: razed %.0f, repelled %d; enlisted %s, sent %d, out as far as %.0f, %d alive, %d home; ran dry %s, rearmed %s, shots %s",
           S.l1 or -1, tostring(S.rep1), l2, rep2, tostring(S.enlisted), a.defend_sent, S.far or 0, alive, home,
           tostring(a.dried), tostring(a.rearmed), tostring(a.shots))
+        if late then
+          local lost = 1 - alive / math.max(1, S.placed or 24)
+          got = got .. string.format("; lost %.0f%% of %s, trooper damage %.2f speed %.2f, Kessler-Hayashi's %s", 100 * lost,
+            tostring(S.placed), game.forces.player.get_ammo_damage_modifier("bullet"), game.forces.player.get_gun_speed_modifier("bullet"),
+            serpent.line(S.tracks))
+          check("director: armylate, both at the top of their research, the strike force still breaks and A keeps more",
+            S.rep1 == 1 and rep2 == 0 and (S.l1 or 1e9) < l2, got)
+          -- (Below 20%: the late game before the arms race, the squad wiping a strike force unhurt.)
+          check("director: armylate, and the fight is contested: the squad loses 20% to 70%", lost >= 0.2 and lost <= 0.7, got)
+          return
+        end
         if params.mix == "armyhold" then
           -- (Not "not broken": having razed A, the force walked on to the squad and broke on it there, 2026-11-16.)
           check("director: armyhold, the squad 100 tiles off on hold stays home and A is razed as B is, unanswered",
@@ -22442,7 +22573,7 @@ end
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
 -- Labs (rd.lua) gate research only where a scenario asks for them: the rest test the tree's choices, not where it stands.
-local LABS = {labs = true, breach = true, factory = true, visit = true}
+local LABS = {labs = true, breach = true, factory = true, visit = true, workshop = true}
 if not LABS[params.scenario] then schedule(1, function() lp("debug_tune", {labs_off = true}) end) end
 -- The biotech lands only where it is the subject (its arrival needs nests and evolution, which some scenarios set up).
 -- (A visit lets it come as it would to the player's game: on evolution, to a nest field out from the factory; the

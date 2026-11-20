@@ -137,6 +137,21 @@ tile depot 3
 "  ++ ::  ++ "
 "     ::     "
 
+# Its workshop (0.2.474): its research, one lab for all its branches (rd.lua), by a street like its depot.
+tile workshop 3
+"     ::     "
+"     ::     "
+" %%%%::  X  "
+" B+++::     "
+" ++++::  C  "
+" ++++::P C  "
+" ++++::     "
+" %%%%::  L  "
+"     ::     "
+"  W+ ::  T+ "
+"  ++ ::  ++ "
+"     ::     "
+
 tile fab 3
 "     ::     "
 "     ::     "
