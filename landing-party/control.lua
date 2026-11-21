@@ -1118,6 +1118,11 @@ remote.add_interface("landing-party", {
     return {wanted = rd.wanted_lab(b.corp), parts = b.parts, keep = b.posture and b.posture.keep or 0,
       launch = b.launch_opened == true, wfc = b.wfc_job ~= nil, districts = layout.districts(b), queue = #(b.queue or {})}
   end,
+  -- What a raid's staging look weighs of the units by pos (intel's mobile: command.worth for the player's army).
+  debug_units_near = function(surface_name, pos, force_name)
+    return ops.units_near(game.surfaces[surface_name], pos, {game.forces[force_name]})
+  end,
+  debug_unit_worth = function(u) return command.worth(u) end,
   debug_tier = function(u, round)
     storage.cmd.tier_test = storage.cmd.tier_test or {}
     storage.cmd.tier_test[u.unit_number] = round

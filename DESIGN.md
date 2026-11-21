@@ -216,10 +216,8 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   docs/reviews/2026-11-19-army-logistics-consult.md (the threat with the factory); director armydefend with a depot by
   the D beacon and a roboport (the consult's readings: magazines drawn and packs used a beat).
 - Ammunition tiers, what stages 1 and 2 (0.2.470 bullets, 0.2.471 uranium shells, 0.2.472 the explosive rungs; TIER_EXP
-  0.33 from the arena, docs/arena-tiers.md) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): the corporations' pricing of the player's army (intel.lua) reading the squad's
-  tier; the beacon's rounds as item signals; the UPS run with tiers on.
-- The arms race's remainder (0.2.474, docs/reviews/2026-11-20-arms-race-consult.md): the player's units weighed in intel
-  by their arena price, research and rank (a flat 0.5 each now; with the tier item above); the flame trooper against
+  0.33 from the arena, docs/arena-tiers.md) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): the beacon's rounds as item signals; the UPS run with tiers on.
+- The arms race's remainder (0.2.474, docs/reviews/2026-11-20-arms-race-consult.md): the flame trooper against
   corporations (-49 late, its infantry rows fell about 30); the reference-factory visits at the player's full research
   (razed within twice the calibration rows); fortress and siegetier against a researched camp; profile.sh on director
   climax for UPS; the Workshop's own look (a recoloured Siege works now).
@@ -2775,6 +2773,14 @@ if their units are upgraded also." `scripts/rd.lua`.
   difficulty preset's research. The late band: kept (the user, 2026-11-20: "I think the late lead might be ok": the
   player leads late, +23 to +71, nothing corporate beats more than 3 of 6). Grubstake on old saves: not a concern (the user: "The mod isn't released"). The tier cap, ordnance and
   Grubstake's raidable workshop: kept (the user: "ok on the calls").
+- **The player's units weighed by what they are worth (0.2.478, the arms race's remainder and the tiers consult's).**
+  A raid's staging look (intel's mobile) and a strike's mix (director strike_mix) weighed every unit 0.5 and counted it
+  one a head: a battle tank on uranium shells at full research and rank as a fresh trooper. Now command.worth: its
+  command slots (shared.POPULATION, the arena's price), times its force's damage and shooting speed for its weapon,
+  its rank (shared.rank_scale) and its round's factor raised to TIER_EXP, at shared.SLOT_WEIGHT (0.5, the old flat
+  weight: a named prior) a slot. Characters, cars, spidertrons and the corporations' units as before. Scenario worth
+  (new; seen failing on the flat weight). abort, weigh, defend and director armydefend, armylate and armydrop pass.
+  Visits: LP_MIX=fullres completes the player's research before the first landing (the consult's sweep bound).
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers

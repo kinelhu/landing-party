@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.478
+Date: 2026-11-21
+  Changes:
+    - The corporations judge your units by their real strength: command slots, weapon research, rank and ammunition. A raid looks again before it attacks and turns back from a researched battle tank, where it used to weigh it as a new trooper. A strike's choice of units counters what your strongest units are, not how many there are.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.477
 Date: 2026-11-20
   Bugfixes:

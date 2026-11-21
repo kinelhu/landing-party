@@ -948,6 +948,34 @@ local function ladder(name)
   return out or nil
 end
 command.ladder = ladder
+-- What one of the player's units is worth in a fight, in its command slots (shared.POPULATION: the arena's price, a
+-- trooper one), scaled by its force's research for its weapon (damage times shooting speed), its rank (shared.rank_scale)
+-- and its round's tier (the factor raised to TIER_EXP, as on_hit pays it). nil for anything not of the player's army.
+-- (The arms race consult, 2026-11-20: the corporations weighed every unit 0.5 whatever it was, a battle tank at
+-- uranium shells as a fresh trooper.)
+local weapon_cat = {}
+function command.worth(e)
+  local slots = e and e.valid and shared.POPULATION[e.name]
+  if not slots then return nil end
+  local cat = weapon_cat[e.name]
+  if cat == nil then
+    local lad = ladder(e.name)
+    local ap = e.prototype.attack_parameters
+    cat = lad and lad.category or (ap and ap.ammo_categories and ap.ammo_categories[1]) or false
+    weapon_cat[e.name] = cat
+  end
+  local f = e.force
+  local research = cat and (1 + f.get_ammo_damage_modifier(cat)) * (1 + f.get_gun_speed_modifier(cat)) or 1
+  local tier = 1
+  local c = storage.cmd or {}
+  local t = c.troopers and c.troopers[e.unit_number]
+  -- (Or a unit the arena marked, debug_tier, as on_hit reads it.)
+  local round = t and t.round or (c.tier_test and c.tier_test[e.unit_number])
+  local lad = round and ladder(e.name)
+  local x = lad and lad.factor[round]
+  if x and x > 1 then tier = x ^ (c.tier_exp or shared.TIER_EXP) end
+  return slots * research * shared.rank_scale(e) * tier
+end
 -- What a unit may draw: its own round, or, empty, any of its ladder best first; an untiered unit its loadout.
 local function kinds(t, empty)
   local lad = ladder(t.unit.name)

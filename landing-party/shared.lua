@@ -393,6 +393,9 @@ shared.CANNON = {STORE = 2, CYCLE = 180, FUEL = 1500, OXIDIZER = 1500, R0 = 16, 
 -- and about 48%), so (1 + 0.3 l)(1 + 0.48 l), Lanchester's health times damage. 1 for anything not a unit (a turret's
 -- quality not measured).
 shared.RANK = {health = 0.3, damage = 0.48}
+-- One command slot of the player's army in turrets' weight (ops.weigh: a gun turret 1), as the corporations weigh it
+-- (intel's mobile, the director's strike mix; command.worth). A named prior, the flat 0.5 a unit they used before 0.2.478.
+shared.SLOT_WEIGHT = 0.5
 function shared.rank_scale(e)
   if not (e and e.valid and (e.type == "unit" or e.type == "spider-unit") and e.quality) then return 1 end
   local l = e.quality.level or 0

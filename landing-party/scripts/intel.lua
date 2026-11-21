@@ -120,16 +120,21 @@ function ops.exposure(surface, pos, forces, fire_only)
   return w
 end
 -- Who stands by a target, at the staging look only (units move; the two-minute scan would be stale): characters 0.5,
--- units 0.5, cars and tanks 1.5, spidertrons 3, within 40 tiles.
+-- units 0.5, cars and tanks 1.5, spidertrons 3, within 40 tiles. The player's army by what each unit is worth
+-- (command.worth: its slots, research, rank and round), shared.SLOT_WEIGHT a slot: a fresh trooper weighs as before, a
+-- battle tank its eight slots times its research, rank and round (the arms race's remainder, 0.2.478).
 local MOBILE = {character = 0.5, unit = 0.5, car = 1.5, ["spider-vehicle"] = 3}
+local command = require("__landing-party__.scripts.command")
 local function mobile(surface, pos, forces)
   local w = 0
   for _, e in pairs(surface.find_entities_filtered{position = pos, radius = 40, force = forces,
     type = {"character", "unit", "car", "spider-vehicle"}}) do
-    w = w + (MOBILE[e.type] or 0)
+    local worth = e.type == "unit" and command.worth(e)
+    w = w + (worth and worth * shared.SLOT_WEIGHT or MOBILE[e.type] or 0)
   end
   return w
 end
+ops.units_near = mobile
 local UNITS_TICKS = 5 * 3600
 
 local function value_of(e)

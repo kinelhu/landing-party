@@ -1736,6 +1736,7 @@ end
 
 -- Its mix: the camp's composition, tilted against the guards of its target (shared.DIRECTOR's strike_guard).
 local COUNTERS = require("__landing-party__.counters")
+local command = require("__landing-party__.scripts.command")
 local GUARD_TYPES = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret", "unit", "car", "spider-vehicle"}
 strike_mix = function(b, k)
   local m = army.composition(b, army.mix(b))
@@ -1746,8 +1747,12 @@ strike_mix = function(b, k)
   local seen, n = {}, 0
   for _, e in ipairs(surface.find_entities_filtered{position = k.target, radius = tun("strike_guard"), force = k.owner,
     type = GUARD_TYPES}) do
-    seen[e.name] = (seen[e.name] or 0) + 1
-    n = n + 1
+    -- (The player's units by what each is worth, as intel weighs them (shared.SLOT_WEIGHT): counted one a head,
+    -- a squad's fresh troopers outweighed the battle tank leading them, 0.2.478.)
+    local worth = e.type == "unit" and command.worth(e)
+    local x = worth and worth * shared.SLOT_WEIGHT or 1
+    seen[e.name] = (seen[e.name] or 0) + x
+    n = n + x
   end
   if n == 0 then return m end
   local out = {}

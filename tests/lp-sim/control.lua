@@ -7839,6 +7839,48 @@ scenarios.catchup = function()
   end)
 end
 
+-- Worth (0.2.478; the arms race's remainder): the corporations weigh each of the player's units by its command slots,
+-- its research, its rank and its round (command.worth), a raid's staging look (intel's mobile) and a strike's mix alike.
+-- Before, a unit was 0.5 whatever it was: a battle tank at the top of research and on uranium shells as a fresh trooper
+-- (seen failing: 0.5 and 0.5).
+scenarios.worth = function()
+  local function put(name, x, y, q)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", quality = q}
+  end
+  local function near(x, y) return lp("debug_units_near", surface().name, {x, y}, "player") end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-200, -20, 200, 20)
+    local f = game.forces.player
+    put("lp-trooper", -150, 0)
+    S.trooper = near(-150, 0)
+    S.tank0 = put("lp-battle-tank", 0, 0)
+    S.tank = near(0, 0)
+    f.set_ammo_damage_modifier("cannon-shell", 1)
+    f.set_gun_speed_modifier("cannon-shell", 1)
+    S.researched = near(0, 0)
+    S.tank0.destroy()
+    S.ranked_u = put("lp-battle-tank", 0, 0, "rare")
+    S.ranked = near(0, 0)
+    lp("debug_tier", S.ranked_u, "uranium-cannon-shell")
+    S.tiered = near(0, 0)
+    S.char = surface().create_entity{name = "character", position = {150, 0}, force = "player"}
+    S.character = near(150, 0)
+  end)
+  schedule(120, function()
+    local r = {trooper = S.trooper, tank = S.tank, researched = S.researched, ranked = S.ranked, tiered = S.tiered,
+      character = S.character}
+    info("worth: " .. serpent.line(r))
+    check("worth: a fresh trooper weighs as before, a character too", math.abs(S.trooper - 0.5) < 1e-6
+      and math.abs(S.character - 0.5) < 1e-6, serpent.line(r))
+    check("worth: a battle tank weighs its eight slots", math.abs(S.tank - 8 * S.trooper) < 1e-6, serpent.line(r))
+    check("worth: research for its shells raises it by damage times speed", math.abs(S.researched - 4 * S.tank) < 1e-6,
+      serpent.line(r))
+    check("worth: a higher rank raises it, then a better round", S.ranked > S.researched and S.tiered > S.ranked,
+      serpent.line(r))
+  end)
+end
+
 -- Workshop (0.2.474; the user: "decouple tech budget from the current parts corps use"): Grubstake's research is its
 -- workshop's, one lab for all its branches, a lot in its town. Its fund fills from nothing while no workshop stands
 -- (its exports no longer feed it), the research rule opens a workshop lot, and once it stands the fund fills by its labs'
@@ -16486,6 +16528,17 @@ scenarios.visit = function()
         e.destroy(); n = n + 1
       end
       info("visit: removed the player's artillery, " .. n .. " pieces")
+    end)
+  end
+  -- LP_MIX=fullres (any mix containing it; the arms race consult's sweep bound, 0.2.478): the player's force with every
+  -- technology researched before the first landing, so the corporations arrive at the top era with the history such a
+  -- world gives them (rd.history) and their tracks capped at that era; the player's damage and speed as researched.
+  if params.mix:find("fullres", 1, true) then
+    schedule(20, function()
+      game.forces.player.research_all_technologies()
+      local f = game.forces.player
+      info(string.format("visit: the player's research complete (bullet damage +%.2f, laser +%.2f)",
+        f.get_ammo_damage_modifier("bullet"), f.get_ammo_damage_modifier("laser")))
     end)
   end
   if params.mix:find("provoked", 1, true) then

@@ -4,6 +4,7 @@
 #   scripts/visit.sh <save.zip> [minutes]      e.g. scripts/visit.sh ~/Library/.../factorio/saves/nwa.zip 180
 #   LP_MIX=provoked: an hour in, both corporations count the factory as having attacked them.
 #   LP_MIX=noart: the player's artillery (turrets and wagons) removed at the start; combines (noart-provoked...).
+#   LP_MIX=fullres: the player's research completed before the first landing (the corporations arrive at the top era).
 #   LP_PROFILE=1: both benchmarks with the engine's per-tick script timings (mean script, the worst ticks).
 # First a baseline benchmark of the save as it is (base, Space Age, Quality, Elevated Rails), then the visit; reports
 # both ms a tick, the visit's story (results.txt) and its timeline, in docs/sim/visit-<save>/.
