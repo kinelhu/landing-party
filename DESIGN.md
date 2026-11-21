@@ -223,9 +223,6 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   corporations (-49 late, its infantry rows fell about 30); the reference-factory visits at the player's full research
   (razed within twice the calibration rows); fortress and siegetier against a researched camp; profile.sh on director
   climax for UPS; the Workshop's own look (a recoloured Siege works now).
-  The arms race's picture for the manual: the user chooses one before anything goes in (drafts: scripts/arms_race.py,
-  power_ladder.py, research_timeline.py and the paired ladders; the user, 2026-11-20: "I wanted to decide on the graphical
-  representation to use before putting it anywhere").
   The research pace: 20 a minute a branch gave Kessler-Hayashi optics 1 at minute 73 of scenario research; to be read
   against a real game after the playtest.
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
