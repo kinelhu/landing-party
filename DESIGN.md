@@ -217,8 +217,7 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   the D beacon and a roboport (the consult's readings: magazines drawn and packs used a beat).
 - Ammunition tiers, what stages 1 and 2 (0.2.470 bullets, 0.2.471 uranium shells, 0.2.472 the explosive rungs; TIER_EXP
   0.33 from the arena, docs/arena-tiers.md) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): the stutter tick of director climax (below, 0.2.480).
-- The arms race's remainder (0.2.474, docs/reviews/2026-11-20-arms-race-consult.md): the flame trooper against
-  corporations (-49 late, its infantry rows fell about 30); the reference-factory visits at the player's full research
+- The arms race's remainder (0.2.474, docs/reviews/2026-11-20-arms-race-consult.md): the reference-factory visits at the player's full research
   (razed within twice the calibration rows: running, Nauvis-only research); the Workshop's own look (a recoloured Siege works now).
   The research pace: 20 a minute a branch gave Kessler-Hayashi optics 1 at minute 73 of scenario research; to be read
   against a real game after the playtest.
@@ -261,6 +260,8 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - Depletion and relocation (the user, 2026-11-05: "Depletion should probably never occur").
 - Truces (0.2.325: "Maybe we just drop the idea of a truce?").
 - The light mech walker, for 0.3.0 (the user, 2026-11-15).
+- The flame trooper tuned against the corporations (-44 late; about even with their infantry): kept the answer to
+  biters (the user, 2026-11-21: "I think I would keep it as anti-biter for now").
 
 ## Legibility audit (2026-10-20)
 The user: "There is starting to be a big gap between mechanics and what's communicated to the players." The mod grew
