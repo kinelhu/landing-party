@@ -2811,6 +2811,11 @@ if their units are upgraded also." `scripts/rd.lua`.
   30 past a laser's 24. That hit is now shared.RAIL_OTHER by script (control.lua, lp-rail-other), unraised; its 40 to
   biters and 250 to nests raised as before. rail checks it (78 a railgunner in 20 s on a wall; 350 seen failing on the
   old slug); clear, clear worms, hazard and rail line pass.
+  The laser visit again with it (v482): railgunners broke 11 (86), razed_worth 590 (455): not the railgunners. Its razing
+  is Kessler-Hayashi's sieges at tier 3 with orbital strikes on the laser wall's substations (195 at minute 30, 126 at
+  138, 45 of 72 lost), which its era 0 never brings (plain: tier 1, 20 razed); 1,053 pieces razed, 138 rebuilt by robots,
+  586 ghosts left. The consult's bound (2 x the calibration's row) compares an era-5 world with the calibration's era-0
+  factories (made by script, nothing researched): whether this is the late pressure wanted is the user's call.
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers
