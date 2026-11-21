@@ -235,8 +235,10 @@ relays like any building, so keep them inside your defenses and on a reliable gr
 set its stance, and a clock on X or Y walks the rally point back and forth as a patrol. The beacon reports on its own
 output: **S** the units in its squad, **H** those of them within {{< var army.here >}} tiles of its rally point, **E** corporation units, Synthexis's biters and wild biters and **T** enemy turrets and worms within
 reach of its rally point, **N** the nests and worms within reach, **M** the squad's ammunition as a share of what its units carry when full, from 0
-to 100, and **W** 1 while a defending squad is out. A decider that sends R when M falls below 30 pulls a squad home to
-rearm before it runs dry. A decider that sends A once S reaches the size you
+to 100, and **W** 1 while a defending squad is out. The magazines and shells its units hold come out too, as item
+signals, one for each kind of round, a part-used magazine counted whole. A decider that sends R when M falls below 30
+pulls a squad home to rearm before it runs dry; one that reads the uranium magazines can do the same for its best
+rounds alone. A decider that sends A once S reaches the size you
 want holds a squad until it is full, then attacks; one that reads W can shut gates or light lamps while the squad is
 away.
 

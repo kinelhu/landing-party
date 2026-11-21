@@ -3731,6 +3731,22 @@ scenarios.tiers = function()
     S.ty_after = lp("debug_ammo", S.TY)
     S.panel = lp("debug_beacon_ammo", S.B)
   end)
+  -- The beacon's report a beat later (it writes each command tick): its rounds by kind as item signals, the magazines
+  -- held, a part-used one whole (0.2.480; the tiers consult, stage 2).
+  schedule(2520, function()
+    S.items, S.want_mags = {}, 0
+    for _, sec in pairs(S.B.get_or_create_control_behavior().sections) do
+      for _, f in pairs(sec.filters) do
+        if f.value and f.value.type == "item" then S.items[f.value.name] = (S.items[f.value.name] or 0) + f.min end
+      end
+    end
+    for _, u in ipairs({S.TU, S.TY, S.GB}) do
+      local a = u.valid and lp("debug_ammo", u)
+      if a and a.round == "uranium-rounds-magazine" and a.ammo > 0 then
+        S.want_mags = S.want_mags + math.ceil(a.ammo / prototypes.item["uranium-rounds-magazine"].magazine_size)
+      end
+    end
+  end)
   schedule(2600, function()
     S.shown = {tu = lp("debug_ammo", S.TU).shown, ty = lp("debug_ammo", S.TY).shown, gb = lp("debug_ammo", S.GB).shown}
     S.D.get_inventory(defines.inventory.chest).clear()
@@ -3813,6 +3829,8 @@ scenarios.tiers = function()
       serpent.line({S.ty_before, S.ty_after}))
     check("tiers: the squad panel counts its units by round", S.panel and S.panel.by_round
       and S.panel.by_round["uranium-rounds-magazine"] == 3, serpent.line(S.panel))
+    check("tiers: the beacon reports its squad's magazines by kind as item signals", S.items
+      and S.want_mags > 0 and S.items["uranium-rounds-magazine"] == S.want_mags, serpent.line({S.items, S.want_mags}))
     check("tiers: each unit's alt-mode icon shows its round", S.shown and S.shown.tu == "uranium-rounds-magazine"
       and S.shown.ty == "uranium-rounds-magazine" and S.shown.gb == "uranium-rounds-magazine", serpent.line(S.shown))
     check("tiers: the depot emptied, the uranium trooper drained walks to the barracks and loads yellow",
@@ -16536,12 +16554,28 @@ scenarios.visit = function()
     end)
   end
   -- LP_MIX=fullres (any mix containing it; the arms race consult's sweep bound, 0.2.478): the player's force with every
-  -- technology researched before the first landing, so the corporations arrive at the top era with the history such a
-  -- world gives them (rd.history) and their tracks capped at that era; the player's damage and speed as researched.
+  -- finite technology Nauvis's seven packs research done before the first landing, so the corporations arrive at the
+  -- era such a world reads, with the history it gives them (rd.history) and their tracks capped at that era; the
+  -- player's damage and speed as researched. (All of them, Space Age's planets too, read era 11 on a Nauvis base, the
+  -- first runs of 0.2.478.)
   if params.mix:find("fullres", 1, true) then
     schedule(20, function()
-      game.forces.player.research_all_technologies()
       local f = game.forces.player
+      local NAUVIS = {["automation-science-pack"] = true, ["logistic-science-pack"] = true, ["military-science-pack"] = true,
+        ["chemical-science-pack"] = true, ["production-science-pack"] = true, ["utility-science-pack"] = true,
+        ["space-science-pack"] = true}
+      local n = 0
+      for _, t in pairs(f.technologies) do
+        local ok = t.prototype.max_level < 4294967295
+        for _, ing in pairs(t.research_unit_ingredients or {}) do if not NAUVIS[ing.name] then ok = false end end
+        if ok and not t.researched then
+          -- (A multi-level finite technology (weapon damage 1 to 6 are each their own): its own level is the one.)
+          t.researched = true
+          n = n + 1
+        end
+      end
+      -- (The era it reads is in decisions.txt: "arrives with history (era k ...)".)
+      info(string.format("visit: %d technologies researched", n))
       info(string.format("visit: the player's research complete (bullet damage +%.2f, laser +%.2f)",
         f.get_ammo_damage_modifier("bullet"), f.get_ammo_damage_modifier("laser")))
     end)

@@ -216,11 +216,10 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   docs/reviews/2026-11-19-army-logistics-consult.md (the threat with the factory); director armydefend with a depot by
   the D beacon and a roboport (the consult's readings: magazines drawn and packs used a beat).
 - Ammunition tiers, what stages 1 and 2 (0.2.470 bullets, 0.2.471 uranium shells, 0.2.472 the explosive rungs; TIER_EXP
-  0.33 from the arena, docs/arena-tiers.md) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): the beacon's rounds as item signals; the UPS run with tiers on.
+  0.33 from the arena, docs/arena-tiers.md) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): the stutter tick of director climax (below, 0.2.480).
 - The arms race's remainder (0.2.474, docs/reviews/2026-11-20-arms-race-consult.md): the flame trooper against
   corporations (-49 late, its infantry rows fell about 30); the reference-factory visits at the player's full research
-  (razed within twice the calibration rows); profile.sh on director
-  climax for UPS; the Workshop's own look (a recoloured Siege works now).
+  (razed within twice the calibration rows: running, Nauvis-only research); the Workshop's own look (a recoloured Siege works now).
   The research pace: 20 a minute a branch gave Kessler-Hayashi optics 1 at minute 73 of scenario research; to be read
   against a real game after the playtest.
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
@@ -2788,6 +2787,19 @@ if their units are upgraded also." `scripts/rd.lua`.
   the trooper's among them: kept 38. fortress max and siegetier 2max and 3max (the camp's tracks at their top,
   rd.max_tracks) pass; 3max's siege razed the eight gun turrets with 10 shells where siegetier 3 fired 120, its laser
   drones at full research against unresearched guns. In the regression list (3max, fortress max).
+- **The beacon's rounds as item signals; UPS at the climax (0.2.480).** The rally beacon's report adds its squad's
+  magazines by kind as item signals (a part-used one whole, as an inventory counts it): a decider reads "uranium rounds
+  < 20" with no new signal (the tiers consult, stage 2). Its section is found again by its contents (report signals,
+  ammunition and capsules, with S), not by a table that a load empties. tiers checks it (seen failing: no item signals);
+  circuit, patrol, rearm, depot, orders, control, squad, assign pass. profile.sh on director climax (60 minutes, tiers
+  and research on): mean tick 0.289 ms, worst 92 ms; the engine crashed in its benchmark's teardown (Benchmark.cpp 190,
+  after its summary) before writing the per-tick rows, so the worst tick is unnamed.
+- **The reference-factory visits at the player's full research (0.2.480, running).** The three factories read era 0 (built
+  by script, nothing researched): the calibration's rows are an unresearched factory's. LP_MIX=fullres first researched
+  every technology, Space Age's planets too: era 11, the corporations arriving with that history (Kessler-Hayashi
+  railguns four levels, optics three); razed_worth laser 491 (20 plain at 0.2.478, 17 in the calibration), belt 516
+  (319, 452), artillery 542 (50, 375), and Kessler-Hayashi's railgunners broke 20 of the player's (the visit's check). Now
+  Nauvis's seven packs only.
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers

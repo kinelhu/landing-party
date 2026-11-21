@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.480
+Date: 2026-11-21
+  Features:
+    - A rally beacon outputs the magazines its squad holds as item signals, one for each kind of round, so a circuit can call a squad home when its best rounds run low.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.479
 Date: 2026-11-21
   Balancing:

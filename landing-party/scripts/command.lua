@@ -563,21 +563,32 @@ local REPORTED = {["signal-S"] = true, ["signal-H"] = true, ["signal-E"] = true,
 local HERE = 12
 local nests_in   -- (below, with nest)
 -- M, the squad's ammunition (0.2.464): what its units carry, a share of their loadouts, 0 to 100.
-local function report(beacon, p, squad, here, m)
+-- And its rounds by kind as item signals (0.2.480; the tiers consult, stage 2): the magazines its units hold of each, a
+-- part-used one counted whole as an inventory counts it, so a decider reads "uranium rounds < 20" with no new signal.
+-- (Its section is still found as the report's own: report signals and rounds only, ammunition and capsules, with S.)
+local function round_item(x)
+  local ip = x.type == "item" and prototypes.item[x.name]
+  return ip and (ip.type == "ammo" or ip.type == "capsule")
+end
+local function report(beacon, p, squad, here, m, rounds)
   local cb = beacon.get_or_create_control_behavior()
   local sec
   for _, s in pairs(cb.sections) do
     if s.is_manual and s.group == "" and #s.filters > 0 then
-      local only = true
-      for _, f in pairs(s.filters) do if not (f.value and REPORTED[f.value.name]) then only = false end end
-      if only then sec = s; break end
+      local only, has_s = true, false
+      for _, f in pairs(s.filters) do
+        local x = f.value
+        if x and x.name == "signal-S" then has_s = true end
+        if not (x and ((x.type or "virtual") == "virtual" and REPORTED[x.name] or round_item(x))) then only = false end
+      end
+      if only and has_s then sec = s; break end
     end
   end
   sec = sec or cb.add_section()
   if not sec then return end
   local s = p.surface
   local function v(name, n) return {value = {type = "virtual", name = name, quality = "normal"}, min = n} end
-  sec.filters = {
+  local fs = {
     v("signal-S", squad),
     v("signal-H", here),
     v("signal-M", m or 0),
@@ -588,6 +599,12 @@ local function report(beacon, p, squad, here, m)
     v("signal-N", nests_in(p)),
     v("signal-W", p.alarm and 1 or 0),
   }
+  for name, k in pairs(rounds or {}) do
+    if prototypes.item[name] then
+      fs[#fs + 1] = {value = {type = "item", name = name, quality = "normal"}, min = k}
+    end
+  end
+  sec.filters = fs
 end
 
 -- Razing (the user, playtest: units "don't seem to target landers or other economic buildings in enemy camps"; "Both"):
@@ -1255,11 +1272,19 @@ local function lead()
   for k in pairs(storage.cmd.answering) do
     if not (plans[k] and plans[k].alarm) then storage.cmd.answering[k] = nil end
   end
-  local here, amm, ammx = {}, {}, {}
+  local here, amm, ammx, mags = {}, {}, {}, {}
   for _, t in pairs(storage.cmd.troopers) do
     if t.beacon and t.unit.valid then
       local a, full = ammo_of(t)
       if a then amm[t.beacon] = (amm[t.beacon] or 0) + a; ammx[t.beacon] = (ammx[t.beacon] or 0) + full end
+      local r = a and a > 0 and round_of(t)
+      local ip = r and prototypes.item[r]
+      if ip then
+        local per = ip.type == "ammo" and ip.magazine_size or 1
+        local by = mags[t.beacon] or {}
+        by[r] = (by[r] or 0) + math.ceil(a / math.max(1, per))
+        mags[t.beacon] = by
+      end
     end
     local p = t.beacon and t.unit.valid and plans[t.beacon]
     if p and p.surface == t.unit.surface
@@ -1270,7 +1295,7 @@ local function lead()
   for k, b in pairs(storage.cmd.beacons) do
     mark(k, b, plans[k])
     report(b, plans[k], squads[k] or 0, here[k] or 0,
-      ammx[k] and math.floor(100 * amm[k] / ammx[k]) or ((squads[k] or 0) > 0 and 100 or 0))
+      ammx[k] and math.floor(100 * amm[k] / ammx[k]) or ((squads[k] or 0) > 0 and 100 or 0), mags[k])
   end
   for k, m in pairs(storage.cmd.marks or {}) do
     if not plans[k] then m.ring.destroy(); m.line.destroy(); storage.cmd.marks[k] = nil end

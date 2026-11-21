@@ -138,8 +138,8 @@
 <title>The player&#39;s army</title>
 <path fill="#f7dede" stroke="black" d="M1139.62,-546.75C1139.62,-546.75 1043.38,-546.75 1043.38,-546.75 1037.38,-546.75 1031.38,-540.75 1031.38,-534.75 1031.38,-534.75 1031.38,-514.75 1031.38,-514.75 1031.38,-508.75 1037.38,-502.75 1043.38,-502.75 1043.38,-502.75 1139.62,-502.75 1139.62,-502.75 1145.62,-502.75 1151.62,-508.75 1151.62,-514.75 1151.62,-514.75 1151.62,-534.75 1151.62,-534.75 1151.62,-540.75 1145.62,-546.75 1139.62,-546.75"/>
 <text xml:space="preserve" text-anchor="middle" x="1091.5" y="-532.3" font-family="Helvetica,sans-Serif" font-size="11.00">The player&#39;s army</text>
-<text xml:space="preserve" text-anchor="middle" x="1091.5" y="-520.3" font-family="Helvetica,sans-Serif" font-size="11.00">8 modules, 3214 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="1091.5" y="-508.3" font-family="Helvetica,sans-Serif" font-size="11.00">command 2003</text>
+<text xml:space="preserve" text-anchor="middle" x="1091.5" y="-520.3" font-family="Helvetica,sans-Serif" font-size="11.00">8 modules, 3239 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="1091.5" y="-508.3" font-family="Helvetica,sans-Serif" font-size="11.00">command 2028</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;The player&#39;s army -->
 <g id="edge33" class="edge">
