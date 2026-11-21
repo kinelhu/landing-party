@@ -2804,6 +2804,13 @@ if their units are upgraded also." `scripts/rd.lua`.
   and its order's, badged with piercing rounds as cut.py badges the others (the order wore vanilla's car). The ammunition
   tiers' eight orders wore their base order's vanilla icon (player.lua copies the base before icons.lua sets the mod's
   own): now each its unit's icon with its round's badge (tools/icons/tiers.py), set by icons.lua; seen in the dump.
+- **The railgunner's research raises its hits on biters and nests only (0.2.482).** The visits at the player's full research
+  (Nauvis's packs, era 5): razed_worth belt 307 (plain 319, calibration 452), artillery 230 (50, 375), laser 455 (20, 17),
+  the laser factory over the consult's bound. There Kessler-Hayashi arrived with railguns four levels (its history, past
+  half evolution) and its railgunners broke 86 of the player's: its slug's 10 to whatever it pierces raised x4, its range
+  30 past a laser's 24. That hit is now shared.RAIL_OTHER by script (control.lua, lp-rail-other), unraised; its 40 to
+  biters and 250 to nests raised as before. rail checks it (78 a railgunner in 20 s on a wall; 350 seen failing on the
+  old slug); clear, clear worms, hazard and rail line pass.
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers

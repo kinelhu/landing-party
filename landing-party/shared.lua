@@ -396,6 +396,10 @@ shared.RANK = {health = 0.3, damage = 0.48}
 -- One command slot of the player's army in turrets' weight (ops.weigh: a gun turret 1), as the corporations weigh it
 -- (intel's mobile, the director's strike mix; command.worth). A named prior, the flat 0.5 a unit they used before 0.2.478.
 shared.SLOT_WEIGHT = 0.5
+-- A railgunner's slug on what is neither a biter nor a nest (units.lua): a flat hit dealt by script (control.lua), which
+-- its railguns research does not raise (0.2.482: at four levels, a slug at x4 through rows of buildings, its range 30 past
+-- a laser's 24; on the laser reference factory at the player's full research its railgunners broke 86 of the player's).
+shared.RAIL_OTHER = 10
 function shared.rank_scale(e)
   if not (e and e.valid and (e.type == "unit" or e.type == "spider-unit") and e.quality) then return 1 end
   local l = e.quality.level or 0

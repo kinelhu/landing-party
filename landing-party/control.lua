@@ -90,6 +90,15 @@ script.on_event(defines.events.on_entity_spawned, farm.on_spawned)
 script.on_event(defines.events.on_script_trigger_effect, function(e)
   if e.effect_id == "lp-army-shot" then return command.on_shot(e) end
   if e.effect_id:sub(1, 7) == "lp-hit:" then return command.on_hit(e) end
+  -- A railgunner's slug on what is neither a biter nor a nest: shared.RAIL_OTHER, unraised by its research (units.lua).
+  if e.effect_id == "lp-rail-other" then
+    local t, src = e.target_entity, e.source_entity or e.cause_entity
+    if t and t.valid and t.destructible and t.health then
+      t.damage(shared.RAIL_OTHER, src and src.valid and src.force or "neutral", "physical", src and src.valid and src or nil,
+        src and src.valid and src or nil)
+    end
+    return
+  end
   aim.on_trigger(e); studies.on_trigger(e); burstfx.on_trigger(e)
 end)
 script.on_nth_tick(3600, aim.sweep)

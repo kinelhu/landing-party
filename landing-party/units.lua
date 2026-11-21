@@ -767,7 +767,10 @@ rail_slug.direction_only = true
 -- Hit at the target's own position: at the edge of its box, a big biter's middle lay outside the 0.5 area, and four
 -- railgunners left 15 of 16 big biters standing.
 rail_slug.hit_at_collision_position = false
-rail_slug.action = {rail_hit(RAIL_NEST, {"lp-nest"}), rail_hit(RAIL_UNIT, {"lp-biter"}), rail_hit(10, {"common"})}
+-- (What is neither, by script: shared.RAIL_OTHER, a hit its railguns research does not raise; it was 10 here, raised x4.)
+local rail_other = {type = "area", radius = 0.5, force = "enemy", trigger_target_mask = {"common"}, action_delivery = {
+  type = "instant", target_effects = {{type = "script", effect_id = "lp-rail-other"}, {type = "create-entity", entity_name = "explosion-hit"}}}}
+rail_slug.action = {rail_hit(RAIL_NEST, {"lp-nest"}), rail_hit(RAIL_UNIT, {"lp-biter"}), rail_other}
 rail_slug.final_action = nil
 rail_slug.animation, rail_slug.shadow, rail_slug.smoke = nil, nil, nil
 data:extend({rail_slug})

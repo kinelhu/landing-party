@@ -27,7 +27,7 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 |:--------------------|:----------------------------|:------------------------------|:----------------------|
 | Laser trooper | 18.48 laser | physical -2 10%, laser 20% | From landing |
 | Laser drone | 12 laser | fire 100%, physical -3 40%, laser 20% | From its level 2 |
-| Railgunner | 250 physical over 0.5 tiles; 40 physical over 0.5 tiles; 10 physical over 0.5 tiles | physical -2 10%, laser 20% | From landing |
+| Railgunner | 250 physical over 0.5 tiles to biters, spawners and worms; 40 physical over 0.5 tiles to anything else | physical -2 10%, laser 20% | From landing |
 | Tank | 40 explosion; 80 explosion over 1.5 tiles to buildings, on top of the hit | physical -3 20%, fire -2 60%, explosion -5 30%, laser -5, electric -5, bite 60% | From landing |
 | Anti-air trooper | 30 laser over 1 tiles; 8 laser over 0.5 tiles | physical -2 10%, laser 20% | Research: Anti-air troopers (Line, era 1) |
 | Heavy laser trooper | 24 laser | physical -2 10%, laser 20% | Research: Heavy laser troopers (Optics, era 1) |

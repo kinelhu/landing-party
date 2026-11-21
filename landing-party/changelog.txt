@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.482
+Date: 2026-11-21
+  Balancing:
+    - Kessler-Hayashi's railgun research raises its railgunners' damage to biters and nests only. At its top their slugs had done four times their damage to every building they passed through, out of your lasers' reach.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.481
 Date: 2026-11-21
   Graphics:
