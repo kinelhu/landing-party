@@ -234,7 +234,7 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   0.2.436; the tank re-priced and the gun buggy, 0.2.438): strike forces sized to the army the player can field (their
   arena price at most about 1.5 times the command capacity's) and the warning naming their kind; the Aegis against the battle tank
   late (+0.78 to the tank at the top of research, its explosive uranium shells; a heavier slug won too much plain); an army variant of `contact.sh` (strikes broken, targets saved); squad colours in
-  alt mode, after the user has seen the panel; the gun buggy's icon from a matte film; a late infantry tier made of
+  alt mode, after the user has seen the panel; a late infantry tier made of
   personal equipment (modular or power armor, shields, an exoskeleton), proposed 2026-11-16.
   Circuits can't read where an attack is (W says out, not where): a position output was offered and set aside, D
   routing the squad itself.
@@ -1292,7 +1292,7 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
   oomph", an autocannon: a round every 30 ticks and a small blast round its hit. 25 physical and a 10 blast at 3 won 35
   of 36; high explosive (a hull's flat 5 and 30% take a third), 20 and a 6 blast, won 27 at 3 and 17 at 4: every
   infantry, buggy and flier, and it loses to every hull, the bigger biters and Shock troopers. Set at 4. Like every
-  player unit it beats the fixed turret lines. Its icon is the car's, tinted, until a matte film cuts it (tools/icons/units.py).
+  player unit it beats the fixed turret lines. Its icon cut from its matte film since 0.2.481 (tools/icons/units.py; the car's, tinted, until then).
 - **Combined arms (built; user 2026-10-13: "rebuilding the RTS formula a la Factorio"):** the barracks has
   no fixed recipe (a new one starts on troopers). **Trooper** (5 magazines, 10 iron, 2 circuits, 30 s;
   population 1): rifles, fights units. **Breacher** (5 grenades, 10 iron, 2 circuits, 30 s; population 1):
@@ -2800,6 +2800,10 @@ if their units are upgraded also." `scripts/rd.lua`.
   railguns four levels, optics three); razed_worth laser 491 (20 plain at 0.2.478, 17 in the calibration), belt 516
   (319, 452), artillery 542 (50, 375), and Kessler-Hayashi's railgunners broke 20 of the player's (the visit's check). Now
   Nauvis's seven packs only.
+- **Icons (0.2.481).** The gun buggy's unit icon from its matte film (last session's cut-out; the car's, tinted, before)
+  and its order's, badged with piercing rounds as cut.py badges the others (the order wore vanilla's car). The ammunition
+  tiers' eight orders wore their base order's vanilla icon (player.lua copies the base before icons.lua sets the mod's
+  own): now each its unit's icon with its round's badge (tools/icons/tiers.py), set by icons.lua; seen in the dump.
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers

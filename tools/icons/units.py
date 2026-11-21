@@ -1,6 +1,6 @@
 """The units' own icons, 64 px (the user, 2026-11-10: "did you make icons for enemy units too? Those are going to show up
 in the threat scanner, no?"): every unit of every faction from its cut-out (docs/manual/shots/matte.py, from the matte
-films docs/manual/shots/portraits-matte.lua, docs/release/units-extra-matte.lua and walkers-matte.lua), its shadow
+films docs/manual/shots/portraits-matte.lua (the gun buggy's alone, 0.2.481), docs/release/units-extra-matte.lua and walkers-matte.lua), its shadow
 dropped as cut.py drops it, squared on transparency. A unit's resistance variants (-fire, -laser, -physical) take their
 base unit's (icons.lua). Written to landing-party/graphics/icons/units/<unit>.png.
 
@@ -15,7 +15,7 @@ from PIL import Image, ImageFilter
 os.makedirs(out, exist_ok=True)
 UNITS = """lp-aegis lp-battle-tank lp-breacher lp-bred-behemoth-biter lp-bred-big-biter lp-bred-big-burster lp-bred-carrier
 lp-bred-cinder lp-bred-medium-biter lp-bred-medium-spitter lp-bred-scout lp-bred-small-biter lp-bred-spore lp-bred-stomper
-lp-buggy lp-constructor lp-dozer lp-flak-buggy lp-flame-trooper lp-grubstake-aegis lp-grubstake-buggy lp-grubstake-dozer
+lp-buggy lp-constructor lp-dozer lp-gun-buggy lp-flak-buggy lp-flame-trooper lp-grubstake-aegis lp-grubstake-buggy lp-grubstake-dozer
 lp-grubstake-flak-buggy lp-grubstake-harrier lp-grubstake-hauler lp-grubstake-howitzer-truck lp-grubstake-infantry
 lp-grubstake-lance lp-grubstake-laser-drone lp-grubstake-prism lp-grubstake-railgunner lp-grubstake-sapper
 lp-grubstake-scavenger lp-grubstake-scorcher lp-grubstake-shock lp-grubstake-skyguard lp-grubstake-slug lp-grubstake-tank

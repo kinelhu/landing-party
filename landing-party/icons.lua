@@ -5,7 +5,7 @@
 local ITEM_TYPES = {"item", "item-with-entity-data", "capsule", "ammo", "gun", "tool", "selection-tool"}
 local NAMES = {"lp-bait", "lp-barracks", "lp-battle-tank-order", "lp-beacon-schematic", "lp-breacher-order",
   "lp-claim-marker", "lp-cluster-artillery-shell", "lp-cluster-fuze", "lp-coil-schematic", "lp-command-core", "lp-command-relay",
-  "lp-crystal-schematic", "lp-defoliant", "lp-drill-head", "lp-flak-turret", "lp-flame-trooper-order", "lp-fuze-schematic",
+  "lp-crystal-schematic", "lp-defoliant", "lp-drill-head", "lp-flak-turret", "lp-flame-trooper-order", "lp-fuze-schematic", "lp-gun-buggy-order",
   "lp-gland-schematic", "lp-mortar-shell", "lp-muster-point", "lp-orbital-beacon", "lp-orbital-cannon", "lp-orbital-shell",
   "lp-pacifier-crystal", "lp-pact-breaker", "lp-pheromone-gland", "lp-player-dome", "lp-player-mortar", "lp-rail-coil",
   "lp-rail-rifle", "lp-rail-slug", "lp-rally-beacon", "lp-rocket-trooper-order", "lp-strike-beacon", "lp-strip-drill", "lp-supply-depot",
@@ -26,6 +26,14 @@ for _, name in ipairs(NAMES) do
       if protos[placed] and protos[placed].collision_box then set(protos[placed], file) end
     end
   end
+end
+-- The ammunition tiers' orders (tools/icons/tiers.py, 0.2.481): its unit with its round's badge, as the base orders. (Made
+-- in player.lua before this ran, they had copied their base order's vanilla icon: the car, the tank, a bare magazine.)
+for name in pairs(require("__landing-party__.shared").ORDER_TIERS) do
+  local file = "__landing-party__/graphics/icons/" .. name .. ".png"
+  assert(data.raw.item[name], "icons.lua: no tier item " .. name)
+  set(data.raw.item[name], file)
+  if data.raw.recipe[name] then set(data.raw.recipe[name], file) end
 end
 
 -- Every unit its own (tools/icons/units.py, graphics/icons/units/<unit>.png: the kill statistics, the threat scanner's

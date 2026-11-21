@@ -75,12 +75,14 @@ for d in sorted(glob.glob(os.path.join(film, "lp-*-dark.png"))):
     write(name, Image.fromarray(m, "RGBA"), thr=120); done.append(name)
 # Orders, from their units.
 ORDERS = {"lp-trooper-order": "lp-trooper", "lp-breacher-order": "lp-breacher", "lp-rocket-trooper-order": "lp-rocket-trooper",
-          "lp-flame-trooper-order": "lp-flame-trooper", "lp-battle-tank-order": "lp-battle-tank"}
+          "lp-flame-trooper-order": "lp-flame-trooper", "lp-battle-tank-order": "lp-battle-tank",
+          "lp-gun-buggy-order": "lp-gun-buggy"}
 # Each with a corner badge of the vanilla ammunition it is armed with, on a dark disc (vanilla's barrels' way): five small
 # soldiers read alike at 64 px (the user, 2026-11-10: "Go for 1 and 2").
 APP = os.path.expanduser("~/Library/Application Support/Steam/steamapps/common/Factorio/factorio.app/Contents/data/base/graphics/icons")
 AMMO = {"lp-trooper-order": "firearm-magazine", "lp-breacher-order": "grenade", "lp-rocket-trooper-order": "rocket",
-        "lp-flame-trooper-order": "flamethrower-ammo", "lp-battle-tank-order": "cannon-shell"}
+        "lp-flame-trooper-order": "flamethrower-ammo", "lp-battle-tank-order": "cannon-shell",
+        "lp-gun-buggy-order": "piercing-rounds-magazine"}
 
 
 def badged(im, badge, at=0.42):

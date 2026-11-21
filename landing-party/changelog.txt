@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.481
+Date: 2026-11-21
+  Graphics:
+    - The gun buggy has its own icon, and so does its barracks order.
+    - Each better-ammunition order shows its unit with its round, not a vanilla icon.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.480
 Date: 2026-11-21
   Features:
