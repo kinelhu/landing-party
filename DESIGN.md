@@ -219,7 +219,7 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   0.33 from the arena, docs/arena-tiers.md) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): the beacon's rounds as item signals; the UPS run with tiers on.
 - The arms race's remainder (0.2.474, docs/reviews/2026-11-20-arms-race-consult.md): the flame trooper against
   corporations (-49 late, its infantry rows fell about 30); the reference-factory visits at the player's full research
-  (razed within twice the calibration rows); fortress and siegetier against a researched camp; profile.sh on director
+  (razed within twice the calibration rows); profile.sh on director
   climax for UPS; the Workshop's own look (a recoloured Siege works now).
   The research pace: 20 a minute a branch gave Kessler-Hayashi optics 1 at minute 73 of scenario research; to be read
   against a real game after the playtest.
@@ -233,8 +233,8 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 
 - The army's remainder (the army consult, 2026-11-16; the defend stance, the panel and the three leaks are built,
   0.2.436; the tank re-priced and the gun buggy, 0.2.438): strike forces sized to the army the player can field (their
-  arena price at most about 1.5 times the command capacity's) and the warning naming their kind; the Aegis's slug raised
-  so it beats the battle tank at 8; an army variant of `contact.sh` (strikes broken, targets saved); squad colours in
+  arena price at most about 1.5 times the command capacity's) and the warning naming their kind; the Aegis against the battle tank
+  late (+0.78 to the tank at the top of research, its explosive uranium shells; a heavier slug won too much plain); an army variant of `contact.sh` (strikes broken, targets saved); squad colours in
   alt mode, after the user has seen the panel; the gun buggy's icon from a matte film; a late infantry tier made of
   personal equipment (modular or power armor, shields, an exoskeleton), proposed 2026-11-16.
   Circuits can't read where an attack is (W says out, not where): a position output was offered and set aside, D
@@ -2781,6 +2781,13 @@ if their units are upgraded also." `scripts/rd.lua`.
   weight: a named prior) a slot. Characters, cars, spidertrons and the corporations' units as before. Scenario worth
   (new; seen failing on the flat weight). abort, weigh, defend and director armydefend, armylate and armydrop pass.
   Visits: LP_MIX=fullres completes the player's research before the first landing (the consult's sweep bound).
+- **The Aegis on Ordnance; sieges by a researched camp (0.2.479).** The Aegis's rail cannon took laser research, damage
+  only since 0.2.476, and at the top of both sides' research the battle tank beat it every round (+1.00); its category
+  is cannon-shell now, Kessler-Hayashi's Ordnance (damage and speed): +0.78 late, the breacher and gun buggy losing to
+  it there; unresearched as before. A slug of 46 for 38: the tank still +0.89 late, and 24 of 37 plain matchups won (16),
+  the trooper's among them: kept 38. fortress max and siegetier 2max and 3max (the camp's tracks at their top,
+  rd.max_tracks) pass; 3max's siege razed the eight gun turrets with 10 shells where siegetier 3 fired 120, its laser
+  drones at full research against unresearched guns. In the regression list (3max, fortress max).
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers

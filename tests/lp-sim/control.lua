@@ -2281,12 +2281,17 @@ scenarios.siegetier = function()
     for _, l in ipairs(st.ops.log or {}) do if l.op == "siege" and not st.ops.op then return true end end
     return false
   end)
-  local tier = ({["2"] = 2, ["3"] = 3, sally = 1, convoy = 2})[params.mix] or 2
+  -- (LP_MIX=3max and the like, 0.2.478, the arms race's remainder: the same with Kessler-Hayashi's tracks at their top,
+  -- rd.max_tracks, a researched camp's siege.)
+  local maxed = params.mix:find("max", 1, true) ~= nil
+  local mix = (params.mix:gsub("max", ""))
+  local tier = ({["2"] = 2, ["3"] = 3, sally = 1, convoy = 2})[mix] or 2
+  if maxed then schedule(90, function() info("siegetier: tracks " .. serpent.line(lp("debug_rd_max", "serenity"))) end) end
   -- Forced (/lp siege) with raids off: weighted, eight gun turrets need a raid of 28, which a grown garrison affords.
   -- (Its truck and convoys as Grubstake still sends them: Kessler-Hayashi's sieges drop from orbit since 0.2.165, and the
   -- convoy this kills never set out.)
   schedule(30, function() lp("debug_tune", {corp_level = {serenity = 3}, siege_tier = tier, era = 4, raids_off = true,
-    drop_off = params.mix == "convoy" or nil}) end)
+    drop_off = mix == "convoy" or nil}) end)
   schedule(60, function()
     for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
   end)
@@ -2319,7 +2324,7 @@ scenarios.siegetier = function()
   for t = 600, END - 120, 60 do
     schedule(t, function()
       -- Tiers 2 and the convoy: the player rebuilds lost turrets each minute (robots), so the mortars run dry.
-      if (params.mix == "2" or params.mix == "convoy") and S.put then S.put() end
+      if (mix == "2" or mix == "convoy") and S.put then S.put() end
       local o = lp("stats", storage.id).ops
       S.max_mortars = math.max(S.max_mortars or 0, o.mortars or 0)
       -- (Each mortar up, whom it is credited to: storage.unit_owner.)
@@ -2332,7 +2337,7 @@ scenarios.siegetier = function()
       S.max_fired = math.max(S.max_fired or 0, o.shells_fired or 0)
       S.max_loaded = math.max(S.max_loaded or 0, o.loaded or 0)
       if o.siege_tier then S.tier = o.siege_tier end
-      if params.mix == "sally" and o.mortar and not S.sallied then
+      if mix == "sally" and o.mortar and not S.sallied then
         S.sallied = true
         local m = o.mortar
         local len = math.sqrt((m[1] - S.c[1]) ^ 2 + (m[2] - S.c[2]) ^ 2)
@@ -2343,7 +2348,7 @@ scenarios.siegetier = function()
         end
         S.sally_at = game.tick
       end
-      if params.mix == "convoy" and o.mortar then
+      if mix == "convoy" and o.mortar then
         for _, h in pairs(surface().find_entities_filtered{force = FORCE, name = "lp-hauler"}) do
           local d = math.sqrt((h.position.x - o.mortar[1]) ^ 2 + (h.position.y - o.mortar[2]) ^ 2)
           if d > 25 and (o.convoys_left or 1) == 0 and not S.convoy_killed then
@@ -2366,22 +2371,22 @@ scenarios.siegetier = function()
     local horn = (lp("sound_cues") or {})["siege-horn"] or 0
     check("siegetier: its horn as it began to bombard", (S.max_mortars or 0) > 0 and horn >= 1, string.format("%d horns, %s mortars",
       horn, tostring(S.max_mortars)))
-    if params.mix == "2" or params.mix == "" then
+    if mix == "2" or mix == "" then
       check("siegetier: two mortars", S.max_mortars == 2, tostring(S.max_mortars))
       check("siegetier: more than one mortar's shells fired", (S.max_fired or 0) > 40, tostring(S.max_fired))
       -- What its shells broke is its razing (a tier-1 siege's mortar killed 3 lasers of the lane and its record read
       -- nothing razed: its mortars no unit of its, their kills credited to no one; the lane, 2026-10-31). (Its razed count
       -- alone proved nothing here: its guards break turrets too.)
       check("siegetier: its mortars credited to it, their kills its razing", S.mortar_owned == true, serpent.line(S.mortar_owner))
-    elseif params.mix == "3" then
+    elseif mix == "3" then
       check("siegetier: three mortars", S.max_mortars == 3, tostring(S.max_mortars))
       check("siegetier: the assault went in", (o.assaults or 0) > 0, tostring(o.assaults))
       check("siegetier: the assault razed something", (o.assault_razed or 0) > 0, tostring(o.assault_razed))
-    elseif params.mix == "sally" then
+    elseif mix == "sally" then
       check("siegetier: the sally killed the mortar and the siege aborted", siege and siege.outcome == "aborted"
         and surface().count_entities_filtered{type = "artillery-turret", force = FORCE} == 0,
         siege and siege.outcome or "not finished")
-    elseif params.mix == "convoy" then
+    elseif mix == "convoy" then
       check("siegetier: the convoy was killed", S.convoy_killed ~= nil, tostring(S.convoy_killed))
       check("siegetier: nothing more was loaded", (S.max_loaded or 0) == 80, tostring(S.max_loaded))
     end
@@ -17090,6 +17095,8 @@ scenarios.fortress = function()
     S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = corp})
     for _ = 1, 3 do lp("debug_depot", S.s, 6000) end
     game.forces.player.create_ghost_on_entity_death = true
+    -- (LP_MIX=max, 0.2.478, the arms race's remainder: the siege as by default, its corporation's tracks at their top.)
+    if params.mix == "max" then info("fortress: tracks " .. serpent.line(lp("debug_rd_max", corp))) end
   end)
   schedule(10 * 3600, function()
     local o = lp("stats", S.s).origin

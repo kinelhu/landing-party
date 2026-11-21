@@ -24,7 +24,7 @@ rd.CATEGORY = {["lp-infantry"] = "bullet", ["lp-buggy"] = "bullet", ["lp-harrier
 -- Each corporation's own infantry (units.lua): Serenity's Line troopers fire lasers, Grubstake's Shotgun hands shells.
 rd.CORP_CATEGORY = {serenity = {["lp-infantry"] = "laser", ["lp-lance"] = "laser", ["lp-shock"] = "electric",
   ["lp-railgunner"] = "lp-rail",
-  ["lp-aegis"] = "laser", ["lp-prism"] = "laser", ["lp-tesla"] = "electric", ["lp-skyguard"] = "lp-anti-air", ["lp-laser-drone"] = "laser"},
+  ["lp-aegis"] = "cannon-shell", ["lp-prism"] = "laser", ["lp-tesla"] = "electric", ["lp-skyguard"] = "lp-anti-air", ["lp-laser-drone"] = "laser"},
   grubstake = {["lp-infantry"] = "shotgun-shell", ["lp-slug"] = "shotgun-shell", ["lp-sapper"] = "grenade",
     ["lp-scorcher"] = "bullet", ["lp-flak-buggy"] = "bullet"}}
 local know = require("__landing-party__.scripts.know")

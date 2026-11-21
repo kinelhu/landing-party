@@ -802,10 +802,14 @@ data:extend({{type = "damage-type", name = "lp-rail"}})
 -- physical and explosion, so a slug hard enough to hurt a tank wrecked everything soft (150 physical: it beat all but
 -- fliers; 80 every 80: still rocket troopers +58 and lances +75, the arena, 2026-10-24). Light on everything, full on
 -- a hull: the anti-armour gun, and rocket troopers and lances answer it from 18 and 17.
--- Ammunition category laser, as the railgunner's: Kessler-Hayashi's research scales it as before.
+-- Ammunition category cannon-shell (0.2.479; laser until then): Kessler-Hayashi's Ordnance track scales it, damage and
+-- shooting speed as the battle tank's research does. On laser it took Optics' damage alone (0.2.476: lasers take no
+-- speed), and at the top of both sides' research the battle tank beat it in every round (the late arena, +1.00).
+-- On cannon-shell, +0.78 there; a slug of 46 (tried, 2026-11-21) left that at +0.89 and won it 24 of its 37 plain
+-- matchups (16 at 38), the trooper's among them: late, the battle tank's lead is its explosive uranium shells.
 aegis.attack_parameters = {
   -- Range 16: rocket troopers (18) and lances (17) answer it from beyond its reach (at 20 it outranged both, +75 on each).
-  type = "projectile", ammo_category = "laser", cooldown = 60, cooldown_deviation = 0.1, range = 16,
+  type = "projectile", ammo_category = "cannon-shell", cooldown = 60, cooldown_deviation = 0.1, range = 16,
   range_mode = "bounding-box-to-bounding-box",
   sound = table.deepcopy((data.raw.gun["railgun"] or data.raw.gun["tank-cannon"]).attack_parameters.sound),
   animation = table.deepcopy(aegis.attack_parameters.animation),

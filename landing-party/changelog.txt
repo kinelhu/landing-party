@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.479
+Date: 2026-11-21
+  Balancing:
+    - Kessler-Hayashi's Railgun tank takes its Ordnance research (cannon shell damage and shooting speed), not its laser research. At the top of research your battle tank no longer beats it every time.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.478
 Date: 2026-11-21
   Changes:
