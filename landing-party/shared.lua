@@ -405,6 +405,8 @@ shared.SLOT_PARTS = 10
 shared.RAIL_OTHER = 10
 -- How far from its lander a railgunner of its garrison may stray, idle or wandering (army.lua's leash; the visit's check).
 shared.RAIL_LEASH = 48
+-- How far past the player's artillery's reach a camp keeps its lander (faction.lua) and plans its blocks (layout.lua).
+shared.ARTILLERY_SPARE = 20
 function shared.rank_scale(e)
   if not (e and e.valid and (e.type == "unit" or e.type == "spider-unit") and e.quality) then return 1 end
   local l = e.quality.level or 0

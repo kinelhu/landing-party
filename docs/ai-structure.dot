@@ -49,7 +49,7 @@ digraph ai {
     "base" [label="base\n944 lines", width=1.85, fillcolor="#eef2f7"];
     "construction" [label="construction\n446 lines", width=1.30, fillcolor="#d9f0d9"];
     "planner" [label="planner\n398 lines", width=1.24, fillcolor="#eef2f7"];
-    "layout" [label="layout\n1749 lines", width=2.74, fillcolor="#f7dede"];
+    "layout" [label="layout\n1789 lines", width=2.79, fillcolor="#f7dede"];
     "wfc" [label="wfc\n380 lines", width=1.22, fillcolor="#d9f0d9"];
     "wfc_serenity" [label="wfc_serenity\n134 lines", width=0.95, fillcolor="#d9f0d9"];
     "lots_grubstake" [label="lots_grubstake\n274 lines", width=1.10, fillcolor="#d9f0d9"];
@@ -77,7 +77,7 @@ digraph ai {
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
     "strike" [label="strike\n68 lines", width=0.88, fillcolor="#eef2f7"];
     "jammer" [label="jammer\n77 lines", width=0.89, fillcolor="#eef2f7"];
-    "dome" [label="dome\n449 lines", width=1.30, fillcolor="#eef2f7"];
+    "dome" [label="dome\n439 lines", width=1.29, fillcolor="#eef2f7"];
     "orbital" [label="orbital\n413 lines", width=1.26, fillcolor="#eef2f7"];
     "scorcher" [label="scorcher\n224 lines", width=1.05, fillcolor="#d9f0d9"];
     "stun" [label="stun\n145 lines", width=0.96, fillcolor="#eef2f7"];
@@ -116,7 +116,7 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_11 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1596 lines", width=2.57, fillcolor="#f7dede"];
+    "control" [label="control\n1600 lines", width=2.58, fillcolor="#f7dede"];
     "dev" [label="dev\n622 lines", width=1.49, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n197 lines", width=1.02, fillcolor="#eef2f7"];
@@ -250,6 +250,7 @@ digraph ai {
   "layout" -> "blocks";
   "layout" -> "rng";
   "layout" -> "site";
+  "layout" -> "threat";
   "layout" -> "wfc";
   "ledger" -> "base";
   "ledger" -> "ops";

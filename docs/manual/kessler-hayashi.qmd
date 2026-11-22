@@ -96,8 +96,9 @@ var camp.yard_far_tiles >}} tiles from its first depot (or from the lander, befo
 side away from your spawn, with nothing hostile within {{< var camp.yard_quiet_tiles >}} tiles. Raids, sieges and
 patrols set out from there.
 
-**The dome.** While the lander holds, a dome covers the ground within {{< var kh.dome_tiles >}} tiles of it, or as far
-as the camp's first hub reaches, and each later hub has a projector with a dome of its own. A dome stops every artillery shell fired from the ground that enters
+**The dome.** While the lander holds, a dome covers the ground within {{< var kh.dome_tiles >}} tiles of it, and each
+later hub has a projector with a dome of its own. A camp plans none of its blocks where it knows your artillery reaches,
+unless no other ground is left. A dome stops every artillery shell fired from the ground that enters
 it, including shells aimed at something beyond it: a bolt from the projector hits the shell, and a ripple runs across
 the dome. Units, bullets, lasers and orbital strikes pass through. A dome can take {{< var kh.dome_hold_min >}}
 minutes of fire from all the artillery that reaches it, however many guns, and then goes down for {{< var

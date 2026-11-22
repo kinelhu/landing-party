@@ -3,6 +3,7 @@
 -- Variety comes from the settlement's doctrine, each hub's archetype, each block's layout variant and
 -- mirror/transpose, and the terrain cells drop out on. Every draw comes from the settlement's seeded rng.
 local shared = require("__landing-party__.shared")
+local threat = require("__landing-party__.scripts.threat")
 local blocks = require("__landing-party__.scripts.blocks")
 local rng = require("__landing-party__.scripts.rng")
 local wfc = require("__landing-party__.scripts.wfc")
@@ -67,6 +68,42 @@ function layout.area_free(surface, x0, y0, w, h, ore)
   end
   if surface.count_entities_filtered{area = inner, type = "resource"} > (ore or 6) then shared.refused(b, "ore") return false end
   return true
+end
+
+-- Under the guns (0.2.488; the user: "Can we try the siting rule? dome seems OP now, and kind of counter intuitive that KH
+-- would do this knowingly"): no block, hub or district planned where the player's artillery reaches (its prototypes and
+-- research, threat.artillery_reach, and shared.ARTILLERY_SPARE more, as its landing keeps its lander), unless no ground
+-- is left (layout.found then tries again without). On nwa its first fortress opened a fab block 51 tiles off toward the
+-- player, in reach and under no dome, and lost it six times until it starved (visit seed 2, 0.2.482). The guns are read
+-- once a minute a camp.
+local GUNS_EVERY = 3600
+local function guns(b, surface)
+  local g = b.guns_seen
+  if g and game.tick - g.at < GUNS_EVERY then return g.list end
+  local list = {}
+  for _, pf in pairs(game.forces) do
+    if not shared.is_corp(pf.name) and not shared.is_biters(pf.name) and pf.name ~= "neutral" then
+      local reach = threat.artillery_reach(pf) + shared.ARTILLERY_SPARE
+      for _, e in pairs(surface.find_entities_filtered{force = pf, type = {"artillery-turret", "artillery-wagon"}}) do
+        list[#list + 1] = {e.position.x, e.position.y, reach}
+      end
+    end
+  end
+  b.guns_seen = {at = game.tick, list = list}
+  return list
+end
+function layout.under_guns(b, x0, y0, w, h)
+  if storage.siting_off then return false end
+  local surface = game.surfaces[b.surface]
+  for _, g in ipairs(guns(b, surface)) do
+    -- The nearest point of the block to the gun.
+    local nx, ny = math.max(x0, math.min(g[1], x0 + w)), math.max(y0, math.min(g[2], y0 + h))
+    if (nx - g[1]) ^ 2 + (ny - g[2]) ^ 2 <= g[3] * g[3] then return true end
+  end
+  return false
+end
+local function fits(b, surface, x0, y0, w, h)
+  return layout.area_free(surface, x0, y0, w, h) and not layout.under_guns(b, x0, y0, w, h)
 end
 
 local function push(b, job) table.insert(b.queue, job) end
@@ -775,7 +812,7 @@ function layout.open_role(b, role)
     local cands = candidates(b, hub)
     for _, c in ipairs(cands) do
       local x0, y0 = hub.x + c.i * PITCH, hub.y + c.j * PITCH
-      if layout.area_free(surface, x0, y0, S, S) then
+      if fits(b, surface, x0, y0, S, S) then
         return open(b, hub, role, x0, y0, S, S, {{c.i, c.j}}), hub
       end
       hub.bad[c.k] = true
@@ -830,12 +867,14 @@ function layout.found(b, near)
     local a = 2 * math.pi * rng.next(b.rng)
     tx, ty = last.x + doc.reach * math.cos(a), last.y + doc.reach * math.sin(a)
   end
+  for pass = 1, 2 do
   for r = 0, 60, 4 do
     local steps = math.max(1, math.floor(2 * math.pi * r / 6))
     for k = 0, steps - 1 do
       local a = 2 * math.pi * k / steps
       local x0, y0 = math.floor(tx + r * math.cos(a)), math.floor(ty + r * math.sin(a))
-      if layout.area_free(surface, x0, y0, S, S) then
+      -- (Out of the guns' reach first; under them only when no other ground is left.)
+      if layout.area_free(surface, x0, y0, S, S) and (pass == 2 or not layout.under_guns(b, x0, y0, S, S)) then
         local hub = new_hub(b, x0, y0)
         if hub.lots then
           local block = town_compound(b, hub)
@@ -847,6 +886,7 @@ function layout.found(b, near)
         return block, hub
       end
     end
+  end
   end
 end
 
@@ -992,7 +1032,7 @@ function layout.wfc_plan(b, hub, x0, y0, need, lab)
   local tiles = WFC_TILES[b.corp]
   if not tiles or b.wfc_job then return false end
   local side = WFC_CELLS * tiles.size
-  if not layout.area_free(game.surfaces[b.surface], x0, y0, side, side) then return false end
+  if not fits(b, game.surfaces[b.surface], x0, y0, side, side) then return false end
   b.wfc_job = {hub = hub.id, x0 = x0, y0 = y0, tries = 0, stage = "solve", need = need, lab = lab}
   return true
 end
@@ -1375,7 +1415,7 @@ function layout.spread(b)
     local role = hub.count == 1 and "depot" or "compound"
     for _, c in ipairs(candidates(b, hub)) do
       local x0, y0 = hub.x + c.i * PITCH, hub.y + c.j * PITCH
-      if inside(x0, y0) and layout.area_free(surface, x0, y0, S, S) then
+      if inside(x0, y0) and fits(b, surface, x0, y0, S, S) then
         local k = open(b, hub, role, x0, y0, S, S, {{c.i, c.j}}, true)
         k.walls = false
         return k
@@ -1417,7 +1457,7 @@ function layout.spread(b)
         return {kind = "compound (planned)", center = {cx, cy}, wfc = true}
       end
       table.remove(b.hubs)
-    elseif clear and layout.area_free(surface, x0, y0, S, S) then
+    elseif clear and fits(b, surface, x0, y0, S, S) then
       -- The cluster before it is done: its wall goes up.
       layout.wall_cluster(b, hub)
       local h = new_hub(b, x0, y0)

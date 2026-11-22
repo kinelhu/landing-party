@@ -53,7 +53,7 @@ local SITE_SCAN = 400             -- cells a band at most through the cheap ones
 local SITE_LOOK = 12              -- candidates a band, the richest, through the costly checks
 local SQUAT_DISTANCE = 60         -- Grubstake's distance from the player's turrets and units
 local SITE_MIN_ORE = 300
-local ARTILLERY_SPARE = 20       -- past its artillery's reach (threat.artillery_reach: its prototypes, its research)
+local ARTILLERY_SPARE = shared.ARTILLERY_SPARE
 
 faction.TIERS = {3000, 8000, 20000, 45000}           -- parts exported to reach tiers 1..4
 

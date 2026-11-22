@@ -734,6 +734,8 @@ remote.add_interface("landing-party", {
     if t.prowl ~= nil then storage.prowl = t.prowl end
     if t.domes ~= nil then storage.domes = t.domes end
     if t.dome_charge ~= nil then storage.dome_charge = t.dome_charge end
+    -- (The siting rule off, scenario guns LP_MIX=off: its blocks planned under the player's artillery as before 0.2.488.)
+    if t.siting_off ~= nil then storage.siting_off = t.siting_off or nil end
     if t.seed_salt ~= nil then storage.seed_salt = t.seed_salt end
     if t.dump_ways ~= nil then storage.dump_ways = t.dump_ways end
     if t.domes_off then storage.domes = false end
@@ -1146,6 +1148,8 @@ remote.add_interface("landing-party", {
   debug_unit_worth = function(u) return command.worth(u) end,
   debug_strike_kinds = function() return (storage.director or {}).strike_kinds or {} end,
   debug_rail_leash = function() return shared.RAIL_LEASH end,
+  debug_artillery_reach = function() return threat.artillery_reach(game.forces.player) end,
+  debug_artillery_spare = function() return shared.ARTILLERY_SPARE end,
   -- A unit in a camp's garrison (where the leash holds it): the distance to that camp's own lander; nil when it is out on
   -- an operation, a clearance or a strike, or in no garrison (the visit's stray railgunner check).
   debug_garrison_reach = function(u)

@@ -2866,6 +2866,14 @@ if their units are upgraded also." `scripts/rd.lua`.
   tiles; 37 seen failing); domehub checks it too (there its generators' 84 already covered it). dome (all seven mixes),
   armed relay, standsiege, fortress, orbital, artyprobe pass. Hub 2's projector on nwa was destroyed a minute after it
   went up, twice: by what, not read (backlog).
+- **The siting rule instead, 0.2.488 (the user: "Can we try the siting rule? dome seems OP now, and kind of counter
+  intuitive that KH would do this knowingly (within the lore)").** 0.2.487's stretch undone. A camp plans no block, hub or
+  district where the player's artillery reaches (threat.artillery_reach and shared.ARTILLERY_SPARE, the landing's own,
+  named once now): layout.under_guns, read once a minute a camp, on the hub cells, a new hub (found: under the guns only
+  when no other ground is left), the districts and the spread. The landing (which may land under the guns, its pass
+  2) and the pickets keep their own rules. Scenario siting (new): a camp 40 tiles past an artillery turret's reach and
+  spare, 25 minutes fed: 0 of its 6 blocks within; LP_MIX=off (storage.siting_off) 3 of 6 (seen failing). guns, guns
+  fewest, armed, armed era2, domehub, town, standsiege, grow pass. The 0.2.487 checks in armed and domehub removed.
 - **nwa visits at 0.2.485 (no railgunners in strikes):** rail_kills 0 on seeds 2 and 3 (razed 699, 2,289); seed 1 4
   land mines (razed 1,172), by a railgunner on a nest clearance 32 tiles off, read as strays: the check counted any kill
   outside a group or strike, and measured to the first lander found (1,683 tiles), not its own. A stray is now a

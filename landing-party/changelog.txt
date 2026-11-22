@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.488
+Date: 2026-11-22
+  Changes:
+    - The corporations no longer plan buildings where your artillery reaches, unless no other ground is left. A Kessler-Hayashi lander's dome is back to its own size (0.2.487 had stretched it over its first district).
+---------------------------------------------------------------------------------------------------
 Version: 0.2.487
 Date: 2026-11-22
   Changes:

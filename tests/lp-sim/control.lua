@@ -9672,6 +9672,49 @@ end
 -- fire on that cluster: its dome catches their shells and the cluster's military targets (what artillery aims at)
 -- stand; its projector killed, they land. (Counted at first as every building within 25 and 60 shells a gun: the guns
 -- held 15 each, all caught, none left when the projector died, and the projector was the one lost.)
+-- Under the guns (0.2.488; the user: "Can we try the siting rule?"): a Kessler-Hayashi camp landed with one of the player's
+-- artillery turrets (unarmed: the siting reads what stands, not what fires) 40 tiles past its reach and its spare from the
+-- lander, fed parts to grow for 25 minutes: none of its blocks is planned within the turret's reach and spare. LP_MIX=off:
+-- the rule off (storage.siting_off), and its blocks grow into the reach (seen failing).
+scenarios.siting = function()
+  local off = params.mix == "off"
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, siting_off = off or nil})
+    for _ = 1, 3 do lp("debug_depot", storage.id, 4000) end
+  end)
+  schedule(90, function()
+    local o = lp("stats", storage.id).origin
+    S.reach = lp("debug_artillery_reach") + lp("debug_artillery_spare")
+    -- Toward the player's spawn, as a real factory lies.
+    local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
+    local d = S.reach + 40
+    S.gun = {o.x - o.x / len * d, o.y - o.y / len * d}
+    surface().request_to_generate_chunks(S.gun, 2)
+    surface().force_generate_chunk_requests()
+    flatten(S.gun[1] - 4, S.gun[2] - 4, S.gun[1] + 4, S.gun[2] + 4)
+    S.turret = surface().create_entity{name = "artillery-turret", position = S.gun, force = "player"}
+    if S.turret then S.turret.destructible = false end
+  end)
+  schedule(END - 60, function()
+    local hb, inside, n = {}, 0, 0
+    for h = 1, 12 do
+      local x = lp("debug_hub_blocks", storage.id, h)
+      for _, q in ipairs(x and x.blocks or {}) do
+        n = n + 1
+        local nx, ny = math.max(q[1], math.min(S.gun[1], q[3])), math.max(q[2], math.min(S.gun[2], q[4]))
+        if (nx - S.gun[1]) ^ 2 + (ny - S.gun[2]) ^ 2 <= S.reach * S.reach then inside = inside + 1 end
+      end
+    end
+    info(string.format("siting: %d blocks, %d within the turret's reach and spare (%.0f)", n, inside, S.reach))
+    check("siting: its camp grew", n >= 4, tostring(n))
+    if off then
+      check("siting: the rule off, its blocks grow into the guns' reach", inside > 0, tostring(inside))
+    else
+      check("siting: no block of its planned within the guns' reach", S.turret and inside == 0, tostring(inside))
+    end
+  end)
+end
+
 scenarios.domehub = function()
   schedule(60, function()
     lp("debug_tune", {ops_off = true, domes = true})
@@ -9760,17 +9803,6 @@ scenarios.domehub = function()
       and S.built1 >= S.built0 - 1, string.format("caught %s, %s -> %s", tostring(pr.caught), tostring(S.built0), tostring(S.built1)))
     check("domehub: its projector killed, their shells land", S.built2 and S.built1b and S.built2 < S.built1b,
       string.format("%s -> %s, %s aimed", tostring(S.built1b), tostring(S.built2), tostring(S.aimed)))
-    -- Its lander's dome over its first hub's blocks (0.2.487: the first hub has no projector, and on nwa a fortress's fab
-    -- block 51 tiles off stood in the player's artillery under no dome, broken six times until the camp starved).
-    local hb, far = lp("debug_hub_blocks", storage.id, 1), 0
-    for _, q in ipairs(hb and hb.blocks or {}) do
-      for _, c in ipairs({{q[1], q[2]}, {q[3], q[2]}, {q[1], q[4]}, {q[3], q[4]}}) do
-        far = math.max(far, math.sqrt((c[1] - hb.lander[1]) ^ 2 + (c[2] - hb.lander[2]) ^ 2))
-      end
-    end
-    local dn = lp("debug_dome", storage.id) or {}
-    check("domehub: its lander's dome reaches its first hub's farthest block", far > 30 and (dn.radius or 0) >= far - 0.5,
-      string.format("radius %s, first hub's farthest corner %.1f", tostring(dn.radius), far))
   end)
 end
 
@@ -11556,18 +11588,6 @@ scenarios.armed = function()
       local d = lp("debug_dome", S.k)
       check("armed: its lander's dome covers the generators round it", d and d.radius and d.radius >= far,
         string.format("radius %s, farthest generator %.1f", tostring(d and d.radius), far))
-      -- And its first hub's blocks (0.2.487: on nwa a fortress's fab block 51 tiles off stood under no dome, its
-      -- generators 33 out, and the player's artillery broke it six times until the camp starved).
-      local hb, fb = lp("debug_hub_blocks", S.k, 1), 0
-      for _, q in ipairs(hb and hb.blocks or {}) do
-        for _, c in ipairs({{q[1], q[2]}, {q[3], q[2]}, {q[1], q[4]}, {q[3], q[4]}}) do
-          fb = math.max(fb, math.sqrt((c[1] - hb.lander[1]) ^ 2 + (c[2] - hb.lander[2]) ^ 2))
-        end
-      end
-      info(string.format("armed: dome radius %s, farthest generator %.1f, first hub's farthest corner %.1f",
-        tostring(d and d.radius), far, fb))
-      check("armed: its lander's dome covers its first hub's blocks", d and d.radius and d.radius >= fb - 0.5,
-        string.format("radius %s, first hub's farthest corner %.1f", tostring(d and d.radius), fb))
       -- The visit's stray check reads a unit's garrison (debug_garrison_reach, 0.2.488): a garrison unit by its lander
       -- reads its distance to it, a unit made by script beside it, in no garrison, reads nothing.
       local gu, inside
