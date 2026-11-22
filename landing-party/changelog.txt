@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.487
+Date: 2026-11-22
+  Changes:
+    - A Kessler-Hayashi lander's dome reaches as far as its camp's first hub, as each later hub's projector covers its own. Its first fabricators could stand outside every dome, under your artillery.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.486
 Date: 2026-11-22
   Features:

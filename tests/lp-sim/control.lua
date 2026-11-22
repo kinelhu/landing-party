@@ -9760,6 +9760,17 @@ scenarios.domehub = function()
       and S.built1 >= S.built0 - 1, string.format("caught %s, %s -> %s", tostring(pr.caught), tostring(S.built0), tostring(S.built1)))
     check("domehub: its projector killed, their shells land", S.built2 and S.built1b and S.built2 < S.built1b,
       string.format("%s -> %s, %s aimed", tostring(S.built1b), tostring(S.built2), tostring(S.aimed)))
+    -- Its lander's dome over its first hub's blocks (0.2.487: the first hub has no projector, and on nwa a fortress's fab
+    -- block 51 tiles off stood in the player's artillery under no dome, broken six times until the camp starved).
+    local hb, far = lp("debug_hub_blocks", storage.id, 1), 0
+    for _, q in ipairs(hb and hb.blocks or {}) do
+      for _, c in ipairs({{q[1], q[2]}, {q[3], q[2]}, {q[1], q[4]}, {q[3], q[4]}}) do
+        far = math.max(far, math.sqrt((c[1] - hb.lander[1]) ^ 2 + (c[2] - hb.lander[2]) ^ 2))
+      end
+    end
+    local dn = lp("debug_dome", storage.id) or {}
+    check("domehub: its lander's dome reaches its first hub's farthest block", far > 30 and (dn.radius or 0) >= far - 0.5,
+      string.format("radius %s, first hub's farthest corner %.1f", tostring(dn.radius), far))
   end)
 end
 
@@ -11545,6 +11556,18 @@ scenarios.armed = function()
       local d = lp("debug_dome", S.k)
       check("armed: its lander's dome covers the generators round it", d and d.radius and d.radius >= far,
         string.format("radius %s, farthest generator %.1f", tostring(d and d.radius), far))
+      -- And its first hub's blocks (0.2.487: on nwa a fortress's fab block 51 tiles off stood under no dome, its
+      -- generators 33 out, and the player's artillery broke it six times until the camp starved).
+      local hb, fb = lp("debug_hub_blocks", S.k, 1), 0
+      for _, q in ipairs(hb and hb.blocks or {}) do
+        for _, c in ipairs({{q[1], q[2]}, {q[3], q[2]}, {q[1], q[4]}, {q[3], q[4]}}) do
+          fb = math.max(fb, math.sqrt((c[1] - hb.lander[1]) ^ 2 + (c[2] - hb.lander[2]) ^ 2))
+        end
+      end
+      info(string.format("armed: dome radius %s, farthest generator %.1f, first hub's farthest corner %.1f",
+        tostring(d and d.radius), far, fb))
+      check("armed: its lander's dome covers its first hub's blocks", d and d.radius and d.radius >= fb - 0.5,
+        string.format("radius %s, first hub's farthest corner %.1f", tostring(d and d.radius), fb))
       -- (Landed by the first rich site before 0.2.154: on nwa across a lake from the factory, no way over land.)
       check("armed: its landing's way over land checked", (lp("faction").by_way or 0) >= 1, tostring(lp("faction").by_way))
     end

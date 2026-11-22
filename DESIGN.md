@@ -224,8 +224,7 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
-- Kessler-Hayashi's first fortress on nwa never has a fabricator standing (both 0.2.429 and 0.2.482 visits: "25 parts,
-  no fabricator standing" from minute 5) and starves on its landing stock; why, not read yet.
+- Kessler-Hayashi's hub projectors on nwa destroyed a minute after going up (visit seed 2, 0.2.482): by what, not read.
 - Multiplayer: two clients using the army and the faction GUIs (scripts/mp.sh covers one client and the director, and
   one client with the army, LP_ARMY=1; a second client needs a second Steam account: left to the beta).
 - Release: the 0.3.0 bump, the full regression, package.sh, the music credit, the GitHub release, the portal upload
@@ -2857,6 +2856,18 @@ if their units are upgraded also." `scripts/rd.lua`.
   posts share a colour (each seen failing: the dispatch off, the attackers weighed 0, the units' dots off). reach,
   circuit, patrol, orders, control, squad, assign, wild, rearm, depot, tiers, cards, attackmove, defend, squadmove and
   director armydefend pass. The locale and the manual say so.
+- **The lander's dome over its first hub (0.2.487).** On nwa (visit seed 2, 0.2.482) Kessler-Hayashi's first fortress
+  opened a fab block 51 tiles off toward the player, in its artillery's reach: the hubs after the first have projectors,
+  the first had only the lander's dome (30 tiles, or its generators' reach: 37 there), and the block was broken six times
+  with 116 walls and 8 turrets until the camp starved and left at minute 55 (at 0.2.429 it never got that far: no feed).
+  The user chose domes over keeping camps out of reach on 2026-11-02 ("Isn't 2 much more elegant?"), so the fix is the
+  dome, not the siting: the lander's dome reaches its first hub's farthest block (dome.lua first_hub_reach, read as its
+  generators are); its charge is time under fire, so a wider dome costs the camp nothing more. armed checks it (62.8
+  tiles; 37 seen failing); domehub checks it too (there its generators' 84 already covered it). dome (all seven mixes),
+  armed relay, standsiege, fortress, orbital, artyprobe pass. Hub 2's projector on nwa was destroyed a minute after it
+  went up, twice: by what, not read (backlog).
+- **nwa visits at 0.2.485 (no railgunners in strikes):** rail_kills 0 and rail_strays 0 on the seeds read (razed 2,289
+  seed 3, 699 seed 2).
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers

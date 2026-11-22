@@ -102,11 +102,23 @@ local function pad_reach(b)
   end
   return r > 0 and r + PAD_SPARE or nil
 end
+-- And over its first hub's blocks (0.2.487): the hubs after it have projectors of their own, the first had only the
+-- lander's 30 tiles, and on nwa a fortress's fab block 51 tiles off toward the player stood in its artillery's reach under
+-- no dome, broken six times until the camp starved and left (visit seed 2, 0.2.482). Its charge is time under fire,
+-- not ground, so a wider dome costs the camp nothing more.
+local hub_radius
+local function first_hub_reach(b)
+  local hub = b.hubs and b.hubs[1]
+  if not (hub and hub.id == 1 and b.lander and b.lander.valid) then return nil end
+  return hub_radius(b, hub, b.lander.position)
+end
 local function state(b)
   b.dome = b.dome or fresh()
   if b.dome.charge and not b.dome.left then b.dome.left, b.dome.charge = math.min(1, b.dome.charge / 300), nil end
-  if not b.dome.pad_at or game.tick - b.dome.pad_at >= LOOK_GUNS then b.dome.pad_r, b.dome.pad_at = pad_reach(b), game.tick end
-  local r = math.max(RADIUS, b.dome.pad_r or 0)
+  if not b.dome.pad_at or game.tick - b.dome.pad_at >= LOOK_GUNS then
+    b.dome.pad_r, b.dome.hub_r, b.dome.pad_at = pad_reach(b), first_hub_reach(b), game.tick
+  end
+  local r = math.max(RADIUS, b.dome.pad_r or 0, b.dome.hub_r or 0)
   -- (Its ring drawn again at its new reach.)
   if r ~= b.dome.radius and b.dome.ring and b.dome.ring.valid then b.dome.ring.destroy(); b.dome.ring = nil end
   b.dome.anchor, b.dome.radius = b.lander, r
@@ -198,7 +210,7 @@ local function catch(b, d, pr)
 end
 
 -- A hub's blocks' farthest corner from its projector, RADIUS at least.
-local function hub_radius(b, hub, at)
+hub_radius = function(b, hub, at)
   local r = RADIUS
   for _, k in ipairs(b.blocks or {}) do
     if k.hub == hub.id then

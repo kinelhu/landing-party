@@ -1054,6 +1054,16 @@ remote.add_interface("landing-party", {
     return out
   end,
   debug_dome = function(id) local b = storage.bases[id]; return b and dome.state(b) end,
+  -- A camp's blocks of one hub, as boxes {x0, y0, x1, y1}, and its lander's position (domehub's first-hub check).
+  debug_hub_blocks = function(id, hub)
+    local b = storage.bases[id]
+    if not (b and b.lander and b.lander.valid) then return nil end
+    local out = {}
+    for _, k in ipairs(b.blocks or {}) do
+      if k.hub == hub then out[#out + 1] = {k.x0, k.y0, k.x0 + k.w, k.y0 + k.h} end
+    end
+    return {lander = {b.lander.position.x, b.lander.position.y}, blocks = out}
+  end,
   debug_strikes = function(id) local b = storage.bases[id]; return b and {called = b.strikes or 0, shells = b.strike_shells or 0,
     off = b.strikes_off_called or 0, guns = b.strike_guns or 0} end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,
