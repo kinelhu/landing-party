@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.485
+Date: 2026-11-22
+  Bugfixes:
+    - The director's strike forces no longer bring railgunners. Like raids and sieges, they leave them at home for clearing nests.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.484
 Date: 2026-11-22
   Balancing:

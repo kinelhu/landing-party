@@ -1134,6 +1134,7 @@ remote.add_interface("landing-party", {
     return ops.units_near(game.surfaces[surface_name], pos, {game.forces[force_name]})
   end,
   debug_unit_worth = function(u) return command.worth(u) end,
+  debug_strike_kinds = function() return (storage.director or {}).strike_kinds or {} end,
   -- A unit sent in one of the director's strike forces (the visit's railgunner check: strikes raze by design).
   debug_strike_unit = function(u)
     for _, k in pairs((storage.director or {}).strikes or {}) do

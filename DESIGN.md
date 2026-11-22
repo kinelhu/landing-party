@@ -2837,6 +2837,14 @@ if their units are upgraded also." `scripts/rd.lua`.
   more than 400 tiles from its lander, in groups or alone under orders (its strikes'): razing by design. 0.2.484: the
   flat RAIL_OTHER on buildings again; the visit's check counts strays only (rail_strays: a railgunner in no group and in
   none of the director's strikes, debug_strike_unit), the 0.2.128 leash bug it was written for.
+- **No railgunners in the director's strikes (0.2.485; the user: "so railgunners were included in strike groups? isn't
+  that a bug??").** Its raids (ops fights, army's pool filter) and its sieges of the player's (siege.lua, 0.2.165: "Not
+  sure railgunners should come with the sieges") leave them home for its clearances; its strikes drew the camp's whole
+  mix (strike_mix: army.composition), 16 of 41 on the director save once, and on nwa they broke 59 to 96 of the
+  player's. strike_mix leaves them out (a copy: composition may hand back the camp's own mix). Every scenario whose
+  strikes landed checks no railgunner among them (storage.director.strike_kinds): seen failing without the filter
+  (director armylate 1, armydefend 2); director, armylate, climax and armydefend pass. (I had called the strikes'
+  railgunners razing by design: wrong; the manual's "its railgunners go in once the shelling is done" is a clearance.)
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers

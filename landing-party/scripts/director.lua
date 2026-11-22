@@ -1523,6 +1523,11 @@ war.on_strike_landed = function(key, units)
   if not k then for _, u in ipairs(units) do if u.valid then u.destroy() end end; return end
   s.strike_landed = (s.strike_landed or 0) + #units
   k.landed_n = (k.landed_n or 0) + #units
+  -- (Its units by kind, for the record and tests: director checks no railgunner lands, 0.2.485.)
+  s.strike_kinds = s.strike_kinds or {}
+  for _, u in ipairs(units) do
+    if u.valid then local kind = shared.kind_of(u.name); s.strike_kinds[kind] = (s.strike_kinds[kind] or 0) + 1 end
+  end
   s.strike_unit = s.strike_unit or {}
   if not k.landed_at and units[1] then
     k.landed_at = {units[1].position.x, units[1].position.y}
@@ -1739,7 +1744,15 @@ local COUNTERS = require("__landing-party__.counters")
 local command = require("__landing-party__.scripts.command")
 local GUARD_TYPES = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret", "unit", "car", "spider-vehicle"}
 strike_mix = function(b, k)
-  local m = army.composition(b, army.mix(b))
+  local all = army.composition(b, army.mix(b))
+  -- (No railgunners, 0.2.485: its raids and its sieges of the player's leave them home for its clearances, the user,
+  -- 0.2.165: "Not sure railgunners should come with the sieges"; its strikes drew the camp's whole mix, 16 of 41 once, and
+  -- on nwa they broke 59 to 96 of the player's 400 tiles from its lander. The user: "isn't that a bug??")
+  -- (A copy: composition may hand back the camp's own mix.)
+  local m = {}
+  for name, x in pairs(all) do
+    if shared.kind_of(name) ~= "lp-railgunner" then m[name] = x end
+  end
   local mind = (shared.CORPS[b.corp] or {}).mind or {}
   local w = (mind.counter or 0) * tun("strike_counter")
   if w <= 0 or not k.target then return m end

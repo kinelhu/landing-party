@@ -22999,6 +22999,16 @@ schedule(END, function()
   -- (dome LP_MIX=dark: its generators killed, no dome and no hull: the guns may take its lander, and from 0.2.370's site
   -- they did.)
   if not MAY_FALL[params.scenario] and not (params.scenario == "dome" and params.mix == "dark") then check("lander alive", s.lander) end
+  -- Any strike that landed brought no railgunner (0.2.485: its strikes drew the camp's whole mix; on nwa they broke 59 to
+  -- 96 of the player's 400 tiles from its lander, where its raids and sieges leave them home).
+  do
+    local kinds = lp("debug_strike_kinds") or {}
+    local landed = 0
+    for _, n in pairs(kinds) do landed = landed + n end
+    if landed > 0 then
+      check("strikes: no railgunner among the units that landed", (kinds["lp-railgunner"] or 0) == 0, serpent.line(kinds))
+    end
+  end
   check("mined", s.mined > 0, s.mined)
   check("made parts", s.made > 0, s.made)
   metric("doctrine", s.doctrine); metric("hubs", s.hubs); metric("archetypes", s.archetypes)
