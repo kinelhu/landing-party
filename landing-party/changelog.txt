@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.483
+Date: 2026-11-22
+  Balancing:
+    - Kessler-Hayashi's railgunners no longer damage buildings, yours or anyone's. Their slugs hurt biters, nests, units and vehicles.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.482
 Date: 2026-11-21
   Balancing:

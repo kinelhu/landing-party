@@ -400,6 +400,8 @@ shared.SLOT_WEIGHT = 0.5
 -- its railguns research does not raise (0.2.482: at four levels, a slug at x4 through rows of buildings, its range 30 past
 -- a laser's 24; on the laser reference factory at the player's full research its railgunners broke 86 of the player's).
 shared.RAIL_OTHER = 10
+-- What that hit lands on (0.2.483): what moves, never a building.
+shared.RAIL_MOVERS = {unit = true, ["spider-unit"] = true, character = true, car = true, ["spider-vehicle"] = true}
 function shared.rank_scale(e)
   if not (e and e.valid and (e.type == "unit" or e.type == "spider-unit") and e.quality) then return 1 end
   local l = e.quality.level or 0

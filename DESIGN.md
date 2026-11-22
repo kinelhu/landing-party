@@ -224,6 +224,8 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
+- Kessler-Hayashi's first fortress on nwa never has a fabricator standing (both 0.2.429 and 0.2.482 visits: "25 parts,
+  no fabricator standing" from minute 5) and starves on its landing stock; why, not read yet.
 - Multiplayer: two clients using the army and the faction GUIs (scripts/mp.sh covers one client and the director, and
   one client with the army, LP_ARMY=1; a second client needs a second Steam account: left to the beta).
 - Release: the 0.3.0 bump, the full regression, package.sh, the music credit, the GitHub release, the portal upload
@@ -2822,7 +2824,15 @@ if their units are upgraded also." `scripts/rd.lua`.
   railbase_end 352, 609, 407, 630 (388, 895, 674, 915): within the seeds' spread, railbase_end lower. Railgunners broke
   59, 82, 96 / 3, 0, 24 / 2, 0, 0, 0 of the player's (267, 114, 157 / 149, 92, 18 / 396 on seed 2): fewer, the check
   still failing on nwa and deathworld10x (a flat 10 piercing rows of buildings over three hours). Kessler-Hayashi's
-  lander fell on nwa all three seeds (seed 1 at 0.2.429).
+  first fortress left early on nwa: departed starved at minutes 55 and 69 (seeds 2 and 3), destroyed at 151 (seed 1);
+  at 0.2.429 it held 180 in two of three. Kessler-Hayashi still razed most of nwa's (1,045, 1,218, 1,263): its second
+  fortress and its strikes. That fortress never has a fabricator standing in either version ("25 parts, no fabricator
+  standing" from minute 5): it lives on its landing stock, spent faster at 0.2.482 (21 arc flamers against biters in its
+  first hour, 3 at 0.2.429; four tries at a fabricator). A bug apart from the arms race (backlog). 0.2.429 is 53
+  versions back: the totals' "within the spread" is not a measure of the arms race alone.
+- **The railgunner's slug leaves buildings alone (0.2.483; the user: "Agreed").** Its hit on what is neither a biter nor a
+  nest lands only on what moves (shared.RAIL_MOVERS: units, characters, vehicles): no wall, turret or building of any
+  force. rail checks the wall unhurt (78 a railgunner at 0.2.482); bombard, siegetier 3, fortress and hazard pass.
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers

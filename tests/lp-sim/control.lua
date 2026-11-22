@@ -13160,11 +13160,11 @@ scenarios.rail = function()
       -- "half stood" failed one seed or another by chance (2026-10-18).
       check("rail: and one stood at least", S.o >= 1, tostring(S.o))
       -- Against buildings no better than Line troopers (about 17 a second each, 1,000 from three in 20 s) at twice the cost.
-      check("rail: the wall no worse off than from troopers", hurt < 1000, string.format("%.0f", hurt))
       -- Its research raises its hits on biters and nests, not on buildings (0.2.482: shared.RAIL_OTHER by script; at the
       -- top of railguns its slug did x4 to whatever it pierced, 86 of the player's broken on the laser reference factory).
       -- 20 s is about 13 shots a railgunner, a stone wall taking (RAIL_OTHER - 3) x 0.8 a hit: about 75, at x4 about 400.
-      check("rail: its railguns research does not raise its hits on buildings", S.o >= 1 and hurt / S.o < 150,
+      -- And none at all on a building (0.2.483, shared.RAIL_MOVERS): its slug hurts what moves, biters and nests.
+      check("rail: its slugs leave the player's wall unhurt", S.o >= 1 and hurt == 0,
         string.format("%.0f a railgunner", hurt / math.max(1, S.o)))
     end
   end)
