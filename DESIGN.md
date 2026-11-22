@@ -2817,6 +2817,12 @@ if their units are upgraded also." `scripts/rd.lua`.
   138, 45 of 72 lost), which its era 0 never brings (plain: tier 1, 20 razed); 1,053 pieces razed, 138 rebuilt by robots,
   586 ghosts left. The consult's bound (2 x the calibration's row) compares an era-5 world with the calibration's era-0
   factories (made by script, nothing researched): whether this is the late pressure wanted is the user's call.
+- **Visits on the user's saves at 0.2.482 against 0.2.429 (before the arms race), director steady, 180 minutes, the
+  same seeds.** razed_worth nwa 1065, 1349, 2090 (1242, 1261, 1683); deathworld10x 1063, 1161, 960 (1020, 1214, 880);
+  railbase_end 352, 609, 407, 630 (388, 895, 674, 915): within the seeds' spread, railbase_end lower. Railgunners broke
+  59, 82, 96 / 3, 0, 24 / 2, 0, 0, 0 of the player's (267, 114, 157 / 149, 92, 18 / 396 on seed 2): fewer, the check
+  still failing on nwa and deathworld10x (a flat 10 piercing rows of buildings over three hours). Kessler-Hayashi's
+  lander fell on nwa all three seeds (seed 1 at 0.2.429).
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers
