@@ -2866,8 +2866,11 @@ if their units are upgraded also." `scripts/rd.lua`.
   tiles; 37 seen failing); domehub checks it too (there its generators' 84 already covered it). dome (all seven mixes),
   armed relay, standsiege, fortress, orbital, artyprobe pass. Hub 2's projector on nwa was destroyed a minute after it
   went up, twice: by what, not read (backlog).
-- **nwa visits at 0.2.485 (no railgunners in strikes):** rail_kills 0 and rail_strays 0 on the seeds read (razed 2,289
-  seed 3, 699 seed 2).
+- **nwa visits at 0.2.485 (no railgunners in strikes):** rail_kills 0 on seeds 2 and 3 (razed 699, 2,289); seed 1 4
+  land mines (razed 1,172), by a railgunner on a nest clearance 32 tiles off, read as strays: the check counted any kill
+  outside a group or strike, and measured to the first lander found (1,683 tiles), not its own. A stray is now a
+  railgunner of its camp's garrison past shared.RAIL_LEASH (48, army.lua's leash, named once) from its own lander
+  (debug_garrison_reach: nil on an operation, clearance or strike); armed checks the remote (seen failing: 0 for all).
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers

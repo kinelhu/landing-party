@@ -11568,6 +11568,19 @@ scenarios.armed = function()
         tostring(d and d.radius), far, fb))
       check("armed: its lander's dome covers its first hub's blocks", d and d.radius and d.radius >= fb - 0.5,
         string.format("radius %s, first hub's farthest corner %.1f", tostring(d and d.radius), fb))
+      -- The visit's stray check reads a unit's garrison (debug_garrison_reach, 0.2.488): a garrison unit by its lander
+      -- reads its distance to it, a unit made by script beside it, in no garrison, reads nothing.
+      local gu, inside
+      for _, u in ipairs(l and surface().find_entities_filtered{type = "unit", force = "lp-serenity", position = l.position,
+        radius = 60} or {}) do
+        local r = lp("debug_garrison_reach", u)
+        if r then gu, inside = u, r break end
+      end
+      local loose = l and surface().create_entity{name = "lp-infantry", force = "lp-serenity",
+        position = surface().find_non_colliding_position("lp-infantry", l.position, 20, 0.5)}
+      local out = loose and lp("debug_garrison_reach", loose)
+      check("armed: a garrison unit reads its reach from its own lander, one in no garrison none",
+        gu ~= nil and inside <= 60 and loose ~= nil and out == nil, string.format("%s, %s", tostring(inside), tostring(out)))
       -- (Landed by the first rich site before 0.2.154: on nwa across a lake from the factory, no way over land.)
       check("armed: its landing's way over land checked", (lp("faction").by_way or 0) >= 1, tostring(lp("faction").by_way))
     end
@@ -16786,7 +16799,7 @@ scenarios.visit = function()
     -- leashed to its claim, one walked the player's wall on deathworld and broke 205 of them (0.2.128).
     metric("rail_kills", S.rail_kills or 0)
     metric("rail_strays", S.rail_strays or 0)
-    check("visit: no stray railgunner of Kessler-Hayashi's broke the player's (in no operation or strike)",
+    check("visit: no stray railgunner of Kessler-Hayashi's broke the player's (in its garrison, past its leash)",
       (S.rail_strays or 0) == 0, string.format("%d strays of %d kills", S.rail_strays or 0, S.rail_kills or 0))
     -- Pollution put out over the run, by source: the corporations' share (Grubstake's drills pollute).
     local corp, all = 0, 0
@@ -23326,9 +23339,11 @@ script.on_event(defines.events.on_entity_died, function(e)
       cmd = c.commandable.command
       grp = c.commandable.parent_group
     end
-    -- (A stray: in no group and in none of the director's strikes. Its strikes' and its assaults' railgunners raze by
-    -- design: the 59 to 96 of nwa's at 0.2.482 were all theirs, 400 tiles and more from its lander, 0.2.484.)
-    if not (grp and grp.valid) and not lp("debug_strike_unit", c) then S.rail_strays = (S.rail_strays or 0) + 1 end
+    -- (A stray: in its camp's garrison, where the leash holds it, and past the leash from its own lander. Out on a
+    -- clearance or a strike it is on its work: at 0.2.485 four land mines by a nest clearance on nwa read as strays,
+    -- 1,683 tiles from the first lander the line below finds, not its own.)
+    local gr = lp("debug_garrison_reach", c)
+    if gr and gr > lp("debug_rail_leash") then S.rail_strays = (S.rail_strays or 0) + 1 end
     local lander = c.surface.find_entities_filtered{name = "lp-lander", force = c.force, limit = 1}[1]
     local gcmd = grp and grp.valid and grp.command
     table.insert(lines, string.format("INFO rail kill %s at %.0f,%.0f tick %d: railgunner at %.0f,%.0f (%.0f off), %.0f from its lander; order %s %s; group %s %s (%d)",

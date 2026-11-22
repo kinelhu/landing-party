@@ -715,7 +715,7 @@ end
 -- (275 to 350 tiles on deathworld) to the player's wall, and one railgunner, outranging the gun turrets, walked it and
 -- broke 205 of the player's buildings (a deathworld visit, 0.2.128). Its clearances take them out of the garrison.
 local LEASH = shared.LEASH
-local RAIL_LEASH = 48
+local RAIL_LEASH = shared.RAIL_LEASH
 local function leash(b, trace)
   local h = b.depots[1] and b.depots[1].valid and b.depots[1] or (b.lander.valid and b.lander)
   if not h then return end

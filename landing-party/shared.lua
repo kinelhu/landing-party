@@ -403,6 +403,8 @@ shared.SLOT_PARTS = 10
 -- its railguns research does not raise (0.2.482: at four levels, a slug at x4 through rows of buildings, its range 30 past
 -- a laser's 24; on the laser reference factory at the player's full research its railgunners broke 86 of the player's).
 shared.RAIL_OTHER = 10
+-- How far from its lander a railgunner of its garrison may stray, idle or wandering (army.lua's leash; the visit's check).
+shared.RAIL_LEASH = 48
 function shared.rank_scale(e)
   if not (e and e.valid and (e.type == "unit" or e.type == "spider-unit") and e.quality) then return 1 end
   local l = e.quality.level or 0

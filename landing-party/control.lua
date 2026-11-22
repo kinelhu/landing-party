@@ -1145,6 +1145,22 @@ remote.add_interface("landing-party", {
   end,
   debug_unit_worth = function(u) return command.worth(u) end,
   debug_strike_kinds = function() return (storage.director or {}).strike_kinds or {} end,
+  debug_rail_leash = function() return shared.RAIL_LEASH end,
+  -- A unit in a camp's garrison (where the leash holds it): the distance to that camp's own lander; nil when it is out on
+  -- an operation, a clearance or a strike, or in no garrison (the visit's stray railgunner check).
+  debug_garrison_reach = function(u)
+    for _, b in pairs(storage.bases or {}) do
+      if b.force == u.force.name and b.lander and b.lander.valid then
+        for _, g in ipairs(b.garrison or {}) do
+          if g == u then
+            local p = b.lander.position
+            return math.sqrt((u.position.x - p.x) ^ 2 + (u.position.y - p.y) ^ 2)
+          end
+        end
+      end
+    end
+    return nil
+  end,
   -- A unit sent in one of the director's strike forces (the visit's railgunner check: strikes raze by design).
   debug_strike_unit = function(u)
     for _, k in pairs((storage.director or {}).strikes or {}) do
