@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.489
+Date: 2026-11-23
+  Balancing:
+    - On a map with well evolved biters, the corporations ring their camps with arc flamers before the biters strike, and put up to three times as many where they are hit, spread out rather than in one spot.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.488
 Date: 2026-11-22
   Changes:

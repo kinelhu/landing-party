@@ -2881,6 +2881,16 @@ if their units are upgraded also." `scripts/rd.lua`.
   91: biters (force enemy) broke 292 and 390 of its buildings, walls, turrets, pylons and drills. On seed 1 it held 180
   minutes, losing 974 to biters and 592 to the player (443 walls, 106 gun turrets: its cordon's posts at the player's
   line, not its blocks). Its starving on nwa is the biters now (backlog).
+- **Heavier arc flamer cover on an evolved map (0.2.489; the user: "I suspect we need a much heavier arc flamer coverage
+  on such a map").** nwa seed 2 at 0.2.488: its hazard log read "no nest within 300" (waves drawn from afar, which no
+  clearance answers; its one clearance lost its railgunners to behemoths on the march), and arcguard put two or three
+  flamers on one spot by the fortress, broken at once and put back there. Now, past GUARD_EVO (0.6) of the biters'
+  evolution on its surface: each block gets a flamer before it loses anything (the first block with none, in the order
+  opened, after the blocks its losses name); a block takes up to GUARD_MOST + GUARD_EXTRA (4 + 8 at evolution 1), one each
+  GUARD_LOSSES x (1 - half the heat) lost; a flamer is placed toward the losses, else round the block's edge, GUARD_GAP
+  (6) from every flamer standing or queued. Priors. arcguard evo (new): at 0.9, 4 of 4 blocks covered ahead of any loss
+  (seen failing with the heat 0: none). The gap is not checked: no scenario put two loss-driven flamers on one block
+  (tried, three variants: one each). arcguard, arcguard grubstake, maxevo and the quick regression (47) pass.
 - **nwa visits at 0.2.485 (no railgunners in strikes):** rail_kills 0 on seeds 2 and 3 (razed 699, 2,289); seed 1 4
   land mines (razed 1,172), by a railgunner on a nest clearance 32 tiles off, read as strays: the check counted any kill
   outside a group or strike, and measured to the first lander found (1,683 tiles), not its own. A stray is now a

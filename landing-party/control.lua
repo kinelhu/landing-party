@@ -1148,6 +1148,7 @@ remote.add_interface("landing-party", {
   debug_unit_worth = function(u) return command.worth(u) end,
   debug_strike_kinds = function() return (storage.director or {}).strike_kinds or {} end,
   debug_rail_leash = function() return shared.RAIL_LEASH end,
+  debug_guard = function(id) local b = storage.bases[id]; return b and {ahead = b.guard_ahead or 0, lost = b.guard_lost or 0} end,
   debug_artillery_reach = function() return threat.artillery_reach(game.forces.player) end,
   debug_artillery_spare = function() return shared.ARTILLERY_SPARE end,
   -- A unit in a camp's garrison (where the leash holds it): the distance to that camp's own lander; nil when it is out on

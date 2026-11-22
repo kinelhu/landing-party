@@ -143,6 +143,12 @@ local function keep(b) return b.posture and b.posture.keep or 0 end
 -- The planner's rules, in priority order. The first that applies and finds a place acts.
 -- `only`: that rule alone (base.lua: the power rule while the queue is busy).
 local GUARD_LOSSES, GUARD_R, GUARD_MOST, GUARD_WINDOW = 6, 28, 4, 30 * 3600   -- priors (arcguard)
+-- Heavier on an evolved map (0.2.489; the user, of Kessler-Hayashi's first fortress starved out by nwa's biters: "I suspect
+-- we need a much heavier arc flamer coverage on such a map"): past GUARD_EVO of the biters' evolution on its surface each
+-- block gets a flamer before it loses anything, and toward evolution 1 a block takes up to GUARD_MOST + GUARD_EXTRA,
+-- one each GUARD_LOSSES / 2 lost; a flamer GUARD_GAP from any other (they had stacked three on one spot by the fortress,
+-- a behemoth's bite from each other). Priors.
+local GUARD_EVO, GUARD_EXTRA, GUARD_GAP = 0.6, 8, 6
 local function plan(b, only)
   local surface = game.surfaces[b.surface]
   -- Whose ground the layout's checks refuse (shared.refused), while it plans.
@@ -231,23 +237,40 @@ local function plan(b, only)
     -- last half hour (its hazard log, siege.lua) gets a flamer by them, one more each GUARD_LOSSES, GUARD_MOST at most.
     {"arcguard", function()
       b.target = nil
-      local log = b.hazard and b.hazard.log
-      -- (Its own price only, not its army's keep past it: under attack the keep is high, and a flamer is 8 parts.)
-      if not log or #log < GUARD_LOSSES or b.parts < (shared.cost["lp-flamer"] or 8) then return false end
+      if b.parts < (shared.cost["lp-flamer"] or 8) then return false end
+      local log = (b.hazard and b.hazard.log) or {}
+      local evo = game.forces.enemy and game.forces.enemy.get_evolution_factor(surface) or 0
+      local hot = math.max(0, math.min(1, (evo - GUARD_EVO) / (1 - GUARD_EVO)))
+      local most_cap = GUARD_MOST + math.floor(GUARD_EXTRA * hot + 0.5)
+      local step = GUARD_LOSSES * (1 - 0.5 * hot)
       local cut, name = game.tick - GUARD_WINDOW, shared.variant(b.corp, "lp-flamer")
+      local function have_at(blk)
+        local cx, cy = blk.center[1], blk.center[2]
+        local have = surface.count_entities_filtered{position = blk.center, radius = GUARD_R, name = name}
+        for _, q in ipairs(b.queue) do
+          if q.name == "lp-flamer" and (q.pos[1] - cx) ^ 2 + (q.pos[2] - cy) ^ 2 <= GUARD_R ^ 2 then have = have + 1 end
+        end
+        return have
+      end
       local best, most
       for _, blk in ipairs(b.blocks) do
         local cx, cy, n, sx, sy = blk.center[1], blk.center[2], 0, 0, 0
         for _, l in ipairs(log) do
           if l[1] >= cut and (l[2] - cx) ^ 2 + (l[3] - cy) ^ 2 <= GUARD_R ^ 2 then n, sx, sy = n + 1, sx + l[2], sy + l[3] end
         end
-        if n >= GUARD_LOSSES then
-          local have = surface.count_entities_filtered{position = blk.center, radius = GUARD_R, name = name}
-          for _, q in ipairs(b.queue) do
-            if q.name == "lp-flamer" and (q.pos[1] - cx) ^ 2 + (q.pos[2] - cy) ^ 2 <= GUARD_R ^ 2 then have = have + 1 end
-          end
-          if have < math.min(GUARD_MOST, math.floor(n / GUARD_LOSSES)) and (not most or n > most) then
+        if n >= step then
+          local have = have_at(blk)
+          if have < math.min(most_cap, math.floor(n / step)) and (not most or n > most) then
             best, most = {blk = blk, at = {sx / n, sy / n}, n = n, have = have}, n
+          end
+        end
+      end
+      -- None hit: on an evolved map, the first block with none (its lander's first: blocks in the order opened).
+      if not best and hot > 0 then
+        for _, blk in ipairs(b.blocks) do
+          if (blk.weight or 1) > 0 and blk.kind ~= "pad" and have_at(blk) == 0 then
+            best = {blk = blk, at = {blk.center[1], blk.center[2]}, n = 0, have = 0, ahead = true}
+            break
           end
         end
       end
@@ -256,15 +279,33 @@ local function plan(b, only)
       function()
         local t, name = b.target, shared.variant(b.corp, "lp-flamer")
         local cx, cy = t.blk.center[1], t.blk.center[2]
-        -- Toward the losses from the block's middle, within it.
-        local px, py = cx + (t.at[1] - cx) * 0.6, cy + (t.at[2] - cy) * 0.6
-        local p = surface.find_non_colliding_position(name, {px, py}, 8, 0.5)
+        local hw, hh = (t.blk.w or 16) / 2, (t.blk.h or 16) / 2
+        -- Toward the losses from the block's middle, within it; else round its edge, GUARD_GAP from every flamer.
+        local tries = {{cx + (t.at[1] - cx) * 0.6, cy + (t.at[2] - cy) * 0.6}}
+        local a0 = math.atan2(t.at[2] - cy, t.at[1] - cx)
+        for k = 0, 7 do
+          local a = a0 + k * math.pi / 4
+          tries[#tries + 1] = {cx + math.cos(a) * (hw + 2), cy + math.sin(a) * (hh + 2)}
+        end
+        local p
+        for _, q in ipairs(tries) do
+          local c = surface.find_non_colliding_position(name, q, 4, 0.5)
+          if c and surface.count_entities_filtered{position = c, radius = GUARD_GAP, name = name, limit = 1} == 0 then
+            local queued = false
+            for _, j in ipairs(b.queue) do
+              if j.name == "lp-flamer" and (j.pos[1] - c.x) ^ 2 + (j.pos[2] - c.y) ^ 2 < GUARD_GAP ^ 2 then queued = true end
+            end
+            if not queued then p = c break end
+          end
+        end
         if not p then return end
         -- (Queued by its kind: construction.place names the corporation's own; a variant queued was named twice,
         -- "lp-grubstake-grubstake-flamer", and crashed maxevo bare and pact nopact at 0.2.367.)
         table.insert(b.queue, 1, {name = "lp-flamer", pos = {p.x, p.y}, module = t.blk})
-        return string.format("an arc flamer by %s at %.0f,%.0f (%d lost to biters round it, %d flamers there)", t.blk.kind,
-          p.x, p.y, t.n, t.have)
+        -- (Counted, for the record and tests: ahead of the biters, or after its losses.)
+        if t.ahead then b.guard_ahead = (b.guard_ahead or 0) + 1 else b.guard_lost = (b.guard_lost or 0) + 1 end
+        return string.format("an arc flamer by %s at %.0f,%.0f (%s, %d flamers there)", t.blk.kind, p.x, p.y,
+          t.ahead and "ahead of the biters" or (t.n .. " lost to biters round it"), t.have)
       end},
     {"defend", function()
       b.target = (doc.outpost_turrets and undefended(b)) or undefended(b, true)

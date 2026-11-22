@@ -9811,7 +9811,33 @@ end
 -- 509 to biter waves and fell; with them 63 and it stood). LP_MIX=grubstake: Grubstake's camp, arrived at a minute (the
 -- rule queued the corporation's own name and the builder named it again, "lp-grubstake-grubstake-flamer": maxevo bare and
 -- pact nopact crashed at 0.2.367, while this ran only Serenity's, whose names carry no prefix).
+-- LP_MIX=evo (0.2.489; the user: "a much heavier arc flamer coverage on such a map"): the biters' evolution 0.9 and none
+-- of its own killed: its blocks get flamers ahead of any loss, each GUARD_GAP from the others (before: none until six
+-- were lost round a block).
 scenarios.arcguard = function()
+  local evo = params.mix == "evo"
+  if evo then
+    schedule(30, function() game.forces.enemy.set_evolution_factor(0.9, surface()) end)
+    -- (Fed, so it grows past its pad and first block in the time.)
+    schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end end)
+    schedule(9 * 3600, function()
+      local st = lp("stats", storage.id)
+      local o = st.origin
+      local fl = surface().find_entities_filtered{force = FORCE, name = "lp-flamer", position = o, radius = 250}
+      local close = 0
+      for i = 1, #fl do for j = i + 1, #fl do
+        local a, c = fl[i].position, fl[j].position
+        if (a.x - c.x) ^ 2 + (a.y - c.y) ^ 2 < 5.5 * 5.5 then close = close + 1 end
+      end end
+      local gd = lp("debug_guard", storage.id) or {}
+      info(string.format("arcguard evo: %d blocks, %d arc flamers (%d queued ahead of the biters, %d after losses), %d pairs closer than the gap",
+        st.blocks or -1, #fl, gd.ahead or 0, gd.lost or 0, close))
+      check("arcguard: on an evolved map, flamers ahead of any loss, at least one a block", (st.blocks or 0) >= 4
+        and (gd.ahead or 0) >= 2 and #fl >= (st.blocks or 0) - 1,
+        string.format("%d flamers, %d ahead, %d blocks", #fl, gd.ahead or 0, st.blocks or -1))
+
+    end)
+  end
   local g = params.mix == "grubstake"
   local force = g and "lp-grubstake" or FORCE
   local flamer = g and "lp-grubstake-flamer" or "lp-flamer"
