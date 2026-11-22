@@ -44,7 +44,7 @@ Kessler-Hayashi waits for your first rocket launch, then lands on a site with a 
 orbital strikes and stay until you break them.
 
 Its army is troopers, tanks and railgunners, with laser drones from its {{< var kh.drone_level_nth >}} level. The railgunners clear the biter
-spawners round its camp; their slugs hurt biters, units and vehicles, never a building. Full numbers are in the [Reference](reference.qmd#sec-units).
+spawners round its camp. Full numbers are in the [Reference](reference.qmd#sec-units).
 
 **Clearing nests.** A camp that the biters keep attacking sends a clearance to the nests they come from. Its guns come
 down in cargo pods, with a howitzer where worms outrange the mortars, and its railgunners go in once the shelling is

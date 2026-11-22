@@ -90,12 +90,12 @@ script.on_event(defines.events.on_entity_spawned, farm.on_spawned)
 script.on_event(defines.events.on_script_trigger_effect, function(e)
   if e.effect_id == "lp-army-shot" then return command.on_shot(e) end
   if e.effect_id:sub(1, 7) == "lp-hit:" then return command.on_hit(e) end
-  -- A railgunner's slug on what is neither a biter nor a nest: shared.RAIL_OTHER, unraised by its research (units.lua), and
-  -- only on what moves (shared.RAIL_MOVERS): no building, the player's or a rival's (0.2.483; the user agreed: at a flat 10
-  -- its slug still broke 59 to 96 of nwa's through rows of them in three hours).
+  -- A railgunner's slug on what is neither a biter nor a nest: shared.RAIL_OTHER, unraised by its research (units.lua).
+  -- (0.2.483 kept it off buildings; undone in 0.2.484, the user: "they'll still attack buildings and not damage them at
+  -- all? feels weird": no unit has a target mask, and its strikes' and assaults' railgunners raze by design.)
   if e.effect_id == "lp-rail-other" then
     local t, src = e.target_entity, e.source_entity or e.cause_entity
-    if t and t.valid and shared.RAIL_MOVERS[t.type] and t.destructible and t.health then
+    if t and t.valid and t.destructible and t.health then
       t.damage(shared.RAIL_OTHER, src and src.valid and src.force or "neutral", "physical", src and src.valid and src or nil,
         src and src.valid and src or nil)
     end
@@ -1134,6 +1134,13 @@ remote.add_interface("landing-party", {
     return ops.units_near(game.surfaces[surface_name], pos, {game.forces[force_name]})
   end,
   debug_unit_worth = function(u) return command.worth(u) end,
+  -- A unit sent in one of the director's strike forces (the visit's railgunner check: strikes raze by design).
+  debug_strike_unit = function(u)
+    for _, k in pairs((storage.director or {}).strikes or {}) do
+      for _, x in ipairs(k.units or {}) do if x == u then return true end end
+    end
+    return false
+  end,
   debug_tier = function(u, round)
     storage.cmd.tier_test = storage.cmd.tier_test or {}
     storage.cmd.tier_test[u.unit_number] = round

@@ -2830,9 +2830,13 @@ if their units are upgraded also." `scripts/rd.lua`.
   standing" from minute 5): it lives on its landing stock, spent faster at 0.2.482 (21 arc flamers against biters in its
   first hour, 3 at 0.2.429; four tries at a fabricator). A bug apart from the arms race (backlog). 0.2.429 is 53
   versions back: the totals' "within the spread" is not a measure of the arms race alone.
-- **The railgunner's slug leaves buildings alone (0.2.483; the user: "Agreed").** Its hit on what is neither a biter nor a
-  nest lands only on what moves (shared.RAIL_MOVERS: units, characters, vehicles): no wall, turret or building of any
-  force. rail checks the wall unhurt (78 a railgunner at 0.2.482); bombard, siegetier 3, fortress and hazard pass.
+- **The railgunner's slug left buildings alone in 0.2.483, undone in 0.2.484.** 0.2.483 landed its hit only on what
+  moves. The user: "they'll still attack buildings and not damage them at all? feels weird": a unit has no target mask
+  (prototype API: none on UnitPrototype or its attack parameters), so it chose a turret and stood firing for nothing;
+  and Kessler-Hayashi sends railgunners in its assaults and strikes. nwa's 59 to 96 railgunner kills at 0.2.482 were all
+  more than 400 tiles from its lander, in groups or alone under orders (its strikes'): razing by design. 0.2.484: the
+  flat RAIL_OTHER on buildings again; the visit's check counts strays only (rail_strays: a railgunner in no group and in
+  none of the director's strikes, debug_strike_unit), the 0.2.128 leash bug it was written for.
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers

@@ -13163,8 +13163,10 @@ scenarios.rail = function()
       -- Its research raises its hits on biters and nests, not on buildings (0.2.482: shared.RAIL_OTHER by script; at the
       -- top of railguns its slug did x4 to whatever it pierced, 86 of the player's broken on the laser reference factory).
       -- 20 s is about 13 shots a railgunner, a stone wall taking (RAIL_OTHER - 3) x 0.8 a hit: about 75, at x4 about 400.
-      -- And none at all on a building (0.2.483, shared.RAIL_MOVERS): its slug hurts what moves, biters and nests.
-      check("rail: its slugs leave the player's wall unhurt", S.o >= 1 and hurt == 0,
+      -- Its research raises its hits on biters and nests, not on buildings (0.2.482: shared.RAIL_OTHER by script; at the
+      -- top of railguns its slug did x4 to whatever it pierced). 20 s is about 13 shots a railgunner, a stone wall taking
+      -- (RAIL_OTHER - 3) x 0.8 a hit: about 75, at x4 about 400 (350 seen failing).
+      check("rail: its railguns research does not raise its hits on buildings", S.o >= 1 and hurt > 0 and hurt / S.o < 150,
         string.format("%.0f a railgunner", hurt / math.max(1, S.o)))
     end
   end)
@@ -16663,7 +16665,9 @@ scenarios.visit = function()
     -- Kessler-Hayashi's railgunners clear nests and leave the player's buildings alone: made past its cordon's walls and
     -- leashed to its claim, one walked the player's wall on deathworld and broke 205 of them (0.2.128).
     metric("rail_kills", S.rail_kills or 0)
-    check("visit: Kessler-Hayashi's railgunners broke none of the player's", (S.rail_kills or 0) == 0, tostring(S.rail_kills or 0))
+    metric("rail_strays", S.rail_strays or 0)
+    check("visit: no stray railgunner of Kessler-Hayashi's broke the player's (in no operation or strike)",
+      (S.rail_strays or 0) == 0, string.format("%d strays of %d kills", S.rail_strays or 0, S.rail_kills or 0))
     -- Pollution put out over the run, by source: the corporations' share (Grubstake's drills pollute).
     local corp, all = 0, 0
     for name, v in pairs(game.get_pollution_statistics(surface()).input_counts) do
@@ -23192,6 +23196,9 @@ script.on_event(defines.events.on_entity_died, function(e)
       cmd = c.commandable.command
       grp = c.commandable.parent_group
     end
+    -- (A stray: in no group and in none of the director's strikes. Its strikes' and its assaults' railgunners raze by
+    -- design: the 59 to 96 of nwa's at 0.2.482 were all theirs, 400 tiles and more from its lander, 0.2.484.)
+    if not (grp and grp.valid) and not lp("debug_strike_unit", c) then S.rail_strays = (S.rail_strays or 0) + 1 end
     local lander = c.surface.find_entities_filtered{name = "lp-lander", force = c.force, limit = 1}[1]
     local gcmd = grp and grp.valid and grp.command
     table.insert(lines, string.format("INFO rail kill %s at %.0f,%.0f tick %d: railgunner at %.0f,%.0f (%.0f off), %.0f from its lander; order %s %s; group %s %s (%d)",

@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.484
+Date: 2026-11-22
+  Balancing:
+    - Kessler-Hayashi's railgunners damage buildings again, as in 0.2.482: a light hit their research does not raise. In 0.2.483 they fired at your turrets and did nothing.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.483
 Date: 2026-11-22
   Balancing:
