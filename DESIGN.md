@@ -225,6 +225,8 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
 - Kessler-Hayashi's hub projectors on nwa destroyed a minute after going up (visit seed 2, 0.2.482): by what, not read.
+- Kessler-Hayashi's first fortress on nwa starved out by biters (0.2.488 visits seeds 2 and 3, minutes 65 and 91: 292
+  and 390 of its buildings, drills and pylons among them): its hazard clearances on a high-evolution map, not read.
 - Multiplayer: two clients using the army and the faction GUIs (scripts/mp.sh covers one client and the director, and
   one client with the army, LP_ARMY=1; a second client needs a second Steam account: left to the beta).
 - Release: the 0.3.0 bump, the full regression, package.sh, the music credit, the GitHub release, the portal upload
@@ -2874,6 +2876,11 @@ if their units are upgraded also." `scripts/rd.lua`.
   2) and the pickets keep their own rules. Scenario siting (new): a camp 40 tiles past an artillery turret's reach and
   spare, 25 minutes fed: 0 of its 6 blocks within; LP_MIX=off (storage.siting_off) 3 of 6 (seen failing). guns, guns
   fewest, armed, armed era2, domehub, town, standsiege, grow pass. The 0.2.487 checks in armed and domehub removed.
+  nwa visits at 0.2.488 (steady, 180 minutes): razed 2,100, 920, 766; rail_strays 0 on all three. The first fortress
+  lost nothing to the player on seeds 2 and 3 (the fab block's six losses gone) and still left starved, at minutes 65 and
+  91: biters (force enemy) broke 292 and 390 of its buildings, walls, turrets, pylons and drills. On seed 1 it held 180
+  minutes, losing 974 to biters and 592 to the player (443 walls, 106 gun turrets: its cordon's posts at the player's
+  line, not its blocks). Its starving on nwa is the biters now (backlog).
 - **nwa visits at 0.2.485 (no railgunners in strikes):** rail_kills 0 on seeds 2 and 3 (razed 699, 2,289); seed 1 4
   land mines (razed 1,172), by a railgunner on a nest clearance 32 tiles off, read as strays: the check counted any kill
   outside a group or strike, and measured to the first lander found (1,683 tiles), not its own. A stray is now a
