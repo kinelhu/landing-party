@@ -165,7 +165,12 @@ local function refresh(p)
   -- (A panel built before 0.2.470 has no rounds row: built again.)
   if not f.rounds then f = build(p) end
   local v = command.beacon_view(b)
-  f.stance.caption = {"lp.squad-stance-" .. v.stance}
+  -- (Its squad's colour first, as its units wear it in alt mode; a post says its channel, 0.2.486.)
+  local c = v.colour
+  local swatch = string.format("[color=%d,%d,%d]■[/color] ", math.floor(c[1] * 255), math.floor(c[2] * 255), math.floor(c[3] * 255))
+  f.stance.caption = {"", swatch, {"lp.squad-stance-" .. v.stance},
+    v.channel and {"", " ", {"lp.squad-channel", v.channel}} or "",
+    v.post and {"", " ", {"lp.squad-post", v.post}} or ""}
   local a = v.answering
   f.doing.caption = a and {"lp.squad-answering", string.format("[gps=%.0f,%.0f,%s]", a.pos.x, a.pos.y, b.surface.name)}
     or (v.stance == "defend" and {"lp.squad-waiting"} or "")

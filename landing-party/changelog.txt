@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.486
+Date: 2026-11-22
+  Features:
+    - Watch posts: a rally beacon given signal P becomes a post on that channel. Defending squads on the same D number answer attacks within its reach, the nearest first, more when the attackers outweigh it.
+    - Squad colours: in alt mode each squad's units and beacon wear its colour, shared by a channel's squads and posts, and shown in the squad panel.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.485
 Date: 2026-11-22
   Bugfixes:

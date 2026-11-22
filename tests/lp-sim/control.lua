@@ -4374,6 +4374,103 @@ scenarios.reach = function()
   end)
 end
 
+-- Watch posts (0.2.486; the user, of squads defending outposts: "Go"): two squads of four troopers on D = 1 at Z = 60,
+-- A 100 tiles east of the base and B 100 west; two posts on P = 1 at Z = 40, P1 250 east and P2 250 west, no squad of
+-- their own. Biters at P1 (three, unkillable): A answers it (the nearer), B holds, P1's W is 1 and P2's 0. Then three at
+-- P2: B answers it, A stays on P1. Then P2's gone and eight more at P1: eleven outweigh A's four, and B joins A there.
+scenarios.watch = function()
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  local red = defines.wire_connector_id.circuit_red
+  local function sig(b, name)
+    for _, x in pairs(b.get_signals(red) or {}) do if x.signal.name == name then return x.count end end
+    return 0
+  end
+  local function beacon(x, y, sigs)
+    local b = put("lp-rally-beacon", x + 0.5, y + 0.5)
+    local cc = put("constant-combinator", x - 1.5, y + 0.5)
+    cc.get_wire_connector(red, true).connect_to(b.get_wire_connector(red, true))
+    for i, x2 in ipairs(sigs) do
+      cc.get_control_behavior().get_section(1).set_slot(i, {value = {type = "virtual", name = x2[1], quality = "normal"},
+        min = x2[2]})
+    end
+    return b
+  end
+  local function state()
+    local function one(b) local v = lp("debug_beacon_view", b) return v.answering and v.answering.key or false end
+    return {a = one(S.A), b = one(S.B), w1 = sig(S.P1, "signal-W"), w2 = sig(S.P2, "signal-W")}
+  end
+  local syn
+  local function biters(x, y, n)
+    local out = {}
+    for i = 1, n do
+      local e = surface().create_entity{name = "small-biter", position = {x + 4, y - 4 + i}, force = syn}
+      if e then e.destructible = false; out[#out + 1] = e end
+    end
+    return out
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    for _, x in ipairs({-256, -128, 0, 128, 256}) do surface().request_to_generate_chunks({x, 0}, 2) end
+    surface().force_generate_chunk_requests()
+    flatten(-280, -30, 280, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    S.A = beacon(100, -10, {{"signal-D", 1}, {"signal-Z", 60}})
+    S.B = beacon(-100, -10, {{"signal-D", 1}, {"signal-Z", 60}})
+    S.P1 = beacon(250, -10, {{"signal-P", 1}, {"signal-Z", 40}})
+    S.P2 = beacon(-250, -10, {{"signal-P", 1}, {"signal-Z", 40}})
+    for i = 1, 4 do
+      -- (Unkillable too: eleven unkillable biters wiped A's four, and a squad of none answers nothing.)
+      for _, x in ipairs({96 + 2 * i, -104 + 2 * i}) do
+        local u = surface().create_entity{name = "lp-trooper", position = {x, -6}, force = "player"}
+        if u then u.destructible = false end
+      end
+    end
+    lp("debug_enlist", {{94, -8}, {106, -4}})
+    lp("debug_enlist", {{-106, -8}, {-94, -4}})
+    -- The outposts: a wall the biters stand by (unbreakable, so each attack lasts while it is read).
+    for _, x in ipairs({254.5, -245.5}) do
+      for i = 0, 4 do
+        local w = put("stone-wall", x, -12.5 + i)
+        if w then w.destructible = false end
+      end
+    end
+    syn = game.forces["lp-biotech"] or game.create_force("lp-biotech")
+    syn.set_cease_fire("player", false); game.forces.player.set_cease_fire(syn, false)
+  end)
+  schedule(60 + 4 * 60, function() S.at1 = biters(256, -10, 3) end)
+  schedule(60 + 20 * 60, function()
+    S.s1 = state()
+    S.at2 = biters(-244, -10, 3)
+  end)
+  schedule(60 + 36 * 60, function()
+    S.s2 = state()
+    for _, e in ipairs(S.at2) do if e.valid then e.destroy() end end
+    for _, e in ipairs(biters(258, -10, 8)) do S.at1[#S.at1 + 1] = e end
+  end)
+  schedule(60 + 120 * 60, function()
+    S.s3 = state()
+    info("watch: " .. serpent.line({S.s1, S.s2, S.s3}))
+    check("watch: an attack at a post: the nearer squad on its channel answers, the other holds, the post's W is 1",
+      S.s1.a and not S.s1.b and S.s1.w1 == 1 and S.s1.w2 == 0, serpent.line(S.s1))
+    check("watch: a second post attacked: the other squad answers it, the first stays on its own",
+      S.s2.a and S.s2.b and S.s2.a ~= S.s2.b and S.s2.w2 == 1, serpent.line(S.s2))
+    -- Colours (0.2.486): a squad and the posts on its channel share one; its units wear it in alt mode.
+    local va, vp = lp("debug_beacon_view", S.A), lp("debug_beacon_view", S.P1)
+    local worn = #va.units_colour == 4
+    for _, c in ipairs(va.units_colour) do if c ~= va.colour then worn = false end end
+    check("watch: a squad and its channel's posts share a colour, its units wear it", va.colour and va.colour == vp.colour
+      and worn, serpent.line({va.colour, vp.colour, va.units_colour}))
+    check("watch: an attack that outweighs one squad draws the second to it",
+      S.s3.a and S.s3.b and S.s3.a == S.s3.b and S.s3.w2 == 0, serpent.line(S.s3))
+  end)
+end
+
 -- A patrol stepped on arrival (0.2.460; the user, of a patrol's legs: "How do we know troops have 'arrived'?"): a beacon
 -- reports H, its squad's units within 12 tiles of the rally point. Four troopers on a beacon wired to a combinator whose X
 -- the script flips between 0 and 30 as a circuit would, read off the beacon's own wire: when H = S, 3 s on, the next leg.

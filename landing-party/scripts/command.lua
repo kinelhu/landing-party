@@ -307,8 +307,12 @@ local function plan(beacon)
   -- the leash, the advance and the defence, so an outpost's squad can answer only its own outpost (the fixed 150
   -- answered the base beside it and left it bare), a long one be covered whole, and a patrol keep to its route.
   local z = v("signal-Z")
+  -- Watch posts (0.2.486; the user, of squads defending outposts: "Go"): P = n makes the beacon a post on channel n, the
+  -- attacks within its reach answered by the defending squads on D = n wherever they stand; D's value is the channel.
+  local d, pz = v(SIGNAL_DEFEND.name), v("signal-P")
   return {stance = st, pos = {x = beacon.position.x + dx, y = beacon.position.y + dy}, surface = beacon.surface,
-    reach = z > 0 and math.min(z, MAX_OFFSET) or nil}
+    reach = z > 0 and math.min(z, MAX_OFFSET) or nil, channel = st == "defend" and d > 0 and d or nil,
+    post = pz > 0 and pz or nil}
 end
 
 -- A plan's reach: its Z, else ATTACK_REACH, and DEFEND_REACH for the attacks a defending squad answers (defend).
@@ -534,9 +538,20 @@ end
 -- line from the beacon when signals move the point.
 local COLOR = {hold = {0.8, 0.8, 0.8, 0.4}, advance = {1, 0.25, 0.1, 0.6},
   retreat = {0.3, 0.5, 1, 0.6}, defend = {0.25, 0.85, 0.45, 0.6}}
+-- A squad's colour (0.2.486; the user: squads told apart in alt mode): its channel's (D or P, so a post and the squads
+-- that answer it share one), else its beacon's own; Okabe-Ito's eight, named for what they mark, not their hue.
+local SQUAD_COLORS = {{0.90, 0.62, 0}, {0.34, 0.71, 0.91}, {0, 0.62, 0.45}, {0.94, 0.89, 0.26}, {0, 0.45, 0.70},
+  {0.84, 0.37, 0}, {0.80, 0.47, 0.65}, {0.6, 0.6, 0.6}}
+local function colour_of(k, p)
+  local c = p and (p.channel or p.post)
+  local i = c and ((c - 1) % #SQUAD_COLORS + 1) or (k % #SQUAD_COLORS + 1)
+  return SQUAD_COLORS[i], i
+end
+command.colour_of = colour_of
 local function mark(k, beacon, p)
   storage.cmd.marks = storage.cmd.marks or {}
   local m = storage.cmd.marks[k]
+  local col, ci = colour_of(k, p)
   if not (m and m.ring.valid and m.line.valid) then
     m = {ring = rendering.draw_circle{color = COLOR.hold, radius = ATTACK_REACH, width = 2, filled = false,
            target = p.pos, surface = beacon.surface, forces = {beacon.force}, draw_on_ground = true},
@@ -544,12 +559,19 @@ local function mark(k, beacon, p)
            to = p.pos, surface = beacon.surface, forces = {beacon.force}, draw_on_ground = true}}
     storage.cmd.marks[k] = m
   end
+  if not (m.dot and m.dot.valid) then
+    m.dot = rendering.draw_circle{color = col, radius = 0.55, filled = true, target = beacon, surface = beacon.surface,
+      forces = {beacon.force}, only_in_alt_mode = true, render_layer = "entity-info-icon"}
+  end
+  if m.dot and m.dot.valid then m.dot.color = col end
   m.ring.target = p.pos
-  m.ring.color = COLOR[p.stance]
+  -- (A post's ring is the reach it watches, in its channel's colour.)
+  m.ring.color = p.post and {col[1], col[2], col[3], 0.6} or COLOR[p.stance]
   -- (A defending beacon's ring is the reach it answers in.)
-  m.ring.radius = reach(p, p.stance == "defend")
+  m.ring.radius = reach(p, p.stance == "defend" or p.post ~= nil)
   m.line.to = p.pos
   m.line.color = COLOR[p.stance]
+  m.colour = ci
 end
 
 -- The beacon's report, written into a section of its own (the first holding only report signals; made when
@@ -597,7 +619,7 @@ local function report(beacon, p, squad, here, m, rounds)
     v("signal-T", s.count_entities_filtered{position = p.pos, radius = reach(p), force = foes(), type = DIRECT}),
     -- N, nests (0.2.463): spawners and worms, the wild biters' and Synthexis's, within reach; a patrol waits on N = 0.
     v("signal-N", nests_in(p)),
-    v("signal-W", p.alarm and 1 or 0),
+    v("signal-W", (p.alarm or p.answered) and 1 or 0),
   }
   for name, k in pairs(rounds or {}) do
     if prototypes.item[name] then
@@ -710,13 +732,18 @@ local function enemies_of(f)
   end
   return out
 end
-local function alarms(defending)
+local function alarms(defending, posts)
   local out, tick = {}, game.tick
   local by_force = {}
   for _, d in ipairs(defending) do
     local f = d.beacon.force
-    by_force[f.name] = by_force[f.name] or {force = f, beacons = {}}
+    by_force[f.name] = by_force[f.name] or {force = f, beacons = {}, posts = {}}
     table.insert(by_force[f.name].beacons, d)
+  end
+  -- (Posts watched only where a squad of their force defends: with none, nothing answers.)
+  for _, p in ipairs(posts or {}) do
+    local g = by_force[p.beacon.force.name]
+    if g then table.insert(g.posts, p) end
   end
   storage.cmd.hits = storage.cmd.hits or {}
   for fname, g in pairs(by_force) do
@@ -749,8 +776,11 @@ local function alarms(defending)
     -- Attacks on its buildings.
     local hits = storage.cmd.hits[fname] or {}
     storage.cmd.hits[fname] = hits
+    local scanned = {}
+    for _, d in ipairs(g.beacons) do scanned[#scanned + 1] = d end
+    for _, p in ipairs(g.posts) do scanned[#scanned + 1] = p end
     if #foes > 0 then
-      for _, d in ipairs(g.beacons) do
+      for _, d in ipairs(scanned) do
         local s = d.beacon.surface
         for _, e in ipairs(s.find_entities_filtered{position = d.plan.pos, radius = reach(d.plan, true), force = foes,
           type = {"unit", "spider-unit"}}) do
@@ -782,6 +812,18 @@ local function alarms(defending)
         hits[n] = nil
       else
         list[#list + 1] = {key = "h" .. n, pos = h.pos, surface = s, rank = 2, target = h.cause}
+      end
+    end
+    -- Each alarm within a post's reach carries the post's channel (and the post, for its W).
+    for _, a in ipairs(list) do
+      for _, p in ipairs(g.posts) do
+        local r = reach(p.plan, true)
+        if a.surface == p.beacon.surface and (a.pos.x - p.plan.pos.x) ^ 2 + (a.pos.y - p.plan.pos.y) ^ 2 <= r * r then
+          a.channels = a.channels or {}
+          a.channels[p.plan.post] = true
+          a.posts = a.posts or {}
+          a.posts[#a.posts + 1] = p.k
+        end
       end
     end
   end
@@ -837,6 +879,58 @@ local function answer(d, list, was)
   end
   if keep and best and best.rank <= keep.rank then return keep end
   return best
+end
+
+-- A watch post's alarms (0.2.486), after each squad has answered in its own reach as before: the free defending squads on
+-- the post's channel, nearest first (the one already on it first), one at least, more while what is sent weighs less than
+-- the attackers (command.worth against their slots: a corporation's unit its parts over shared.SLOT_PARTS, anything
+-- else one). Strike warnings with nothing there yet take one squad.
+local CORP_OF = {}
+for corp, c in pairs(shared.CORPS) do CORP_OF[c.force] = corp end
+local function attackers_weight(a, foes)
+  local w = 0
+  for _, e in ipairs(a.surface.find_entities_filtered{position = a.pos, radius = DEFEND_CLEAR, force = foes,
+    type = {"unit", "spider-unit"}}) do
+    local corp = CORP_OF[e.force.name]
+    w = w + (corp and shared.unit_cost(corp, shared.kind_of(e.name)) / shared.SLOT_PARTS or 1)
+  end
+  return w
+end
+local function dispatch(defending, by_force, worth)
+  for fname, list in pairs(by_force) do
+    local sent = {}
+    for _, d in ipairs(defending) do
+      if d.plan.alarm and d.beacon.force.name == fname then
+        sent[d.plan.alarm.key] = (sent[d.plan.alarm.key] or 0) + (worth[d.k] or 0)
+      end
+    end
+    local order = {}
+    for _, a in ipairs(list) do if a.channels then order[#order + 1] = a end end
+    table.sort(order, function(x, y) if x.rank ~= y.rank then return x.rank > y.rank end return x.key < y.key end)
+    local foes = enemies_of(game.forces[fname])
+    for _, a in ipairs(order) do
+      local need = #foes > 0 and attackers_weight(a, foes) or 0
+      local free = {}
+      for _, d in ipairs(defending) do
+        if not d.plan.alarm and d.beacon.force.name == fname and d.plan.channel and a.channels[d.plan.channel]
+          and (worth[d.k] or 0) > 0 and d.beacon.surface == a.surface then
+          local was = storage.cmd.answering[d.k]
+          free[#free + 1] = {d = d, kept = was ~= nil and was.key == a.key,
+            dd = (a.pos.x - d.plan.pos.x) ^ 2 + (a.pos.y - d.plan.pos.y) ^ 2}
+        end
+      end
+      table.sort(free, function(x, y)
+        if x.kept ~= y.kept then return x.kept end
+        if x.dd ~= y.dd then return x.dd < y.dd end
+        return x.d.k < y.d.k
+      end)
+      for _, c in ipairs(free) do
+        if (sent[a.key] or 0) > 0 and sent[a.key] >= need then break end
+        c.d.plan.alarm = a
+        sent[a.key] = (sent[a.key] or 0) + worth[c.d.k]
+      end
+    end
+  end
 end
 
 -- A holding squad's nest (the user, of a rail line's patrol: nests and worms within reach are targets): the wild biters'
@@ -1248,25 +1342,36 @@ local function lead()
   for _, t in pairs(storage.cmd.troopers) do
     if t.unit.valid and t.beacon then squads[t.beacon] = (squads[t.beacon] or 0) + 1 end
   end
-  local defending = {}
+  local defending, posts = {}, {}
   for k, b in pairs(storage.cmd.beacons) do
     if b.valid then
       plans[k] = plan(b)
       if plans[k].stance == "defend" then defending[#defending + 1] = {beacon = b, plan = plans[k], k = k} end
+      if plans[k].post then posts[#posts + 1] = {beacon = b, plan = plans[k], k = k} end
     else
       storage.cmd.beacons[k] = nil
     end
   end
   storage.cmd.answering = storage.cmd.answering or {}
   if #defending > 0 then
-    local by_force = alarms(defending)
+    local by_force = alarms(defending, posts)
     for _, d in ipairs(defending) do
-      local was = storage.cmd.answering[d.k]
-      local a = answer(d, by_force[d.beacon.force.name], was)
-      d.plan.alarm = a
+      d.plan.alarm = answer(d, by_force[d.beacon.force.name], storage.cmd.answering[d.k])
+    end
+    if #posts > 0 then
+      local worth = {}
+      for _, t in pairs(storage.cmd.troopers) do
+        if t.beacon and t.unit.valid then worth[t.beacon] = (worth[t.beacon] or 0) + (command.worth(t.unit) or 0) end
+      end
+      dispatch(defending, by_force, worth)
+    end
+    for _, d in ipairs(defending) do
+      local was, a = storage.cmd.answering[d.k], d.plan.alarm
       -- (Counted once an answer: a squad sent, for the record and tests.)
       if a and not (was and was.key == a.key) then storage.cmd.defend_sent = (storage.cmd.defend_sent or 0) + 1 end
       storage.cmd.answering[d.k] = a and {key = a.key, pos = a.pos} or nil
+      -- (A post whose alarm is answered says so on W.)
+      for _, pk in ipairs(a and a.posts or {}) do if plans[pk] then plans[pk].answered = true end end
     end
   end
   for k in pairs(storage.cmd.answering) do
@@ -1298,12 +1403,31 @@ local function lead()
       ammx[k] and math.floor(100 * amm[k] / ammx[k]) or ((squads[k] or 0) > 0 and 100 or 0), mags[k])
   end
   for k, m in pairs(storage.cmd.marks or {}) do
-    if not plans[k] then m.ring.destroy(); m.line.destroy(); storage.cmd.marks[k] = nil end
+    if not plans[k] then
+      m.ring.destroy(); m.line.destroy()
+      if m.dot and m.dot.valid then m.dot.destroy() end
+      storage.cmd.marks[k] = nil
+    end
   end
   local offline = offline_set()
   for k, t in pairs(storage.cmd.troopers) do
     local u = t.unit
-    if u.valid then round_mark(t) end
+    if u.valid then
+      round_mark(t)
+      -- Its squad's colour, a dot under it in alt mode (0.2.486).
+      local m = t.beacon and storage.cmd.marks and storage.cmd.marks[t.beacon]
+      local ci = m and m.colour
+      if t.colour_shown ~= ci then
+        if t.colour_mark and t.colour_mark.valid then t.colour_mark.destroy() end
+        t.colour_mark, t.colour_shown = nil, nil
+        if ci then
+          t.colour_mark = rendering.draw_circle{color = SQUAD_COLORS[ci], radius = 0.3, filled = true,
+            target = {entity = u, offset = {0, 0.4}}, surface = u.surface, forces = {u.force}, only_in_alt_mode = true,
+            render_layer = "entity-info-icon"}
+          t.colour_shown = ci
+        end
+      end
+    end
     if not u.valid then
       storage.cmd.troopers[k] = nil
     elseif t.manual and t.manual.kind == "retire" then
@@ -1951,7 +2075,8 @@ function command.beacon_view(beacon)
     end
   end
   return {stance = p.stance, pos = p.pos, answering = (storage.cmd.answering or {})[beacon.unit_number], count = count,
-    units = units, caps = caps(beacon) or {}, ammo = ammo.full > 0 and ammo or nil}
+    units = units, caps = caps(beacon) or {}, ammo = ammo.full > 0 and ammo or nil,
+    colour = colour_of(beacon.unit_number, p), channel = p.channel, post = p.post}
 end
 function command.beacon_of(u)
   local t = storage.cmd.troopers[u.unit_number]

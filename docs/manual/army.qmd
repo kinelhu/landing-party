@@ -242,6 +242,16 @@ rounds alone. A decider that sends A once S reaches the size you
 want holds a squad until it is full, then attacks; one that reads W can shut gates or light lamps while the squad is
 away.
 
+**Watch posts.** A rally beacon given P becomes a watch post: it needs no squad and no wire home, and its Z sets the
+ground it watches. The number on P is a channel. Every squad defending on a D of the same number covers that post as
+well as its own ground. When a post is attacked, the nearest squad on its channel that is free goes, and the others
+hold; if the attackers outweigh it, the next nearest joins it. Each squad comes home to its own rally point when the
+attack is over, and the post's W reads 1 while its attack is answered. One squad between a few outposts, with a supply
+depot by its rally point, can guard them all.
+
+**Colours.** In alt mode each squad's units wear a coloured dot, and its beacon the same colour. A squad on a channel
+takes the channel's colour, so a post and the squads that answer it match; the squad panel shows it beside the stance.
+
 **Barracks.** A barracks reports its contents and takes its recipe from the circuit network, as an assembling machine
 does. It keeps training while your bandwidth is full: its finished orders wait in its output and step out as units when
 there is room. A barracks at a far outpost, fed its kit by train, keeps a few units ready there.

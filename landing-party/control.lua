@@ -1162,7 +1162,14 @@ remote.add_interface("landing-party", {
   end,
   debug_beacon_view = function(beacon)
     local v = command.beacon_view(beacon)
-    return {stance = v.stance, answering = v.answering, count = v.count, caps = v.caps, n = #v.units}
+    local m = storage.cmd.marks and storage.cmd.marks[beacon.unit_number]
+    local shown = {}
+    for _, u in ipairs(v.units) do
+      local t = storage.cmd.troopers[u.unit_number]
+      shown[#shown + 1] = t and t.colour_shown or false
+    end
+    return {stance = v.stance, answering = v.answering, count = v.count, caps = v.caps, n = #v.units,
+      colour = m and m.colour, units_colour = shown}
   end,
   -- The selection's cards (scripts/cards.lua), headless: the model in plain numbers, the bars' shares, groups, picks.
   debug_cards = function()

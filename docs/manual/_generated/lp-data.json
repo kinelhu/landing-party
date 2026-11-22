@@ -1,6 +1,6 @@
 {
  "_comment": "Written by scripts/roster_page.py --qmd (scripts/manual_qmd.py, booklet) from the prototype dump, shared.lua, the scripts, the locale and docs/manual/words.cfg. Do not edit: run it again.",
- "edition": "For Landing Party 0.2.485",
+ "edition": "For Landing Party 0.2.486",
  "portraits": "media/portraits",
  "factions": {
   "grubstake": {

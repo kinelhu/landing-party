@@ -235,10 +235,10 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   0.2.436; the tank re-priced and the gun buggy, 0.2.438): strike forces sized to the army the player can field (their
   arena price at most about 1.5 times the command capacity's) and the warning naming their kind; the Aegis against the battle tank
   late (+0.78 to the tank at the top of research, its explosive uranium shells; a heavier slug won too much plain); an army variant of `contact.sh` (strikes broken, targets saved); squad colours in
-  alt mode, after the user has seen the panel; a late infantry tier made of
+  a late infantry tier made of
   personal equipment (modular or power armor, shields, an exoskeleton), proposed 2026-11-16.
   Circuits can't read where an attack is (W says out, not where): a position output was offered and set aside, D
-  routing the squad itself.
+  routing the squad itself (watch posts, 0.2.486).
 
 **After 0.3.0 (designed or proposed)**
 - The player's shield projector (Open questions: 45 degrees, 8-way rotation). Only Kessler-Hayashi's dome projector
@@ -2845,6 +2845,18 @@ if their units are upgraded also." `scripts/rd.lua`.
   strikes landed checks no railgunner among them (storage.director.strike_kinds): seen failing without the filter
   (director armylate 1, armydefend 2); director, armylate, climax and armydefend pass. (I had called the strikes'
   railgunners razing by design: wrong; the manual's "its railgunners go in once the shelling is done" is a clearance.)
+- **Watch posts and squad colours (0.2.486; the user, of squads defending outposts: "Go").** A rally beacon with P = n is
+  a post on channel n (no squad, no wire; its Z the ground it watches); a defending beacon's D value is its channel.
+  After each squad answers in its own reach as before (unchanged with no post), the free squads on a post's channel
+  answer its alarms: nearest first (the one already on it first), one at least, more while what is sent (command.worth)
+  weighs less than the attackers (a corporation's unit its parts over shared.SLOT_PARTS, 10, the arena's slot; anything
+  else 1). Each comes home to its own rally point; the post's W reads 1 while its attack is answered. Colours: each
+  squad its channel's (D or P) of Okabe-Ito's eight, else its beacon's own; a dot on its beacon and under each unit in
+  alt mode, a post's ring in it, a swatch in the squad panel with its channel or post. Scenario watch (new): the nearer
+  squad answers a post, a second post the other squad, an attack of eleven against four draws both, a squad and its
+  posts share a colour (each seen failing: the dispatch off, the attackers weighed 0, the units' dots off). reach,
+  circuit, patrol, orders, control, squad, assign, wild, rearm, depot, tiers, cards, attackmove, defend, squadmove and
+  director armydefend pass. The locale and the manual say so.
 
 ### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
 The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers
