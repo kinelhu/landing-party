@@ -227,7 +227,9 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - Kessler-Hayashi's first fortress on nwa past two hours: starved of its mine on seed 1 (0.2.491, 0.2.492, about 127
   minutes); its mines guarded since 0.2.494 (fed at 60 minutes: 808 parts, ore 1,620 a minute), its fate at 180 not read
   (a full visit, before the release). Hub projectors still killed by behemoths with 4 to 9 flamers under them (0.2.494: 2
-  a seed of 9 to 13, three within 10 s of going up): its health (1,500, a radar's body) not decided.
+  a seed of 9 to 13, three within 10 s of going up): its health raised to 5,000 (0.2.495, the user: "Projector: raise
+  it."); not yet visited. What it costs the player's troops to break one is not measured: no scenario has a squad kill a
+  hub's projector (breach's domed district is a comment; its lab fell at 35 s against 25 before, variance assumed).
 - Multiplayer: two clients using the army and the faction GUIs (scripts/mp.sh covers one client and the director, and
   one client with the army, LP_ARMY=1; a second client needs a second Steam account: left to the beta).
 - Release: the 0.3.0 bump, the full regression, package.sh, the music credit, the GitHub release, the portal upload

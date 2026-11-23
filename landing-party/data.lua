@@ -608,7 +608,9 @@ data:extend({relay})
 -- The dome projector (a Kessler-Hayashi hub's dome, dome.lua): up while it stands with power. (A radar's body for now.)
 local projector = copy("radar", "radar", "lp-dome-projector")
 projector.energy_usage = watts(shared.power["lp-radar"])
-projector.max_health = 1500
+-- (5,000, 0.2.495; was 1,500, a radar's: on nwa at 0.2.494 behemoths killed 2 a camp-hour with 4 to 9 arc flamers under
+-- them, three within 10 s of going up. The user: "Projector: raise it.")
+projector.max_health = 5000
 -- Its body: Space Age's tesla turret at three quarters (4x4 to the projector's 3x3), unarmed, the tower its catches will
 -- fire from (the user's idea, 2026-11-03: "Enlarged Tesla tower, fires a bolt at the shell").
 local tesla = sa("electric-turret", "tesla-turret")
