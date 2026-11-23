@@ -218,7 +218,7 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - Ammunition tiers, what stages 1 and 2 (0.2.470 bullets, 0.2.471 uranium shells, 0.2.472 the explosive rungs; TIER_EXP
   0.33 from the arena, docs/arena-tiers.md) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): the stutter tick of director climax (below, 0.2.480).
 - The arms race's remainder (0.2.474, docs/reviews/2026-11-20-arms-race-consult.md): the reference-factory visits at the player's full research
-  (razed within twice the calibration rows: running, Nauvis-only research). The Workshop's own look: built 0.2.496, not yet rated.
+  (razed within twice the calibration rows: running, Nauvis-only research). The Workshop's own look: built 0.2.496 (the user: "Looks good to me").
   The research pace: 20 a minute a branch gave Kessler-Hayashi optics 1 at minute 73 of scenario research; to be read
   against a real game after the playtest.
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
@@ -2918,7 +2918,8 @@ if their units are upgraded also." `scripts/rd.lua`.
   faction_works.py (workshop gs): rusted plate and steel bays (ochre read as cardboard at the game's zoom), burlap,
   Poly Haven props; its still frame 0, its busy animation (base.lab_look, always drawn) a welder's arc on the jib's load
   and the forge's glow, 16 frames; a warm light at night (lab_look; dark beside the fabricator in the first stills).
-  Shadow 0.65 to 0.99 solid (shadow_solid.py; vanilla's lab 0.91). Stills: docs/review/stills-workshop.lua.
+  Shadow 0.65 to 0.99 solid (shadow_solid.py; vanilla's lab 0.91). Stills: docs/review/stills-workshop.lua. The user,
+  on the stills: "Looks good to me".
 - **Mines guarded (0.2.494; the user, on seed 1's starved fortress: "Seems obvious we need to defend mines!").** Seed 1
   at 0.2.492, read from its trace: parts 2,490 at 10 minutes, 180 at 30 (104 units lost to biters, behemoths most,
   replaced at about 31 parts each; its crews spent 215); biters broke its one mine's drills at 14, 25, 29, 31 and 50
