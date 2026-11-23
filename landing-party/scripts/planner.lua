@@ -149,6 +149,7 @@ local GUARD_LOSSES, GUARD_R, GUARD_MOST, GUARD_WINDOW = 6, 28, 4, 30 * 3600   --
 -- one each GUARD_LOSSES / 2 lost; a flamer GUARD_GAP from any other (they had stacked three on one spot by the fortress,
 -- a behemoth's bite from each other). Priors.
 local GUARD_EXTRA, GUARD_GAP = 8, 6   -- (GUARD_EVO: shared.lua)
+local MINE_GROUP = 20   -- (arcguard: mining modules within this of a mine's first guarded with it)
 local function plan(b, only)
   local surface = game.surfaces[b.surface]
   -- Whose ground the layout's checks refuse (shared.refused), while it plans.
@@ -265,8 +266,25 @@ local function plan(b, only)
       -- construction's, and the block, still with none, was chosen again each pass: 1,895 orders for one spot on nwa,
       -- 0.2.491, 2,591 in the run.)
       local function refused(blk) return not storage.guard_memory_off and blk.guard_refused and blk.guard_refused >= cut end
+      -- Its blocks and its mines (0.2.494; the user: "Seems obvious we need to defend mines!"): on nwa it guarded every
+      -- kind of block and never a mine, and biters broke 64 to 90 drills a visit; seed 1's fortress lost its one mine,
+      -- three crews on the way, and starved. A mine is its mining modules within MINE_GROUP of the first, guarded as one.
+      local sites = {}
+      for _, blk in ipairs(b.blocks) do sites[#sites + 1] = blk end
+      if not storage.guard_mines_off then
+        local firsts = {}
+        for _, m in ipairs(b.modules or {}) do
+          if m.kind == "mining" and m.built and not (m.abandoned or m.failed or m.claim) and m.center then
+            local near = false
+            for _, f in ipairs(firsts) do
+              if (f.center[1] - m.center[1]) ^ 2 + (f.center[2] - m.center[2]) ^ 2 <= MINE_GROUP ^ 2 then near = true break end
+            end
+            if not near then firsts[#firsts + 1] = m; sites[#sites + 1] = m end
+          end
+        end
+      end
       local best, most
-      for _, blk in ipairs(b.blocks) do
+      for _, blk in ipairs(sites) do
         local cx, cy, n, sx, sy = blk.center[1], blk.center[2], 0, 0, 0
         for _, l in ipairs(log) do
           if l[1] >= cut and (l[2] - cx) ^ 2 + (l[3] - cy) ^ 2 <= GUARD_R ^ 2 then n, sx, sy = n + 1, sx + l[2], sy + l[3] end
@@ -282,7 +300,7 @@ local function plan(b, only)
       -- blocks in the order opened).
       if not best and hot > 0 then
         local fewest
-        for _, blk in ipairs(b.blocks) do
+        for _, blk in ipairs(sites) do
           if (blk.weight or 1) > 0 and blk.kind ~= "pad" and not refused(blk) then
             local have = have_at(blk)
             if have < ahead_n and (not fewest or have < fewest) then
@@ -297,6 +315,8 @@ local function plan(b, only)
         local t, name = b.target, shared.variant(b.corp, "lp-flamer")
         local cx, cy = t.blk.center[1], t.blk.center[2]
         local hw, hh = (t.blk.w or 16) / 2, (t.blk.h or 16) / 2
+        -- (A mine: round its first module's pylon, within the pylon's reach, shared.lua's mining module.)
+        if t.blk.kind == "mining" then cx, cy, hw, hh = cx + 2.5, cy + 0.5, 4, 4 end
         -- Toward the losses from the block's middle, within it; else round its edge, GUARD_GAP from every flamer.
         local tries = {{cx + (t.at[1] - cx) * 0.6, cy + (t.at[2] - cy) * 0.6}}
         local a0 = math.atan2(t.at[2] - cy, t.at[1] - cx)
@@ -323,6 +343,7 @@ local function plan(b, only)
         table.insert(b.queue, 1, {name = "lp-flamer", pos = {p.x, p.y}, module = t.blk, guard = true})
         -- (Counted, for the record and tests: ahead of the biters, or after its losses.)
         if t.ahead then b.guard_ahead = (b.guard_ahead or 0) + 1 else b.guard_lost = (b.guard_lost or 0) + 1 end
+        if t.blk.kind == "mining" then b.guard_mines = (b.guard_mines or 0) + 1 end
         return string.format("an arc flamer by %s at %.0f,%.0f (%s, %d flamers there)", t.blk.kind, p.x, p.y,
           t.ahead and "ahead of the biters" or (t.n .. " lost to biters round it"), t.have)
       end},

@@ -313,7 +313,12 @@ local function build(b)
   table.remove(b.queue, 1)
   local e = place(b, job)
   if job.slot then job.slot.filled = e ~= nil end
-  if not e and job.guard then job.module.guard_refused = game.tick end   -- (arcguard's: planner.lua)
+  -- (arcguard's, planner.lua: skipped, never its module abandoned; a mine's flamer refused would have given up the mine.)
+  if not e and job.guard then
+    job.module.guard_refused = game.tick
+    trace(b, string.format("cannot place lp-flamer at %.1f,%.1f by its %s: skipped", job.pos[1], job.pos[2], job.module.kind))
+    return
+  end
   if not e and job.module.x0 then
     -- A block survives a blocked entity: skip it.
     trace(b, string.format("cannot place %s at %.1f,%.1f in %s: skipped", job.name, job.pos[1], job.pos[2], job.module.kind))

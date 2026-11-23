@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.494
+Date: 2026-11-23
+  Balancing:
+    - A corporation guards its mines with arc flamers as it guards its other buildings: before they are attacked where the biters are far evolved, and after losses anywhere.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.493
 Date: 2026-11-23
   Balancing:

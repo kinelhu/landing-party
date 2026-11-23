@@ -9875,9 +9875,16 @@ end
 -- LP_MIX=evorefuse (0.2.492): as evo, construction refusing every flamer: a refused block sits out the window, so its
 -- orders stay near its blocks' count (nwa at 0.2.491: a spot that passed the planner's look and failed construction's,
 -- ordered 1,895 times). evorefuse_off forgets the refusals, as before (seen failing).
+-- LP_MIX=mine (0.2.494; the user: "Seems obvious we need to defend mines!"): as evo, its mines guarded too: flamers
+-- ordered for them and standing by their drills (nwa at 0.2.492: never one by a mine, 64 to 90 drills lost to biters a
+-- visit, seed 1's fortress starved of its one mine). mine_off: as before (seen failing).
 scenarios.arcguard = function()
+  local mine = params.mix == "mine" or params.mix == "mine_off"
+  if mine then
+    schedule(20, function() lp("debug_tune", {guard_mines_off = params.mix == "mine_off"}) end)
+  end
   local refuse = params.mix == "evorefuse" or params.mix == "evorefuse_off"
-  local evo = params.mix == "evo" or refuse
+  local evo = params.mix == "evo" or refuse or mine
   if refuse then
     schedule(20, function() lp("debug_tune", {guard_refuse = true, guard_memory_off = params.mix == "evorefuse_off"}) end)
   end
@@ -9897,6 +9904,20 @@ scenarios.arcguard = function()
       local gd = lp("debug_guard", storage.id) or {}
       info(string.format("arcguard evo: %d blocks, %d arc flamers (%d queued ahead of the biters, %d after losses), %d pairs closer than the gap",
         st.blocks or -1, #fl, gd.ahead or 0, gd.lost or 0, close))
+      if mine then
+        local drills = surface().find_entities_filtered{force = FORCE, name = "lp-drill", position = o, radius = 250}
+        local by = 0
+        for _, dr in ipairs(drills) do
+          if surface().count_entities_filtered{force = FORCE, name = "lp-flamer", position = dr.position, radius = 10, limit = 1} > 0 then
+            by = by + 1
+          end
+        end
+        info(string.format("arcguard mine: %d flamers ordered for its mines, %d of %d drills with a flamer within 10",
+          gd.mines or 0, by, #drills))
+        check("arcguard: on an evolved map, its mines guarded", (gd.mines or 0) >= 1 and by >= 1,
+          string.format("%d ordered, %d of %d drills", gd.mines or 0, by, #drills))
+        return
+      end
       if refuse then
         -- (All its flamer orders, ahead and after losses: forgetting, the run's kills at three minutes churned one spot
         -- 82 times and the camp stalled at two blocks.)
@@ -9947,7 +9968,7 @@ scenarios.arcguard = function()
     S.after = surface().count_entities_filtered{force = force, type = "electric-turret", position = o, radius = 200}
     local flamers = surface().count_entities_filtered{force = force, name = flamer, position = o, radius = 200}
     info(string.format("arcguard: %d killed by biters, electric turrets %d -> %d, %d arc flamers", S.killed or 0, S.before or 0, S.after, flamers))
-    if refuse then return end   -- (no flamer stands where construction refuses them all)
+    if refuse or mine then return end   -- (no flamer stands where construction refuses them all)
     check("arcguard: hit by biters round a block, it puts an arc flamer there", (S.killed or 0) >= 6 and flamers >= 1,
       string.format("%d killed, %d flamers", S.killed or 0, flamers))
   end)

@@ -743,6 +743,8 @@ remote.add_interface("landing-party", {
     -- evorefuse_off, 0.2.492.)
     if t.guard_refuse ~= nil then storage.guard_refuse = t.guard_refuse or nil end
     -- (A hub's projector up without its flamers on an evolved map: scenario domehub LP_MIX=evo_off, 0.2.493.)
+    -- (arcguard's mines unguarded, as before 0.2.494: scenario arcguard LP_MIX=mine_off.)
+    if t.guard_mines_off ~= nil then storage.guard_mines_off = t.guard_mines_off or nil end
     if t.guard_projector_off ~= nil then storage.guard_projector_off = t.guard_projector_off or nil end
     if t.guard_memory_off ~= nil then storage.guard_memory_off = t.guard_memory_off or nil end
     if t.seed_salt ~= nil then storage.seed_salt = t.seed_salt end
@@ -1189,7 +1191,8 @@ remote.add_interface("landing-party", {
     rd.history(corp, game.surfaces[1])
     return t.nodes
   end,
-  debug_guard = function(id) local b = storage.bases[id]; return b and {ahead = b.guard_ahead or 0, lost = b.guard_lost or 0} end,
+  debug_guard = function(id) local b = storage.bases[id]; return b and {ahead = b.guard_ahead or 0, lost = b.guard_lost or 0,
+    mines = b.guard_mines or 0} end,
   debug_artillery_reach = function() return threat.artillery_reach(game.forces.player) end,
   debug_artillery_spare = function() return shared.ARTILLERY_SPARE end,
   -- A unit in a camp's garrison (where the leash holds it): the distance to that camp's own lander; nil when it is out on

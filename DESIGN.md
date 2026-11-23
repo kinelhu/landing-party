@@ -2904,6 +2904,18 @@ if their units are upgraded also." `scripts/rd.lua`.
   again each pass (three times at -1008,1016 in a row). 0.2.491: it counts what is queued, carried and awaiting rebuild,
   as the planner's owed does (the generators' same bug, loot). Not checked in a scenario: no short run keeps a crew's
   job out long enough; the nwa visits read it (arcguard orders against flamers standing).
+- **Mines guarded (0.2.494; the user, on seed 1's starved fortress: "Seems obvious we need to defend mines!").** Seed 1
+  at 0.2.492, read from its trace: parts 2,490 at 10 minutes, 180 at 30 (104 units lost to biters, behemoths most,
+  replaced at about 31 parts each; its crews spent 215); biters broke its one mine's drills at 14, 25, 29, 31 and 50
+  minutes, its ore in from 234 a minute to 1; three crews killed on the way and the mine given up at 37; from 50 "no site
+  fits" with 40 of 56 ore cells free (the given-up ground's MINE_DANGER, assumed); it ate its stock (1,885 ore at 34),
+  starving at 103, departed at 127. Its ore was not short (the earlier "19 bad" a misreading). arcguard never guarded a
+  mine on any seed (by compound, fab, fortress, launch, depot, gen, lab, street), 64 to 90 drills lost to biters a visit.
+  Now its mines are guarded as its blocks are: its mining modules within MINE_GROUP (20) of a mine's first are one site,
+  flamers round that first module's pylon (6 out, its reach 9), ahead of losses on an evolved map and after them anywhere;
+  a refused flamer is skipped, never its module abandoned. arcguard LP_MIX=mine (new): 3 ordered, 13 of 18 drills with a
+  flamer within 10; mine_off 0 (seen failing); its mining 3,963 against 4,278 in the calm run. arcguard (4), maxevo (2),
+  domehub evo, hazard (2), strangle ore, cordon ore, crew (3), prospect, biters camp and grow pass.
 - **nwa at 0.2.492 (refused flamer spots remembered):** arcguard orders 161, 308, 197 a run (0.2.491: 2,600 to 3,900),
   no spot ordered more than 4 times, 2 to 5 flamers skipped by construction. Razed 3,636, 1,609, 2,602. The first fortress
   held 180 on seeds 2 and 3; on seed 1 it departed starved again at about 127 minutes (630 buildings lifted out), as at
