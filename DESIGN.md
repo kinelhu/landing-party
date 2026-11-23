@@ -237,8 +237,8 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 
 - The army's remainder (the army consult, 2026-11-16; the defend stance, the panel and the three leaks are built,
   0.2.436; the tank re-priced and the gun buggy, 0.2.438): strike forces sized to the army the player can field (their
-  arena price at most about 1.5 times the command capacity's) and the warning naming their kind; the Aegis against the battle tank
-  late (+0.78 to the tank at the top of research, its explosive uranium shells; a heavier slug won too much plain); an army variant of `contact.sh` (strikes broken, targets saved); squad colours in
+  arena price at most about 1.5 times the command capacity's); the Aegis against the battle tank
+  late (+0.78 to the tank at the top of research, its explosive uranium shells; a heavier slug won too much plain); an army variant of `contact.sh` (strikes broken, targets saved);
   a late infantry tier made of
   personal equipment (modular or power armor, shields, an exoskeleton), proposed 2026-11-16.
   Circuits can't read where an attack is (W says out, not where): a position output was offered and set aside, D
@@ -2908,6 +2908,9 @@ if their units are upgraded also." `scripts/rd.lua`.
   again each pass (three times at -1008,1016 in a row). 0.2.491: it counts what is queued, carried and awaiting rebuild,
   as the planner's owed does (the generators' same bug, loot). Not checked in a scenario: no short run keeps a crew's
   job out long enough; the nwa visits read it (arcguard orders against flamers standing).
+- **A strike's warning names no kinds (2026-11-23; the army consult's proposal, dropped).** Offered: the two largest kinds of
+  its mix, no counts, only with the player's radar over its landing spot. The user: "I would not build that". The
+  warning stays "n units"; out of the backlog. (Squad colours, in the same backlog line, were built in 0.2.486.)
 - **Grubstake's Workshop modelled (0.2.496; the user: "Workshop art: let's get on it", then of the clay: "C is cool but
   improve the clay still. It looks childish next to the fabricator", then "Perhaps real material now").** Four clay
   silhouettes (tools/blender/workshop_clay.py, workshop_clay_sheet.py: a lean-to forge, a container shop, a Quonset hut,
