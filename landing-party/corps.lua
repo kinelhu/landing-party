@@ -257,6 +257,20 @@ local function still(p, key)
   p.picture = {layers = {pic("body"), pic("glow", {draw_as_glow = true, blend_mode = "additive"}), pic("shadow", {draw_as_shadow = true})}}
 end
 MODELLED["lp-depot"] = {dir = "depot", apply = still}
+-- Grubstake's Workshop (its siege lab; faction_works.py workshop gs, 0.2.496): a Quonset hut, its still frame 0's body and
+-- shadow (body.png and shadow.png hold that frame alone), its busy animation (base.lab_look) the welder's arc and the
+-- forge's glow, 16 frames of glow.png, in place of the Space Age foundry's moving parts it had recoloured.
+MODELLED["lp-siege-lab"] = {dir = "workshop", apply = function(p, key, corp)
+  local function one(file, extra)
+    local l = sheet_layer(key, file, extra); l.frame_count, l.line_length = 1, 1; return l
+  end
+  local plate = {layers = {one("body"), one("shadow", {draw_as_shadow = true})}}
+  p.on_animation, p.off_animation = plate, table.deepcopy(plate)
+  local busy = data.raw.animation[p.name .. "-busy"]
+  if busy then
+    busy.layers = {sheet_layer(key, "glow", {draw_as_glow = true, blend_mode = "additive", animation_speed = 0.5})}
+  end
+end}
 MODELLED["lp-launchpad"] = {dir = "launchpad", apply = still}
 MODELLED["lp-turret"] = {dir = "turret", head = true, apply = turret}
 MODELLED["lp-gun-turret"] = {dir = "gun-turret", head = true, apply = turret}

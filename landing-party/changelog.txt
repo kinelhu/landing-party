@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.496
+Date: 2026-11-23
+  Graphics:
+    - Grubstake's Workshop has its own look: a patched Quonset hut with a welder at work by its door, in place of a recoloured Siege works.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.495
 Date: 2026-11-23
   Balancing:

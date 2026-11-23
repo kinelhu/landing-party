@@ -218,7 +218,7 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - Ammunition tiers, what stages 1 and 2 (0.2.470 bullets, 0.2.471 uranium shells, 0.2.472 the explosive rungs; TIER_EXP
   0.33 from the arena, docs/arena-tiers.md) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): the stutter tick of director climax (below, 0.2.480).
 - The arms race's remainder (0.2.474, docs/reviews/2026-11-20-arms-race-consult.md): the reference-factory visits at the player's full research
-  (razed within twice the calibration rows: running, Nauvis-only research); the Workshop's own look (a recoloured Siege works now).
+  (razed within twice the calibration rows: running, Nauvis-only research). The Workshop's own look: built 0.2.496, not yet rated.
   The research pace: 20 a minute a branch gave Kessler-Hayashi optics 1 at minute 73 of scenario research; to be read
   against a real game after the playtest.
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
@@ -2908,6 +2908,17 @@ if their units are upgraded also." `scripts/rd.lua`.
   again each pass (three times at -1008,1016 in a row). 0.2.491: it counts what is queued, carried and awaiting rebuild,
   as the planner's owed does (the generators' same bug, loot). Not checked in a scenario: no short run keeps a crew's
   job out long enough; the nwa visits read it (arcguard orders against flamers standing).
+- **Grubstake's Workshop modelled (0.2.496; the user: "Workshop art: let's get on it", then of the clay: "C is cool but
+  improve the clay still. It looks childish next to the fabricator", then "Perhaps real material now").** Four clay
+  silhouettes (tools/blender/workshop_clay.py, workshop_clay_sheet.py: a lean-to forge, a container shop, a Quonset hut,
+  a gantry yard) beside vanilla's lab and Grubstake's fabricator: C, the Quonset, picked (its round ribbed shell unlike any
+  camp building; the lean-to read as a flat roof from the camera, the tarp shapeless, the gantry too thin). Its clay
+  redone: curved bays (flat sheets read as a prism, turned at random as stonework), corrugation, patches, a framed south
+  end, crown and ground clutter, its tones measured to the fabricator's (mean 95 to 61 of 255 against 47). Built in
+  faction_works.py (workshop gs): rusted plate and steel bays (ochre read as cardboard at the game's zoom), burlap,
+  Poly Haven props; its still frame 0, its busy animation (base.lab_look, always drawn) a welder's arc on the jib's load
+  and the forge's glow, 16 frames; a warm light at night (lab_look; dark beside the fabricator in the first stills).
+  Shadow 0.65 to 0.99 solid (shadow_solid.py; vanilla's lab 0.91). Stills: docs/review/stills-workshop.lua.
 - **Mines guarded (0.2.494; the user, on seed 1's starved fortress: "Seems obvious we need to defend mines!").** Seed 1
   at 0.2.492, read from its trace: parts 2,490 at 10 minutes, 180 at 30 (104 units lost to biters, behemoths most,
   replaced at about 31 parts each; its crews spent 215); biters broke its one mine's drills at 14, 25, 29, 31 and 50

@@ -2034,7 +2034,187 @@ TURRETS = {("turret", "kh"): lambda: concept("kh-laser-neck"), ("gun-turret", "k
            ("turret", "gs"): lambda: concept("gs-pintle")}
 
 
-BUILD = {("fabricator", "kh"): fabricator_kh, ("fabricator", "gs"): fabricator_gs,
+EXTRA_GLOW = set()   # (a build's own lit materials, beyond the palette's light and glass: the workshop's weld)
+
+
+def arc_sheet(R, y0, y1, cx, z0, m, a0=0.0, a1=math.pi, n=40, t=0.03):
+    """An open arc of sheet round the y axis at (cx, z0), radius R, from y0 to y1, angles a0..a1 (a Quonset's bay)."""
+    import bmesh as _bm
+    bm = _bm.new()
+    rows = [[bm.verts.new((cx + R * math.cos(a0 + (a1 - a0) * k / n), y, z0 + R * math.sin(a0 + (a1 - a0) * k / n)))
+             for y in (y0, y1)] for k in range(n + 1)]
+    for k in range(n):
+        bm.faces.new((rows[k][0], rows[k + 1][0], rows[k + 1][1], rows[k][1]))
+    me = bpy.data.meshes.new("arc"); bm.to_mesh(me); bm.free()
+    o = bpy.data.objects.new("arc", me); scene.collection.objects.link(o)
+    me.materials.append(m)
+    o.modifiers.new("s", "SOLIDIFY").thickness = t
+    return o
+
+
+def sheet_at(x, y, z, w, l, t, ry, m, rz=0.0):
+    """A sheet centred at (x, y, z), w across, l along y, t thick, turned ry about y and rz about z."""
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(x, y, z), rotation=(0, ry, rz))
+    o = bpy.context.object; o.scale = (w, l, t); o.data.materials.append(m); return o
+
+
+def workshop_gs():
+    """Grubstake's Workshop (lp-grubstake-siege-lab, 4x4; clay C2 of tools/blender/workshop_clay.py, the user: "C is cool
+    but improve the clay still", then "Perhaps real material now"): a Quonset hut of patched sheet, bays of rusted plate,
+    grimed ochre and bare steel, red-painted patches and a burlap tarp lashed over a hole; its south end a plank wall
+    under a steel lintel, a half-raised roll shutter over a lit bay where a welder works (its busy animation: the arc's
+    flashes and the forge's glow); a painted shotgun sign over the door, a jib hoist with a crate on its hook, a vent
+    turbine, an aerial and a stove pipe on its crown, lit dormers down its west side; an open lean-to east over an old
+    compressor, scrap sheet stacked under it; tyres, gas bottles, ammunition boxes, a gun rack and drums on a broken pad."""
+    import random as _r
+    rnd = _r.Random(7)
+    sign = lpkit.worn("gs-sign", (0.42, 0.11, 0.04), metal=0.2, rough=0.6, seams=2, rivets=True, wear=0.35)
+    weld = lpkit.mat("gs-weld", (0.6, 0.7, 1.0), metal=0.0, rough=0.3, emit=(0.75, 0.85, 1.0), strength=0.0, grime=0.0)
+    forge = lpkit.mat("gs-forge", (0.5, 0.2, 0.05), metal=0.0, rough=0.5, emit=(1.0, 0.45, 0.12), strength=0.0, grime=0.0)
+    weld_halo = lpkit.mat("gs-weld-halo", (0.2, 0.3, 0.7), metal=0.0, rough=0.5, emit=(0.35, 0.55, 1.0), strength=0.0, grime=0.0)
+    weld_halo.blend_method = "BLEND" if hasattr(weld_halo, "blend_method") else None
+    b_ = weld_halo.node_tree.nodes["Principled BSDF"]; b_.inputs["Alpha"].default_value = 0.35
+    EXTRA_GLOW.update({weld, forge, weld_halo})
+    R, CX, Y0, Y1, Z0 = 1.2, -0.35, -1.25, 1.75, 0.06
+    yS = Y0 - 0.02
+
+    def drum(x, y, z=0.0, r=0.2, h=0.55, m=None):
+        cyl(r, h, x, y, z, m or P["accent"], verts=20)
+        for zz in (z + h * 0.3, z + h * 0.7):
+            tor(r * 1.01, 0.014, x, y, zz, P["dark"])
+        cyl(r * 0.98, 0.02, x, y, z + h, P["dark"], verts=20)
+
+    def crate(x, y, z, s, m=None, rot=0.0):
+        B(s, s, s * 0.8, x, y, z, m or P["skid"], rot=rot, bevel=0.02)
+        B(s * 1.02, s * 0.12, s * 0.82, x, y, z, P["dark"], rot=rot, bevel=0.0)
+
+    def build():
+        # The pad: broken slabs.
+        for (px, py, w, d) in ((-0.9, 0.2, 2.2, 3.7), (1.05, 0.5, 1.6, 2.9), (0.5, -1.55, 2.9, 0.8)):
+            # (Dark: the skid's grey slabs read as a pale border round it.)
+            B(w, d, 0.06, px, py, 0, P["dark"], rot=rnd.uniform(-0.02, 0.02), bevel=0.02)
+        # The shell: a bay a sheet, its corrugation ridges, patches bolted proud.
+        n_l = 7
+        L = (Y1 - Y0) / n_l
+        for j in range(n_l):
+            bay = rnd.choice((P["trim"], P["trim"], P["trim"], P["steel"]))  # (no ochre: at game scale it read as cardboard)
+            arc_sheet(R + rnd.uniform(-0.01, 0.012), Y0 + L * j, Y0 + L * (j + 1) + 0.01, CX, Z0, bay)
+            for q in range(6):
+                yr = Y0 + L * j + L * (q + 0.5) / 6
+                arc_sheet(R + 0.015, yr - 0.012, yr + 0.012, CX, Z0, P["dark"] if q == 0 else bay, n=40, t=0.025)
+        for _ in range(6):
+            a = rnd.uniform(0.4, math.pi - 0.4); y = rnd.uniform(Y0 + 0.3, Y1 - 0.4); da = rnd.uniform(0.18, 0.32)
+            arc_sheet(R + 0.04, y, y + rnd.uniform(0.25, 0.45), CX, Z0, rnd.choice((P["accent"], P["steel"], P["trim"])),
+                      a0=a - da / 2, a1=a + da / 2, n=6, t=0.02)
+        # The tarp over a hole, west of the crown, and its ropes.
+        arc_sheet(R + 0.06, 0.15, 1.15, CX, Z0, P["cloth"], a0=math.radians(100), a1=math.radians(150), n=10, t=0.02)
+        for yy in (0.25, 0.65, 1.05):
+            arc_sheet(R + 0.085, yy, yy + 0.03, CX, Z0, P["dark"], a0=math.radians(95), a1=math.radians(155), n=10, t=0.015)
+        # The crown: a vent turbine, an aerial guyed, the stove pipe, sandbags.
+        cyl(0.12, 0.18, CX + 0.25, 1.05, Z0 + R - 0.02, P["steel"], verts=12)
+        sph(0.15, CX + 0.25, 1.05, Z0 + R + 0.24, P["steel"]).scale = (1, 1, 0.7)
+        rod((CX + 0.55, 1.45, Z0 + R - 0.1), (CX + 0.55, 1.45, Z0 + R + 1.1), 0.012, P["dark"], verts=5)
+        for (gx, gy) in ((0.3, 0), (-0.25, 0.15), (0.0, -0.3)):
+            rod((CX + 0.55, 1.45, Z0 + R + 0.9), (CX + 0.55 + gx, 1.45 + gy, Z0 + R - 0.05), 0.004, P["dark"], verts=3)
+        cyl(0.08, 0.9, CX - 0.5, -0.35, Z0 + R * 0.85, P["gunmetal"], verts=10)
+        cyl(0.14, 0.05, CX - 0.5, -0.35, Z0 + R * 0.85 + 0.9, P["dark"], verts=10)
+        cyl(0.1, 0.05, CX - 0.5, -0.35, Z0 + R * 0.85 + 0.6, P["dark"], verts=10)
+        for k in range(5):
+            B(0.28, 0.16, 0.1, CX - 0.6 + k * 0.3, 1.55, Z0 + R - 0.08, P["cloth"], rot=rnd.uniform(-0.3, 0.3), bevel=0.04)
+        # The south end: planks under the arch, the lintel and posts.
+        nplank = 13
+        for k in range(nplank):
+            x = -R + (k + 0.5) * 2 * R / nplank
+            hgt = math.sqrt(max(0.0, R * R - x * x)) - 0.02
+            m = rnd.choice((P["shield"], P["skid"], P["dark"]))
+            if abs(x) < 0.55:
+                B(2 * R / nplank * 0.96, 0.05, hgt - 1.05, CX + x, yS, Z0 + 1.05, m, bevel=0.005)
+            else:
+                B(2 * R / nplank * 0.96, 0.05, hgt, CX + x, yS, Z0, m, bevel=0.005)
+        B(1.3, 0.1, 0.12, CX, yS - 0.03, Z0 + 1.0, P["gunmetal"], bevel=0.01)
+        for sx in (-1, 1):
+            B(0.1, 0.1, 1.0, CX + sx * 0.6, yS - 0.03, Z0, P["gunmetal"], bevel=0.01)
+        # The bay: dark inside, the forge's mouth at its back, the welder's bench, the shutter half up.
+        B(1.1, 0.9, 0.95, CX, yS + 0.45, Z0, P["dark"], bevel=0.0)
+        B(0.36, 0.06, 0.24, CX - 0.3, yS + 0.86, Z0 + 0.1, forge, bevel=0.0)
+        B(0.8, 0.25, 0.04, CX + 0.1, yS + 0.6, Z0 + 0.5, P["skid"], bevel=0.0)
+        for k in range(6):
+            B(1.12, 0.03, 0.06, CX, yS - 0.05, Z0 + 0.62 + k * 0.065, P["steel"] if k % 2 else P["skid"], bevel=0.0)
+        lie(0.07, 1.2, CX, yS - 0.07, Z0 + 1.0, P["dark"], "x", 10)
+        # A jib hoist over the bay, a crate on its hook.
+        rod((CX + 0.68, yS - 0.12, Z0), (CX + 0.68, yS - 0.12, Z0 + 1.75), 0.04, P["gunmetal"], verts=8)
+        rod((CX + 0.68, yS - 0.12, Z0 + 1.7), (CX + 0.1, yS - 0.75, Z0 + 1.6), 0.03, P["gunmetal"], verts=6)
+        rod((CX + 0.68, yS - 0.12, Z0 + 1.2), (CX + 0.3, yS - 0.55, Z0 + 1.58), 0.018, P["steel"], verts=5)
+        rod((CX + 0.1, yS - 0.75, Z0 + 1.6), (CX + 0.1, yS - 0.75, Z0 + 0.65), 0.008, P["dark"], verts=4)
+        crate(CX + 0.1, yS - 0.75, Z0 + 0.38, 0.3, rot=0.4)
+        # Dormers down the west side, their panes lit.
+        for yy in (-0.55, 0.45, 1.25):
+            a = math.radians(150)
+            x, z = CX + (R + 0.02) * math.cos(a), Z0 + (R + 0.02) * math.sin(a)
+            B(0.3, 0.32, 0.22, x - 0.05, yy, z - 0.12, P["trim"], bevel=0.01)
+            B(0.03, 0.22, 0.13, x - 0.21, yy, z - 0.06, P["glass"], bevel=0.0)
+        # The sign over the lintel, its gun in relief; the lamp.
+        s = B(1.15, 0.05, 0.36, CX, yS - 0.1, Z0 + 1.14, sign, bevel=0.012); s.rotation_euler = (math.radians(-12), 0, 0)
+        B(0.26, 0.03, 0.13, CX - 0.32, yS - 0.15, Z0 + 1.2, P["gunmetal"], bevel=0.0)
+        B(0.72, 0.03, 0.05, CX + 0.08, yS - 0.15, Z0 + 1.29, P["gunmetal"], bevel=0.0)
+        cyl(0.077, 0.05, CX + 0.75, yS - 0.08, Z0 + 1.05, P["dark"], verts=12)
+        sph(0.07, CX + 0.75, yS - 0.08, Z0 + 1.15, P["light"])
+        # The lean-to east: two sheets and bare purlins over the compressor, scrap sheet stacked.
+        for (py, m) in ((-0.7, P["trim"]), (1.15, P["trim"])):
+            sheet_at(1.42, py, 0.98, 1.0, 0.95, 0.03, math.radians(-14), m, rz=rnd.uniform(-0.03, 0.03))
+            sheet_at(1.42, py + 0.47, 1.0, 1.0, 0.05, 0.035, math.radians(-14), P["dark"])
+        for q in range(3):
+            x = 1.05 + q * 0.38
+            rod((x, -0.25, 1.07 - (x - 1.05) * 0.25), (x, 0.7, 1.07 - (x - 1.05) * 0.25), 0.018, P["dark"], verts=5)
+        for py in (-1.15, 0.25, 1.6):
+            rod((1.9, py, 0.06), (1.9, py, 0.86), 0.03, P["gunmetal"], verts=6)
+        if not prop("old_military_compressor", "old_military_compressor", (1.25, 0.4, 0.06), 90, 0.45):
+            B(0.5, 0.42, 0.34, 1.25, 0.4, 0.06, P["steel"], bevel=0.03)
+        for k in range(5):
+            B(0.75, 0.5, 0.03, 1.35, -0.55, 0.06 + k * 0.035, rnd.choice((P["trim"], P["hull"], P["steel"])),
+              rot=rnd.uniform(-0.25, 0.25), bevel=0.0)
+        # Out front: tyres, rims, gas bottles, ammunition boxes, the gun rack, drums, crates.
+        for k in range(3):
+            tor(0.22, 0.08, 1.55, -1.55, 0.14 + k * 0.16, P["rubber"])
+        for (rx, ry_) in ((0.95, -1.35), (1.75, -0.95)):
+            t = tor(0.16, 0.04, rx, ry_, 0.2, P["steel"]); t.rotation_euler = (math.radians(75), 0, rnd.uniform(0, 3))
+        for k in range(3):
+            if not prop("small_lpg_tank", "small_lpg_tank", (0.55 + k * 0.17, -1.7, 0.06), 20 * k, 0.3):
+                cyl(0.065, 0.5, 0.55 + k * 0.15, -1.7, 0.06, P["steel"], verts=12)
+        for (bx, by, rz, z) in ((-1.55, -1.55, 0.2, 0.06), (-1.25, -1.7, -0.3, 0.06), (-1.4, -1.6, 0.0, 0.2)):
+            B(0.26, 0.16, 0.14, bx, by, z, P["gunmetal"], rot=rz, bevel=0.015)
+        for k in range(5):
+            rod((-1.72, -0.9 + k * 0.17, 0.12), (-1.74, -0.86 + k * 0.17, 0.85), 0.022, P["gunmetal"], verts=5)
+        B(0.06, 0.95, 0.05, -1.71, -0.55, 0.55, P["skid"], bevel=0.0)
+        drum(0.95, -0.75, r=0.17, h=0.45); drum(0.62, -0.55, r=0.17, h=0.45, m=P["hull"])
+        crate(-1.0, 1.8, 0.06, 0.4); crate(-0.55, 1.85, 0.06, 0.35, rot=0.3); crate(-0.8, 1.8, 0.38, 0.3, rot=-0.2)
+        prop("utility_box_01", "utility_box_01", (CX - 0.75, yS - 0.08, 0.5), 0, 0.3)
+
+    def build_arc():
+        # The welder's arc on the load hanging from the jib, at the door (in the bay it was hidden under the lintel): a
+        # bright point at the crate's west face, sparks falling from it to the pad.
+        ax, ay, az = CX - 0.07, yS - 0.75, Z0 + 0.5
+        # (Bigger than first rendered, a halo round it: at the game's zoom the arc was a white dot.)
+        sph(0.07, ax, ay, az, weld)
+        halo = sph(0.1, ax, ay, az, weld_halo)   # (0.16 at 4 read as a white egg)
+        for k in range(10):
+            a = k * 0.9
+            rod((ax + math.cos(a) * 0.06, ay + math.sin(a) * 0.05, az - 0.04 - k * 0.04),
+                (ax + math.cos(a) * 0.14, ay + math.sin(a) * 0.1, az - 0.1 - k * 0.045), 0.01, weld, verts=4)
+    model = group(build) + group(build_arc)
+    model += scatter([o for o in model if o.type == "MESH"], {P["hull"], P["trim"]}, P["dark"], P["steel"], 4, density=6.0)
+    # (Frame 0 dark: the still the Workshop shows idle, frames 1 on the busy animation's glow.)
+    ARC = [0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1]
+    def set_frame(f, frames):
+        on = ARC[f % len(ARC)] if f > 0 else 0
+        lpkit.emission(weld, 12.0 if on else 0.0); lpkit.emission(weld_halo, 1.2 if on else 0.0)
+        lpkit.emission(forge, 0.0 if f == 0 else 2.0 + 1.2 * math.sin(f / frames * 2 * math.pi))
+        lpkit.emission(P["light"], 2.0); lpkit.emission(P["glass"], 1.5)
+        bpy.context.view_layer.update()
+    return model, set_frame
+
+
+BUILD = {("fabricator", "kh"): fabricator_kh, ("fabricator", "gs"): fabricator_gs, ("workshop", "gs"): workshop_gs,
          ("generator", "kh"): generator_kh, ("generator", "gs"): generator_gs,
          ("radar", "kh"): radar_kh, ("radar", "gs"): radar_gs, ("drill", "kh"): drill_kh,
          ("depot", "kh-a"): depot_kh_a, ("depot", "kh-b"): depot_kh_b, ("depot", "gs-a"): depot_gs_a,
@@ -2157,7 +2337,7 @@ if (WHAT, F) in TURRETS:
     print("rendered", WHAT, F, out)
     sys.exit(0)
 FRAMES = int(os.environ.get("LP_FRAMES", 16))
-TILES = {"fabricator": 3, "generator": 2, "radar": 3, "drill": 3, "depot": 4, "launchpad": 9}[WHAT]
+TILES = {"fabricator": 3, "generator": 2, "radar": 3, "drill": 3, "depot": 4, "launchpad": 9, "workshop": 4}[WHAT]
 if WHAT in ("depot", "launchpad"): FRAMES = 1   # (a container's one picture)
 objs, set_frame = BUILD[(WHAT, F)]()
 # (Taller, where vanilla's sprite of the same footprint stands taller: the generators read squat beside the accumulator.)
@@ -2185,6 +2365,6 @@ if WHAT == "drill":
         lpkit.passes(scene, f"{out}/{d}", FRAMES, lambda f: set_frame(f, FRAMES), objs, {P["light"], P["glass"]}, ground, sun,
                      world, shadow_each=(F == "kh"))   # (KH's ram rises and falls: its shadow with it)
 else:
-    lpkit.passes(scene, out, FRAMES, lambda f: set_frame(f, FRAMES), objs, {P["light"], P["glass"]}, ground, sun, world,
-                 shadow_each=TURNS)
+    lpkit.passes(scene, out, FRAMES, lambda f: set_frame(f, FRAMES), objs, {P["light"], P["glass"]} | EXTRA_GLOW, ground, sun,
+                 world, shadow_each=TURNS)
 print("rendered", WHAT, F, out)

@@ -40,6 +40,7 @@ return {
   ["grubstake/turret/base"] = {width = 198, height = 195, frames = 1, line_length = 8, shift = {0.171875, -0.1328125}},
   ["grubstake/turret/head"] = {width = 290, height = 278, frames = 64, line_length = 8, shift = {0.640625, -0.609375}},
   ["grubstake/uplink"] = {width = 677, height = 652, frames = 32, line_length = 8, shift = {1.2109375, -1.234375}},
+  ["grubstake/workshop"] = {width = 359, height = 413, frames = 16, line_length = 8, shift = {0.4375, -0.625}},
   ["player/barracks"] = {width = 360, height = 344, frames = 16, line_length = 8, shift = {0.6953125, -0.421875}},
   ["player/claim-marker"] = {north = {width = 218, height = 174, shift = {1.234375, -0.8203125}, frames = 16, line_length = 4, body_frames = 16}},
   ["player/command-relay"] = {width = 417, height = 400, frames = 32, line_length = 8, shift = {1.828125, -1.5390625}},

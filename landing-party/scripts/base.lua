@@ -108,6 +108,12 @@ function base.lab_look(e)
   local has = valid(own)
   rendering.draw_animation{animation = has and own or "lp-lab-busy", target = e, surface = e.surface,
     render_layer = "object", animation_speed = has and 1 / 2 or 1 / 3}
+  -- (Grubstake's Workshop at night: its bay's and lamp's warm light on the ground, as its fabricator's working light; dark
+  -- beside it in the first stills, 0.2.496. A lab prototype carries no light of its own.)
+  if e.name == "lp-grubstake-siege-lab" then
+    rendering.draw_light{sprite = "utility/light_medium", target = {entity = e, offset = {-0.3, 1.2}}, surface = e.surface,
+      color = {r = 1, g = 0.7, b = 0.35}, intensity = 0.5, scale = 1.0, minimum_darkness = 0.3}
+  end
   rendering.draw_sprite{sprite = icon, target = {entity = e, offset = {0, -2.8}}, surface = e.surface, x_scale = 1.2,
     y_scale = 1.2, render_layer = "air-object"}
 end
