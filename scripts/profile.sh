@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Profile a sim run's map with the engine's per-tick timings: mean tick and script time, and the worst
-# script ticks (stutters). Runs the scenario once to build the map, then benchmarks it verbosely.
+# script ticks (stutters). Runs the scenario once to build the map, then benchmarks it verbosely: the scenario again from
+# its fresh map (sim.zip is tick 0), so its own landing at tick 60 is in it. (Verbose "all": a list of columns,
+# "wholeUpdate,scriptUpdate", crashed the engine on its first row, Benchmark.cpp 190, 2.1.24; the worst tick went unnamed.)
 #   scripts/profile.sh [scenario] [seed] [minutes]
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
@@ -9,7 +11,7 @@ SCENARIO="${1:-grow}"; SEED="${2:-12345}"; MINUTES="${3:-30}"
 SIM="$HOME/Library/Application Support/factorio-lp-sim/$SCENARIO-$SEED"
 csv="$SIM/profile.csv"
 "$FACTORIO" --config "$SIM/config/config.ini" --benchmark "$SIM/saves/sim.zip" \
-  --benchmark-ticks $((${LP_BENCH:-$MINUTES} * 3600)) --benchmark-runs 1 --benchmark-verbose wholeUpdate,scriptUpdate > "$csv" 2>&1
+  --benchmark-ticks $((${LP_BENCH:-$MINUTES} * 3600)) --benchmark-runs 1 --benchmark-verbose all > "$csv" 2>&1
 python3 - "$csv" <<'PY'
 import sys
 lines = open(sys.argv[1]).read().splitlines()

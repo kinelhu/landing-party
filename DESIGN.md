@@ -216,7 +216,7 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   docs/reviews/2026-11-19-army-logistics-consult.md (the threat with the factory); director armydefend with a depot by
   the D beacon and a roboport (the consult's readings: magazines drawn and packs used a beat).
 - Ammunition tiers, what stages 1 and 2 (0.2.470 bullets, 0.2.471 uranium shells, 0.2.472 the explosive rungs; TIER_EXP
-  0.33 from the arena, docs/arena-tiers.md) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): the stutter tick of director climax (below, 0.2.480).
+  0.33 from the arena, docs/arena-tiers.md) left (docs/reviews/2026-11-20-ammo-tiers-consult.md): nothing (the climax's worst tick was its landing, 2026-11-23).
 - The arms race's remainder (0.2.474, docs/reviews/2026-11-20-arms-race-consult.md): the reference-factory visits at the player's full research
   (razed within twice the calibration rows: running, Nauvis-only research). The Workshop's own look: built 0.2.496 (the user: "Looks good to me").
   The research pace: 20 a minute a branch gave Kessler-Hayashi optics 1 at minute 73 of scenario research; to be read
@@ -2909,6 +2909,13 @@ if their units are upgraded also." `scripts/rd.lua`.
   1,609, 2,602). Drills lost to biters 39, 41, 66 (75, 90, 64). Hub projectors lost 5, 3, 4 of 33 to 44 up (0.2.492: 5,
   17, 8 of 28 to 56), all to behemoths but one big spitter. arcguard 551 to 744 orders a run (161 to 308), 65 to 107 for
   mines, no spot ordered more than twice, 6 to 12 flamers skipped by construction: three a block ahead, not churn.
+- **The climax's "stutter" named (2026-11-23).** profile.sh's verbose benchmark had crashed the engine on its first row
+  (Benchmark.cpp 190, a list of columns, "wholeUpdate,scriptUpdate"; "all" writes every row): now "all". And the
+  benchmark replays the scenario from its fresh map (sim.zip is tick 0). director climax, 60 minutes: the worst tick, 97
+  ms, is tick 60, its camp's landing (once a camp); next the harness's own snapshots every 10 minutes (profile.sh passes
+  every 10 to sim.sh: 24 to 44 ms, growing with the map; not the mod's); then raids planned at 1.5 and 6.5 minutes (33 ms)
+  and a dozen ticks of 20 to 25 ms in raids and a spree. 12 of the game's ticks over 16 ms in an hour, mean 0.25 ms.
+  Nothing to fix before the beta; a raid's planning (33 ms) is the one to slice if it shows on a big save.
 - **A strike's warning names no kinds (2026-11-23; the army consult's proposal, dropped).** Offered: the two largest kinds of
   its mix, no counts, only with the player's radar over its landing spot. The user: "I would not build that". The
   warning stays "n units"; out of the backlog. (Squad colours, in the same backlog line, were built in 0.2.486.)
