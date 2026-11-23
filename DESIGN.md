@@ -2904,6 +2904,10 @@ if their units are upgraded also." `scripts/rd.lua`.
   again each pass (three times at -1008,1016 in a row). 0.2.491: it counts what is queued, carried and awaiting rebuild,
   as the planner's owed does (the generators' same bug, loot). Not checked in a scenario: no short run keeps a crew's
   job out long enough; the nwa visits read it (arcguard orders against flamers standing).
+- **nwa at 0.2.492 (refused flamer spots remembered):** arcguard orders 161, 308, 197 a run (0.2.491: 2,600 to 3,900),
+  no spot ordered more than 4 times, 2 to 5 flamers skipped by construction. Razed 3,636, 1,609, 2,602. The first fortress
+  held 180 on seeds 2 and 3; on seed 1 it departed starved again at about 127 minutes (630 buildings lifted out), as at
+  0.2.491: the seed's ore, not its defence (assumed; not read).
 - **Hub projectors on nwa, by what (0.2.493; in the backlog since 0.2.482).** A projector's death now names its killer
   in its camp's trace (dome.note_death). A 20-minute visit, seed 2: hub 2's projector killed 75 s after it went up by a
   behemoth biter, base 1's hub 2's 32 s after by a big spitter; each hub had one arc flamer (arcguard's ahead cover), killed
