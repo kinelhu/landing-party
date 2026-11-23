@@ -9841,8 +9841,15 @@ end
 -- LP_MIX=evo (0.2.489; the user: "a much heavier arc flamer coverage on such a map"): the biters' evolution 0.9 and none
 -- of its own killed: its blocks get flamers ahead of any loss, each GUARD_GAP from the others (before: none until six
 -- were lost round a block).
+-- LP_MIX=evorefuse (0.2.492): as evo, construction refusing every flamer: a refused block sits out the window, so its
+-- orders stay near its blocks' count (nwa at 0.2.491: a spot that passed the planner's look and failed construction's,
+-- ordered 1,895 times). evorefuse_off forgets the refusals, as before (seen failing).
 scenarios.arcguard = function()
-  local evo = params.mix == "evo"
+  local refuse = params.mix == "evorefuse" or params.mix == "evorefuse_off"
+  local evo = params.mix == "evo" or refuse
+  if refuse then
+    schedule(20, function() lp("debug_tune", {guard_refuse = true, guard_memory_off = params.mix == "evorefuse_off"}) end)
+  end
   if evo then
     schedule(30, function() game.forces.enemy.set_evolution_factor(0.9, surface()) end)
     -- (Fed, so it grows past its pad and first block in the time.)
@@ -9859,6 +9866,15 @@ scenarios.arcguard = function()
       local gd = lp("debug_guard", storage.id) or {}
       info(string.format("arcguard evo: %d blocks, %d arc flamers (%d queued ahead of the biters, %d after losses), %d pairs closer than the gap",
         st.blocks or -1, #fl, gd.ahead or 0, gd.lost or 0, close))
+      if refuse then
+        -- (All its flamer orders, ahead and after losses: forgetting, the run's kills at three minutes churned one spot
+        -- 82 times and the camp stalled at two blocks.)
+        local orders = (gd.ahead or 0) + (gd.lost or 0)
+        check("arcguard: a block whose flamer construction refused is not ordered again each pass", orders >= 2
+          and orders <= 2 * (st.blocks or 0) + 2,
+          string.format("%d orders (%d ahead), %d blocks, %d flamers", orders, gd.ahead or 0, st.blocks or -1, #fl))
+        return
+      end
       check("arcguard: on an evolved map, flamers ahead of any loss, at least one a block", (st.blocks or 0) >= 4
         and (gd.ahead or 0) >= 2 and #fl >= (st.blocks or 0) - 1,
         string.format("%d flamers, %d ahead, %d blocks", #fl, gd.ahead or 0, st.blocks or -1))
@@ -9898,6 +9914,7 @@ scenarios.arcguard = function()
     S.after = surface().count_entities_filtered{force = force, type = "electric-turret", position = o, radius = 200}
     local flamers = surface().count_entities_filtered{force = force, name = flamer, position = o, radius = 200}
     info(string.format("arcguard: %d killed by biters, electric turrets %d -> %d, %d arc flamers", S.killed or 0, S.before or 0, S.after, flamers))
+    if refuse then return end   -- (no flamer stands where construction refuses them all)
     check("arcguard: hit by biters round a block, it puts an arc flamer there", (S.killed or 0) >= 6 and flamers >= 1,
       string.format("%d killed, %d flamers", S.killed or 0, flamers))
   end)

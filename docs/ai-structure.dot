@@ -47,8 +47,8 @@ digraph ai {
   }
   subgraph cluster_5 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "base" [label="base\n944 lines", width=1.85, fillcolor="#eef2f7"];
-    "construction" [label="construction\n446 lines", width=1.30, fillcolor="#d9f0d9"];
-    "planner" [label="planner\n447 lines", width=1.30, fillcolor="#eef2f7"];
+    "construction" [label="construction\n448 lines", width=1.30, fillcolor="#d9f0d9"];
+    "planner" [label="planner\n453 lines", width=1.30, fillcolor="#eef2f7"];
     "layout" [label="layout\n1789 lines", width=2.79, fillcolor="#f7dede"];
     "wfc" [label="wfc\n380 lines", width=1.22, fillcolor="#d9f0d9"];
     "wfc_serenity" [label="wfc_serenity\n134 lines", width=0.95, fillcolor="#d9f0d9"];
@@ -56,7 +56,7 @@ digraph ai {
     "site" [label="site\n180 lines", width=1.00, fillcolor="#eef2f7"];
     "blocks" [label="blocks\n76 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
-    "crew" [label="crew\n549 lines", width=1.41, fillcolor="#eef2f7"];
+    "crew" [label="crew\n550 lines", width=1.41, fillcolor="#eef2f7"];
     "cordon" [label="cordon\n388 lines", width=1.23, fillcolor="#eef2f7"];
     "perimeter" [label="perimeter\n331 lines", width=1.17, fillcolor="#eef2f7"];
     "road" [label="road\n143 lines", width=0.96, fillcolor="#eef2f7"];
@@ -116,7 +116,7 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_11 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1614 lines", width=2.59, fillcolor="#f7dede"];
+    "control" [label="control\n1618 lines", width=2.60, fillcolor="#f7dede"];
     "dev" [label="dev\n622 lines", width=1.49, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n197 lines", width=1.02, fillcolor="#eef2f7"];

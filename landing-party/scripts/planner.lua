@@ -260,13 +260,17 @@ local function plan(b, only)
         end
         return have
       end
+      -- (A block whose flamer construction refused sits out GUARD_WINDOW: the spot passed the planner's look and failed
+      -- construction's, and the block, still with none, was chosen again each pass: 1,895 orders for one spot on nwa,
+      -- 0.2.491, 2,591 in the run.)
+      local function refused(blk) return not storage.guard_memory_off and blk.guard_refused and blk.guard_refused >= cut end
       local best, most
       for _, blk in ipairs(b.blocks) do
         local cx, cy, n, sx, sy = blk.center[1], blk.center[2], 0, 0, 0
         for _, l in ipairs(log) do
           if l[1] >= cut and (l[2] - cx) ^ 2 + (l[3] - cy) ^ 2 <= GUARD_R ^ 2 then n, sx, sy = n + 1, sx + l[2], sy + l[3] end
         end
-        if n >= step then
+        if n >= step and not refused(blk) then
           local have = have_at(blk)
           if have < math.min(most_cap, math.floor(n / step)) and (not most or n > most) then
             best, most = {blk = blk, at = {sx / n, sy / n}, n = n, have = have}, n
@@ -276,7 +280,7 @@ local function plan(b, only)
       -- None hit: on an evolved map, the first block with none (its lander's first: blocks in the order opened).
       if not best and hot > 0 then
         for _, blk in ipairs(b.blocks) do
-          if (blk.weight or 1) > 0 and blk.kind ~= "pad" and have_at(blk) == 0 then
+          if (blk.weight or 1) > 0 and blk.kind ~= "pad" and not refused(blk) and have_at(blk) == 0 then
             best = {blk = blk, at = {blk.center[1], blk.center[2]}, n = 0, have = 0, ahead = true}
             break
           end
@@ -298,7 +302,9 @@ local function plan(b, only)
         local p
         for _, q in ipairs(tries) do
           local c = surface.find_non_colliding_position(name, q, 4, 0.5)
-          if c and surface.count_entities_filtered{position = c, radius = GUARD_GAP, name = name, limit = 1} == 0 then
+          -- (Construction's own test, its force's, as well: the planner's look alone passed spots it then refused.)
+          if c and surface.can_place_entity{name = name, position = c, force = force(b)}
+            and surface.count_entities_filtered{position = c, radius = GUARD_GAP, name = name, limit = 1} == 0 then
             local queued = false
             for _, j in ipairs(b.flamers_owed or {}) do
               if (j[1] - c.x) ^ 2 + (j[2] - c.y) ^ 2 < GUARD_GAP ^ 2 then queued = true end
@@ -306,10 +312,10 @@ local function plan(b, only)
             if not queued then p = c break end
           end
         end
-        if not p then return end
+        if not p then t.blk.guard_refused = game.tick return end
         -- (Queued by its kind: construction.place names the corporation's own; a variant queued was named twice,
         -- "lp-grubstake-grubstake-flamer", and crashed maxevo bare and pact nopact at 0.2.367.)
-        table.insert(b.queue, 1, {name = "lp-flamer", pos = {p.x, p.y}, module = t.blk})
+        table.insert(b.queue, 1, {name = "lp-flamer", pos = {p.x, p.y}, module = t.blk, guard = true})
         -- (Counted, for the record and tests: ahead of the biters, or after its losses.)
         if t.ahead then b.guard_ahead = (b.guard_ahead or 0) + 1 else b.guard_lost = (b.guard_lost or 0) + 1 end
         return string.format("an arc flamer by %s at %.0f,%.0f (%s, %d flamers there)", t.blk.kind, p.x, p.y,

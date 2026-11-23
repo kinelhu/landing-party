@@ -424,6 +424,7 @@ local function step(b, i)
       s.create_entity{name = "explosion-hit", position = e.position}
     end
   else
+    if job.guard and job.module then job.module.guard_refused = game.tick end   -- (arcguard's: planner.lua)
     base.trace(b, string.format("crew: cannot place %s at %.1f,%.1f: skipped", job.name, job.pos[1], job.pos[2]))
   end
 end

@@ -105,6 +105,7 @@ local function place(b, job, by_crew)
     b.turrets_placed = (b.turrets_placed or 0) + 1
     if b.turrets_placed % flak == 0 then job.name = "lp-scrap-cannon" end
   end
+  if job.guard and storage.guard_refuse then return nil end
   local name = shared.variant(b.corp, job.name)
   clear_area(surface, name, pos, b)
   make_way(b, surface, name, pos)
@@ -312,6 +313,7 @@ local function build(b)
   table.remove(b.queue, 1)
   local e = place(b, job)
   if job.slot then job.slot.filled = e ~= nil end
+  if not e and job.guard then job.module.guard_refused = game.tick end   -- (arcguard's: planner.lua)
   if not e and job.module.x0 then
     -- A block survives a blocked entity: skip it.
     trace(b, string.format("cannot place %s at %.1f,%.1f in %s: skipped", job.name, job.pos[1], job.pos[2], job.module.kind))

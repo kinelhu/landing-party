@@ -738,6 +738,10 @@ remote.add_interface("landing-party", {
     if t.siting_off ~= nil then storage.siting_off = t.siting_off or nil end
     -- (The arrival history's match of the player's research off, scenario parity LP_MIX=off: as before 0.2.490.)
     if t.parity_off ~= nil then storage.parity_off = t.parity_off or nil end
+    -- (Construction refuses arcguard's flamers, and the planner forgets the refusals: scenario arcguard LP_MIX=evorefuse,
+    -- evorefuse_off, 0.2.492.)
+    if t.guard_refuse ~= nil then storage.guard_refuse = t.guard_refuse or nil end
+    if t.guard_memory_off ~= nil then storage.guard_memory_off = t.guard_memory_off or nil end
     if t.seed_salt ~= nil then storage.seed_salt = t.seed_salt end
     if t.dump_ways ~= nil then storage.dump_ways = t.dump_ways end
     if t.domes_off then storage.domes = false end

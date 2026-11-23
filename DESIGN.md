@@ -2905,6 +2905,17 @@ if their units are upgraded also." `scripts/rd.lua`.
   again each pass (three times at -1008,1016 in a row). 0.2.491: it counts what is queued, carried and awaiting rebuild,
   as the planner's owed does (the generators' same bug, loot). Not checked in a scenario: no short run keeps a crew's
   job out long enough; the nwa visits read it (arcguard orders against flamers standing).
+- **nwa at 0.2.491 (arrival at the player's research, owed flamers counted):** razed 2,354, 1,701, 3,261 (0.2.489:
+  950, 714, 2,013); KH arrives at optics 6 and ordnance 6, Grubstake at handloads 6, on all three seeds. Its first fortress
+  stood 180 minutes on seed 2; on seed 1 it departed starved at about 130 (its ore short: 19 of 56 cells bad), on seed 3
+  a later expedition replaced it at about 123; neither was destroyed. But arcguard still ordered 2,600 to 3,900 flamers a
+  run, all but a few on one or two spots (1,895 at -1325,1426, seed 1): a spot that passed the planner's look
+  (find_non_colliding_position) and failed construction's (can_place_entity with the force, after its clearing), skipped,
+  and the block, still with none, the first chosen again next pass. 0.2.492: the planner tests a spot as construction
+  does, and a block whose flamer construction or a crew refused sits out GUARD_WINDOW. arcguard LP_MIX=evorefuse (new;
+  construction refuses every flamer): 4 orders on 5 blocks; evorefuse_off forgets as before: 70 orders on one spot and the
+  camp stalled at 2 blocks (seen failing). Why construction refused that spot is not known (assumed: the 2x2 flamer
+  snapped off a half-tile spot onto a neighbour).
 - **nwa visits at 0.2.485 (no railgunners in strikes):** rail_kills 0 on seeds 2 and 3 (razed 699, 2,289); seed 1 4
   land mines (razed 1,172), by a railgunner on a nest clearance 32 tiles off, read as strays: the check counted any kill
   outside a group or strike, and measured to the first lander found (1,683 tiles), not its own. A stray is now a
