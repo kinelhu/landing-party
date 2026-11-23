@@ -8,7 +8,7 @@ digraph ai {
     "tune" [label="tune\n51 lines", width=0.86, fillcolor="#d9f0d9"];
     "rng" [label="rng\n56 lines", width=0.86, fillcolor="#d9f0d9"];
     "names" [label="names\n54 lines", width=0.86, fillcolor="#eef2f7"];
-    "chart" [label="chart\n114 lines", width=0.93, fillcolor="#d9f0d9"];
+    "chart" [label="chart\n116 lines", width=0.93, fillcolor="#d9f0d9"];
     "ground" [label="ground\n38 lines", width=0.84, fillcolor="#d9f0d9"];
     "threat" [label="threat\n297 lines", width=1.13, fillcolor="#eef2f7"];
     "unit_prior" [label="unit_prior\n29 lines", width=0.83, fillcolor="#d9f0d9"];
@@ -103,7 +103,7 @@ digraph ai {
     "cell" [label="cell\n438 lines", width=1.29, fillcolor="#eef2f7"];
   }
   subgraph cluster_9 { label="The map"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
+    "map" [label="map\n76 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "command" [label="command\n2162 lines", width=3.20, fillcolor="#f7dede"];
@@ -117,7 +117,7 @@ digraph ai {
   }
   subgraph cluster_11 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "control" [label="control\n1648 lines", width=2.63, fillcolor="#f7dede"];
-    "dev" [label="dev\n622 lines", width=1.49, fillcolor="#eef2f7"];
+    "dev" [label="dev\n625 lines", width=1.49, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n197 lines", width=1.02, fillcolor="#eef2f7"];
   }

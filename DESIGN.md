@@ -2909,6 +2909,17 @@ if their units are upgraded also." `scripts/rd.lua`.
   1,609, 2,602). Drills lost to biters 39, 41, 66 (75, 90, 64). Hub projectors lost 5, 3, 4 of 33 to 44 up (0.2.492: 5,
   17, 8 of 28 to 56), all to behemoths but one big spitter. arcguard 551 to 744 orders a run (161 to 308), 65 to 107 for
   mines, no spot ordered more than twice, 6 to 12 flamers skipped by construction: three a block ahead, not churn.
+- **The playtest of 2026-11-23 (0.2.497, the army save).** /lp director crashed the game: dev.lua required director_gui
+  inside its handler ("Require can't be used outside of control.lua parsing"); now at load, and scripts/lint_requires.sh
+  (check.sh) fails any require on an indented line of the control stage (seen failing on the old dev.lua, line 126). The
+  better rounds' orders and recipes all bore their base's name (four "Battle tank order"s): now "<order> (<round>)",
+  the round's own vanilla name. Kessler-Hayashi's next arc on the map ("the half circle is completely unnecessary") no
+  longer drawn, old ones cleared; the territory overlay ("a little too distracting") softer, wash 0.07 to 0.05 and edge
+  0.75 to 0.5, for marks drawn from then on. Asked of the user's time, the depot, repair, beacon clicks and watch posts
+  read from their scenarios instead (depot, robotrepair, assign, squadmove, watch, rearm, tiers: pass). On the user's
+  map at evolution 0.8: "Clusters are extremely well defended. The camp was also armed to the teeth with uranium
+  bullets" (the flame cover at full heat; uranium rounds from evolution 0.6, base.lua). Open: walls and turrets on filled
+  water (the user: "Not sure this should be intended behaviour").
 - **Strike forces capped by the player's army (0.2.497; the army consult's "their arena price at most about 1.5 times the
   command capacity's", the user: "Yes").** After pricing (point_scale), a strike's parts are no more than strike_cap
   (1.5) times the slots the player's research may field (command.fieldable: its relays allowed, working or not), a slot

@@ -6,7 +6,9 @@
 local chart = {}
 
 local C = 32
-local WASH, EDGE = 0.07, 0.75
+-- (Softer since 0.2.498, 0.07 and 0.75 before; the user, in the playtest: the territory overlay "alright although a
+-- little too distracting". Drawn from then on: marks already on a map keep their old strength.)
+local WASH, EDGE = 0.05, 0.5
 
 -- Rendering takes premultiplied colours.
 local function pm(c, a) return {r = c.r * a, g = c.g * a, b = c.b * a, a = a} end

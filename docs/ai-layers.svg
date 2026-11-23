@@ -14,7 +14,7 @@
 <title>Seams (leaves)</title>
 <path fill="#d9f0d9" stroke="black" d="M927.62,-746.25C927.62,-746.25 825.38,-746.25 825.38,-746.25 819.38,-746.25 813.38,-740.25 813.38,-734.25 813.38,-734.25 813.38,-722.25 813.38,-722.25 813.38,-716.25 819.38,-710.25 825.38,-710.25 825.38,-710.25 927.62,-710.25 927.62,-710.25 933.62,-710.25 939.62,-716.25 939.62,-722.25 939.62,-722.25 939.62,-734.25 939.62,-734.25 939.62,-740.25 933.62,-746.25 927.62,-746.25"/>
 <text xml:space="preserve" text-anchor="middle" x="876.5" y="-729.8" font-family="Helvetica,sans-Serif" font-size="11.00">Seams (leaves)</text>
-<text xml:space="preserve" text-anchor="middle" x="876.5" y="-717.8" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 1843 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="876.5" y="-717.8" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 1845 lines</text>
 </g>
 <!-- Settlement -->
 <g id="node6" class="node">
@@ -356,7 +356,7 @@
 <title>The map</title>
 <path fill="#eef2f7" stroke="black" d="M91,-846C91,-846 12,-846 12,-846 6,-846 0,-840 0,-834 0,-834 0,-822 0,-822 0,-816 6,-810 12,-810 12,-810 91,-810 91,-810 97,-810 103,-816 103,-822 103,-822 103,-834 103,-834 103,-840 97,-846 91,-846"/>
 <text xml:space="preserve" text-anchor="middle" x="51.5" y="-829.55" font-family="Helvetica,sans-Serif" font-size="11.00">The map</text>
-<text xml:space="preserve" text-anchor="middle" x="51.5" y="-817.55" font-family="Helvetica,sans-Serif" font-size="11.00">1 module, 71 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="51.5" y="-817.55" font-family="Helvetica,sans-Serif" font-size="11.00">1 module, 76 lines</text>
 </g>
 <!-- The map&#45;&gt;Seams (leaves) -->
 <g id="edge35" class="edge">

@@ -377,18 +377,21 @@ data:extend({
 
 -- Ammunition tiers (0.2.470, shared.ORDER_TIERS): each a copy of its base order's item and recipe, its round in place of
 -- the base round (the ingredient of the same ammo category), the same name, its icon the round's (or the base's with the
--- round as a badge). Hidden like the base orders; enabled by script once the base order and the round are.
+-- round as a badge). Hidden like the base orders; enabled by script once the base order and the round are. Named for
+-- its base and its round, "Battle tank order (Uranium cannon shell)" (0.2.498; the playtest, the user: "there are
+-- problem with recipe names": every tier had its base order's name, four "Battle tank order"s at the barracks).
 for name, tier in pairs(shared.ORDER_TIERS) do
   local bi, br = data.raw.item[tier.base], data.raw.recipe[tier.base]
   local round = data.raw.ammo[tier.round]
   local it = table.deepcopy(bi)
   it.name = name
-  it.localised_name = {"item-name." .. tier.base}
+  local with_round = {"", {"item-name." .. tier.base}, " (", {"item-name." .. tier.round}, ")"}
+  it.localised_name = with_round
   it.localised_description = {"item-description." .. tier.base}
   local base_round
   local r = table.deepcopy(br)
   r.name = name
-  r.localised_name = {"recipe-name." .. tier.base}
+  r.localised_name = table.deepcopy(with_round)
   for _, ing in ipairs(r.ingredients) do
     local a = data.raw.ammo[ing.name]
     if (tier.replaces and ing.name == tier.replaces) or (not tier.replaces and a and round

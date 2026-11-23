@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.498
+Date: 2026-11-23
+  Bugfixes:
+    - /lp director no longer crashes the game.
+    - Each better-ammunition order and recipe at the barracks is named for its round, as "Battle tank order (Uranium cannon shell)"; they all bore their unit's plain order name.
+  Changes:
+    - Kessler-Hayashi's next ring of posts is no longer drawn as an arc on the map, and the corporations' territory on the map is drawn fainter.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.497
 Date: 2026-11-23
   Balancing:

@@ -29,7 +29,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `base` | 950 | army, blocks, chart, construction, landfx, layout, lights, modules, names, ops, planner, rng, site, tune | control, cordon, crew, dev, dome, faction, jumper, ledger, lifeline, pact, prospect, prowl, road, skim, tap, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, ops.siege_goal, war.footing | 7, 60, 120, 3600, 7200 |  | lab_look, next_id, wrecks |
 | `war` | 701 | army, base, lights, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, director, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `rd` | 674 | know, tune | army, control, director, faction, ops, planner, war | ops.era |  |  | corps |
-| `dev` | 622 | army, base, burstfx, cannon, cards, command, director_gui, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap, veterancy | control |  |  |  | chartcheck, cordon_off, dev_cannon, dev_platform, era_override, hq_fast, merit, ram_trace, trace |
+| `dev` | 625 | army, base, burstfx, cannon, cards, command, director_gui, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap, veterancy | control |  |  |  | chartcheck, cordon_off, dev_cannon, dev_platform, era_override, hq_fast, merit, ram_trace, trace |
 | `costmap` | 620 | firemap, threat | airraid, control, creep, faction, farm, herd, siege |  |  |  |  |
 | `creep` | 614 | costmap, tune | control, farm, studies |  |  |  | creep |
 | `crew` | 550 | base, ops, standing | control |  | 30 |  | crew_owner |
@@ -82,7 +82,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `separate` | 131 | rng | control |  |  |  | sep |
 | `director_gui` | 130 | director | control, dev |  | 60 |  |  |
 | `airraid` | 127 | attempt, costmap, firemap, know, threat, veterancy | army, ops |  |  |  |  |
-| `chart` | 114 | (leaf) | base, map, prospect |  |  |  |  |
+| `chart` | 116 | (leaf) | base, map, prospect |  |  |  |  |
 | `standing` | 114 | ops | control, crew, dev, ledger, map, prospect, road |  | 3600 |  | corps, incidents, standing_seen |
 | `pact` | 112 | base, lights, rng | control, faction, marker |  | 600 |  | pact_broken, pact_state |
 | `fall` | 101 | rng | control |  |  |  | crashed, fall_rng, fall_skip, fallen, falls |
@@ -96,7 +96,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `jammer` | 77 | lights | control, director, ops |  |  |  | jam_beams, jammed, jammers |
 | `strategy` | 77 | know | war |  |  |  |  |
 | `blocks` | 76 | (leaf) | base, layout |  |  |  |  |
-| `map` | 71 | chart, names, standing | control |  | 600 |  |  |
+| `map` | 76 | chart, names, standing | control |  | 600 |  |  |
 | `marker` | 70 | pact | control |  | 60 |  | breakers, claim_markers, pact_breaks, pact_suspended_till |
 | `strike` | 68 | orbital, threat | control |  | 60 |  | strike_targets, strikes, strikes_fired |
 | `pods` | 64 | (leaf) | cell, control, director, faction, farm, lifeline, siege, war |  | 60 |  | pods |

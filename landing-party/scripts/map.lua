@@ -15,7 +15,7 @@ end
 
 -- Serenity's next arc: a dashed hairline through its posts, in angle order (scripts/chart.lua), where it was a ring of
 -- circles and an arrow.
-local function draw_arc(b, c)
+local function draw_arc(b, c)   -- (unused since 0.2.498: map.tick no longer calls it)
   local s = game.surfaces[b.surface]
   local col = shared.CORPS[b.corp].color
   local pts = {}
@@ -55,8 +55,13 @@ function map.tick(tick)
         o.text, b.map_standing = {"lp.map-" .. text}, text
       end
       b.map_text = names.of(b) .. " (" .. shared.CORPS[b.corp].name .. "): " .. text
+      -- (Kessler-Hayashi's next arc no longer drawn, 0.2.498; the user, in the playtest: "the half circle is completely
+      -- unnecessary". Marks from before cleared once; an empty table stands for drawn.)
       local c = b.cordon
-      if c and not c.marks then draw_arc(b, c) end
+      if c and c.marks then
+        for _, r in ipairs(c.marks) do if r.valid then r.destroy() end end
+      end
+      if c then c.marks = {} end
     end
   end
   -- Arcs done: their marks go (the claim's disc takes over).

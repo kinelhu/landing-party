@@ -53,6 +53,9 @@ local jumper = require("__landing-party__.scripts.jumper")
 local tap = require("__landing-party__.scripts.tap")
 local standing = require("__landing-party__.scripts.standing")
 local farm = require("__landing-party__.scripts.farm")
+-- (At load: required inside dev.run, /lp director crashed the playtest, "Require can't be used outside of control.lua
+-- parsing", 0.2.498; check.sh's lint now fails any require below the top level.)
+local director_gui = require("__landing-party__.scripts.director_gui")
 local burstfx = require("__landing-party__.scripts.burstfx")
 local orbital = require("__landing-party__.scripts.orbital")
 local ram = require("__landing-party__.scripts.ram")
@@ -123,7 +126,7 @@ function dev.run(player, args)
     list(player)
   elseif what == "director" then
     -- The director's debug panel (director_gui.lua).
-    local open = require("__landing-party__.scripts.director_gui").toggle(player)
+    local open = director_gui.toggle(player)
     player.print(open and "director panel open" or "director panel closed") -- notice-ok: the dev tool's reply to its caller
   elseif what == "raid" or what == "siege" or what == "strip" or what == "airraid" then
     local b = pick(player, id, what == "strip" and function(b) return (shared.CORPS[b.corp].temper or {}).strips end)
