@@ -224,12 +224,8 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
-- Kessler-Hayashi's first fortress on nwa past two hours: starved of its mine on seed 1 (0.2.491, 0.2.492, about 127
-  minutes); its mines guarded since 0.2.494 (fed at 60 minutes: 808 parts, ore 1,620 a minute), its fate at 180 not read
-  (a full visit, before the release). Hub projectors still killed by behemoths with 4 to 9 flamers under them (0.2.494: 2
-  a seed of 9 to 13, three within 10 s of going up): its health raised to 5,000 (0.2.495, the user: "Projector: raise
-  it."); not yet visited. What it costs the player's troops to break one is not measured: no scenario has a squad kill a
-  hub's projector (breach's domed district is a comment; its lab fell at 35 s against 25 before, variance assumed).
+- What it costs the player's troops to break a hub's projector (5,000 since 0.2.495) is not measured: no scenario has a
+  squad kill one (breach's domed district is a comment).
 - Multiplayer: two clients using the army and the faction GUIs (scripts/mp.sh covers one client and the director, and
   one client with the army, LP_ARMY=1; a second client needs a second Steam account: left to the beta).
 - Release: the 0.3.0 bump, the full regression, package.sh, the music credit, the GitHub release, the portal upload
@@ -2908,6 +2904,11 @@ if their units are upgraded also." `scripts/rd.lua`.
   again each pass (three times at -1008,1016 in a row). 0.2.491: it counts what is queued, carried and awaiting rebuild,
   as the planner's owed does (the generators' same bug, loot). Not checked in a scenario: no short run keeps a crew's
   job out long enough; the nwa visits read it (arcguard orders against flamers standing).
+- **nwa at 0.2.496, three hours (mines guarded, hubs covered by three, projectors at 5,000):** the first fortress stood
+  180 minutes on all three seeds (0.2.492: seed 1 departed starved at 127). Razed 3,337, 4,590, 4,188 (0.2.492: 3,636,
+  1,609, 2,602). Drills lost to biters 39, 41, 66 (75, 90, 64). Hub projectors lost 5, 3, 4 of 33 to 44 up (0.2.492: 5,
+  17, 8 of 28 to 56), all to behemoths but one big spitter. arcguard 551 to 744 orders a run (161 to 308), 65 to 107 for
+  mines, no spot ordered more than twice, 6 to 12 flamers skipped by construction: three a block ahead, not churn.
 - **A strike's warning names no kinds (2026-11-23; the army consult's proposal, dropped).** Offered: the two largest kinds of
   its mix, no counts, only with the player's radar over its landing spot. The user: "I would not build that". The
   warning stays "n units"; out of the backlog. (Squad colours, in the same backlog line, were built in 0.2.486.)
