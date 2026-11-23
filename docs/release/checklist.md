@@ -19,13 +19,16 @@ manual revisited after calibration; an art direction pass before the playtest.
 - **Version 0.3.0** for the first upload, a public beta.
 - **No PNG recompression**: about 18 MB saved of 163 was not worth it ("Do we need to bother for 10 MB?").
 - **The page links the manual PDF and the source repository.**
-- **The trailer's music:** variants proposed first, to try to improve it, before the credit is written.
+- **The trailer:** done and on YouTube (the user, 2026-11-23: "we already have a good version. I uploaded it to YT").
+  Left: its link on the mod page (modpage.md's [Trailer: link]), and the mod page's link in its YouTube description once
+  the mod is uploaded (https://mods.factorio.com/mod/landing-party, the portal's address for info.json's name).
 - Before the upload: the playtest and calibration set up; the sound pass ("would increase the value of the mod
   greatly"); the mod page with GIFs; a multiplayer run with the director; the manual's pictures. Then the trailer,
   the release regression and the upload.
 
 ## For the user to decide
-- **The music credit** in the trailer's description and on the page.
+- ~~The music credit~~: none needed (the user, 2026-11-23: "not needed. We did this ourselves?"; the score is
+  generated here, scripts/trailer_score.py).
 - **Multiplayer**: `scripts/mp.sh` showed no desync in two runs (2026-11-07). With the director (2026-11-15, 0.2.426):
   heavy mode passed with ten of its beats out, and a client played 8 minutes at half speed through sieges, strikes and
   the director's strike and joint commands, no desync (the joint itself impossible on that save: one corporation at
