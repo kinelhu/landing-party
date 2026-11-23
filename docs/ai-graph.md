@@ -35,9 +35,9 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `crew` | 549 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `cards` | 471 | veterancy | control, dev | command.ammo_of, command.round_of |  |  | cards, cmd |
 | `ram` | 454 | (leaf) | control, dev, ops |  | 3, 6 |  | ram_breaches, ram_charges, ram_crushed, ram_early, ram_followers, ram_moved, rams |
+| `planner` | 447 | rd | base |  |  |  |  |
 | `construction` | 446 | (leaf) | base |  |  |  |  |
 | `dome` | 439 | base, lights, ops, threat | control |  | 60, 3600 |  | dome_alert, pdomes |
-| `planner` | 439 | rd | base |  |  |  |  |
 | `cell` | 438 | pods | control, farm |  |  |  | cell_sites, cells |
 | `routing` | 431 | threat | ops |  |  |  | corridors |
 | `skim` | 422 | base, ops, stance, tune | control |  | 60, 600 |  |  |

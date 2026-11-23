@@ -244,11 +244,19 @@ local function plan(b, only)
       local most_cap = GUARD_MOST + math.floor(GUARD_EXTRA * hot + 0.5)
       local step = GUARD_LOSSES * (1 - 0.5 * hot)
       local cut, name = game.tick - GUARD_WINDOW, shared.variant(b.corp, "lp-flamer")
+      -- (Its flamers owed: queued, carried by its crews, awaiting rebuild. The queue alone read none once a crew took
+      -- one, and it ordered the same flamer again each pass: 1,227 arcguard orders in a three-hour visit on nwa, 0.2.489.)
+      local pending = {}
+      local function owe(job) if job.name == "lp-flamer" and job.pos then pending[#pending + 1] = job.pos end end
+      for _, q in ipairs(b.queue) do owe(q) end
+      for _, q in ipairs(b.rebuild or {}) do owe(q) end
+      for _, c in ipairs(b.crews or {}) do for i = c.k or 1, #(c.jobs or {}) do owe(c.jobs[i]) end end
+      b.flamers_owed = pending
       local function have_at(blk)
         local cx, cy = blk.center[1], blk.center[2]
         local have = surface.count_entities_filtered{position = blk.center, radius = GUARD_R, name = name}
-        for _, q in ipairs(b.queue) do
-          if q.name == "lp-flamer" and (q.pos[1] - cx) ^ 2 + (q.pos[2] - cy) ^ 2 <= GUARD_R ^ 2 then have = have + 1 end
+        for _, q in ipairs(pending) do
+          if (q[1] - cx) ^ 2 + (q[2] - cy) ^ 2 <= GUARD_R ^ 2 then have = have + 1 end
         end
         return have
       end
@@ -292,8 +300,8 @@ local function plan(b, only)
           local c = surface.find_non_colliding_position(name, q, 4, 0.5)
           if c and surface.count_entities_filtered{position = c, radius = GUARD_GAP, name = name, limit = 1} == 0 then
             local queued = false
-            for _, j in ipairs(b.queue) do
-              if j.name == "lp-flamer" and (j.pos[1] - c.x) ^ 2 + (j.pos[2] - c.y) ^ 2 < GUARD_GAP ^ 2 then queued = true end
+            for _, j in ipairs(b.flamers_owed or {}) do
+              if (j[1] - c.x) ^ 2 + (j[2] - c.y) ^ 2 < GUARD_GAP ^ 2 then queued = true end
             end
             if not queued then p = c break end
           end

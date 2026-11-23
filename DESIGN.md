@@ -2899,6 +2899,12 @@ if their units are upgraded also." `scripts/rd.lua`.
   railguns and what more the tier rule allows, as before. Scenario parity (new): the player at level 5 in lasers and
   cannon shells, era 6, 0.99: optics 5 then 6 by the fund, ordnance 5; LP_MIX=off reads nwa's (optics 3, railguns 4,
   no ordnance: seen failing). techup (4 mixes), catchup, research quick, plate, arms and the quick regression pass.
+- **nwa at 0.2.489 (heavier arc flamers, the naive arrival):** the first fortress held 180 minutes on all three seeds
+  (two of three starved at 0.2.488); razed 950, 714, 2,013; lost to biters 355, 437, 1,006. But arcguard ordered 947 to
+  1,227 flamers a camp: it counted its queue only, and a flamer a crew carried read as none, so the same one was ordered
+  again each pass (three times at -1008,1016 in a row). 0.2.491: it counts what is queued, carried and awaiting rebuild,
+  as the planner's owed does (the generators' same bug, loot). Not checked in a scenario: no short run keeps a crew's
+  job out long enough; the nwa visits read it (arcguard orders against flamers standing).
 - **nwa visits at 0.2.485 (no railgunners in strikes):** rail_kills 0 on seeds 2 and 3 (razed 699, 2,289); seed 1 4
   land mines (razed 1,172), by a railgunner on a nest clearance 32 tiles off, read as strays: the check counted any kill
   outside a group or strike, and measured to the first lander found (1,683 tiles), not its own. A stray is now a

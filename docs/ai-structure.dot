@@ -48,7 +48,7 @@ digraph ai {
   subgraph cluster_5 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "base" [label="base\n944 lines", width=1.85, fillcolor="#eef2f7"];
     "construction" [label="construction\n446 lines", width=1.30, fillcolor="#d9f0d9"];
-    "planner" [label="planner\n439 lines", width=1.29, fillcolor="#eef2f7"];
+    "planner" [label="planner\n447 lines", width=1.30, fillcolor="#eef2f7"];
     "layout" [label="layout\n1789 lines", width=2.79, fillcolor="#f7dede"];
     "wfc" [label="wfc\n380 lines", width=1.22, fillcolor="#d9f0d9"];
     "wfc_serenity" [label="wfc_serenity\n134 lines", width=0.95, fillcolor="#d9f0d9"];
