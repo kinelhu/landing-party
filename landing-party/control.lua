@@ -357,6 +357,7 @@ script.on_event({defines.events.on_player_display_resolution_changed, defines.ev
 -- destroy is counted razed (attributed through the unit that did it).
 script.on_event(defines.events.on_entity_died, function(e)
   local ent = e.entity
+  if ent.valid and ent.name == "lp-dome-projector" then dome.note_death(ent, e.cause, e.force) end
   -- (A unit of a corporation's killed by a gun of the player's: the director's grudge, a strike force's retaliation.)
   if ent.valid and ent.type == "unit" and e.cause and e.cause.valid and ent.force.name:sub(1, 3) == "lp-" then
     director.note_unit_loss(ent.force.name, e.cause)
@@ -741,6 +742,8 @@ remote.add_interface("landing-party", {
     -- (Construction refuses arcguard's flamers, and the planner forgets the refusals: scenario arcguard LP_MIX=evorefuse,
     -- evorefuse_off, 0.2.492.)
     if t.guard_refuse ~= nil then storage.guard_refuse = t.guard_refuse or nil end
+    -- (A hub's projector up without its flamers on an evolved map: scenario domehub LP_MIX=evo_off, 0.2.493.)
+    if t.guard_projector_off ~= nil then storage.guard_projector_off = t.guard_projector_off or nil end
     if t.guard_memory_off ~= nil then storage.guard_memory_off = t.guard_memory_off or nil end
     if t.seed_salt ~= nil then storage.seed_salt = t.seed_salt end
     if t.dump_ways ~= nil then storage.dump_ways = t.dump_ways end
@@ -1062,6 +1065,27 @@ remote.add_interface("landing-party", {
     return out
   end,
   debug_dome = function(id) local b = storage.bases[id]; return b and dome.state(b) end,
+  -- A projector's dome radius, by its unit number (scenario domehub evo).
+  debug_dome_radius = function(unit)
+    for _, b in pairs(storage.bases) do
+      for _, d in pairs(b.domes or {}) do if d.anchor and d.anchor.valid and d.anchor.unit_number == unit then return d.radius end end
+    end
+  end,
+  -- Its hubs, past its first, and the projectors standing for them (scenario domehub evo).
+  debug_hub_projectors = function(id)
+    local b = storage.bases[id]
+    if not b then return nil end
+    local hubs, up, fewest = 0, 0, nil
+    for _, hub in ipairs(b.hubs or {}) do
+      if hub.id > 1 then
+        hubs = hubs + 1
+        local d = (b.domes or {})["hub" .. hub.id]
+        if d and d.anchor and d.anchor.valid then up = up + 1 end
+        if d and d.flamers_up and (not fewest or d.flamers_up < fewest) then fewest = d.flamers_up end
+      end
+    end
+    return {hubs = hubs, up = up, fewest = fewest}
+  end,
   -- A camp's blocks of one hub, as boxes {x0, y0, x1, y1}, and its lander's position (domehub's first-hub check).
   debug_hub_blocks = function(id, hub)
     local b = storage.bases[id]

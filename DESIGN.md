@@ -224,7 +224,6 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
-- Kessler-Hayashi's hub projectors on nwa destroyed a minute after going up (visit seed 2, 0.2.482): by what, not read.
 - Kessler-Hayashi's first fortress on nwa starved out by biters (0.2.488 visits seeds 2 and 3, minutes 65 and 91: 292
   and 390 of its buildings, drills and pylons among them): its hazard clearances on a high-evolution map, not read.
 - Multiplayer: two clients using the army and the faction GUIs (scripts/mp.sh covers one client and the director, and
@@ -2905,6 +2904,16 @@ if their units are upgraded also." `scripts/rd.lua`.
   again each pass (three times at -1008,1016 in a row). 0.2.491: it counts what is queued, carried and awaiting rebuild,
   as the planner's owed does (the generators' same bug, loot). Not checked in a scenario: no short run keeps a crew's
   job out long enough; the nwa visits read it (arcguard orders against flamers standing).
+- **Hub projectors on nwa, by what (0.2.493; in the backlog since 0.2.482).** A projector's death now names its killer
+  in its camp's trace (dome.note_death). A 20-minute visit, seed 2: hub 2's projector killed 75 s after it went up by a
+  behemoth biter, base 1's hub 2's 32 s after by a big spitter; each hub had one arc flamer (arcguard's ahead cover), killed
+  seconds before it. Biters at evolution 0.99 overran a new hub, the projector with it; not the player's guns. Now
+  shared.guard_ahead: on an evolved map each block takes 1 + round(2 x heat) flamers ahead of any loss (3 at 0.9 and up;
+  was one), the block with fewest short first; a hub's projector waits until as many stand under the dome it would raise
+  (its hub's radius: counted within 28 of its spot, hubs 2 and 3 of the scenario got none in 40 minutes). domehub
+  LP_MIX=evo (new; at 0.9, its flamers killed each minute to 15): the barest projector up over 3, 5 of 6 hubs up;
+  evo_off over 1 (seen failing). arcguard evorefuse's bound now (ahead + 1) a block: 3 queued before the first refusal
+  came back (20 on 5 blocks; forgetting, 96 on 2). Whether a hub so covered holds on nwa: the next visits.
 - **nwa at 0.2.491 (arrival at the player's research, owed flamers counted):** razed 2,354, 1,701, 3,261 (0.2.489:
   950, 714, 2,013); KH arrives at optics 6 and ordnance 6, Grubstake at handloads 6, on all three seeds. Its first fortress
   stood 180 minutes on seed 2; on seed 1 it departed starved at about 130 (its ore short: 19 of 56 cells bad), on seed 3

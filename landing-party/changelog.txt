@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.493
+Date: 2026-11-23
+  Balancing:
+    - On a map with highly evolved biters, a corporation guards each new block with up to three arc flamers before it is attacked, and puts up a hub's dome projector only once they stand.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.492
 Date: 2026-11-23
   Bugfixes:

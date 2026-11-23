@@ -269,13 +269,23 @@ local function projectors(b, tick)
       if (not d or d.back_at) and tick >= ((d and d.back_at) or 0) and not b.lander.destructible then
         local s = b.lander.surface
         local p = projector_spot(b, hub)
+        -- (On an evolved map, not before its arc flamers stand round it: shared.guard_ahead.)
+        local need = shared.guard_ahead(shared.guard_heat(game.forces.enemy and game.forces.enemy.get_evolution_factor(s) or 0))
+        -- (Under the dome it would raise, its hub's blocks: within 28 of its spot, hubs 2 and 3 of domehub evo waited
+        -- 40 minutes, their flamers on their blocks farther out.)
+        local under = p and s.count_entities_filtered{position = p, radius = hub_radius(b, hub, p), force = b.force,
+          name = shared.variant(b.corp, "lp-flamer")} or 0
+        if p and need > 0 and not storage.guard_projector_off and under < need then
+          p = nil
+          d = d or fresh(); d.waits = (d.waits or 0) + 1; b.domes[key] = d; d.back_at = d.back_at or tick
+        end
         local e = p and s.create_entity{name = "lp-dome-projector", position = p, force = b.force}
         lights.attach(e, b.corp)
         if e then
           d = d or fresh()
-          d.anchor, d.back_at, d.left, d.down_till = e, nil, 1, 0
+          d.anchor, d.back_at, d.left, d.down_till, d.flamers_up = e, nil, 1, 0, under
           b.domes[key] = d
-          trace(b, string.format("a projector up by its %s at %.0f,%.0f", key, p.x, p.y))
+          trace(b, string.format("a projector up by its %s at %.0f,%.0f (%d arc flamers under it)", key, p.x, p.y, under))
         end
       end
       if d and d.anchor and d.anchor.valid then
@@ -434,6 +444,22 @@ function dome.player_stats()
     out[n] = {caught = d.caught, breaks = d.breaks, down = d.down_till > 0, left = d.left}
   end
   return out
+end
+
+-- A hub's projector killed (control.lua, on_entity_died): who and what, in its camp's trace (nwa, 0.2.491: hub
+-- projectors down a minute or two after going up, by what not known).
+function dome.note_death(ent, cause, force)
+  for _, b in pairs(storage.bases or {}) do
+    for key, d in pairs(b.domes or {}) do
+      if d.anchor == ent then
+        local c = cause and cause.valid and cause or nil
+        trace(b, string.format("the projector of its %s killed at %.0f,%.0f by %s's %s%s (health %d)", key,
+          ent.position.x, ent.position.y, force and force.name or "none", c and c.name or "nothing",
+          c and string.format(" at %.0f,%.0f", c.position.x, c.position.y) or "", ent.max_health))
+        return
+      end
+    end
+  end
 end
 
 return dome

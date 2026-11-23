@@ -97,7 +97,8 @@ side away from your spawn, with nothing hostile within {{< var camp.yard_quiet_t
 patrols set out from there.
 
 **The dome.** While the lander holds, a dome covers the ground within {{< var kh.dome_tiles >}} tiles of it, and each
-later hub has a projector with a dome of its own. A camp plans none of its blocks where it knows your artillery reaches,
+later hub has a projector with a dome of its own. Where the biters are far evolved, a hub's projector goes up only once arc
+flamers guard the hub. A camp plans none of its blocks where it knows your artillery reaches,
 unless no other ground is left. A dome stops every artillery shell fired from the ground that enters
 it, including shells aimed at something beyond it: a bolt from the projector hits the shell, and a ripple runs across
 the dome. Units, bullets, lasers and orbital strikes pass through. A dome can take {{< var kh.dome_hold_min >}}

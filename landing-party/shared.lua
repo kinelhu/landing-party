@@ -407,6 +407,13 @@ shared.RAIL_OTHER = 10
 shared.RAIL_LEASH = 48
 -- How far past the player's artillery's reach a camp keeps its lander (faction.lua) and plans its blocks (layout.lua).
 shared.ARTILLERY_SPARE = 20
+-- Arc flamer cover on an evolved map (planner arcguard, dome.lua): past GUARD_EVO of the biters' evolution, the heat runs
+-- 0 to 1 toward evolution 1, and each block has guard_ahead(heat) flamers before it loses anything (1 to 3; 0.2.493: on
+-- nwa a new hub's one flamer and its projector were killed together within two minutes); a hub's projector waits for
+-- as many standing round its spot.
+shared.GUARD_EVO = 0.6
+function shared.guard_heat(evo) return math.max(0, math.min(1, (evo - shared.GUARD_EVO) / (1 - shared.GUARD_EVO))) end
+function shared.guard_ahead(heat) return heat > 0 and 1 + math.floor(2 * heat + 0.5) or 0 end
 function shared.rank_scale(e)
   if not (e and e.valid and (e.type == "unit" or e.type == "spider-unit") and e.quality) then return 1 end
   local l = e.quality.level or 0

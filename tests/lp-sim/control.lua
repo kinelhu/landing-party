@@ -3,6 +3,7 @@ local lp_threat = require("__landing-party__.scripts.threat")
 local LP_CORPS = require("__landing-party__.shared").CORPS
 local LP_LIFELINE = require("__landing-party__.shared").LIFELINE
 local LP_MINE_DANGER = require("__landing-party__.shared").MINE_DANGER
+local SH = require("__landing-party__.shared")
 -- Headless simulation: lands one base near spawn, lets it grow, plays a scripted player action at
 -- params.strike minutes, snapshots the base and checks what should follow.
 -- params.lua (written by scripts/sim.sh into this mod's copy in the run's profile) gives
@@ -9742,7 +9743,37 @@ scenarios.siting = function()
   end)
 end
 
+-- LP_MIX=evo (0.2.493): the biters' evolution 0.9: a hub's projector goes up only with shared.guard_ahead's flamers (3)
+-- under its dome (nwa at 0.2.491, seed 2: a new hub's one flamer and its projector killed together, a behemoth's and a
+-- big spitter's work, within two minutes of it going up). evo_off: up as before, flamers or none (seen failing).
 scenarios.domehub = function()
+  if params.mix == "evo" or params.mix == "evo_off" then
+    schedule(30, function()
+      game.forces.enemy.set_evolution_factor(0.9, surface())
+      lp("debug_tune", {ops_off = true, domes = true, guard_projector_off = params.mix == "evo_off"})
+      for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
+    end)
+    -- (Its flamers killed by the enemy each minute to 15, half a minute off the dome's own minute, as nwa's biters broke a
+    -- new hub's: with too few standing a projector waits; without the rule it went up bare. Unkilled, the dome over hub 2
+    -- held 9 at 6 minutes and the rule was not tested; killed on the minute, the count raced the dome's.)
+    for m = 2, 15 do
+      schedule(m * 3600 + 1800, function()
+        for _, e in pairs(surface().find_entities_filtered{name = "lp-flamer", force = "lp-serenity"}) do e.die("enemy") end
+      end)
+    end
+    schedule(40 * 3600 - 60, function()
+      -- (Each projector's flamers counted by the dome as it went up; every hub its projector in the time: counted within
+      -- 28 of its spot, hubs 2 and 3 had none in 40 minutes.)
+      local hp = lp("debug_hub_projectors", storage.id) or {}
+      info(string.format("domehub evo: %d of %d hubs past the first with a projector, %s arc flamers under the barest as it went up",
+        hp.up or 0, hp.hubs or 0, tostring(hp.fewest)))
+      check("domehub: on an evolved map, a hub's projector up with its arc flamers under it", (hp.fewest or -1) >= 3,
+        tostring(hp.fewest))
+      check("domehub: on an evolved map, its hubs' projectors up in the time", (hp.hubs or 0) >= 2 and (hp.up or 0) >= (hp.hubs or 0) - 1,
+        string.format("%d of %d", hp.up or 0, hp.hubs or 0))
+    end)
+    return
+  end
   schedule(60, function()
     lp("debug_tune", {ops_off = true, domes = true})
     for _, pair in ipairs({{"player", "lp-serenity"}, {"lp-serenity", "player"}}) do game.forces[pair[1]].set_cease_fire(pair[2], false) end
@@ -9870,8 +9901,10 @@ scenarios.arcguard = function()
         -- (All its flamer orders, ahead and after losses: forgetting, the run's kills at three minutes churned one spot
         -- 82 times and the camp stalled at two blocks.)
         local orders = (gd.ahead or 0) + (gd.lost or 0)
+        -- (Up to shared.guard_ahead a block queued before the first refusal came back: 20 on 5 blocks at 0.2.493.)
+        local per = SH.guard_ahead(SH.guard_heat(0.9)) + 1
         check("arcguard: a block whose flamer construction refused is not ordered again each pass", orders >= 2
-          and orders <= 2 * (st.blocks or 0) + 2,
+          and orders <= per * (st.blocks or 0) + 2,
           string.format("%d orders (%d ahead), %d blocks, %d flamers", orders, gd.ahead or 0, st.blocks or -1, #fl))
         return
       end

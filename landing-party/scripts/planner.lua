@@ -148,7 +148,7 @@ local GUARD_LOSSES, GUARD_R, GUARD_MOST, GUARD_WINDOW = 6, 28, 4, 30 * 3600   --
 -- block gets a flamer before it loses anything, and toward evolution 1 a block takes up to GUARD_MOST + GUARD_EXTRA,
 -- one each GUARD_LOSSES / 2 lost; a flamer GUARD_GAP from any other (they had stacked three on one spot by the fortress,
 -- a behemoth's bite from each other). Priors.
-local GUARD_EVO, GUARD_EXTRA, GUARD_GAP = 0.6, 8, 6
+local GUARD_EXTRA, GUARD_GAP = 8, 6   -- (GUARD_EVO: shared.lua)
 local function plan(b, only)
   local surface = game.surfaces[b.surface]
   -- Whose ground the layout's checks refuse (shared.refused), while it plans.
@@ -240,7 +240,8 @@ local function plan(b, only)
       if b.parts < (shared.cost["lp-flamer"] or 8) then return false end
       local log = (b.hazard and b.hazard.log) or {}
       local evo = game.forces.enemy and game.forces.enemy.get_evolution_factor(surface) or 0
-      local hot = math.max(0, math.min(1, (evo - GUARD_EVO) / (1 - GUARD_EVO)))
+      local hot = shared.guard_heat(evo)
+      local ahead_n = shared.guard_ahead(hot)
       local most_cap = GUARD_MOST + math.floor(GUARD_EXTRA * hot + 0.5)
       local step = GUARD_LOSSES * (1 - 0.5 * hot)
       local cut, name = game.tick - GUARD_WINDOW, shared.variant(b.corp, "lp-flamer")
@@ -277,12 +278,16 @@ local function plan(b, only)
           end
         end
       end
-      -- None hit: on an evolved map, the first block with none (its lander's first: blocks in the order opened).
+      -- None hit: on an evolved map, the block with the fewest short of shared.guard_ahead (its lander's first on a tie:
+      -- blocks in the order opened).
       if not best and hot > 0 then
+        local fewest
         for _, blk in ipairs(b.blocks) do
-          if (blk.weight or 1) > 0 and blk.kind ~= "pad" and not refused(blk) and have_at(blk) == 0 then
-            best = {blk = blk, at = {blk.center[1], blk.center[2]}, n = 0, have = 0, ahead = true}
-            break
+          if (blk.weight or 1) > 0 and blk.kind ~= "pad" and not refused(blk) then
+            local have = have_at(blk)
+            if have < ahead_n and (not fewest or have < fewest) then
+              best, fewest = {blk = blk, at = {blk.center[1], blk.center[2]}, n = 0, have = have, ahead = true}, have
+            end
           end
         end
       end
