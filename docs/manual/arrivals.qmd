@@ -70,6 +70,10 @@ set its level, and each level unlocks more of what it can do:
 
 {{< include _generated/levels.qmd >}}
 
+**Flame turrets.** A camp puts a flame turret where the biters have been killing its buildings, and more as the
+losses go on. Where their evolution is past {{< var arrival.guard_evo_pct >}}%, it guards every block and every mine
+before it is attacked, up to {{< var arrival.guard_ahead_word >}} turrets each, set apart from one another.
+
 **Headquarters.** At level {{< var arrival.hq_level >}}, or after {{< var arrival.hq_floor_h >}} hours with
 {{< var arrival.hq_floor_bases >}} bases standing, a corporation
 prepares to build a headquarters. It lands {{< var arrival.consolidate_min >}} minutes later, about
@@ -107,7 +111,8 @@ combat robots, heavier lasers against your troopers. It never gets far ahead of 
   which none of your technologies raises, goes up {{< var arrival.rail_level_pct >}}% a level, one level a tier.
 - New units and abilities each carry an era, and come only once you have reached it.
 
-A corporation that lands late in a game arrives with the research it would have bought by then.
+A corporation that lands late in a game arrives with its weapons at the level of your own research, as far as its
+reach allows, and with the units and armor it would have bought by then.
 
 Each corporation's **Research** map setting sets its pace, from ×{{< var arrival.research_pace_low >}} to
 ×{{< var arrival.research_pace_high >}}, and how far ahead of you it may get, from

@@ -233,7 +233,7 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 
 - The army's remainder (the army consult, 2026-11-16; the defend stance, the panel and the three leaks are built,
   0.2.436; the tank re-priced and the gun buggy, 0.2.438): strike forces sized to the army the player can field (their
-  arena price at most about 1.5 times the command capacity's); the Aegis against the battle tank
+  arena price at most about 1.5 times the command capacity's: built 0.2.497); the Aegis against the battle tank
   late (+0.78 to the tank at the top of research, its explosive uranium shells; a heavier slug won too much plain); an army variant of `contact.sh` (strikes broken, targets saved);
   a late infantry tier made of
   personal equipment (modular or power armor, shields, an exoskeleton), proposed 2026-11-16.
@@ -2909,6 +2909,15 @@ if their units are upgraded also." `scripts/rd.lua`.
   1,609, 2,602). Drills lost to biters 39, 41, 66 (75, 90, 64). Hub projectors lost 5, 3, 4 of 33 to 44 up (0.2.492: 5,
   17, 8 of 28 to 56), all to behemoths but one big spitter. arcguard 551 to 744 orders a run (161 to 308), 65 to 107 for
   mines, no spot ordered more than twice, 6 to 12 flamers skipped by construction: three a block ahead, not churn.
+- **Strike forces capped by the player's army (0.2.497; the army consult's "their arena price at most about 1.5 times the
+  command capacity's", the user: "Yes").** After pricing (point_scale), a strike's parts are no more than strike_cap
+  (1.5) times the slots the player's research may field (command.fieldable: its relays allowed, working or not), a slot
+  shared.SLOT_PARTS (10, a rifleman's), times the beat's multiple (capped alone, a climax's double came out the size of any
+  strike); strike_cap_min (6) units at least. At the first bandwidth (20 slots) a strike is at most 300 parts, about 8 of
+  Kessler-Hayashi's units at its mix's average price, where the calibration saw 15 to 58. director targets: its strike 8
+  units priced, 6 at a cap of 0.6 (the test's; at 1.5 its 8 sat under the cap's 10); targetsoff 8 (seen failing). The ops
+  area (210 runs) passes; the cap bound in none of its other strikes: what it does on a real factory is the playtest's.
+  The manual (headquarters) says it.
 - **The climax's "stutter" named (2026-11-23).** profile.sh's verbose benchmark had crashed the engine on its first row
   (Benchmark.cpp 190, a list of columns, "wholeUpdate,scriptUpdate"; "all" writes every row): now "all". And the
   benchmark replays the scenario from its fresh map (sim.zip is tick 0). director climax, 60 minutes: the worst tick, 97

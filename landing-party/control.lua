@@ -744,6 +744,8 @@ remote.add_interface("landing-party", {
     if t.guard_refuse ~= nil then storage.guard_refuse = t.guard_refuse or nil end
     -- (A hub's projector up without its flamers on an evolved map: scenario domehub LP_MIX=evo_off, 0.2.493.)
     -- (arcguard's mines unguarded, as before 0.2.494: scenario arcguard LP_MIX=mine_off.)
+    -- (A strike uncapped by the player's army, as before 0.2.497: scenario strikecap LP_MIX=off.)
+    if t.strike_cap_off ~= nil then storage.strike_cap_off = t.strike_cap_off or nil end
     if t.guard_mines_off ~= nil then storage.guard_mines_off = t.guard_mines_off or nil end
     if t.guard_projector_off ~= nil then storage.guard_projector_off = t.guard_projector_off or nil end
     if t.guard_memory_off ~= nil then storage.guard_memory_off = t.guard_memory_off or nil end
@@ -1178,6 +1180,7 @@ remote.add_interface("landing-party", {
     return ops.units_near(game.surfaces[surface_name], pos, {game.forces[force_name]})
   end,
   debug_unit_worth = function(u) return command.worth(u) end,
+  debug_fieldable = function(force) return command.fieldable(game.forces[force]) end,
   debug_strike_kinds = function() return (storage.director or {}).strike_kinds or {} end,
   debug_rail_leash = function() return shared.RAIL_LEASH end,
   -- A corporation's arrival history run again from nothing (scenario parity): its research state cleared, its forces'

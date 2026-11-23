@@ -100,6 +100,15 @@ local function relays(force)
   return working, allowed, level
 end
 
+-- The army a force may field: its research's relays, working or not (the director's strike cap, 0.2.497: a player between
+-- relays is not spared a strike for it).
+function command.fieldable(force)
+  local level = research_level(force)
+  local allowed = shared.RELAYS_BY_LEVEL[math.min(level, 3)]
+  if level > 3 then allowed = allowed + (level - 3) * shared.RELAYS_PER_EXTRA_LEVEL end
+  return allowed * shared.RELAY_CAPACITY
+end
+
 function command.capacity(force)
   local working, allowed = relays(force)
   return math.min(working, allowed) * shared.RELAY_CAPACITY

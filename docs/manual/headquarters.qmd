@@ -34,7 +34,8 @@ to the next undefended building nearby, and the next.
 The largest attacks come from headquarters itself, and every step-up brings one. A strike force comes down by drop
 pod, not out of a camp's garrison. Its size follows the worth of your factory, up to a cap at normal difficulty, and it
 is counted by strength, not by heads: a force that brings tanks brings fewer units. The difficulty setting scales it from
-there, and it grows while you go a long time without losses. The largest strike forces bring {{< var director.climax_times >}} that.
+there, and it grows while you go a long time without losses. It is never stronger than {{< var director.strike_cap_pct >}}%
+of the largest army your Command bandwidth research lets you field. The largest strike forces bring {{< var director.climax_times >}} that.
 
 **Where it lands.** Its pods come down within {{< var director.strike_land >}} tiles of its target, at the spot the
 fewest of your turrets can reach. That is usually inside your walls.

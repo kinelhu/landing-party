@@ -10609,10 +10609,15 @@ scenarios.director = function()
   -- labs, landing within strike_land where no turret reaches; unforced, retaliation at that gun; at power, told ahead,
   -- its target tagged, and the camp's operations held while it is out (given parts, it raids in that window unheld:
   -- seen failing); another strike none in the hold.
-  if params.mix == "targets" then
+  -- LP_MIX=targetsoff (0.2.497): as targets, the strike cap off (seen failing: its hard strike past the cap).
+  if params.mix == "targetsoff" then schedule(30, function() lp("debug_tune", {strike_cap_off = true}) end) end
+  if params.mix == "targets" or params.mix == "targetsoff" then
     schedule(120, function()
       lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100, points_per_worth = 1,
-        warn_minutes = 100, strike_minutes = 3, power_hold = 1, points_max = 10}})  -- (10: below its worth's 17, the cap binds)
+        warn_minutes = 100, strike_minutes = 3, power_hold = 1, points_max = 10,
+        -- (The strike cap at 0.6 of the player's army here, 0.2.497: at 1.5 its 8 units sat under the cap's 10 and the
+        -- cap's check read nothing.)
+        strike_cap = 0.6}})  -- (10: below its worth's 17, the cap binds)
       local id = (lp("bases") or {})[1]
       local o = lp("stats", id).origin
       local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
@@ -10733,7 +10738,16 @@ scenarios.director = function()
         end
         priced = math.floor(S.k1.points * lp("director_prior", "point_scale") * lp("debug_unit_cost", S.k1.corp, "lp-infantry")
           * w / c + 0.5)
+        -- (Capped, 0.2.497: its parts no more than strike_cap times the slots the player may field, in parts.)
+        S.cap_units = math.max(lp("director_prior", "strike_cap_min"),
+          math.floor(lp("director_prior", "strike_cap") * 10 * lp("debug_fieldable", "player") * w / c))
+        S.uncapped = priced
+        if params.mix ~= "targetsoff" then priced = math.min(priced, S.cap_units) end
       end
+      check("director: targets, a strike no stronger than strike_cap times the army the player may field",
+        S.cap_units and S.uncapped and S.uncapped > S.cap_units and S.k1.sent <= S.cap_units,
+        string.format("%s sent, %s priced, cap %s (%s slots)", tostring(S.k1 and S.k1.sent), tostring(S.uncapped),
+          tostring(S.cap_units), tostring(lp("debug_fieldable", "player"))))
       check("director: targets, its units as many as its points buy by strength", priced and S.k1.sent == priced
         and S.k1.sent < S.k1.points, string.format("%s sent for %s points, priced %s", tostring(S.k1 and S.k1.sent),
         tostring(S.k1 and S.k1.points), tostring(priced)))

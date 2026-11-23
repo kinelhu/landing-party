@@ -603,6 +603,9 @@ shared.DIRECTOR = {cap = 4, spree_cost = 1, spree_factor = 2, spree_minutes = 20
   -- average price buys; 0, a unit a point as before. Measured on the director save against a player's army of 50 at
   -- Kessler-Hayashi's landing, DESIGN 2026-11-18.)
   point_scale = 1.5,
+  -- (A strike's cap in the player's army: strike_cap times the slots its research may field, in parts; strike_cap_min
+  -- units at least. Priors, the army consult's 1.5. director.lua strike.)
+  strike_cap = 1.5, strike_cap_min = 6,
   -- A strike force's time in the field before it walks home to its camp (director.strikes), and the most it takes to get
   -- there before what is left is its camp's where it stands (lift_minutes, 3, to its landing point until 0.2.419).
   strike_minutes = 8, home_minutes = 5,

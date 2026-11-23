@@ -42,9 +42,9 @@ A plan for two hours: the first hour on your own pacing (Synthexis, Grubstake, y
 you have radar near your base; then let the director run for an hour without the panel, and use the panel only at the
 end to see the beats you missed.
 
-## Before the public beta (0.2.458 to 0.2.466)
+## Before the public beta (0.2.458 to 0.2.497)
 
-About 20 minutes with the army save (`LP_WATCH=army.zip`), on what changed since the last session. The rest of the
+About 30 minutes with the army save (`LP_WATCH=army.zip`), on what changed since the last session. The rest of the
 kit (items 4 and 6 to 10) is left to the beta's players.
 
 - **Ammunition.** Each unit carries its order's rounds, shown under its health on the cards and counted in the squad
@@ -66,6 +66,16 @@ kit (items 4 and 6 to 10) is left to the beta's players.
   beacon. Do squads go out further than you expected?
 - **Circuits** (optional): a constant combinator on a beacon with Z sets its reach; the beacon reports H (arrived), N
   (nests in reach) and M. Readable from a lamp or a display panel?
+- **Watch posts and colours** (0.2.486). Give one beacon P = 1 (a post) and two others D = 1 with squads. Let something
+  attack near the post: does the nearer squad go, and the second only when the attackers outweigh it? In alt mode, do the
+  squads' colours tell you which units answer which post? Does the post's W light when it is answered?
+- **Rounds as signals** (0.2.480): the beacon's magazines by kind on its wire. Would you build a "come home for uranium"
+  circuit from them?
+- **Strike forces against your army** (0.2.497): a strike is now never more than half again the army your command
+  research lets you field. At your current bandwidth, does a strike feel like a fight your army can win, or too small?
+- **Kessler-Hayashi on an evolved map** (0.2.488 to 0.2.495; best on the director save at high evolution, or any save past
+  evolution 0.6): its camps ring each block and mine with arc flamers, keep out of your artillery's reach and put up a hub's
+  dome only once flamers stand. Is a camp still worth attacking, and can you tell where its flamers are?
 
 ## In the order you meet them
 

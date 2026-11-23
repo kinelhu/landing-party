@@ -25,6 +25,7 @@ local war = require("__landing-party__.scripts.war")
 local jammer = require("__landing-party__.scripts.jammer")
 local rd = require("__landing-party__.scripts.rd")
 local army = require("__landing-party__.scripts.army")
+local command = require("__landing-party__.scripts.command")
 
 local director = {}
 
@@ -1448,6 +1449,20 @@ local function strike(s, owner, corps, tick, mult, warn, aim, want)
       local priced = math.max(1, math.floor(n * per * shared.unit_cost(lead.corp, "lp-infantry") * wsum / csum + 0.5))
       k.points, k.sent = n, priced
       n = priced
+      -- Its cap (0.2.497; the army consult, 2026-11-16: "their arena price at most about 1.5 times the command
+      -- capacity's"; the user: "Yes"): its parts no more than strike_cap times the army the player may field, a slot a
+      -- rifleman's parts (shared.SLOT_PARTS). Before it, a player at the first bandwidth (20 slots, 200 parts of army)
+      -- met strikes of up to about 1,000 parts. strike_cap_min units at least. (Times the beat's multiple: capped alone, a
+      -- climax's double came out the size of any strike.)
+      local cap = tun("strike_cap")
+      if cap and cap > 0 and f and not storage.strike_cap_off then
+        local most = math.max(tun("strike_cap_min") or 1,
+          math.floor(cap * (mult or 1) * shared.SLOT_PARTS * command.fieldable(f) * wsum / csum))
+        if n > most then
+          trace(string.format("strike capped: %d units to %d (the player may field %d slots)", n, most, command.fieldable(f)))
+          k.capped, k.sent, n = n, most, most
+        end
+      end
     end
   end
   s.reinforced = (s.reinforced or 0) + n

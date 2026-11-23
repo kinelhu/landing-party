@@ -43,6 +43,10 @@ troopers; refined flammables raise flame troopers. Each unit's description names
 from heavy armor also take its resistance to acid, so worms and spitters hurt them less. Without military research, a
 squad that clears corporation outposts will struggle against a large biter nest.
 
+The corporations weigh your units by what they can do, not by how many there are: a unit's command slots, its
+research, its rank and the round it fires. A raid looks again before it attacks and turns back from a squad it cannot
+beat, and a strike force brings the kinds that counter your strongest units.
+
 **Field repair.** Your units within {{< var army.repair_tiles >}} tiles of a powered barracks heal. Construction
 robots repair them too, as they repair your turrets: a squad inside a roboport's area is mended with repair packs, and
 your own personal roboport mends the units round you. Robots keep up poorly with units on the move, and they fly into the

@@ -1,7 +1,7 @@
 # Landing Party: mod portal page (draft)
 
 Drafted 2026-11-10 for the user to edit, brought up to 0.2.339 on 2026-11-12, to 0.2.433 and to 0.2.438 on 2026-11-16,
-and to 0.2.464 (released as 0.3.0, a public beta) on 2026-11-19; the manual's link works once the v0.3.0 GitHub release carries the PDF; nothing here is published. Paste the part below the line into the portal's
+to 0.2.464 on 2026-11-19, and to 0.2.497 (released as 0.3.0, a public beta) on 2026-11-23; the manual's link works once the v0.3.0 GitHub release carries the PDF; nothing here is published. Paste the part below the line into the portal's
 "Information" field. Placeholders in [square brackets].
 
 Portal fields:
@@ -47,7 +47,11 @@ camps, and it sends more of them as the biters evolve.
 attack, and it remembers where an attack failed and tries something else there next time.
 
 Each faction researches its own units, with their own models and sounds, and picks raids, sieges, thefts or air strikes
-by what your defences are weakest against.
+by what your defences are weakest against. The corporations research in labs you can find and destroy (Grubstake in its
+Workshop), at the same levels as your own technologies, never far past your era; one that lands late arrives at your
+level. They judge your army by what it can really do, its research, ranks and rounds, and a raid turns back from a squad
+it cannot beat. Where the biters have evolved far, their camps ring every block and mine with flame turrets before the
+biters come, and they keep their buildings out of your artillery's reach where they can.
 
 [gif: prism] [gif: bombers]
 
@@ -65,7 +69,8 @@ no warning of either.
   first: up to two minutes ahead with a radar right over the spot, less from further away. A strike on your power is
   always told in advance, with its target marked, and no other attack starts while it is out.
 - **Units chosen for the job:** a strike force brings what beats the guns and troops guarding its target. Your army can
-  meet it where the pods land, and goes on its own if you set it to defend.
+  meet it where the pods land, and goes on its own if you set it to defend. However hard the difficulty, a strike force
+  is never more than half again as strong as the largest army your command research lets you field.
 - **Other events:** a jammer mast that keeps pausing your rocket silo; a blackout mast that switches off your radars; a
   bounty on one of your buildings; a crashed shuttle with salvage inside, guarded by its crew; export contracts,
   garrison rotations, joint strikes by both corporations, and research jumps that bring new units.
@@ -85,9 +90,16 @@ The Director setting sets the pace: Steady, Gentle or Chaotic, or Off, which lea
   back when it is over. A holding squad clears the biter nests near it. A panel beside the beacon shows its squad and
   sets how many of each unit it keeps; lower one beacon's number and raise another's, and the units move over.
   Right-click a beacon with units selected and they join its squad. Hover over a beacon to see its squad.
+- **Watch posts and squad colours:** a beacon given a channel becomes a watch post, and the defending squads on that
+  channel answer attacks within its reach, the nearest first, more when the attackers outweigh it. In alt mode each
+  squad's units and beacon wear its channel's colour.
 - **Circuit control:** a beacon reads its stance, its rally point and its reach from signals, and reports its squad,
-  how many have arrived, the enemies, turrets and spawners within reach, an alarm and its ammunition. Patrols, outposts
+  how many have arrived, the enemies, turrets and spawners within reach, an alarm, and the magazines its squad holds by
+  kind. Patrols, outposts
   that call for help and squads on a clock are built from combinators.
+- **Better rounds:** troopers with piercing or uranium magazines, gun buggies with uranium, battle tanks with uranium or
+  explosive shells, rocket troopers with explosive rockets, each an order of its own at the barracks. The round a unit
+  holds shows on its card and over it in alt mode.
 - **Ammunition:** units carry the rounds their order was made with and spend them as they fire. A unit that runs dry
   raises an alert, walks to the nearest powered barracks holding its ammunition and rearms there. With the logistic system, supply depots
   your robots fill rearm the squads at the front. A startup setting turns it off.
@@ -117,7 +129,7 @@ roar of a camp landing, a siege horn, a shield dome stopping a shell, the build-
 ## Settings
 
 The Director, a difficulty preset, and for each faction: on or off, when it arrives, how many bases it can have, its
-strength, aggression and income. Also the time between landings, revenge landings, Kessler-Hayashi's orbital strikes,
+strength, aggression, income, and its research: how fast, and how far ahead of you its weapons may get. Also the time between landings, revenge landings, Kessler-Hayashi's orbital strikes,
 Grubstake's theft, Synthexis's number of cultures, largest attack and learning, and your army's ammunition.
 
 ## Requirements and notes
@@ -144,6 +156,8 @@ Grubstake's theft, Synthexis's number of cultures, largest attack and learning, 
 9. Two of your orbital cannons on a space platform, firing down on Nauvis.
 10. An orbital strike from your cannons on a Synthexis culture.
 11. A Kessler-Hayashi strike force's pods coming down beside your furnaces.
+12. Three squads in alt mode, each wearing its channel's colour, under their rally beacons.
+13. Grubstake's Workshop, a welder at work by its door, between its depot and its fabricator.
 
 Loops (media/release/gifs, docs/release/gifs.sh; manifest.json has each one's caption, length and sizes): pods,
 strike-fight and walk-home (the director's film set, docs/release/strike-film.lua, 2026-11-16); tesla, bombers, prism,

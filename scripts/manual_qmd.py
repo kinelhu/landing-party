@@ -265,6 +265,8 @@ def write(rp):
         out["joint_share_pct"] = pct("joint_share")
         out["datacore_word"] = worded("share", need("datacore_chance"), "DIRECTOR.datacore_chance")
         out["climax_times"] = worded("times", need("climax_points"), "DIRECTOR.climax_points")
+        # A strike's cap in the player's fieldable army (director.lua strike, 0.2.497).
+        out["strike_cap_pct"] = pct("strike_cap")
         out["gentle_share"] = worded("share", (need("personality") or {}).get("gentle", 0), "DIRECTOR.personality.gentle")
         return out
 
@@ -278,6 +280,11 @@ def write(rp):
             "late_min": fmt(minutes(phases_src, "LATE_HASTE", "LATE_HASTE")),
             # The levers (settings.lua; their defaults in shared.lua): the time between landings, a corporation's most camps.
             "cadence_min": fmt(num(shared_src, r"^shared\.LANDING_MINUTES = \{default = (\d+)", "LANDING_MINUTES")),
+            # The camps' flame cover on an evolved map (planner arcguard; shared.GUARD_EVO and shared.guard_ahead, whose
+            # 1 + round(2 x heat) at heat 1 is read from its source).
+            "guard_evo_pct": fmt(round(num(shared_src, r"^shared\.GUARD_EVO = ([\d.]+)", "GUARD_EVO") * 100)),
+            "guard_ahead_word": worded("count", 1 + int(1 * num(shared_src, r"return heat > 0 and 1 \+ math\.floor\((\d+) \* heat",
+                                                        "guard_ahead") + 0.5), "shared.guard_ahead at heat 1"),
             "haste_min": fmt(minutes(faction_src, "HASTE", "HASTE")),
             "max_per_corp": fmt(num(shared_src, r"^shared\.MAX_CAMPS = \{default = (\d+)", "MAX_CAMPS")),
             "apart_tiles": fmt(num(faction_src, r"^local APART = (\d+)", "APART")),

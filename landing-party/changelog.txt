@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.497
+Date: 2026-11-23
+  Balancing:
+    - A strike force is never more than half again as strong as the largest army your command bandwidth research lets you field (twice that for the director's largest strikes).
+---------------------------------------------------------------------------------------------------
 Version: 0.2.496
 Date: 2026-11-23
   Graphics:
