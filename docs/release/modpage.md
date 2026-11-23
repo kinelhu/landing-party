@@ -1,12 +1,12 @@
 # Landing Party: mod portal page (draft)
 
-Drafted 2026-11-10 for the user to edit, brought up to 0.2.339 on 2026-11-12, to 0.2.433 and to 0.2.438 on 2026-11-16,
+Drafted 2026-11-10 for the user to edit, brought up to 0.2.339 on 2026-11-12, given its prose pass (portal comparison, picture first) on 2026-11-23, to 0.2.433 and to 0.2.438 on 2026-11-16,
 to 0.2.464 on 2026-11-19, and to 0.2.497 (released as 0.3.0, a public beta) on 2026-11-23; the manual's link works once the v0.3.0 GitHub release carries the PDF; nothing here is published. Paste the part below the line into the portal's
 "Information" field. Placeholders in [square brackets].
 
 Portal fields:
 - **Title:** Landing Party
-- **Summary (one line):** Three rival factions land on Nauvis and build settlements, armies and biter farms of their own.
+- **Summary (one line):** Two rival corporations land on Nauvis with camps and armies of their own, and a third faction takes over the biters.
 - **Category:** Content (the portal's categories: content, overhaul, tweaks, utilities...; scripts/portal.py sets it)
 - **Tags:** Combat, Enemies (the portal's own tag list has no planets or size tags)
 - **License:** MIT
@@ -19,129 +19,107 @@ Portal fields:
 
 ---
 
-Three rival factions come to Nauvis. They land, mine real ore, and build walled settlements with their own power, roads
-and defences. Their armies are made in their own factories. They fight you, each other and the biters.
+![A Kessler-Hayashi fortress inside its rings of wall](https://raw.githubusercontent.com/kinelhu/landing-party/main/docs/release/gallery/01-kessler-hayashi-fortress.jpg)
+
+Three rival factions come to Nauvis. Two are corporations that land, mine real ore, build walled camps with their own
+power and turrets, and make their armies in their own factories. The third takes over the biters. All three fight you
+and each other.
 
 [Trailer on YouTube](https://www.youtube.com/watch?v=Xmsl4OdcdWY)
 
-**Public beta.** The mechanics are tested by scripted runs and a few played sessions; the difficulty is not tuned yet.
-Tell us on the discussion page or in a GitHub issue what felt unfair, dull or broken, which version, and if you can, a
-save.
+**Before you start.** Factorio 2.1 with Space Age. It works on a new game or an existing one: each faction comes on a
+trigger of its own, so an established base meets them in turn. This is a public beta. Everything is tested by scripted
+runs and a few played sessions, but the difficulty is not tuned yet. Tell us on the discussion page or in a GitHub issue
+what felt unfair, dull or broken, with the version and, if you can, a save.
 
 ## The factions
 
-**Grubstake** arrives once you make chemical science. A prospecting outfit, it raids what you leave unguarded, skims
-your belts, strips your ore and drives Dozers through your walls. It would rather steal than destroy, and it keeps what
+**Grubstake** comes once you make chemical science. It is a prospecting outfit that would rather steal than destroy. It
+raids what you leave unguarded, skims your belts, strips your ore and drives Dozers through your walls, and it keeps what
 it takes in its scrapyard until you destroy the yard.
 
 [gif: flak]
 
-**Kessler-Hayashi** arrives after your first rocket. An armed contractor run from orbit, it pushes a line of posts
-toward you, cuts off your outposts, besieges your walls with mortars and calls down orbital strikes. Its camps are the
-best defended, with laser turret lines, shield domes and arc flamers. Its railgunners clear the biter nests around its
-camps, and it sends more of them as the biters evolve.
+**Kessler-Hayashi** comes after your first rocket: an armed contractor run from orbit. It pushes a line of posts toward
+you, cuts off your outposts, shells your walls with mortars and calls down orbital strikes. Its camps sit inside laser
+turret lines, under shield domes that stop artillery shells. Its railgunners clear the biter nests around it.
 
 [gif: arcflamer] [gif: tesla]
 
 **Synthexis** takes over the biter nests and breeds its own strains in them. Its scouts circle your walls before an
-attack, and it remembers where an attack failed and tries something else there next time.
+attack, and where an attack failed it tries something else the next time.
 
-Each faction researches its own units, with their own models and sounds, and picks raids, sieges, thefts or air strikes
-by what your defences are weakest against. The corporations research in labs you can find and destroy (Grubstake in its
-Workshop), at the same levels as your own technologies, never far past your era; one that lands late arrives at your
-level. They judge your army by what it can really do, its research, ranks and rounds, and a raid turns back from a squad
-it cannot beat. Where the biters have evolved far, their camps ring every block and mine with flame turrets before the
-biters come, and they keep their buildings out of your artillery's reach where they can.
+Each faction chooses raids, sieges, thefts or air strikes by what your defenses are weakest against, and judges your army
+by what it can do: its research, its ranks and its ammunition. The corporations research in labs you can find and
+destroy, at your own technologies' levels, and never get far past you. On a map where the biters have evolved far, their
+camps put flame turrets round every block and mine before the biters come.
 
 [gif: prism] [gif: bombers]
 
 ## Headquarters
 
-Grubstake and Kessler-Hayashi each have a headquarters that paces their attacks: busy spells, then quiet ones, with
-no warning of either.
+Each corporation has a headquarters that paces its attacks, with busy spells and quiet ones and no warning of either.
 
-- **Strike forces:** a headquarters drops a force by pod next to something it wants, where your turrets reach least.
-  Grubstake goes for your power and the pumps feeding your boilers; Kessler-Hayashi for your rocket silos, landing pads
-  and labs; either for your train stations, roboports or oil. A turret that keeps killing their units becomes a target,
-  and so do your barracks. Once it has lost too many, the force walks back to its camp, around your turrets where it
-  can.
-- **Warning:** you are told when a strike force lands. If your radar covers the landing spot, you see the pods coming
-  first: up to two minutes ahead with a radar right over the spot, less from further away. A strike on your power is
-  always told in advance, with its target marked, and no other attack starts while it is out.
-- **Units chosen for the job:** a strike force brings what beats the guns and troops guarding its target. Your army can
-  meet it where the pods land, and goes on its own if you set it to defend. However hard the difficulty, a strike force
-  is never more than half again as strong as the largest army your command research lets you field.
-- **Other events:** a jammer mast that keeps pausing your rocket silo; a blackout mast that switches off your radars; a
-  bounty on one of your buildings; a crashed shuttle with salvage inside, guarded by its crew; export contracts,
-  garrison rotations, joint strikes by both corporations, and research jumps that bring new units.
+- **Strike forces** come down by pod beside something the headquarters wants, where your turrets reach least: power and
+  the pumps feeding your boilers for Grubstake, rocket silos and labs for Kessler-Hayashi, train stations, roboports or oil
+  for either. A turret that keeps killing their units becomes a target. Once a force has lost too many, it walks home.
+- **Warning:** you are told when a strike force lands. With radar over the landing spot you see the pods coming up to two
+  minutes ahead. A strike on your power is always announced, its target marked.
+- **The right units for the job:** a strike force brings what beats the guns and troops guarding its target. It is never
+  more than half again as strong as the largest army your command research lets you field.
+- **Other events:** a mast that keeps pausing your rocket silo, another that blinds your radars, a bounty on one of your
+  buildings, a crashed shuttle with salvage and its crew, joint strikes by both corporations.
 
 [gif: pods] [gif: strike-fight] [gif: walk-home]
 
-The Director setting sets the pace: Steady, Gentle or Chaotic, or Off, which leaves each faction to act alone.
+The Director setting chooses the pace (Steady, Gentle or Chaotic), or turns the headquarters off and leaves each faction
+to act alone.
 
-## Your side
+## Your army
 
-- **An army of your own:** barracks train troopers, breachers, rocket troopers, gun buggies, flamethrower troopers and
-  battle tanks from your own equipment: heavy armor and guns, a car, a tank with an exoskeleton. Order them with the
-  command tool (ALT + C) or with rally beacons on the circuit network. A panel at the top of the screen shows your units
-  against your cap; retire the ones you no longer need (ALT + R).
-- **Rally beacons:** signals on a beacon set its squad's stance: hold, advance, retreat or defend. A defending squad goes
-  out to a strike force your radar sees coming, to enemies at your buildings or to a gun shelling your walls, and comes
-  back when it is over. A holding squad clears the biter nests near it. A panel beside the beacon shows its squad and
-  sets how many of each unit it keeps; lower one beacon's number and raise another's, and the units move over.
-  Right-click a beacon with units selected and they join its squad. Hover over a beacon to see its squad.
-- **Watch posts and squad colours:** a beacon given a channel becomes a watch post, and the defending squads on that
-  channel answer attacks within its reach, the nearest first, more when the attackers outweigh it. In alt mode each
-  squad's units and beacon wear its channel's colour.
-- **Circuit control:** a beacon reads its stance, its rally point and its reach from signals, and reports its squad,
-  how many have arrived, the enemies, turrets and spawners within reach, an alarm, and the magazines its squad holds by
-  kind. Patrols, outposts
-  that call for help and squads on a clock are built from combinators.
-- **Better rounds:** troopers with piercing or uranium magazines, gun buggies with uranium, battle tanks with uranium or
-  explosive shells, rocket troopers with explosive rockets, each an order of its own at the barracks. The round a unit
-  holds shows on its card and over it in alt mode.
-- **Ammunition:** units carry the rounds their order was made with and spend them as they fire. A unit that runs dry
-  raises an alert, walks to the nearest powered barracks holding its ammunition and rearms there. With the logistic system, supply depots
-  your robots fill rearm the squads at the front. A startup setting turns it off.
-- **Repair:** units heal near a powered barracks, and construction robots repair them with repair packs, as they do
-  your turrets.
-- **Selection cards and control groups:** selected units show health bars, and a panel above the quickbar shows a card
-  for each with its health and rank. Click a card to narrow the selection, SHIFT + click to drop it, right-click to
-  follow it. CONTROL + 1 to 9 saves a group, ALT + 1 to 9 recalls it.
-- **Veterancy:** units that kill earn ranks (Veteran, Elite, Heroic), each adding health and damage, shown as gold
-  chevrons. The corporations' units rank too, and a raid retreats sooner to save its elites.
-- **Scanners, roads and outposts:** a threat scanner reports enemy units by type to the circuit network; concrete roads
-  speed up your army, and squads take them; a far outpost's barracks, fed by train, is its reserve.
-- **Orbital cannons:** later in the game, build cannons on a space platform over Nauvis, keep them supplied with shells
-  made on the ground and fuel made from asteroids, and call strikes with a remote (ALT + O). More cannons on a platform
-  make a wider, denser strike; more platforms let you strike again sooner.
-- **Spoils:** each faction's technology can be recovered from its wreckage: cluster shells, rail rifles, pheromone bait
-  and more.
+- **Barracks** train troopers, breachers, rocket troopers, flamethrower troopers, gun buggies and battle tanks from your
+  own equipment. Command them with the command tool (ALT + C) or with rally beacons. A panel at the top of the screen shows
+  your units against your command capacity; retire the ones you no longer need (ALT + R).
+- **Rally beacons** set a squad's stance by signal: hold, advance, retreat or defend. A defending squad goes out to a
+  strike force your radar sees, to enemies at your buildings or to a gun shelling your walls, and comes back after. A
+  beacon's panel sets how many of each unit it keeps, and units move between beacons as you change the numbers.
+- **Watch posts:** give a beacon a channel and the defending squads on that channel answer attacks within its reach,
+  nearest first, more when the attackers outweigh one squad. In alt mode each squad wears its channel's color.
+- **Circuits:** a beacon reads its stance, rally point and reach from signals, and reports its squad, the enemies near it,
+  an alarm and its magazines by kind. Patrols and outposts that call for help are built from combinators.
+- **Ammunition:** units carry the rounds of their order and spend them. A unit that runs dry raises an alert and walks to
+  a barracks to rearm; supply depots your robots fill rearm squads at the front. Better orders train troopers on piercing
+  or uranium magazines, tanks on uranium or explosive shells. A startup setting turns ammunition off.
+- **Repair and ranks:** units heal near a powered barracks, and construction robots repair them. Units that kill earn
+  ranks (Veteran, Elite, Heroic) for more health and damage. The corporations' units rank too.
+- **Selection:** selected units show a card each above the quickbar. CONTROL + 1 to 9 saves a group, ALT + 1 to 9 recalls
+  it.
+- **Orbital cannons:** late in the game, build cannons on a space platform over Nauvis, supply them from the ground, and
+  call strikes with a remote (ALT + O).
+- **Spoils:** each faction's technology can be recovered from its wreckage, from cluster shells to rail rifles.
 
 [gif: cannon-strike]
 
 ## Sound
 
-The corporations' units have their own weapons, engines, footsteps and deaths: Grubstake's heavy and rough,
-Kessler-Hayashi's tight and electric. Their events have sounds too: a klaxon as a strike force's pods come down, the
-roar of a camp landing, a siege horn, a shield dome stopping a shell, the build-up of an orbital strike.
+The corporations' units have their own weapons, engines, footsteps and deaths, Grubstake's heavy and rough,
+Kessler-Hayashi's tight and electric. Their events have their own cues: a klaxon as a strike force's pods come down, a
+siege horn, a shield dome stopping a shell.
 
 ## Settings
 
-The Director, a difficulty preset, and for each faction: on or off, when it arrives, how many bases it can have, its
-strength, aggression, income, and its research: how fast, and how far ahead of you its weapons may get. Also the time between landings, revenge landings, Kessler-Hayashi's orbital strikes,
-Grubstake's theft, Synthexis's number of cultures, largest attack and learning, and your army's ammunition.
+The Director and a difficulty preset. For each faction: whether it comes, when, how many bases it may have, its strength,
+aggression and income, and how fast it researches. Also the time between landings, Kessler-Hayashi's orbital strikes,
+Grubstake's theft, and your army's ammunition.
 
-## Requirements and notes
+## Notes
 
-- Factorio 2.1 with Space Age.
-- Works on a new game or an existing one: each faction arrives on its own trigger (chemical science, the first rocket,
-  the biters). Saves made on an earlier version load on a later one.
-- Multiplayer: tested with a second player joining, through sieges and strike forces, without desyncs. Two players
-  using the army and the faction panels at the same time has not been tested yet.
+- Saves made on an earlier version load on a later one.
+- Multiplayer: tested with a second player joining through sieges and strike forces, without desyncs. Two players using
+  the army at the same time has not been tested yet.
 - No known incompatible mods. Please report clashes on the discussion page.
-- Player manual (PDF): [the manual](https://github.com/kinelhu/landing-party/releases/download/v0.3.0/Landing-Party-manual.pdf).
-- Source and issues: [github.com/kinelhu/landing-party](https://github.com/kinelhu/landing-party).
+- [Player manual (PDF)](https://github.com/kinelhu/landing-party/releases/download/v0.3.0/Landing-Party-manual.pdf)
+- Source and issues: [github.com/kinelhu/landing-party](https://github.com/kinelhu/landing-party)
 
 ## Gallery captions
 
