@@ -736,6 +736,8 @@ remote.add_interface("landing-party", {
     if t.dome_charge ~= nil then storage.dome_charge = t.dome_charge end
     -- (The siting rule off, scenario guns LP_MIX=off: its blocks planned under the player's artillery as before 0.2.488.)
     if t.siting_off ~= nil then storage.siting_off = t.siting_off or nil end
+    -- (The arrival history's match of the player's research off, scenario parity LP_MIX=off: as before 0.2.490.)
+    if t.parity_off ~= nil then storage.parity_off = t.parity_off or nil end
     if t.seed_salt ~= nil then storage.seed_salt = t.seed_salt end
     if t.dump_ways ~= nil then storage.dump_ways = t.dump_ways end
     if t.domes_off then storage.domes = false end
@@ -1148,6 +1150,17 @@ remote.add_interface("landing-party", {
   debug_unit_worth = function(u) return command.worth(u) end,
   debug_strike_kinds = function() return (storage.director or {}).strike_kinds or {} end,
   debug_rail_leash = function() return shared.RAIL_LEASH end,
+  -- A corporation's arrival history run again from nothing (scenario parity): its research state cleared, its forces'
+  -- modifiers zeroed, then rd.history as at a first landing. Returns its nodes.
+  debug_history = function(corp)
+    local d = storage.corps and storage.corps[corp]
+    if d then d.tech = nil end
+    local t = rd.state(corp)
+    local f = game.forces[shared.CORPS[corp].force]
+    if f then for c in pairs(prototypes.ammo_category) do f.set_ammo_damage_modifier(c, 0); f.set_gun_speed_modifier(c, 0) end end
+    rd.history(corp, game.surfaces[1])
+    return t.nodes
+  end,
   debug_guard = function(id) local b = storage.bases[id]; return b and {ahead = b.guard_ahead or 0, lost = b.guard_lost or 0} end,
   debug_artillery_reach = function() return threat.artillery_reach(game.forces.player) end,
   debug_artillery_spare = function() return shared.ARTILLERY_SPARE end,

@@ -2891,6 +2891,14 @@ if their units are upgraded also." `scripts/rd.lua`.
   (6) from every flamer standing or queued. Priors. arcguard evo (new): at 0.9, 4 of 4 blocks covered ahead of any loss
   (seen failing with the heat 0: none). The gap is not checked: no scenario put two loss-driven flamers on one block
   (tried, three variants: one each). arcguard, arcguard grubstake, maxevo and the quick regression (47) pass.
+- **Arriving at the player's research (0.2.490; the user: "are we landing a 'naive' KH, which probably wouldn't
+  help..", then "Yes").** On nwa (era 6, evolution 0.99) Kessler-Hayashi's history fund bought warden, railguns 4 and
+  optics 3 and ran out: its lasers behind the player's, no ordnance, its fund on railgunners that died on the march. Now
+  rd.history first sets each track of the base game's categories at the highest level whose damage is no more than the
+  player's research in one of its categories, within its era and preset (the tier rule), free; its fund then buys plates,
+  railguns and what more the tier rule allows, as before. Scenario parity (new): the player at level 5 in lasers and
+  cannon shells, era 6, 0.99: optics 5 then 6 by the fund, ordnance 5; LP_MIX=off reads nwa's (optics 3, railguns 4,
+  no ordnance: seen failing). techup (4 mixes), catchup, research quick, plate, arms and the quick regression pass.
 - **nwa visits at 0.2.485 (no railgunners in strikes):** rail_kills 0 on seeds 2 and 3 (razed 699, 2,289); seed 1 4
   land mines (razed 1,172), by a railgunner on a nest clearance 32 tiles off, read as strays: the check counted any kill
   outside a group or strike, and measured to the first lander found (1,683 tiles), not its own. A stray is now a

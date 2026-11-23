@@ -559,6 +559,42 @@ function rd.history(corp, surface)
   local evo = game.forces.enemy and game.forces.enemy.get_evolution_factor(surface) or 0
   t.fund = math.min(FUND_CAP, t.fund + HISTORY_ERA * era + HISTORY_EVO * evo)
   local bought = {}
+  -- At the player's research first (0.2.490; the user, of Kessler-Hayashi landing on nwa with optics 3 at the player's
+  -- era 6: "are we landing a 'naive' KH, which probably wouldn't help..", then "Yes" to matching it): each track of the
+  -- base game's categories at the highest level whose damage is no more than the player's own research in one of its
+  -- categories, within its era and preset (allowed's tier rule); free, as a history is. Its fund then buys the rest as
+  -- before: plates, and the tracks of its own (railguns), which the player has no research to match.
+  local pmod = {}
+  for _, pf in pairs(game.forces) do
+    if shared.is_player_force(pf) then
+      for c in pairs(prototypes.ammo_category) do pmod[c] = math.max(pmod[c] or 0, pf.get_ammo_damage_modifier(c)) end
+    end
+  end
+  local f = game.forces[shared.CORPS[corp].force]
+  local tiers = era + tune.ahead(corp)
+  local matched = {}
+  for _, node in ipairs(storage.parity_off and {} or shared.CORPS[corp].tree or {}) do
+    if node.track and not node.step and (not node.requires or t.nodes[node.requires]) then
+      local best = 0
+      for k = 1, levels_of(node) do
+        if gains(node, k) and tier_of(node, k) <= tiers then
+          for _, c in ipairs(node.track) do
+            local l = ladder(c)
+            local dmg = l.top > 0 and sum(l, k, nil, node.speed) or 0
+            if dmg > 0 and dmg <= (pmod[c] or 0) + 1e-6 then best = k end
+          end
+        end
+      end
+      if best > (t.nodes[node.id] or 0) then
+        t.nodes[node.id] = best
+        for _, c in ipairs(node.track) do t.weapons[c] = best; set_level(f, node, c, best, tiers) end
+        matched[#matched + 1] = node.id .. " " .. best
+      end
+    end
+  end
+  if rd.trace and #matched > 0 then
+    rd.trace(corp, "arrives at the player's research: " .. table.concat(matched, ", "))
+  end
   -- What the world calls for first: past half evolution, armour against biters' jaws, then what answers biters
   -- (railguns), then the other tracks. In tree order the tracks went first: on the player's nw (evolution 0.91) optics
   -- to five and railguns to three spent it all, and its troopers came without the armour they had (2026-10-25).

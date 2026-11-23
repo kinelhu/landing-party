@@ -7959,6 +7959,33 @@ scenarios.catchup = function()
   end)
 end
 
+-- Parity (0.2.490; the user, of Kessler-Hayashi on nwa: "are we landing a 'naive' KH"): the player's laser and cannon
+-- shell research at the base game's level 5 (the track's own sums), its era 6, the biters at 0.99, as nwa reads; the
+-- corporation's arrival history run again: optics and ordnance arrive at 5 at least. LP_MIX=off: the match off (as
+-- before, the fund alone: on nwa optics 3 and no ordnance).
+scenarios.parity = function()
+  schedule(60, function()
+    lp("debug_tune", {era = 6, raids_off = true, parity_off = params.mix == "off" or nil})
+    game.forces.enemy.set_evolution_factor(0.99, surface())
+    local f = game.forces.player
+    S.want = {laser = lp("debug_rd_track", "serenity", "optics", 5).laser[1],
+      cannon = lp("debug_rd_track", "serenity", "ordnance", 5)["cannon-shell"][1]}
+    f.set_ammo_damage_modifier("laser", S.want.laser)
+    f.set_ammo_damage_modifier("cannon-shell", S.want.cannon)
+  end)
+  schedule(120, function()
+    S.nodes = lp("debug_history", "serenity")
+    local kf = game.forces["lp-serenity"]
+    S.got = {laser = kf.get_ammo_damage_modifier("laser"), cannon = kf.get_ammo_damage_modifier("cannon-shell")}
+  end)
+  schedule(180, function()
+    info("parity: " .. serpent.line({want = S.want, nodes = S.nodes, got = S.got}))
+    check("parity: its tracks arrive at the player's research (optics and ordnance at 5)",
+      (S.nodes.optics or 0) >= 5 and (S.nodes.ordnance or 0) >= 5 and S.got.laser >= S.want.laser - 1e-6
+      and S.got.cannon >= S.want.cannon - 1e-6, serpent.line({S.nodes, S.got}))
+  end)
+end
+
 -- Worth (0.2.478; the arms race's remainder): the corporations weigh each of the player's units by its command slots,
 -- its research, its rank and its round (command.worth), a raid's staging look (intel's mobile) and a strike's mix alike.
 -- Before, a unit was 0.5 whatever it was: a battle tank at the top of research and on uranium shells as a fresh trooper

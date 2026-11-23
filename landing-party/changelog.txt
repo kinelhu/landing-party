@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.490
+Date: 2026-11-23
+  Balancing:
+    - A corporation landing in a world already far along arrives with its weapon research at your own level, within its Research setting, not behind it.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.489
 Date: 2026-11-23
   Balancing:
