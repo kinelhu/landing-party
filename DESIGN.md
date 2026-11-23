@@ -2916,6 +2916,12 @@ if their units are upgraded also." `scripts/rd.lua`.
   a refused flamer is skipped, never its module abandoned. arcguard LP_MIX=mine (new): 3 ordered, 13 of 18 drills with a
   flamer within 10; mine_off 0 (seen failing); its mining 3,963 against 4,278 in the calm run. arcguard (4), maxevo (2),
   domehub evo, hazard (2), strangle ore, cordon ore, crew (3), prospect, biters camp and grow pass.
+- **nwa at 0.2.494, the first hour (mines guarded, hubs covered by three):** seed 1's fortress parts 808 at 50 minutes
+  (0.2.492: 30), its ore in 1,620 a minute (1); drills lost to biters 18, 15, 34 (28, 67, 47), sites given up 2, 5, 5
+  (4, 7, 12); 33 to 38 flamers for mines a camp. Seed 3's fortress held fewer parts at 50 (81 against 256), its ore in the
+  same: the flamers' cost, assumed. Hub projectors 13, 9, 10 up, 2 lost each (0.2.492: 5, 10, 11 up, 0, 3, 0 lost): not
+  fewer lost; more up. Sixty minutes, not 180 (the user: "It's kinda slow. Do we need that visit?"): the mine fell by 37
+  and the projectors in 15; the fortress's fate past 127 not read.
 - **nwa at 0.2.492 (refused flamer spots remembered):** arcguard orders 161, 308, 197 a run (0.2.491: 2,600 to 3,900),
   no spot ordered more than 4 times, 2 to 5 flamers skipped by construction. Razed 3,636, 1,609, 2,602. The first fortress
   held 180 on seeds 2 and 3; on seed 1 it departed starved again at about 127 minutes (630 buildings lifted out), as at
