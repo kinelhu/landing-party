@@ -300,6 +300,6 @@ director:
   strike_cap_pct: "150"
   gentle_share: "half"
 mod:
-  version: "0.2.498"
+  version: "0.2.499"
   factorio: "2.1"
   needs: "base, space-age"

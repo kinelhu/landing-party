@@ -745,6 +745,8 @@ remote.add_interface("landing-party", {
     -- (A hub's projector up without its flamers on an evolved map: scenario domehub LP_MIX=evo_off, 0.2.493.)
     -- (arcguard's mines unguarded, as before 0.2.494: scenario arcguard LP_MIX=mine_off.)
     -- (A strike uncapped by the player's army, as before 0.2.497: scenario strikecap LP_MIX=off.)
+    -- (A wall ring filling the water under it, as before 0.2.499: scenario fortress LP_MIX=lakeoff.)
+    if t.ring_fill ~= nil then storage.ring_fill = t.ring_fill or nil end
     if t.strike_cap_off ~= nil then storage.strike_cap_off = t.strike_cap_off or nil end
     if t.guard_mines_off ~= nil then storage.guard_mines_off = t.guard_mines_off or nil end
     if t.guard_projector_off ~= nil then storage.guard_projector_off = t.guard_projector_off or nil end
@@ -1180,6 +1182,24 @@ remote.add_interface("landing-party", {
     return ops.units_near(game.surfaces[surface_name], pos, {game.forces[force_name]})
   end,
   debug_unit_worth = function(u) return command.worth(u) end,
+  -- The positions of every standing piece of a camp's cordon posts, walls and gates, its ring's too (scenario cordon lake).
+  debug_post_pieces = function(id)
+    local b = storage.bases[id]
+    if not b then return nil end
+    local out, mods = {}, {}
+    local function arc(c)
+      if not c then return end
+      for _, k in ipairs({"posts", "walls", "gates"}) do for _, m in ipairs(c[k] or {}) do mods[#mods + 1] = m end end
+    end
+    arc(b.cordon); arc(b.ring)
+    for _, c in ipairs(b.cordon_history or {}) do arc(c) end
+    for _, m in ipairs(mods) do
+      for _, e in ipairs(m.entities or {}) do
+        if e.valid then out[#out + 1] = {e.position.x, e.position.y} end
+      end
+    end
+    return out
+  end,
   debug_fieldable = function(force) return command.fieldable(game.forces[force]) end,
   debug_strike_kinds = function() return (storage.director or {}).strike_kinds or {} end,
   debug_rail_leash = function() return shared.RAIL_LEASH end,

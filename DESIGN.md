@@ -2918,8 +2918,14 @@ if their units are upgraded also." `scripts/rd.lua`.
   0.75 to 0.5, for marks drawn from then on. Asked of the user's time, the depot, repair, beacon clicks and watch posts
   read from their scenarios instead (depot, robotrepair, assign, squadmove, watch, rearm, tiers: pass). On the user's
   map at evolution 0.8: "Clusters are extremely well defended. The camp was also armed to the teeth with uranium
-  bullets" (the flame cover at full heat; uranium rounds from evolution 0.6, base.lua). Open: walls and turrets on filled
-  water (the user: "Not sure this should be intended behaviour").
+  bullets" (the flame cover at full heat; uranium rounds from evolution 0.6, base.lua). Walls and turrets on filled
+  water (the user: "Not sure this should be intended behaviour", then "Agreed" on skipping it): 0.2.499, a cordon post's
+  site with water within POST_DRY (4) is left out of its arc or ring (HOLD counts the posts planned, so a lake no longer
+  holds the claim), its pad is not filled, and construction skips a post's or curtain's piece over water (b.ring_wet). A
+  block's own walls still stand on its filled floor, beside its buildings (armed with a lake laid across it: 135 such
+  pieces, rightly; the first test measured those). cordon LP_MIX=lake (new): no post piece on fill, 2 posts left out, the
+  line past the lake to 243; lakeoff 40 on fill (seen failing). cordon ring's check counts a post left out for water as
+  its sector (5 standing and 3 left out by its lake).
 - **Strike forces capped by the player's army (0.2.497; the army consult's "their arena price at most about 1.5 times the
   command capacity's", the user: "Yes").** After pricing (point_scale), a strike's parts are no more than strike_cap
   (1.5) times the slots the player's research may field (command.fieldable: its relays allowed, working or not), a slot

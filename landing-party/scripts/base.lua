@@ -943,7 +943,7 @@ function base.stats(b)
     columns_arrived = b.columns_arrived or 0, quiescent = b.quiescent, stood_down = b.stood_down or 0,
     fail_streak = b.fail_streak or 0, stood_down_streak = b.stood_down_streak or 0,
     war_rung = b.war_rung or 0, posture = b.posture, map_text = b.map_text, name = b.name,
-    refused = b.refused, crews_stuck = b.crews_stuck or 0, blasted = b.blasted or 0, landfilled = b.landfilled or 0, piers = b.piers or 0,
+    refused = b.refused, crews_stuck = b.crews_stuck or 0, blasted = b.blasted or 0, landfilled = b.landfilled or 0, piers = b.piers or 0, ring_wet = b.ring_wet or 0, posts_wet = b.posts_wet or 0,
     claim_marks = #(b.claim_marks or {}), jumps = b.jumps or 0, hands_back = b.hands_back or 0, gate_opens = b.gate_opens or 0, landfx = b.landfx, taps = b.taps or 0, tap_watts = b.tap_watts or 0, looted = b.looted or 0, reprisals = b.reprisals or 0}
 end
 

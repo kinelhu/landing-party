@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.499
+Date: 2026-11-23
+  Changes:
+    - Kessler-Hayashi's perimeter posts leave water alone: a post that would stand in a lake is left out of its line or ring instead of built on filled ground, and the line no longer waits on it.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.498
 Date: 2026-11-23
   Bugfixes:

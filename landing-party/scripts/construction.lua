@@ -20,6 +20,8 @@ local join = K.join
 local register = K.register
 local site = K.site
 local trace = K.trace
+-- The kinds of a wall ring (layout.lua's fortress curtain, cordon.lua's posts): their pieces skip water (place).
+local RING_KINDS = {curtain = true, post = true}
 -- Lay road tiles, never over water or an existing road.
 -- Floors in the corporation's own tiles: roads, and pads (paved yards, docs/corporations.md).
 -- A post's pad remembers the ground under it (module.under), put back when the post comes down (cordon.lua: recovered
@@ -30,8 +32,9 @@ local function pave(b, tiles, floor, module)
   local out = {}
   local keep = module and module.kind == "post" and floor == "pad"
   if keep then module.under = module.under or {} end
-  -- Water under its floor filled first, by a corporation that fills (shared.landfill: a pond, never a lake).
-  shared.landfill(surface, tiles, b)
+  -- Water under its floor filled first, by a corporation that fills (shared.landfill: a pond, never a lake); not under a
+  -- wall ring's post or curtain (0.2.499: its pad left off the water, its pieces skipped there, place).
+  if not (module and RING_KINDS[module.kind]) or storage.ring_fill then shared.landfill(surface, tiles, b) end
   for _, t in ipairs(tiles) do
     local tile = surface.get_tile(t[1], t[2])
     if tile.valid and tile.name ~= name and not tile.collides_with("water_tile") then
@@ -107,6 +110,20 @@ local function place(b, job, by_crew)
   end
   if job.guard and storage.guard_refuse then return nil end
   local name = shared.variant(b.corp, job.name)
+  -- A wall ring's piece over water is left out, not built on filled ground (0.2.499; the user, in the playtest: "they
+  -- built a big part of the wall on top of water (so turrets in the middle of the water)", then "Agreed" on skipping it):
+  -- water already stops the biters and the player's ground units. The camp's buildings still fill what they stand on.
+  -- (A block's own walls stand on its filled floor, beside its buildings, and are built: armed's lake test, 0.2.499.)
+  if job.module and RING_KINDS[job.module.kind] and shared.fills(b) and not storage.ring_fill then
+    local cb = prototypes.entity[name].collision_box
+    local wet = surface.count_tiles_filtered{area = {{pos[1] + cb.left_top.x, pos[2] + cb.left_top.y},
+      {pos[1] + cb.right_bottom.x, pos[2] + cb.right_bottom.y}}, collision_mask = "water_tile", limit = 1}
+    if wet > 0 then
+      job.water = true
+      b.ring_wet = (b.ring_wet or 0) + 1
+      return nil
+    end
+  end
   clear_area(surface, name, pos, b)
   make_way(b, surface, name, pos)
   if job.loose then pos = surface.find_non_colliding_position(name, pos, 4, 0.5) or pos end
@@ -314,6 +331,7 @@ local function build(b)
   local e = place(b, job)
   if job.slot then job.slot.filled = e ~= nil end
   -- (arcguard's, planner.lua: skipped, never its module abandoned; a mine's flamer refused would have given up the mine.)
+  if not e and job.water then return end   -- (a ring's piece over water: left out, its module kept; place)
   if not e and job.guard then
     job.module.guard_refused = game.tick
     trace(b, string.format("cannot place lp-flamer at %.1f,%.1f by its %s: skipped", job.pos[1], job.pos[2], job.module.kind))

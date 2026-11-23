@@ -13938,7 +13938,37 @@ end
 -- LP_MIX=breach: at 12 minutes three post turrets of the standing line killed by the player: drones mend them within 3
 -- minutes, and Serenity is an enemy. LP_MIX=contact: the relay 200 out: an arc within 60 of it closes its middle with
 -- wall (40 pieces at least on that arc, near the bearing).
+local function cordon_lake_check()
+  -- (The posts' own pieces on filled ground, the most seen every two minutes: arcs two behind come down, and at the end
+  -- lakeoff's posts in the lake were gone. Not the camp's: its blocks spread over the lake's edge fill their floors.)
+  S.lake_on = 0
+  for t = 4 * 3600, END - 120, 2 * 3600 do
+    schedule(t, function()
+      local on, tiles = 0, {}
+      local pieces = lp("debug_post_pieces", storage.id) or {}
+      for _, p in ipairs(pieces) do
+        local n = surface().get_tile(p[1], p[2]).name
+        tiles[n] = (tiles[n] or 0) + 1
+        if n == "landfill" then on = on + 1 end
+      end
+      S.lake_on = math.max(S.lake_on, on)
+      info(string.format("cordon lake at %d min: %d post pieces, on %s", math.floor(game.tick / 3600), #pieces, serpent.line(tiles)))
+    end)
+  end
+  schedule(END - 60, function()
+    local on = S.lake_on
+    local st = lp("stats", storage.id)
+    local per = (lp("cordon_stats", storage.id) or {}).perimeter or 0
+    info(string.format("cordon lake: %d post pieces on filled ground, %d posts left out for water, %d pieces skipped, perimeter %.0f",
+      on, st.posts_wet or -1, st.ring_wet or -1, per))
+    check("cordon: its line skips a lake, no post of it on filled ground", on == 0 and (st.posts_wet or 0) > 0,
+      string.format("%d on fill, %d posts left out", on, st.posts_wet or -1))
+    check("cordon: its line steps out past the lake", per >= 175, string.format("perimeter %.0f", per))
+  end)
+end
+
 scenarios.cordon = function()
+  if params.mix == "lake" or params.mix == "lakeoff" then cordon_lake_check() end
   -- LP_MIX=rail: a player rail along the bearing, 100 to 260 out, crossed by the arcs: gate posts on it, and a train
   -- driven toward the camp from 240 out at 14 minutes stops at the outermost gate.
   -- LP_MIX=ore: an iron patch on the arcs' path (150 out, 20 degrees off the bearing): Serenity claims it.
@@ -14057,6 +14087,24 @@ scenarios.cordon = function()
     S.c = {math.floor(o.x - o.x / len * out), math.floor(o.y - o.y / len * out)}
     flatten(S.c[1] - 6, S.c[2] - 6, S.c[1] + 6, S.c[2] + 6)
     S.relay = surface().create_entity{name = "lp-command-relay", position = S.c, force = "player"}
+    -- LP_MIX=lake (0.2.499; the playtest, the user: "a big part of the wall on top of water (so turrets in the middle of
+    -- the water)", then "Agreed" on skipping it): a lake across the bearing, 100 to 170 tiles out: none of its posts'
+    -- pieces stand on filled ground there, posts are left out for it, and the line still steps out past it.
+    -- lakeoff: filled as before (seen failing).
+    if params.mix == "lake" or params.mix == "lakeoff" then
+      if params.mix == "lakeoff" then lp("debug_tune", {ring_fill = true}) end
+      local ux, uy = (S.c[1] - o.x) / out, (S.c[2] - o.y) / out
+      S.lake = {o.x + ux * 135, o.y + uy * 135}
+      local t = {}
+      for x = math.floor(S.lake[1] - 60), math.floor(S.lake[1] + 60) do
+        for y = math.floor(S.lake[2] - 60), math.floor(S.lake[2] + 60) do
+          local dx, dy = x - o.x, y - o.y
+          local along = dx * ux + dy * uy
+          if along >= 100 and along <= 170 and math.abs(dx * uy - dy * ux) <= 90 then t[#t + 1] = {name = "water", position = {x, y}} end
+        end
+      end
+      surface().set_tiles(t, true, false, true, false)
+    end
     if oremix then
       local a = math.atan2(S.c[2] - o.y, S.c[1] - o.x) + math.rad(20)
       S.ore = {math.floor(o.x + math.cos(a) * 150), math.floor(o.y + math.sin(a) * 150)}
@@ -14263,8 +14311,10 @@ scenarios.cordon = function()
     for _ in pairs(sectors) do covered = covered + 1 end
     info(string.format("cordon: mature %s; ring at %s, %d guns on it, %d of 8 sectors", tostring(st.mature), tostring(cs.ring), ringed, covered))
     if ringmix then
-      -- Seven of eight: a post may stand on water or wait for its drone (the ring relaid at 135 had 19 of 24 guns up).
-      check("cordon: a grown camp closes a ring round itself", cs.ring ~= nil and covered >= 7,
+      -- Seven of eight: a post may wait for its drone (the ring relaid at 135 had 19 of 24 guns up); a post on water is
+      -- left out since 0.2.499 and counts as its sector (this camp's ring by the lake: 5 standing, 3 left out).
+      local wetn = (lp("stats", storage.id) or {}).posts_wet or 0
+      check("cordon: a grown camp closes a ring round itself", cs.ring ~= nil and covered + wetn >= 7,
         string.format("ring %s, %d sectors", tostring(cs.ring), covered))
     end
     check("cordon: drones built them, none stuck", cr.done >= 6 and cr.stuck == 0, serpent.line(cr))

@@ -15,6 +15,16 @@ local cordon = {}
 local ARC = math.pi / 3           -- either side of the bearing
 local SPACING = 60
 local HOLD = 0.8
+-- A post's site with water within POST_DRY of it is left out of its arc or ring (0.2.499; the user, in the playtest:
+-- "they built a big part of the wall on top of water (so turrets in the middle of the water)", then "Agreed" on skipping
+-- it): water stops what the post would, and posts that could never stand held the claim at a lake (HOLD counts the
+-- posts planned). storage.ring_fill: as before.
+local POST_DRY = 4
+local function wet(b, p)
+  if storage.ring_fill then return false end
+  local s = game.surfaces[b.surface]
+  return s.count_tiles_filtered{position = p, radius = POST_DRY, collision_mask = "water_tile", limit = 1} > 0
+end
 local WALL = 8                    -- wall pieces in a post's front
 local KEEP = 2                    -- arcs kept standing: the leading one and one behind
 local CONTACT = 60                -- an arc this near the player's nearest building closes its middle with wall
@@ -126,9 +136,13 @@ function cordon.ring(b)
   for k = 0, n - 1 do
     local a = 2 * math.pi * (k + 0.5) / n
     local p = {b.origin.x + math.cos(a) * r, b.origin.y + math.sin(a) * r}
-    local m = {kind = "post", center = p, entities = {}, ring = true}
-    table.insert(b.ring.posts, m)
-    for _, j in ipairs(post_jobs(b, m, p, a)) do table.insert(jobs, j) end
+    if wet(b, p) then
+      b.posts_wet = (b.posts_wet or 0) + 1
+    else
+      local m = {kind = "post", center = p, entities = {}, ring = true}
+      table.insert(b.ring.posts, m)
+      for _, j in ipairs(post_jobs(b, m, p, a)) do table.insert(jobs, j) end
+    end
   end
   -- At the back of the queue (first, they held a camp's generators back: demand past supply in seven scenarios).
   for _, j in ipairs(jobs) do table.insert(b.queue, j) end
@@ -192,8 +206,11 @@ function cordon.step(b, new, near)
   for k = 0, n - 1 do
     local a = a0 - ARC + 2 * ARC * k / (n - 1)
     local p = {b.origin.x + math.cos(a) * new, b.origin.y + math.sin(a) * new}
-    local m = {kind = "post", center = p, entities = {}}
-    table.insert(c.posts, m)
+    if wet(b, p) then
+      b.posts_wet = (b.posts_wet or 0) + 1
+    else
+      table.insert(c.posts, {kind = "post", center = p, entities = {}})
+    end
   end
   -- First in the queue (behind the camp's growth they waited 4.6 minutes for their drones).
   local jobs = {}
