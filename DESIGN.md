@@ -224,8 +224,10 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - Calibration, after the playtest: seeds 2 and 3 and a director-off row for docs/calibration-2026-11-16.md; the pressure
   at steady (4 to 20 times director off on the big saves); strike forces sized to the base (15 to 58 units on small
   factories).
-- Kessler-Hayashi's first fortress on nwa starved out by biters (0.2.488 visits seeds 2 and 3, minutes 65 and 91: 292
-  and 390 of its buildings, drills and pylons among them): its hazard clearances on a high-evolution map, not read.
+- Kessler-Hayashi's first fortress on nwa past two hours: starved of its mine on seed 1 (0.2.491, 0.2.492, about 127
+  minutes); its mines guarded since 0.2.494 (fed at 60 minutes: 808 parts, ore 1,620 a minute), its fate at 180 not read
+  (a full visit, before the release). Hub projectors still killed by behemoths with 4 to 9 flamers under them (0.2.494: 2
+  a seed of 9 to 13, three within 10 s of going up): its health (1,500, a radar's body) not decided.
 - Multiplayer: two clients using the army and the faction GUIs (scripts/mp.sh covers one client and the director, and
   one client with the army, LP_ARMY=1; a second client needs a second Steam account: left to the beta).
 - Release: the 0.3.0 bump, the full regression, package.sh, the music credit, the GitHub release, the portal upload
