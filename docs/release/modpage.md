@@ -22,7 +22,7 @@ Portal fields:
 Three rival factions come to Nauvis. They land, mine real ore, and build walled settlements with their own power, roads
 and defences. Their armies are made in their own factories. They fight you, each other and the biters.
 
-[Trailer: link]
+[Trailer on YouTube](https://www.youtube.com/watch?v=Xmsl4OdcdWY)
 
 **Public beta.** The mechanics are tested by scripted runs and a few played sessions; the difficulty is not tuned yet.
 Tell us on the discussion page or in a GitHub issue what felt unfair, dull or broken, which version, and if you can, a

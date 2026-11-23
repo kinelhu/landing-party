@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.0
+Date: 2026-11-23
+  Info:
+    - First public beta on the mod portal. The difficulty is not tuned yet: tell us what felt unfair, dull or broken.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.499
 Date: 2026-11-23
   Changes:
