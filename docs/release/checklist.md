@@ -48,3 +48,6 @@ written: the APC hauler (0.2.429), the manual and its PDF (media/Landing-Party-m
 trailer (cut-27 with the drive score; the cannon battery shot in progress).
 - A last full regression on the release commit (`scripts/regress.sh 12345`, all of it).
 - Upload: mods.factorio.com, "Upload new mod", the zip from media/release/; then the page text, gallery and tags.
+
+**Released 2026-11-24:** 0.3.0 public on the mod portal (https://mods.factorio.com/mod/landing-party: 13 images, 10 loops
+from the v0.3.0 GitHub release, the manual PDF there), made live on the user's "live" after they looked at it hidden.
