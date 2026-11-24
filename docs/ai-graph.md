@@ -33,7 +33,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `costmap` | 620 | firemap, threat | airraid, control, creep, faction, farm, herd, siege |  |  |  |  |
 | `creep` | 614 | costmap, tune | control, farm, studies |  |  |  | creep |
 | `crew` | 550 | base, ops, standing | control |  | 30 |  | crew_owner |
-| `planner` | 479 | rd | base |  |  |  |  |
+| `planner` | 484 | rd | base |  |  |  |  |
 | `cards` | 471 | veterancy | control, dev | command.ammo_of, command.round_of |  |  | cards, cmd |
 | `construction` | 471 | (leaf) | base |  |  |  |  |
 | `dome` | 465 | base, lights, ops, threat | control |  | 60, 3600 |  | dome_alert, pdomes |
@@ -42,9 +42,9 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `routing` | 431 | threat | ops |  |  |  | corridors |
 | `skim` | 422 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `orbital` | 413 | achievements, threat, tune | cannon, control, dev, siege, strike |  | 10, 30 |  | cannon_impacts, cannon_shocks, kh_shadows, kh_strikes, orbital_build_off, orbital_builds, orbital_builds_stopped |
+| `cordon` | 412 | base, ops, prospect | control |  |  |  |  |
 | `prospect` | 408 | base, chart, ops, pool, standing, studies | control, cordon |  | 60, 600, 3600 |  | prospect_failed |
 | `veterancy` | 408 | threat | airraid, cards, control, dev, ops |  |  |  | merit, promoted, vet_due, vet_stats |
-| `cordon` | 405 | base, ops, prospect | control |  |  |  |  |
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |
 | `tap` | 375 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
 | `cannon` | 373 | orbital, threat | control, dev |  | 30, 60 |  | cannon_barrel, cannon_last, cannon_next_pl, cannon_recoil, cannon_recoil_max, cannon_recoils, cannon_shells, cannon_silhouette, cannon_strikes |

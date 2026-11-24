@@ -3,6 +3,9 @@ Version: 0.3.0
 Date: 2026-11-23
   Info:
     - First public beta on the mod portal. The difficulty is not tuned yet: tell us what felt unfair, dull or broken.
+  Bugfixes:
+    - Kessler-Hayashi's perimeter line could crash the game where a lake left a gap in it (0.2.499).
+    - The corporations' flame turrets are no longer put on their camps' roads or by their gates, where they blocked their own vehicles.
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.499
 Date: 2026-11-23

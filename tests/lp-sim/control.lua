@@ -1143,7 +1143,7 @@ scenarios.faction = function()
         if st.mature then mature = mature + 1 end
         pads, lamps, mines = pads + st.launchpads, lamps + st.lamps, mines + st.mines
         info(string.format("settlement %d: %s, %d hubs %d blocks, mature %s, exported %d, units %d (%s)", id, st.doctrine,
-          st.hubs, st.blocks, tostring(st.mature), st.exported, st.units_built, serpent.line(st.built_by or {})))
+          st.hubs, st.blocks, tostring(st.mature), st.exported or 0, st.units_built or 0, serpent.line(st.built_by or {})))
         lp("snapshot", id, "landing-party/faction.jsonl", 200)
       end
     end
@@ -13985,7 +13985,10 @@ scenarios.cordon = function()
   -- (No spread: a spreading camp closes its ring only when its spread is done.)
   -- (Its camp by blocks: districts' plated floors counted as litter beyond 100.)
   schedule(30, function() lp("debug_tune", {perimeter_fast = true, mature_blocks = ringmix and 2 or nil,
-    grow_to_line_off = ringmix or nil, wfc_core_off = true}) end)
+    grow_to_line_off = ringmix or nil, wfc_core_off = true,
+    -- (broken: its posts built over water as before 0.2.499: this map's bearing crosses a lake, its arcs at 120 to 180
+    -- left with no posts, and the break, its subject, had none to break; the full regression of 0.3.0.)
+    ring_fill = broken or nil}) end)
   -- Watched (scripts/watch.sh cordon): the camp and a post on the leading arc, by day and by night, and the line at night
   -- (Serenity's look: its deck, the post lamps, the painted stripe).
   if params.watch then

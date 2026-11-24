@@ -209,17 +209,22 @@ function cordon.step(b, new, near)
     if wet(b, p) then
       b.posts_wet = (b.posts_wet or 0) + 1
     else
-      table.insert(c.posts, {kind = "post", center = p, entities = {}})
+      -- (Its place on the arc, k, and its angle: a post left out for water leaves a gap, and the stripe, the contact
+      -- walls and its facing, counted by list position, crashed or crossed it; the full regression of 0.3.0, five runs.)
+      table.insert(c.posts, {kind = "post", center = p, entities = {}, slot = k, angle = a})
     end
   end
+  local by_slot = {}
+  for _, m in ipairs(c.posts) do by_slot[m.slot] = m end
   -- First in the queue (behind the camp's growth they waited 4.6 minutes for their drones).
   local jobs = {}
-  for k, m in ipairs(c.posts) do
-    local a = a0 - ARC + 2 * ARC * (k - 1) / (n - 1)
-    for _, j in ipairs(post_jobs(b, m, m.center, a)) do table.insert(jobs, j) end
+  for _, m in ipairs(c.posts) do
+    for _, j in ipairs(post_jobs(b, m, m.center, m.angle)) do table.insert(jobs, j) end
   end
   -- The painted line: a dark stripe post to post (its trim), laid with the posts; it outlives their recovery.
   for k = 1, #c.posts - 1 do
+    -- (Neighbours on the arc only: none across a gap left by water.)
+    if c.posts[k + 1].slot ~= c.posts[k].slot + 1 then goto next_span end
     local stripe = {}
     for _, q in ipairs(wall_line(c.posts[k].center, c.posts[k + 1].center)) do
       -- Off the posts' pads (it painted over half of one).
@@ -229,6 +234,7 @@ function cordon.step(b, new, near)
       end
     end
     table.insert(jobs, {tiles = stripe, floor = "stripe", module = c.posts[k]})
+    ::next_span::
   end
   -- Gate posts (Fable: a route the arc crosses gets a gate): where the arc crosses a player's straight rail, two gates
   -- across it (a gate of another force on a player's rail stops their trains: spike, DESIGN Engine notes) and two gun
@@ -295,8 +301,9 @@ function cordon.step(b, new, near)
       local a1 = a0 - ARC + 2 * ARC * (k - 1) / (n - 1)
       local a2 = a0 - ARC + 2 * ARC * k / (n - 1)
       local mid = (a1 + a2) / 2
-      if math.abs(mid - a0) <= CONTACT_ARC then
-        local p1, p2 = c.posts[k].center, c.posts[k + 1].center
+      local s1, s2 = by_slot[k - 1], by_slot[k]
+      if math.abs(mid - a0) <= CONTACT_ARC and s1 and s2 then
+        local p1, p2 = s1.center, s2.center
         local m = {kind = "post", center = {(p1[1] + p2[1]) / 2, (p1[2] + p2[2]) / 2}, entities = {}}
         local tiles = wall_line(p1, p2)
         local half = #tiles / 2

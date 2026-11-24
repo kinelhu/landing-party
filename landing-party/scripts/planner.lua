@@ -149,6 +149,7 @@ local GUARD_LOSSES, GUARD_R, GUARD_MOST, GUARD_WINDOW = 6, 28, 4, 30 * 3600   --
 -- one each GUARD_LOSSES / 2 lost; a flamer GUARD_GAP from any other (they had stacked three on one spot by the fortress,
 -- a behemoth's bite from each other). Priors.
 local GUARD_EXTRA, GUARD_GAP = 8, 6   -- (GUARD_EVO: shared.lua)
+local GUARD_ROADS = {"lp-road", "lp-grubstake-road"}   -- (arcguard: no flamer on or beside them)
 local MINE_GROUP = 20   -- (arcguard: mining modules within this of a mine's first guarded with it)
 local function plan(b, only)
   local surface = game.surfaces[b.surface]
@@ -328,7 +329,11 @@ local function plan(b, only)
         for _, q in ipairs(tries) do
           local c = surface.find_non_colliding_position(name, q, 4, 0.5)
           -- (Construction's own test, its force's, as well: the planner's look alone passed spots it then refused.)
-          if c and surface.can_place_entity{name = name, position = c, force = force(b)}
+          -- (Off its roads and clear of its gates, 0.3.0's full regression: the cover flamers round its blocks stood in
+          -- its lanes and its howitzer truck never got home, clear worms; with them refused it did.)
+          if c and surface.count_tiles_filtered{position = c, radius = 2, name = GUARD_ROADS, limit = 1} == 0
+            and surface.count_entities_filtered{position = c, radius = 4, type = "gate", force = force(b), limit = 1} == 0
+            and surface.can_place_entity{name = name, position = c, force = force(b)}
             and surface.count_entities_filtered{position = c, radius = GUARD_GAP, name = name, limit = 1} == 0 then
             local queued = false
             for _, j in ipairs(b.flamers_owed or {}) do

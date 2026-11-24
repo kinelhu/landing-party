@@ -2909,6 +2909,15 @@ if their units are upgraded also." `scripts/rd.lua`.
   1,609, 2,602). Drills lost to biters 39, 41, 66 (75, 90, 64). Hub projectors lost 5, 3, 4 of 33 to 44 up (0.2.492: 5,
   17, 8 of 28 to 56), all to behemoths but one big spitter. arcguard 551 to 744 orders a run (161 to 308), 65 to 107 for
   mines, no spot ordered more than twice, 6 to 12 flamers skipped by construction: three a block ahead, not churn.
+- **0.3.0's full regression (424 runs): 7 failed, two bugs and a test's.** (1) Five runs (budget, line back, cordon
+  broken, bend, convoy) crashed at cordon.lua's contact walls: 0.2.499's posts left out for water shortened c.posts, and
+  the walls, the painted stripe and each post's facing were counted by list position. Each post now carries its slot and
+  angle; walls and stripe join neighbours on the arc only. cordon broken then failed: its map's bearing crosses a lake,
+  arcs at 120 to 180 with no posts, nothing to break; it builds over water as before (ring_fill), its subject the break.
+  (2) clear worms (passing at 0.2.477): the howitzer truck never got home, 68 seconds of truck and howitzer at once; with
+  arcguard's flamers refused it did (a probe): the cover flamers round its blocks (0.2.493's ahead cover, the run's
+  evolution past 0.6) stood in its lanes. A flamer's spot is now 2 tiles off its roads and 4 from its gates. (3) faction:
+  the harness's format on a settlement with no units built (nil). All seven pass; arcguard (4), domehub evo, maxevo too.
 - **The playtest of 2026-11-23 (0.2.497, the army save).** /lp director crashed the game: dev.lua required director_gui
   inside its handler ("Require can't be used outside of control.lua parsing"); now at load, and scripts/lint_requires.sh
   (check.sh) fails any require on an indented line of the control stage (seen failing on the old dev.lua, line 126). The
