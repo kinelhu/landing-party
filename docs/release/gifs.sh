@@ -40,5 +40,7 @@ loop prism 30 "" "Kessler-Hayashi's Prisms, with its tanks and a Tesla, against 
 loop flak 30 "" "Grubstake's flak buggies against Kessler-Hayashi's scout drones." -i "$L/flak.mp4"
 loop arcflamer 10 "" "Kessler-Hayashi's arc flamer: lightning that sets its targets burning blue." -i "$L/arcflamer.mp4"
 loop cannon-strike 10 "" "Your orbital cannons' strike on a Synthexis culture." -i "$L/strike.mp4"
+# (Synthexis at a wall: the trailer's burster shot, cut before its swarm turns back from the gap; 2026-11-24.)
+loop burst-wall 30 "crop=1280:720:250:0" "Synthexis's bursters walking through a laser wall's fire and bursting against it." -t 5.2 -i media/trailer/act-herd-burst.mp4
 (IFS=,; echo "[${man[*]}]") | python3 -m json.tool > "$OUT/manifest.json"
 echo "$OUT/manifest.json"
