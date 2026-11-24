@@ -121,6 +121,12 @@ Grubstake's theft, and your army's ammunition.
 - [Player manual (PDF)](https://github.com/kinelhu/landing-party/releases/download/v0.3.0/Landing-Party-manual.pdf)
 - Source and issues: [github.com/kinelhu/landing-party](https://github.com/kinelhu/landing-party)
 
+## Use of AI
+
+Claude (Anthropic) was used to write the mod's code, build its 3D models in Blender and draft its manual. The textures
+are CC0 materials from ambientCG and Poly Haven; no image-generation model was used. The author designed the mod,
+playtested it and reviewed every change. Behaviour is verified by scripted headless test games before each release.
+
 ## Gallery captions
 
 1. A Kessler-Hayashi fortress inside its rings of wall, its lander at the centre and its mine beside it.

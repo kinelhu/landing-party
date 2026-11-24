@@ -17,6 +17,12 @@ Status: every mechanic has a headless scenario (`scripts/regress.sh` runs them),
 copies of real saves; they are not yet balanced in played games. See `DESIGN.md` (decisions, findings, status table)
 and `docs/` (the AI's structure, the arc, reviews).
 
+## Use of AI
+
+Claude (Anthropic) was used to write the mod's code, build its 3D models in Blender and draft its manual. The textures
+are CC0 materials from ambientCG and Poly Haven; no image-generation model was used. The author designed the mod,
+playtested it and reviewed every change. Behaviour is verified by scripted headless test games before each release.
+
 ## Layout
 - `landing-party/`: the mod.
 - `tests/lp-sim/`: the headless simulation's scenarios; `tests/lp-ref/`: reference factories built for visits.
