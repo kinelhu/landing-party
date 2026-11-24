@@ -1,8 +1,9 @@
 # Landing Party
 
-A Factorio 2.1 + Space Age mod, in beta: three rival factions come to Nauvis. Two are corporations that land, mine,
-build settlements of walled hubs, roads and outposts, and fight you with an army that is the output of their economy.
-The third takes over the biters. Each faction has its own aims and ways of fighting, which the player learns.
+A Factorio 2.1 + Space Age mod, in beta: three rival factions come to Nauvis. Grubstake and Kessler-Hayashi land,
+mine, build settlements of walled hubs, roads and outposts, and fight you with an army that is the output of their
+economy; Synthexis takes over biter nests and breeds its own. Each faction has its own aims and ways of fighting, which
+the player learns.
 
 - **Grubstake** (arrives at chemical science) steals what you leave exposed, mostly by night: trucks skim your belts,
   raids take your machines apart and carry them off (their ghosts left), heists empty your chests, taps drain your

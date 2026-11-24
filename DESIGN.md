@@ -8960,3 +8960,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   off (joins, walks there), shift + right-click still an attack-move; seen failing with the branch off (4 of 6 checks).
   The command-tool scenarios (squad, squadmove, orders, control, attackmove, retire, raze click, cards, tutorial,
   director cmd, owngates, paved route) unchanged: they never right-click a beacon.
+- **0.3.0's second full regression (2026-11-24): a test's luck, and stompers' deaths unread.** The farm siege tests (siege,
+  siegepoor, siegestall) failed after 0.3.0's flamer fix, which touches nothing of Synthexis's. Their pipeline ran to 150
+  tiles from the field the test plants, inside FED_NEAR (250): the culture could never land there, and came down only
+  once the wild had grown a nest farther out, when the game's draws allowed; the flamers standing elsewhere moved those
+  draws and it came 40 minutes late (traced in its site search: every nest weighed out). The pipeline now stops 300
+  short. Landing on time, siege then showed two stompers "gone from the map with no death" on both the fixed and the
+  older code: herd.on_died read only type "unit", and stompers are spider-units, so a wave never recorded their deaths.
+  Read both now (the vanished check caught it; seen failing on both trees).

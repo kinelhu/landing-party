@@ -6,6 +6,7 @@ Date: 2026-11-23
   Bugfixes:
     - Kessler-Hayashi's perimeter line could crash the game where a lake left a gap in it (0.2.499).
     - The corporations' flame turrets are no longer put on their camps' roads or by their gates, where they blocked their own vehicles.
+    - Synthexis now counts the stompers it loses in a wave; their deaths went unrecorded.
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.499
 Date: 2026-11-23

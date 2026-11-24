@@ -123,8 +123,8 @@
 <title>The biotech</title>
 <path fill="#f7dede" stroke="black" d="M1231.62,-443C1231.62,-443 1135.38,-443 1135.38,-443 1129.38,-443 1123.38,-437 1123.38,-431 1123.38,-431 1123.38,-411 1123.38,-411 1123.38,-405 1129.38,-399 1135.38,-399 1135.38,-399 1231.62,-399 1231.62,-399 1237.62,-399 1243.62,-405 1243.62,-411 1243.62,-411 1243.62,-431 1243.62,-431 1243.62,-437 1237.62,-443 1231.62,-443"/>
 <text xml:space="preserve" text-anchor="middle" x="1183.5" y="-428.55" font-family="Helvetica,sans-Serif" font-size="11.00">The biotech</text>
-<text xml:space="preserve" text-anchor="middle" x="1183.5" y="-416.55" font-family="Helvetica,sans-Serif" font-size="11.00">5 modules, 8328 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="1183.5" y="-404.55" font-family="Helvetica,sans-Serif" font-size="11.00">herd 4502, farm 2521</text>
+<text xml:space="preserve" text-anchor="middle" x="1183.5" y="-416.55" font-family="Helvetica,sans-Serif" font-size="11.00">5 modules, 8330 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="1183.5" y="-404.55" font-family="Helvetica,sans-Serif" font-size="11.00">herd 4504, farm 2521</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;The biotech -->
 <g id="edge32" class="edge">

@@ -1,8 +1,8 @@
 # Landing Party {.unnumbered}
 
-Landing Party adds three factions to Nauvis. Two are corporations that land, mine, build factories and field armies of
-their own. The third takes over biter spawners and breeds its own biters. All three compete with you for the planet,
-and with each other.
+Landing Party adds three factions to Nauvis. Grubstake and Kessler-Hayashi land, mine, build factories and field
+armies of their own. Synthexis takes over biter spawners and breeds its own biters. All three compete with you for the
+planet, and with each other.
 
 They do not arrive at the start. Each one comes when your factory reaches a certain point, so each meets a factory
 that can answer it. [Arrivals](arrivals.qmd) has the timeline.

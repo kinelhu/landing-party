@@ -4260,7 +4260,9 @@ function herd.on_died(e)
   local h = storage.herd
   if not h or not next(h.waves) then return end
   local ent = e.entity
-  if ent.force.name == B.force and ent.type == "unit" then
+  -- (Its stompers are spider-units: read as units only, their deaths went unrecorded and a siege's check counted two as
+  -- gone from the map with no death, farm siege, 0.3.0.)
+  if ent.force.name == B.force and (ent.type == "unit" or ent.type == "spider-unit") then
     for _, w in pairs(h.waves) do
       for _, u in ipairs(w.members) do
         if u == ent then

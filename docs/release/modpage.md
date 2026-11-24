@@ -6,7 +6,7 @@ to 0.2.464 on 2026-11-19, and to 0.2.497 (released as 0.3.0, a public beta) on 2
 
 Portal fields:
 - **Title:** Landing Party
-- **Summary (one line):** Two rival corporations land on Nauvis with camps and armies of their own, and a third faction takes over the biters.
+- **Summary (one line):** Three rival factions come to Nauvis with armies of their own: Grubstake steals, Kessler-Hayashi walls off its ground and besieges you, Synthexis breeds biters.
 - **Category:** Content (the portal's categories: content, overhaul, tweaks, utilities...; scripts/portal.py sets it)
 - **Tags:** Combat, Enemies (the portal's own tag list has no planets or size tags)
 - **License:** MIT
@@ -21,9 +21,9 @@ Portal fields:
 
 ![A Kessler-Hayashi fortress inside its rings of wall](https://raw.githubusercontent.com/kinelhu/landing-party/main/docs/release/gallery/01-kessler-hayashi-fortress.jpg)
 
-Three rival factions come to Nauvis. Two are corporations that land, mine real ore, build walled camps with their own
-power and turrets, and make their armies in their own factories. The third takes over the biters. All three fight you
-and each other.
+Three rival factions come to Nauvis, each when your factory reaches a point of its own. They grow on the planet as you
+do: Grubstake and Kessler-Hayashi build walled camps that mine real ore and make their armies in their own factories,
+and Synthexis breeds biters in the nests it takes over. All three fight you and each other.
 
 [Trailer on YouTube](https://www.youtube.com/watch?v=Xmsl4OdcdWY)
 
@@ -48,6 +48,8 @@ turret lines, under shield domes that stop artillery shells. Its railgunners cle
 
 **Synthexis** takes over the biter nests and breeds its own strains in them. Its scouts circle your walls before an
 attack, and where an attack failed it tries something else the next time.
+
+[gif: swarm-breach]
 
 Each faction chooses raids, sieges, thefts or air strikes by what your defenses are weakest against, and judges your army
 by what it can do: its research, its ranks and its ammunition. The corporations research in labs you can find and
@@ -141,9 +143,10 @@ playtested it and reviewed every change. Behaviour is verified by scripted headl
 10. An orbital strike from your cannons on a Synthexis culture.
 11. A Kessler-Hayashi strike force's pods coming down beside your furnaces.
 12. Three squads in alt mode, each wearing its channel's colour, under their rally beacons.
-13. Grubstake's Workshop, a welder at work by its door, between its depot and its fabricator.
+13. Grubstake's Workshop at work, between its depot and its fabricator.
 
 Loops (media/release/gifs, docs/release/gifs.sh; manifest.json has each one's caption, length and sizes): pods,
 strike-fight and walk-home (the director's film set, docs/release/strike-film.lua, 2026-11-16); tesla, bombers, prism,
-flak (the showcase film, 2026-11-12); arcflamer (0.2.350); cannon-strike (the trailer's culture reel, 2026-11-12).
+flak (the showcase film, 2026-11-12); arcflamer (0.2.350); cannon-strike (the trailer's culture reel, 2026-11-12);
+swarm-breach (the trailer's breach shot, media/trailer/act-herd-breach.mp4, 2026-11-24).
 The 2026-11-12 sources stay in media/release/loops.

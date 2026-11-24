@@ -19138,7 +19138,11 @@ scenarios.farm = function()
       -- And a pipeline of the player's out toward the nests, a megabase's outlying ground, worth nothing to it (read short of
       -- the foe's ground, its plan staged at its own nest, and its bursters went at nothing; poles drew waves of their own).
       -- (Not in the siege lab: a star fort's waves went in for the pipe at its edge, found nothing more, and died going out.)
-      if mix ~= "lab" then for d = 48, 600 do put("pipe", at(d, 10)) end end
+      -- (To 440, 300 short of the field: to 600 it ended 150 from it, inside FED_NEAR, and the field was never one it could
+      -- land on; it landed only once the wild had grown a nest farther out, and when that came hung on the map's luck. At
+      -- 0.3.0 arcguard's flamers stood elsewhere, the game's draws went otherwise, and it came 40 minutes late: siegepoor
+      -- never saw it land, siege and siegestall ran out of time.)
+      if mix ~= "lab" then for d = 48, 440 do put("pipe", at(d, 10)) end end
       -- And mines, a belt of them 3 to 9 tiles outside the wall on every face (nw's gap: 84 of them), its price for them
       -- learned (as if a wave had died to them): its sweep should set them off ahead of its wave.
       for i = -48, 48, 4 do
