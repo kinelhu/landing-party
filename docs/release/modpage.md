@@ -21,14 +21,12 @@ Portal fields:
 
 ![A Kessler-Hayashi fortress inside its rings of wall](https://raw.githubusercontent.com/kinelhu/landing-party/main/docs/release/gallery/01-kessler-hayashi-fortress.jpg)
 
-Three rival factions come to Nauvis, each when your factory reaches a point of its own. They grow on the planet as you
-do: Grubstake and Kessler-Hayashi build walled camps that mine real ore and make their armies in their own factories,
-and Synthexis breeds biters in the nests it takes over. All three fight you and each other.
+Three rival factions come to Nauvis and fight you and each other for it. Grubstake and Kessler-Hayashi build walled
+camps that mine ore and make their armies in their own factories. Synthexis breeds biters in the nests it takes over.
 
 [Trailer on YouTube](https://www.youtube.com/watch?v=Xmsl4OdcdWY)
 
-**Before you start.** Factorio 2.1 with Space Age. It works on a new game or an existing one: each faction comes on a
-trigger of its own, so an established base meets them in turn. This is a public beta. Everything is tested by scripted
+**Before you start.** Factorio 2.1 with Space Age. It works on a new game or an existing one. This is a public beta. Everything is tested by scripted
 runs and a few played sessions, but the difficulty is not tuned yet. Tell us on the discussion page or in a GitHub issue
 what felt unfair, dull or broken, with the version and, if you can, a save.
 
@@ -46,7 +44,8 @@ turret lines, under shield domes that stop artillery shells. Its railgunners cle
 
 [gif: arcflamer] [gif: tesla]
 
-**Synthexis** takes over the biter nests and breeds its own strains in them. Its scouts circle your walls before an
+**Synthexis** comes once the biters have evolved far enough. It takes over their nests and breeds its own strains in
+them. Its scouts circle your walls before an
 attack, and where an attack failed it tries something else the next time.
 
 [gif: swarm-breach]
