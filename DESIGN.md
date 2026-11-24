@@ -241,6 +241,11 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   routing the squad itself (watch posts, 0.2.486).
 
 **After 0.3.0 (designed or proposed)**
+- A Synthexis swarm at a gap reads as a bug: it breaks through, mills, goes a few metres in, mills, and walks back out
+  (the user, 2026-11-24, on the trailer's breach shot: "spazzes out"). In the trace, its rush's order done at the gap, a
+  look at how many are through, the group broken up and formed again outside, then another rush (herd.lua's rush and
+  hold). Look at it in a film first, then decide what it should do there (it is the user's to say). Its loop is off the
+  mod page until then; the page has no Synthexis loop.
 - The player's shield projector (Open questions: 45 degrees, 8-way rotation). Only Kessler-Hayashi's dome projector
   exists.
 - Synthexis breeding from its survivors (a biter that kills and comes back seeds the next breed; "after the playtest").

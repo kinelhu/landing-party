@@ -48,8 +48,6 @@ turret lines, under shield domes that stop artillery shells. Its railgunners cle
 them. Its scouts circle your walls before an
 attack, and where an attack failed it tries something else the next time.
 
-[gif: swarm-breach]
-
 Each faction chooses raids, sieges, thefts or air strikes by what your defenses are weakest against, and judges your army
 by what it can do: its research, its ranks and its ammunition. The corporations research in labs you can find and
 destroy, at your own technologies' levels, and never get far past you. On a map where the biters have evolved far, their
@@ -146,6 +144,7 @@ playtested it and reviewed every change. Behaviour is verified by scripted headl
 
 Loops (media/release/gifs, docs/release/gifs.sh; manifest.json has each one's caption, length and sizes): pods,
 strike-fight and walk-home (the director's film set, docs/release/strike-film.lua, 2026-11-16); tesla, bombers, prism,
-flak (the showcase film, 2026-11-12); arcflamer (0.2.350); cannon-strike (the trailer's culture reel, 2026-11-12);
-swarm-breach (the trailer's breach shot, media/trailer/act-herd-breach.mp4, 2026-11-24).
+flak (the showcase film, 2026-11-12); arcflamer (0.2.350); cannon-strike (the trailer's culture reel, 2026-11-12).
+(swarm-breach, the trailer's breach shot, was cut 2026-11-24 and dropped: the user read its swarm rushing the gap and
+falling back out as a bug.)
 The 2026-11-12 sources stay in media/release/loops.

@@ -4,7 +4,7 @@
 # with manifest.json (name, caption, size, seconds).
 #   docs/release/gifs.sh
 # Sources: the director film's frames (docs/release/strike-film.lua, docs/sim/film-strike-loops) and the loops of
-# 2026-11-12 (media/release/loops/*.mp4, docs/release/loops.py and the trailer's culture reel), and the trailer's breach shot (media/trailer).
+# 2026-11-12 (media/release/loops/*.mp4, docs/release/loops.py and the trailer's culture reel).
 set -euo pipefail
 export LC_ALL=C
 cd "$(dirname "$0")/../.."
@@ -40,7 +40,5 @@ loop prism 30 "" "Kessler-Hayashi's Prisms, with its tanks and a Tesla, against 
 loop flak 30 "" "Grubstake's flak buggies against Kessler-Hayashi's scout drones." -i "$L/flak.mp4"
 loop arcflamer 10 "" "Kessler-Hayashi's arc flamer: lightning that sets its targets burning blue." -i "$L/arcflamer.mp4"
 loop cannon-strike 10 "" "Your orbital cannons' strike on a Synthexis culture." -i "$L/strike.mp4"
-# (Synthexis at a wall: the trailer's breach shot, its swarm through a gap in a wall, cropped to it; 2026-11-24.)
-loop swarm-breach 30 "crop=1280:720:600:280" "A Synthexis swarm pouring through a gap in a wall." -i media/trailer/act-herd-breach.mp4
 (IFS=,; echo "[${man[*]}]") | python3 -m json.tool > "$OUT/manifest.json"
 echo "$OUT/manifest.json"
