@@ -12174,6 +12174,11 @@ scenarios.standsiege = function()
     local ran
     for _, l in ipairs(ops_.log or {}) do if l.op == "siege" and (l.launched or 0) > 0 then ran = l end end
     check("standsiege: the siege ran", ran ~= nil, serpent.line({log = ran and ran.outcome, strikes = st}))
+    -- (Its breach cleared by the strike, the assault went on to what stood nearest past it: before, it read done there and
+    -- fell back to its guns, the user's nw game, 2026-11-26: "suddenly changed its mind". Seen failing before siege.lua's
+    -- push: 0.)
+    check("standsiege: past a cleared breach, the assault pushed on", (ops_.assault_pushes or 0) >= 1,
+      tostring(ops_.assault_pushes))
     if nests then
       -- (A walking barrage: its escort in behind its strike. Told to engage anything on the way, it stood 45 s at its
       -- jump-off dueling lasers 33 tiles aside, and came in after the barrage; 0.2.167.)

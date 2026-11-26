@@ -17,6 +17,7 @@ local function spreads(b) return shared.CORPS[b.corp].cordon and not storage.gro
 -- Its size against GROW_CAP: a compound laid out whole (layout.wfc_compound) counts as several blocks.
 local function size(b) local n = 0 for _, k in ipairs(b.blocks) do n = n + (k.weight or 1) end return n end
 local LAB_PARTS = 150          -- parts in hand before it plans a research district
+local LAB_WAIT = 2 * 3600       -- a lab's district not looked for again this long after none was found
 -- A lab of this kind standing, owed (queued, carried, awaiting rebuild) or planned in any camp of b's corporation.
 local function lab_coming(b, kind)
   for _, o in pairs(storage.bases) do
@@ -393,6 +394,9 @@ local function plan(b, only)
     {"research", function()
       if not ((layout.districts(b) or layout.town(b)) and b.launch_opened and not b.wfc_job
         and b.parts > LAB_PARTS + keep(b)) then return false end
+      -- (Not again within LAB_WAIT of a search that found no ground: 22 to 41 ms a search, every 5 s, on the user's nw
+      -- save, "still too much of a spike".)
+      if game.tick < (b.lab_wait or 0) then return false end
       local kind = rd.wanted_lab(b.corp)
       b.target = kind and not lab_coming(b, kind) and kind or nil
       return b.target ~= nil end,
@@ -403,6 +407,7 @@ local function plan(b, only)
             block.center[2], b.target)
         end
         local d = layout.district(b, "lab", b.target)
+        if not d then b.lab_wait = game.tick + LAB_WAIT end
         return d and string.format("district planned at %.0f,%.0f for %s", d.center[1], d.center[2], b.target)
       end},
     -- Serenity spreads out to its line (the user, 2026-10-20: "We need organic looking bases that look menacing, like

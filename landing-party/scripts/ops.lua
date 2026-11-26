@@ -2542,7 +2542,7 @@ function ops.summary(b)
     strike_falling = b.op and b.op.strike_falling or b.dev_strike and b.dev_strike.falling,
     held = b.intel and b.intel.held and (function() local o = {} for k in pairs(b.intel.held) do o[k] = held_by(b, k) end
       return o end)() or nil,
-    siege_tier = b.op and b.op.tier, answers = b.answers or 0, answered = b.answered, cuts_found = b.cuts_found or 0, recons = b.recons or 0, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,
+    siege_tier = b.op and b.op.tier, answers = b.answers or 0, answered = b.answered, cuts_found = b.cuts_found or 0, recons = b.recons or 0, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0, assault_pushes = b.assault_pushes or 0,
     convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,
     shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil, truck_packing = b.op and b.op.packing ~= nil,
     looted = b.looted or 0, carrying = b.op and b.op.loot and b.op.loot.items or 0, works = b.op and b.op.works and #b.op.works or 0, clearances = b.clearances or 0,

@@ -268,6 +268,9 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - The uplink fortress that varies (one fixed template).
 - A new corporation landing after both are gone (`withdrawing` is never cleared); the rivals' war on each other.
 - After 0.3.1, from the user's nw game (2026-11-26):
+  - Synthexis's wave planning in one tick (farm send: its sieges sized, its methods weighed, its plan read again): 105 to
+    597 ms ticks every 10 s while a wave is planned, on the user's nw save (0.3.0's). Next: sliced, as Kessler-Hayashi's
+    siege ways are (b.ways_job).
   - Five scenarios flip with the seed whatever the code: attackmove (its bad mode on 3 of 9 seeds before stands, 6 of 9
     with), nestclear tech (fails on 777 before), line turret and watchdog army (both fail on 4242 before and after),
     director repel (passes 3 of 4 seeds before, 2 of 4 after, failing on different ones). The camps' decisions the same
@@ -9050,7 +9053,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   kept by on_chunk_generated (built each cycle it cost 28 to 35 ms itself); a siege's ways read in slices (b.ways_job:
   64 rows of fire, 24 cells of cost a tick, the map kept 2 minutes, learned prices through firemap.price_of; no map yet,
   no siege at a player but a battery). After: worst tick 52 ms (a lab's district found, once), none other past 27 ms,
-  99.9% under 23.5 ms. And air
+  99.9% under 23.5 ms. Then the user's forced siege on the test build: after its strike its assault walked to the breach
+  "but suddenly changed its mind", and sat by its mortars while they shelled the roboports behind. Nothing of TYPES
+  within ASSAULT_DEPTH (30) of the breach read done (the strike had razed round it; 0.3.0's, standsiege's assault fell
+  back so at 34000): now it pushes on to what stands nearest within ASSAULT_PUSH (60), PUSHES (3) times (b.assault_pushes;
+  standsiege checks one, seen failing before). And on the user's 09:54 autosave: a camp's lab district searched for and
+  not found every plan, 22 to 41 ms every 5 s, now not again for LAB_WAIT (2 minutes). Synthexis's wave planning (farm
+  send: its sieges sized and weighed, 105 to 597 ms ticks every 10 s while it plans; 0.3.0's) is in the backlog. And air
   raids: none had fliers (5 drones built, all lost to biters; its counter tilt cut them to a tenth). Raids that find no
   way on foot mark the target (t.no_foot) and it is weighed by air alone; such targets with little anti-air ask for an
   air squad of 8 first (army.air_want); an air raid's ladder is its own ("air"), not the ground raid's that failed there

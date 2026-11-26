@@ -70,6 +70,7 @@ local GUARDS_PER_PIECE = 6
 -- 40% lost, docs/reviews/2026-11-03-factorio-rts-assessment.md), and how long before an assault of choice again. Through
 -- the breach to its target 60 tiles in, 12 of 18 died to the lasers inside (the artillery base, 0.2.168).
 local ASSAULT_DEPTH = 30
+local ASSAULT_PUSH, PUSHES = 60, 3   -- a cleared breach: on to what stands nearest within this, this many times
 local FALL_BACK = 0.6
 local ASSAULT_COOL = 3 * 3600
 -- Whether a gun of `fire` (firemap.read) covers q or HOLD_MARGIN round it.
@@ -2073,6 +2074,7 @@ local function siege_step(b, trace, army)
         for _, u in ipairs(pool.take(b, want - #op.members, pool.GUARD, FOOT)) do table.insert(op.members, u) end
         op.launched = #op.members
         op.phase, op.phase_at, op.last_kill, op.kills_at, op.razed_before = "assault", game.tick, game.tick, b.razed, b.razed
+        op.pushes = nil
         b.assaults = (b.assaults or 0) + 1
         -- A drop siege's at its roboports first, nearest its site first, then its target (what makes the damage stay: on
         -- the artillery base and nw its robots rebuilt nearly all it broke, 0 lost on nw).
@@ -2160,6 +2162,25 @@ local function siege_step(b, trace, army)
       local at = op.assault_at or (t and t.pos)
       local remaining = at and s.count_entities_filtered{position = at, radius = op.assault_at and ASSAULT_DEPTH or 16,
         type = TYPES, force = foes} or 0
+      -- Its breach cleared (the strike had razed round it): on to what stands nearest past it, ASSAULT_PUSH tiles at most,
+      -- PUSHES times (the user's nw game, 2026-11-26: its army walked to the breach "but suddenly changed its mind", and
+      -- sat by its mortars while they shelled the roboports behind; nothing within ASSAULT_DEPTH of the breach read done).
+      if remaining == 0 and op.drop and op.assault_at and (op.pushes or 0) < PUSHES then
+        local near = s.find_entities_filtered{position = op.assault_at, radius = ASSAULT_PUSH, type = TYPES, force = foes}
+        local best, bd
+        for _, e in ipairs(near) do
+          local d = (e.position.x - op.assault_at[1]) ^ 2 + (e.position.y - op.assault_at[2]) ^ 2
+          if not bd or d < bd then best, bd = e, d end
+        end
+        if best then
+          op.pushes, op.assault_at, op.last_kill = (op.pushes or 0) + 1, {best.position.x, best.position.y}, game.tick
+          b.assault_pushes = (b.assault_pushes or 0) + 1
+          at = op.assault_at
+          remaining = s.count_entities_filtered{position = at, radius = ASSAULT_DEPTH, type = TYPES, force = foes}
+          trace(b, string.format("siege: the breach cleared, the assault pushes on to %s at %.0f,%.0f (%d)", best.name,
+            best.position.x, best.position.y, op.pushes))
+        end
+      end
       local done = remaining == 0 or game.tick - op.last_kill > NO_KILL_TICKS
       -- A drop siege's falls back to its jump-off and shells on, its guns standing: a later strike sends it in again.
       local live_guns = 0
