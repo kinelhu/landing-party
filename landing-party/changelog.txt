@@ -4,7 +4,7 @@ Date: 2026-11-27
   Bugfixes:
     - Grubstake's flame turrets are now military targets: your turrets and units fire on them by themselves, and Kessler-Hayashi's mortars shell them. Its sieges on Grubstake sat loaded and fired nothing.
     - A siege's guards now fight biters and Synthexis units that attack it. They stood still while their mortars were destroyed.
-    - Kessler-Hayashi's idle railgunners stand still instead of milling around its lander.
+    - Kessler-Hayashi's railgunners called back home stop at the edge of its camp instead of crowding onto its lander.
     - After a strike on your power, the other camps' operations against you resume two minutes after the strike is over, instead of 18 minutes after it landed.
     - A camp held back by a power strike no longer counts that time towards standing down.
   Changes:

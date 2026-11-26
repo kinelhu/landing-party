@@ -771,15 +771,13 @@ local function leash(b, trace)
     -- Idle ones only: re-ordered straight home, raiders coming back round a nest field walked through it (country).
     if far then
       -- Back within RAIL_HOME of it (16 once: a hundred sent to 16 tiles of a lander inside rings of wall could not all get
-      -- there and pushed; the user's nw game, 2026-11-26: "like 100 railgunners all spazzing out"). Arrived, it stands:
-      -- below.
+      -- there and pushed; the user's nw game, 2026-11-26: "like 100 railgunners all spazzing out"). (Not stopped where it
+      -- stands, idle within the leash, in 0.3.1: made by the depot and stopped there, they filled the ground a crew's drone
+      -- or truck is put down on and no crew went out, and seven scenarios failed in 0.3.1's full regression; standing them
+      -- clear of the lander and depots moved those games and four still failed. In the backlog.)
       u.commandable.set_command{type = defines.command.go_to_location, destination = lp, radius = RAIL_HOME, distraction = d}
       trace(b, string.format("leash: railgunner %d at %.0f,%.0f called back to its lander (%s)", u.unit_number, u.position.x,
         u.position.y, c.has_command and "wandering" or "idle"))
-    elseif rail and lp and (not c.has_command or (c.command and c.command.type == defines.command.wander)) then
-      -- A railgunner idle or wandering within its leash stands where it is (a stop, answering damage, as the yard's units
-      -- do; not a compound, which the watchdog takes for stuck): idle by the lander they wandered, a crowd shoving.
-      c.set_command{type = defines.command.stop, distraction = d}
     elseif u.valid and not u.commandable.has_command
       and (u.position.x - b.origin.x) ^ 2 + (u.position.y - b.origin.y) ^ 2 > r * r then
       u.commandable.set_command{type = defines.command.go_to_location, destination = hp, radius = 10, distraction = d}
