@@ -24,6 +24,8 @@ local COOL_TICKS = K.COOL_TICKS
 local DEFENCE_RADIUS = K.DEFENCE_RADIUS
 local DEPLOY_TICKS = K.DEPLOY_TICKS
 local FOOT = K.FOOT
+-- A drop siege's escort: any fighting unit, railgunners too (0.3.1), not a hauler.
+local function SIEGE_FIT(u) return (u.type == "unit" or u.type == "spider-unit") and shared.kind_of(u.name) ~= "lp-hauler" end
 local SOLDIER = K.SOLDIER
 local HOWITZER_REACH = K.HOWITZER_REACH
 local HOWITZER_STAND = K.HOWITZER_STAND
@@ -211,6 +213,19 @@ local function rails_home(b)
   for _, u in ipairs(b.garrison or {}) do if u.valid and shared.kind_of(u.name) == "lp-railgunner" then n = n + 1 end end
   return n
 end
+
+-- A siege's escort by what is home (the user, 2026-11-26: "I can't believe KH can field 120 railgunners but not a bigger
+-- siege than 12 units?"): at least its tier's, up to SIEGE_SHARE of what is home above its floor (railgunners too, since
+-- 0.3.1), at most SIEGE_GUARDS_MAX. Its tier's alone (6, 10, 16) sent 12 of 200 at home on the user's nw game.
+local SIEGE_SHARE, SIEGE_GUARDS_MAX = 0.5, 80
+local function guards_for(b, army, tier_guards)
+  local avail = field(b, army) + rails_home(b)
+  return math.max(tier_guards, math.min(SIEGE_GUARDS_MAX, math.floor(avail * SIEGE_SHARE)))
+end
+ops.siege_guards_for = guards_for
+-- A siege's way kept at least this share of its escort, or it is not sent (the user's nw game: "its way keeps 0.00, read
+-- from orbit", 17 sent 460 tiles through big biters, none came back). Its best target past that is the corridor's to clear.
+local KEEP_MIN = 0.3
 local REISSUE_MAX = 3          -- times a hauler that gave its way up is sent on (siege_step)
 local ESCORT_NEAR = 24        -- guards this near its hauler are kept behind it; further, they go on along its way
 local ESCORT_BACK = 8          -- tiles behind its hauler its guards keep, at its launch and on its march
@@ -426,14 +441,15 @@ local function choose_siege(b, army, only_battery)
         -- last cell out of all fire: on nwa, ringed by nests, that was its own doorstep, and every target read 0.98.)
         if p and cm and against_player(t.owner) then
           local lost = costmap.cost(cm, {x = p[1], y = p[2]})
-          local keeps = lost and valuemap.keeps_one_way(SIEGE_TIERS[#SIEGE_TIERS].guards, lost) or 0
+          local keeps = lost and valuemap.keeps_one_way(guards_for(b, army, SIEGE_TIERS[#SIEGE_TIERS].guards), lost) or 0
           t.way_keeps = keeps
           -- (The best it would take with its way free, for its corridor below.)
           if lost and keeps < 1 and (not blocked_s or s > blocked_s) then blocked, blocked_s, blocked_site = t, s, p end
           -- Synthexis's floor (valuemap.REACH_FLOOR): a dear way makes a target worth less, not nothing. Without it every
           -- target past a few nests read 0.00 (a siege's guards are 10 to 24, its waves hundreds) and on nw it sent no
           -- siege in 90 minutes, three seeds (0.2.156); no way at all is still none.
-          s = lost and s * (valuemap.REACH_FLOOR + keeps) or 0
+          -- (Not below KEEP_MIN, 0.3.1: the floor let a way keeping none weigh at REACH_FLOOR, and it marched.)
+          s = (lost and keeps >= KEEP_MIN) and s * (valuemap.REACH_FLOOR + keeps) or 0
         end
         if p and s > 0 and (not bs or s > bs) then best, bs, site, piece = key, s, p, pc end
       end
@@ -625,6 +641,8 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   -- Its escort's size: its tier's, or a drop siege's GUARDS_PER_PIECE for each piece it brings.
   local want_g = drop and math.max(spec.guards, GUARDS_PER_PIECE * ((piece == "lp-howitzer" and 1 or spec.mortars)
     + (with_howitzer and 1 or 0))) or spec.guards
+  -- (And by what is home, guards_for; not a clearance, whose railgunners are its tier's.)
+  if not clearance then want_g = guards_for(b, army, want_g) end
   -- Counter-battery (Serenity): against the player's artillery, its Shock troopers go first (up to six).
   local floor = floor_of(b, army, battery(t))
   if battery(t) and rd.has(b.corp, "counter") then
@@ -642,21 +660,23 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
     -- A drop siege's escort in its mix's shares (army.mix), walkers too (no truck to keep up with): taken newest first,
     -- it was what its counter tilt had lately built, against lasers its tanks, and a siege went with 9 tanks of 16
     -- (the user, 2026-11-03: "unit compo was strange with many tanks"). What a kind lacks, the rest make up.
+    -- (Railgunners among them since 0.3.1, the user: a siege is where their reach belongs; kept home before, 108 of a
+    -- garrison of 200 never left it, nw.)
     if drop then
       local m, sum = army.mix(b), 0
-      for name, w in pairs(m) do if name ~= "lp-railgunner" then sum = sum + w end end
+      for _, w in pairs(m) do sum = sum + w end
       local kinds = {}
-      for name in pairs(m) do if name ~= "lp-railgunner" then kinds[#kinds + 1] = name end end
+      for name in pairs(m) do kinds[#kinds + 1] = name end
       table.sort(kinds)
       for _, name in ipairs(kinds) do
         local want = math.floor(want_g * m[name] / math.max(1, sum) + 0.5)
         for _, u in ipairs(pool.take(b, math.min(want, want_g - #guards), floor,
-          function(u) return SOLDIER(u) and shared.kind_of(u.name) == name end)) do
+          function(u) return (u.type == "unit" or u.type == "spider-unit") and shared.kind_of(u.name) == name end)) do
           table.insert(guards, u)
         end
       end
     end
-    for _, u in ipairs(pool.take(b, want_g - #guards, floor, drop and SOLDIER or FOOT)) do
+    for _, u in ipairs(pool.take(b, want_g - #guards, floor, drop and SIEGE_FIT or FOOT)) do
       table.insert(guards, u)
     end
   end
@@ -1259,6 +1279,14 @@ local function guard_duty(b, op)
   local foes = op.clearance and s.find_entities_filtered{position = op.site, radius = guard_r, type = "unit", force = shared.NEST_FORCES}
     or s.find_entities_filtered{position = c, radius = guard_r, type = {"unit", "character", "car", "spider-vehicle"},
       force = enemies(game.forces[b.force])}
+  -- The biters' and Synthexis's units in its ring are foes too (enemies() leaves them out): a drop siege's guards hold
+  -- with no distraction, and twelve medium biters killed every one of a siege's 11 units and both its mortars, unfought
+  -- (the user's nw game, 2026-11-26; siegetier biters).
+  if not op.clearance then
+    local wild = s.find_entities_filtered{position = c, radius = guard_r, type = {"unit", "spider-unit"}, force = shared.NEST_FORCES}
+    local own = game.forces[b.force]
+    for _, u in ipairs(wild) do if not own.get_cease_fire(u.force) then foes[#foes + 1] = u end end
+  end
   -- (Back in line when the ground is quiet, every LINE_AGAIN at most: guard duty brought them back to its centre, and
   -- the line its hold had formed was a clump again, standsiege nests.)
   if #foes == 0 and op.drop and not op.clearance and game.tick - (op.lined_at or 0) >= LINE_AGAIN then

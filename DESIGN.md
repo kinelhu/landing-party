@@ -199,6 +199,9 @@ document still says Serenity where it records history.
 | The lightning's stun on units (`scripts/stun.lua`): every electric hit on a unit, either side's (Kessler-Hayashi's Tesla and shock trooper, the player's tesla turret and gun), charges it by one less its electric resistance, a hull a quarter of that; the charge halves every 4 s, worked out at the next hit; a hit stuns with chance (charge - 1) / 6, at most 60%, never the first; stunned it is switched off (no move, no shot) for 1 s under Space Age's lightning hit looped over it, then immune for 4 s; Space Age's own slow kept. A tesla turret's 120 kills most infantry before it builds | built 0.2.249 | `stun` (in the regression), `dev` (the Prism scene's Tesla) |
 | A corporation's railgunners out of the engine's groups (shelled, the engine sends the units near the impact at the battery; on nwa railgunners so broke 232 of the player's buildings): one added to a group goes home. The yard keeps 40 tiles from the guns of a force at cease-fire with it. A landing by pod stands on its pod's pad (explosions take no ground) | built 0.2.219 | `artyreply`, `idle` truce, `podland` |
 | The arena: a counter heatmap of every unit kind at equal spend, against biters by evolution and the player's lines; to watch, with a panel | built 0.1.46 | `scripts/arena.sh` (`docs/arena.md`), `scripts/play-arena.sh` |
+| Orbital sight (Kessler-Hayashi, shared.CORPS orbital_intel): every building of its foes within 1,500 tiles found from orbit, a few chunks a second (intel.orbit); before, its radars, units and one survey line only | built 0.3.1 | `orbit` (and off) |
+| Air plan: a target its raids found no way to on foot weighed by air alone, an air squad made for it where little shoots up (army.air_want); air raids on a ladder of their own | built 0.3.1 | `airplan` (and tilted) |
+| Sieges by what is home (up to half, at most 80, railgunners among them), refused below 30% of their escort kept on the way; railgunners at most 30% of the cap | built 0.3.1 | `siegetier` big, biters; `rivalsiege` |
 | Legibility: every mechanic told in the world (audit below) | audited 2026-10-20; gaps open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
 
@@ -262,6 +265,19 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   - no spree while a Synthexis wave is out or due (farm.wave_soon unread by the director).
 - The uplink fortress that varies (one fixed template).
 - A new corporation landing after both are gone (`withdrawing` is never cleared); the rivals' war on each other.
+- After 0.3.1, from the user's nw game (2026-11-26):
+  - Veterancy's names: ranks are vanilla qualities, so a veteran's tooltip says "Uncommon" and wears the engine's quality
+    badge beside our chevrons (the user: "a little miffed regarding the 'rarity' language"). Proposed: three qualities of
+    the mod's own (Veteran, Elite, Heroic; levels 1 to 3, a chain of their own no recipe makes, our chevron their icon).
+    A probe first: a hidden quality kept out of the player's selectors, and a unit made at a quality off the normal chain.
+  - The player's orbital cannons spare walls, gates and poles (cannon.lua SPARE): fired at a wall they read as weak (the
+    user: "orbital strike can't destroy walls?"). Proposed: walls first when the aim point is within a few tiles of one.
+  - Synthexis at high evolution: its wave's price rises with evolution, its income does not (nw, evolution 0.92: a wave
+    of 44 at 2,297 biomass, 198 in hand, about 1,270 gained in 44 minutes and spent on growth). No serious wave in an hour.
+  - Grubstake against a fortress with nothing exposed: 11,681 parts and 78 units idle (its prospect trucks and buggies
+    died to lasers). Its thefts need a belt or a machine outside the guns.
+  - Kessler-Hayashi's raids through nest country: its 121-unit raid on an undefended substation fled after two leaders
+    fell to biters, 91 back, nothing razed (nw, 0.3.1).
 
 **Cut or dropped**
 - Depletion and relocation (the user, 2026-11-05: "Depletion should probably never occur").
@@ -8973,3 +8989,29 @@ Bugs and surprises the headless runs caught, each kept as a check:
   short. Landing on time, siege then showed two stompers "gone from the map with no death" on both the fixed and the
   older code: herd.on_died read only type "unit", and stompers are spider-units, so a wave never recorded their deaths.
   Read both now (the vanished check caught it; seen failing on both trees).
+- **The user's nw game (2026-11-26, 0.3.0 from the portal on nw.zip, 56 hours of map, evolution 0.92): six reasons the
+  corporations did little, found in a copy of their autosave.** A probe mod read each faction's state there, and traced
+  runs of the copy (headless, its own profile) gave the reasons. (1) Kessler-Hayashi's siege on Grubstake sat 12 minutes
+  with two loaded mortars and fired nothing: the only guns in reach were Grubstake's flamers, copies of lp-flamer-oil,
+  which data.lua's MILITARY left out, so no military target; neither a mortar nor the player's own turrets fired on them
+  by themselves (scenario military, seen failing on exactly the two). (2) A siege's guards ignored the biters: the guard
+  step sought foes among enemies(), which leaves the biter forces out, and a drop siege's guards hold with no distraction;
+  twelve medium biters killed all 11 of a siege and both mortars (siegetier biters, seen failing). (3) It knew 14 of the
+  player's cells, all on the walled front its survey line met: orbital intelligence read a target's defence, never found
+  one. intel.orbit now looks over every chunk within 1,500 tiles (32 a second, 2 sensed): 581 known in six minutes on the
+  save (scenario orbit; off, the outpost stays unknown). (4) Every one of the 581 was then held by the director's power
+  hold, 18 minutes from the strike's landing whatever became of it (a diagnostic now counts holds by cause:
+  choose_why.by); it lifts 2 minutes after the strike is over (scenario powerhold, seen failing: 11 minutes left). And
+  the quiet clock counted the hold: Kessler-Hayashi stood down an hour after landing with 237 units home; held time no
+  longer counts (war.lua; on the save it then raided with 121; not a guard of its own). (5) 108 of its 150 units made
+  were railgunners, 37% of its mix: kept out of raids and sieges (ops.lua fights), they never left, the others went out
+  and died. Now at most 30% of its cap, and sieges take them (siegetier big, seen failing: 21 guards and none on the
+  old code, 61 and 25 now). Its sieges took their tier's 6 to 16 with 200 home; now up to half of what is home (at most
+  80), the gap after a costly one at most 10 minutes more. A siege whose cost map keeps under 30% of that escort is not
+  sent (a siege had marched 460 tiles at "keeps 0.00" and lost all 17). (6) Idle railgunners wandered by the lander, the
+  yard leaving them out when it lies past their leash: 115 of 120 wandering, 2 tiles in 10 s each; now standing, 0.2 to
+  0.4 (on the save; a fresh map's yard is within the leash and a scenario could not show it, so none was kept). And air
+  raids: none had fliers (5 drones built, all lost to biters; its counter tilt cut them to a tenth). Raids that find no
+  way on foot mark the target (t.no_foot) and it is weighed by air alone; such targets with little anti-air ask for an
+  air squad of 8 first (army.air_want); an air raid's ladder is its own ("air"), not the ground raid's that failed there
+  (scenario airplan, tilted, seen failing both ways: no air raid without the ladder's split, 5 fliers without the plan).

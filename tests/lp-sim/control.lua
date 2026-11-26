@@ -2296,6 +2296,24 @@ scenarios.siegetier = function()
   schedule(60, function()
     for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
   end)
+  -- LP_MIX=big (the user's nw game, 2026-11-26: "I can't believe KH can field 120 railgunners but not a bigger siege than
+  -- 12 units?"): 60 infantry and 30 railgunners home before the siege; it takes up to half of what is home above its
+  -- floor (siege.guards_for), railgunners among them. Its tier's 10 alone before.
+  if mix == "big" then
+    schedule(5 * 3600 - 300, function()
+      lp("debug_units", storage.id, "lp-infantry", 60)
+      lp("debug_units", storage.id, "lp-railgunner", 30)
+    end)
+    -- (Out with it: railgunners past their leash from the lander, 68 tiles, where home keeps them.)
+    schedule(5 * 3600 + 1800, function()
+      local L = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1].position
+      local rails = 0
+      for _, u in pairs(surface().find_entities_filtered{force = FORCE, name = "lp-railgunner"}) do
+        if (u.position.x - L.x) ^ 2 + (u.position.y - L.y) ^ 2 > 68 * 68 then rails = rails + 1 end
+      end
+      S.big_rails = rails
+    end)
+  end
   schedule(5 * 3600, function() lp("dev", {"siege", tostring(storage.id)}, S.c) end)
   schedule(120, function()
     local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
@@ -2349,6 +2367,29 @@ scenarios.siegetier = function()
         end
         S.sally_at = game.tick
       end
+      -- LP_MIX=biters (the user's nw game, 2026-11-26: "The siege with the mortars also doesn't react while being attacked
+      -- by the biters (nor the mortars nor the accompanying troops)"): its mortars firing, twelve medium biters come at
+      -- them from beyond the site, away from the position; 90 s on, how many still stand. (A siege's guards hold with no
+      -- distraction and its guard step sought foes among enemies(), which leaves the biters out: none was fought.)
+      if mix == "biters" and o.mortar and (o.shells_fired or 0) > 0 and not S.bit then
+        local m = o.mortar
+        local len = math.max(1, math.sqrt((m[1] - S.c[1]) ^ 2 + (m[2] - S.c[2]) ^ 2))
+        local from = {m[1] + (m[1] - S.c[1]) / len * 16, m[2] + (m[2] - S.c[2]) / len * 16}
+        S.bit = spawn("medium-biter", from, 12, "enemy")
+        for _, u in ipairs(S.bit) do
+          u.commandable.set_command{type = defines.command.attack_area, destination = {x = m[1], y = m[2]}, radius = 12,
+            distraction = defines.distraction.by_enemy}
+        end
+        S.bit_at = game.tick
+        info(string.format("siegetier biters: %d medium biters at %.0f,%.0f, the mortar at %.0f,%.0f", #S.bit, from[1], from[2], m[1], m[2]))
+      end
+      -- (Read every second to 90 s: a siege the biters wiped out ends the run early, settled; 12 biters killed all 11 of
+      -- its units and both mortars before the fix, seed 12345.)
+      if S.bit_at and game.tick <= S.bit_at + 90 * 60 then
+        S.bit_left = 0
+        for _, u in ipairs(S.bit) do if u.valid then S.bit_left = S.bit_left + 1 end end
+        S.mortars_after = surface().count_entities_filtered{type = "artillery-turret", force = FORCE}
+      end
       if mix == "convoy" and o.mortar then
         for _, h in pairs(surface().find_entities_filtered{force = FORCE, name = "lp-hauler"}) do
           local d = math.sqrt((h.position.x - o.mortar[1]) ^ 2 + (h.position.y - o.mortar[2]) ^ 2)
@@ -2387,10 +2428,252 @@ scenarios.siegetier = function()
       check("siegetier: the sally killed the mortar and the siege aborted", siege and siege.outcome == "aborted"
         and surface().count_entities_filtered{type = "artillery-turret", force = FORCE} == 0,
         siege and siege.outcome or "not finished")
+    elseif mix == "big" then
+      -- (61 of 90 at home, seed 12345, 0.3.1; its tier's 10 before.)
+      check("siegetier big: its escort by what is home, 30 at least", siege and (siege.launched or 0) >= 30,
+        tostring(siege and siege.launched))
+      check("siegetier big: railgunners among them", (S.big_rails or 0) > 0, tostring(S.big_rails))
+    elseif mix == "biters" then
+      check("siegetier biters: the biters came at its firing mortars", S.bit and #S.bit == 12, tostring(S.bit and #S.bit))
+      check("siegetier biters: its guards fought them off, at most 3 of 12 standing after 90 s", S.bit_left and S.bit_left <= 3,
+        string.format("%s standing, %s mortars", tostring(S.bit_left), tostring(S.mortars_after)))
     elseif mix == "convoy" then
       check("siegetier: the convoy was killed", S.convoy_killed ~= nil, tostring(S.convoy_killed))
       check("siegetier: nothing more was loaded", (S.max_loaded or 0) == 80, tostring(S.max_loaded))
     end
+  end)
+end
+
+-- A siege on a rival (the user's nw game, 2026-11-26: Kessler-Hayashi "sent a small siege to the grubstake camp ...
+-- The siege deployed mortars that didn't fire at all"; its trace: 2 mortars up with 80 shells, aborted twelve minutes on,
+-- razed 0). A Grubstake camp lands 260 tiles from Kessler-Hayashi's; at minute 10 a siege is forced at its building
+-- nearest Kessler-Hayashi that a mortar site reaches (tried each 30 s, as the trailer's corps-at-war beat does). Its mortars
+-- must fire and break something of Grubstake's. (The fire plan, a flare on one point, was the player's alone, and a
+-- mortar fires by itself only at what it reads as a military target.)
+scenarios.rivalsiege = function()
+  local GS = "lp-grubstake"
+  local function d2(a, b2) return (a.x - b2.x) ^ 2 + (a.y - b2.y) ^ 2 end
+  settle_when(function()
+    if not S.go then return false end
+    local st = lp("stats", storage.id)
+    for _, l in ipairs(st.ops.log or {}) do if l.op == "siege" and not st.ops.op then return true end end
+    return false
+  end)
+  schedule(30, function() lp("debug_tune", {corp_level = {serenity = 3, grubstake = 2}, siege_tier = 2, raids_off = true}) end)
+  schedule(60, function() for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end end)
+  schedule(120, function()
+    local k = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1].position
+    local len = math.sqrt(k.x * k.x + k.y * k.y)
+    -- Beside it, across the line to the spawn (the camps' ground apart).
+    S.g = lp("arrive", 1, {x = k.x - k.y / len * 220, y = k.y + k.x / len * 220}, 40, {corp = "grubstake"})
+    info("rivalsiege: Grubstake's camp " .. tostring(S.g))
+  end)
+  for t = 10 * 3600, 16 * 3600, 1800 do
+    schedule(t, function()
+      if S.go or not S.g then return end
+      local g = lp("stats", S.g)
+      local k = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1].position
+      local cand = surface().find_entities_filtered{position = g.origin, radius = 90, force = GS, type = {"assembling-machine",
+        "electric-energy-interface", "mining-drill", "container", "electric-pole"}}
+      table.sort(cand, function(a, b2) return d2(a.position, k) < d2(b2.position, k) end)
+      for i = 1, math.min(12, #cand) do
+        local why = lp("debug_force_op", storage.id, "siege", {cand[i].position.x, cand[i].position.y}, GS)
+        if not why then
+          S.go, S.pos = game.tick, {cand[i].position.x, cand[i].position.y}
+          S.gs0 = surface().count_entities_filtered{position = S.pos, radius = 60, force = GS}
+          info(string.format("rivalsiege: siege at %s %.0f,%.0f (%d of Grubstake's within 60)", cand[i].name, S.pos[1], S.pos[2], S.gs0))
+          return
+        end
+        S.why = why
+      end
+    end)
+  end
+  for t = 10 * 3600, END - 120, 60 do
+    schedule(t, function()
+      if not S.go then return end
+      local o = lp("stats", storage.id).ops
+      S.max_mortars = math.max(S.max_mortars or 0, o.mortars or 0)
+      S.max_fired = math.max(S.max_fired or 0, o.shells_fired or 0)
+      local hurt = 0
+      for _, e in pairs(surface().find_entities_filtered{position = S.pos, radius = 60, force = GS}) do
+        if e.health and e.max_health and e.health < e.max_health then hurt = hurt + 1 end
+      end
+      S.hurt = math.max(S.hurt or 0, hurt)
+      S.gs_low = math.min(S.gs_low or math.huge, surface().count_entities_filtered{position = S.pos, radius = 60, force = GS})
+    end)
+  end
+  schedule(END - 60, function()
+    local o = lp("stats", storage.id).ops
+    local siege
+    for _, l in ipairs(o.log or {}) do if l.op == "siege" then siege = l end end
+    info("rivalsiege: " .. serpent.line({why = S.why, mortars = S.max_mortars, fired = S.max_fired, hurt = S.hurt,
+      gs0 = S.gs0, gs_low = S.gs_low, siege = siege}))
+    check("rivalsiege: a siege went at Grubstake's camp", S.go ~= nil, tostring(S.why))
+    check("rivalsiege: its mortars came up", (S.max_mortars or 0) > 0, tostring(S.max_mortars))
+    check("rivalsiege: its mortars fired", (S.max_fired or 0) > 10, tostring(S.max_fired))
+    check("rivalsiege: they broke or hurt Grubstake's buildings", (S.hurt or 0) > 0 or (S.gs_low or 0) < (S.gs0 or 0),
+      string.format("%s hurt, %s of %s left at least", tostring(S.hurt), tostring(S.gs_low), tostring(S.gs0)))
+  end)
+end
+
+-- Orbital sight (intel.orbit; the user's nw game, 2026-11-26: Kessler-Hayashi knew 14 of the player's cells, all on the
+-- walled front its survey line met, and raided nothing). An undefended outpost of the player's (six assemblers, poles)
+-- 520 tiles from its lander, across the line to the spawn, beyond its lander's 300 and its radars' 250 and 300 off the
+-- survey's line: within 20 minutes Kessler-Hayashi knows it. LP_MIX=off: orbital sight off (orbit_off), the control:
+-- it does not.
+scenarios.orbit = function()
+  local off = params.mix == "off"
+  schedule(30, function() lp("debug_tune", {orbit_off = off or nil, raids_off = true}) end)
+  schedule(120, function()
+    local k = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1].position
+    local len = math.sqrt(k.x * k.x + k.y * k.y)
+    local c = {math.floor(k.x - k.y / len * 520), math.floor(k.y + k.x / len * 520)}
+    flatten(c[1] - 16, c[2] - 16, c[1] + 16, c[2] + 16)
+    for i = 0, 5 do
+      surface().create_entity{name = "assembling-machine-1", position = {c[1] - 8 + (i % 3) * 6 + 0.5, c[2] - 3 + math.floor(i / 3) * 6 + 0.5}, force = "player"}
+    end
+    for _, p in ipairs({{-10, 0}, {0, 0}, {10, 0}}) do
+      surface().create_entity{name = "small-electric-pole", position = {c[1] + p[1] + 0.5, c[2] + p[2] + 0.5}, force = "player"}
+    end
+    S.c = c
+    info(string.format("orbit: the outpost at %d,%d, %.0f from its lander", c[1], c[2], math.sqrt((c[1] - k.x) ^ 2 + (c[2] - k.y) ^ 2)))
+  end)
+  for t = 5 * 3600, 20 * 3600, 3600 do
+    schedule(t, function()
+      if S.known_at or not S.c then return end
+      local kn = lp("debug_knows", storage.id, S.c, 40)
+      if kn and #kn.cells > 0 then S.known_at, S.cells = (game.tick - storage.t0) / 3600, kn.cells end
+    end)
+  end
+  schedule(20 * 3600 + 60, function()
+    info("orbit: " .. serpent.line({known_at = S.known_at, cells = S.cells}))
+    if off then
+      check("orbit: off, the outpost beyond its sensors stays unknown", S.known_at == nil, tostring(S.known_at))
+    else
+      check("orbit: it knows the outpost beyond its sensors within 20 minutes", S.known_at ~= nil,
+        S.known_at and string.format("minute %.0f, %s", S.known_at, serpent.line(S.cells)) or "unknown")
+    end
+  end)
+end
+
+-- The power strike's hold lifts when the strike is over (the user's nw game, 2026-11-26: every camp held all 581 of the
+-- player's known targets for the hold's full 18 minutes, the strike long over). The director on, a steam engine of the
+-- player's 150 tiles from the camp; at minute 5 a power strike at it; once its pods are down, every unit of the camp's
+-- within 60 of the engine killed. Four minutes after the strike is over, the hold's end is at most 2.5 minutes off (it
+-- had 18 from the landing). LP_MIX is not read.
+scenarios.powerhold = function()
+  schedule(120, function()
+    lp("debug_tune", {director = "steady", director_tune = {grace = 0, fill = 0, hurt_floor = 100, points_per_worth = 1,
+      points_max = 10}})
+    local id = (lp("bases") or {})[1]
+    local o = lp("stats", id).origin
+    local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
+    S.p = {math.floor(o.x - o.x / len * 150), math.floor(o.y - o.y / len * 150)}
+    flatten(S.p[1] - 12, S.p[2] - 12, S.p[1] + 12, S.p[2] + 12)
+    surface().create_entity{name = "steam-engine", position = {S.p[1] + 0.5, S.p[2] + 0.5}, direction = defines.direction.east, force = "player"}
+    for _ = 1, 2 do lp("debug_depot", id, 3000) end
+  end)
+  schedule(5 * 3600, function() S.said = lp("director_cmd", "strike", "power") end)
+  for t = 5 * 3600 + 600, END - 300, 600 do
+    schedule(t, function()
+      local d = lp("director") or {}
+      local h = d.power_hold and d.power_hold.player
+      if h and not S.hold0 then S.hold0 = h - game.tick end
+      local k = d.strikes and d.strikes[d.strike_n]
+      if k and k.landed_n and not S.killed then
+        S.killed = 0
+        for _, u in pairs(surface().find_entities_filtered{position = S.p, radius = 60, type = "unit"}) do
+          if u.force.name ~= "player" then u.die("player"); S.killed = S.killed + 1 end
+        end
+      end
+      if S.killed and not k and not S.over_at then S.over_at = game.tick end
+      if S.over_at and not S.hold1 and game.tick >= S.over_at + 4 * 3600 then S.hold1 = h and (h - game.tick) or -1 end
+    end)
+  end
+  schedule(END - 60, function()
+    info("powerhold: " .. serpent.line({said = S.said, hold0 = S.hold0, killed = S.killed, over_at = S.over_at, hold1 = S.hold1}))
+    check("powerhold: a power strike went, its hold set", S.hold0 ~= nil and S.hold0 > 10 * 3600, tostring(S.hold0))
+    check("powerhold: its units killed, the strike over", (S.killed or 0) > 0 and S.over_at ~= nil,
+      string.format("%s killed, over %s", tostring(S.killed), tostring(S.over_at)))
+    check("powerhold: four minutes after, the hold is lifted (2 minutes past its end)", S.hold1 ~= nil and S.hold1 <= 0,
+      string.format("%s ticks of hold left", tostring(S.hold1)))
+  end)
+end
+
+-- An air plan (the user, 2026-11-26: "shouldn't it judge air raids feasible and then start building fliers for it?"; on
+-- nw its 5 drones had died to biters and its counter tilt cut them to a tenth): an outpost of the player's on an island,
+-- ringed by water 10 tiles wide, nothing round it that shoots up, 420 tiles from Kessler-Hayashi's lander (its orbital
+-- sight finds it). At its level 3, parts and depots granted: within 40 minutes it builds fliers and sends them by air.
+-- LP_MIX=tilted: as on nw, its losses are to biters (ten of its infantry killed by a medium biter each ten minutes), and
+-- its counter tilt cuts its drones to a tenth; the plan builds them all the same (seen failing without it: none sent).
+scenarios.airplan = function()
+  schedule(30, function() lp("debug_tune", {corp_level = {serenity = 3}}) end)
+  if params.mix == "tilted" then
+    for t = 3 * 3600, END - 600, 10 * 3600 do
+      schedule(t, function()
+        local k = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1].position
+        local p = surface().find_non_colliding_position("medium-biter", {k.x + 60, k.y}, 20, 1)
+        local bit = p and surface().create_entity{name = "medium-biter", position = p, force = "enemy"}
+        for _ = 1, 10 do
+          local q = surface().find_non_colliding_position("lp-infantry", {k.x + 60, k.y + 4}, 20, 1)
+          local u = q and surface().create_entity{name = "lp-infantry", position = q, force = FORCE}
+          if u then u.die("enemy", bit) end
+        end
+        if bit and bit.valid then bit.destroy() end
+      end)
+    end
+  end
+  schedule(60, function() local id = (lp("bases") or {})[1]; for _ = 1, 3 do lp("debug_depot", id, 3000) end end)
+  schedule(120, function()
+    local k = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1].position
+    local len = math.sqrt(k.x * k.x + k.y * k.y)
+    local c = {math.floor(k.x - k.y / len * 420), math.floor(k.y + k.x / len * 420)}
+    flatten(c[1] - 30, c[2] - 30, c[1] + 30, c[2] + 30)
+    local tiles = {}
+    for x = -28, 28 do for y = -28, 28 do
+      local r = math.max(math.abs(x), math.abs(y))
+      if r >= 16 and r <= 26 then tiles[#tiles + 1] = {name = "water", position = {c[1] + x, c[2] + y}} end
+    end end
+    surface().set_tiles(tiles, true, true, true, false)
+    for i = 0, 5 do
+      surface().create_entity{name = "assembling-machine-1", position = {c[1] - 8 + (i % 3) * 6 + 0.5, c[2] - 3 + math.floor(i / 3) * 6 + 0.5}, force = "player"}
+    end
+    surface().create_entity{name = "small-electric-pole", position = {c[1] + 0.5, c[2] + 0.5}, force = "player"}
+    S.c = c
+    info(string.format("airplan: the island at %d,%d", c[1], c[2]))
+  end)
+  for t = 5 * 3600, END - 120, 600 do
+    schedule(t, function()
+      local id = (lp("bases") or {})[1]
+      local st = lp("stats", id)
+      S.air = math.max(S.air or 0, st.ops.air_raids or 0)
+      S.drones = math.max(S.drones or 0, (st.built_by or {})["lp-laser-drone"] or 0)
+      if (S.air or 0) > 0 and not S.air_at then S.air_at = (game.tick - storage.t0) / 3600 end
+    end)
+  end
+  schedule(END - 60, function()
+    info("airplan: " .. serpent.line({air = S.air, drones = S.drones, air_at = S.air_at}))
+    -- (Tilted, an air squad, army.air_want's 8: without the plan its counter tilt made 5, enough for one raid.)
+    local least = params.mix == "tilted" and 8 or 3
+    check("airplan: it built fliers, " .. least .. " at least", (S.drones or 0) >= least, tostring(S.drones))
+    check("airplan: it raided the island by air", (S.air or 0) > 0, string.format("%s air raids, first at minute %s",
+      tostring(S.air), tostring(S.air_at)))
+  end)
+end
+
+-- Every turret of the mod's a military target (the user's nw game, 2026-11-26: Kessler-Hayashi's mortars sat loaded 12
+-- minutes, two Grubstake flamers in reach, and fired nothing: Grubstake's flamer, a copy of lp-flamer-oil, which the
+-- MILITARY list in data.lua left out, was no military target, so neither a mortar nor the player's own turrets fired on
+-- it by themselves).
+scenarios.military = function()
+  schedule(60, function()
+    local bad = {}
+    for name, p in pairs(prototypes.get_entity_filtered{{filter = "type", type = {"ammo-turret", "electric-turret",
+      "fluid-turret", "artillery-turret"}}}) do
+      if name:find("^lp%-") and not p.is_military_target then bad[#bad + 1] = name end
+    end
+    table.sort(bad)
+    check("military: every turret of the mod's is a military target", #bad == 0, table.concat(bad, ", "))
   end)
 end
 

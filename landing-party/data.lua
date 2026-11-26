@@ -71,7 +71,9 @@ end
 
 -- A faction copy of a vanilla prototype: renamed, retinted, not blueprintable. Nothing the faction owns can be mined,
 -- only its ruins once a settlement falls, or what the player captured: to what it is made of (made_of).
-local MILITARY = {["lp-turret"] = true, ["lp-gun-turret"] = true, ["lp-flamer"] = true, ["lp-gate"] = false, ["lp-mortar"] = true, ["lp-howitzer"] = true, ["lp-orbital-relay"] = true, ["lp-dome-projector"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-pacifier"] = true, ["lp-lander"] = true,
+-- (lp-flamer-oil, Grubstake's flamer's base, left out until 0.3.1: no military target, its flamers drew no fire from a
+-- mortar or the player's turrets by themselves; the user's nw game, scenario military.)
+local MILITARY = {["lp-turret"] = true, ["lp-gun-turret"] = true, ["lp-flamer"] = true, ["lp-flamer-oil"] = true, ["lp-gate"] = false, ["lp-mortar"] = true, ["lp-howitzer"] = true, ["lp-orbital-relay"] = true, ["lp-dome-projector"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-pacifier"] = true, ["lp-lander"] = true,
   ["lp-uplink"] = true, ["lp-launchpad"] = true, ["lp-scrap-cannon"] = true,
   ["lp-optics-lab"] = true, ["lp-line-lab"] = true, ["lp-siege-lab"] = true}
 local function copy(type, name, new)

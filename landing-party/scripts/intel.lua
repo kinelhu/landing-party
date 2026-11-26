@@ -282,6 +282,54 @@ local function survey(b)
   end
 end
 
+-- Orbital sight (shared.CORPS orbital_intel; the user, 2026-11-26: "I thought we had given it an all seeing eye like
+-- Synthexis?"): a camp knows every building of its foes within ORBIT_RANGE, not only what its radars, its units and the
+-- survey's one line to the spawn see. On the user's nw game Kessler-Hayashi knew 14 of the player's cells, all on the
+-- walled front its survey line met, and raided nothing in 15 minutes: the stretches defended by water alone it had never
+-- seen. Spread over ticks: ORBIT_LOOK chunks looked at a step (one cheap count each), and ORBIT_SENSE of those with
+-- buildings sensed (each its cells' defence, exposure and way in, as any sensor's), what is gone forgotten.
+local ORBIT_RANGE, ORBIT_LOOK, ORBIT_SENSE = 1500, 32, 2
+local function orbit(b)
+  if not ((shared.CORPS[b.corp] or {}).orbital_intel and b.origin and b.lander.valid) or storage.orbit_off then return end
+  local s = game.surfaces[b.surface]
+  local o = b.orbit
+  if not o or not o.ring then
+    -- A pass: the chunks within range, nearest first, and none queued yet.
+    local cx, cy = math.floor(b.origin.x / 32), math.floor(b.origin.y / 32)
+    local n = math.ceil(ORBIT_RANGE / 32)
+    local ring = {}
+    for dx = -n, n do for dy = -n, n do
+      if dx * dx + dy * dy <= n * n then ring[#ring + 1] = {cx + dx, cy + dy, dx * dx + dy * dy} end
+    end end
+    table.sort(ring, function(p, q) return p[3] < q[3] end)
+    o = {ring = ring, i = 1, queue = {}, passes = (o and o.passes or 0), sensed = (o and o.sensed or 0)}
+    b.orbit = o
+  end
+  local foes = {}
+  for _, f in ipairs(enemies(game.forces[b.force])) do
+    if shared.is_player_force(f) then foes[#foes + 1] = f end
+  end
+  if #foes == 0 then return end
+  for _ = 1, ORBIT_LOOK do
+    local c = o.ring[o.i]
+    if not c then break end
+    o.i = o.i + 1
+    if s.is_chunk_generated({c[1], c[2]}) and s.count_entities_filtered{area = {{c[1] * 32, c[2] * 32}, {c[1] * 32 + 32, c[2] * 32 + 32}},
+      force = foes, type = TYPES, limit = 1} > 0 then
+      o.queue[#o.queue + 1] = {c[1], c[2]}
+    end
+  end
+  for _ = 1, ORBIT_SENSE do
+    local c = table.remove(o.queue, 1)
+    if not c then break end
+    local mid = {x = c[1] * 32 + 16, y = c[2] * 32 + 16}
+    sense(b, s, mid, 23)
+    forget(b, mid, 23)
+    o.sensed = o.sensed + 1
+  end
+  if not o.ring[o.i] and #o.queue == 0 then o.ring, o.passes = nil, o.passes + 1 end
+end
+
 -- Units in the field see around them (patrols, responses, the operation's own force).
 local function field_sight(b)
   local surface = game.surfaces[b.surface]
@@ -294,7 +342,7 @@ local function field_sight(b)
     end
   end
 end
-return {SURVEY_TICKS = SURVEY_TICKS, UNITS_TICKS = UNITS_TICKS, enemies = enemies, field_sight = field_sight, mobile = mobile, scan = scan, sense = sense, survey = survey}
+return {SURVEY_TICKS = SURVEY_TICKS, UNITS_TICKS = UNITS_TICKS, enemies = enemies, field_sight = field_sight, mobile = mobile, orbit = orbit, scan = scan, sense = sense, survey = survey}
 end
 
 return intel

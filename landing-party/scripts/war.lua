@@ -620,6 +620,10 @@ local function quiet(tick)
       elseif at_war(b) then
         b.war_since = b.war_since or tick
         local since = math.max(b.razed_at or 0, b.war_since, b.woke_at or 0)
+        -- Not while the director holds it, nor counting the hold (0.3.1; the user's nw game: held 18 minutes by a power
+        -- strike, Kessler-Hayashi stood down an hour after its landing with 237 units at home, never free to try).
+        local dh = foe and storage.director and storage.director.power_hold and storage.director.power_hold[foe]
+        if dh then since = math.max(since, math.min(dh, tick)) end
         local aborted = (b.ops_aborted or 0) - (b.aborted_mark or 0)
         -- An aggressive corporation keeps at it longer before it stands down (tune.lua).
         local streak = math.max(2, math.floor(FAIL_STREAK * tune.aggression(b.corp) + 0.5))

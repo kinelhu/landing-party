@@ -545,6 +545,7 @@ local function needed(d) return math.ceil(PER_TURRET * d - 1e-9) + BASE_FORCE en
 -- defenders as on foot, over the corporation's strength. Weighed again after AIR_TICKS, at most AIR_NEW a choice (each
 -- weighing looks along 400 tiles of line).
 local AIR_TICKS, AIR_NEW = 10 * 3600, 4
+ops.NO_FOOT_TICKS = 60 * 3600   -- a target a raid found no way to on foot is weighed by air alone this long
 local function air_defence(b, t, quota)
   if not t.air or game.tick - (t.air_at or 0) > AIR_TICKS then
     if quota.n <= 0 then return nil end
@@ -626,7 +627,9 @@ local function choose(b, army)
   -- At least what stands at home beyond the reserve: a camp with no depot has a cap of nought, and its escort of sixteen
   -- could afford nothing (visit, under the guns).
   local max_field = math.max(0, cap(b, army) - math.ceil(RESERVE * cap(b, army)), (field(b, army)))
-  local why = {held = 0, cool = 0, seen = 0, odds = 0}
+  local why = {held = 0, cool = 0, seen = 0, odds = 0, by = {}}
+  -- (What held each player target, its first cause: why.by, for the trace and debug_corp_why.)
+  local function hold(cause) why.by[cause] = (why.by[cause] or 0) + 1 end
   local best, bs
   local zones = {}
   for i = #(b.intel.cool or {}), 1, -1 do
@@ -659,11 +662,12 @@ local function choose(b, army)
   for key, t in pairs(b.intel.targets) do
     local player = against_player(t.owner)
     local held = player and in_flight >= budget(t.owner) and not battery(t)
+    if held then hold("budget") end
     if held and game.tick >= (t.cool or 0) then storage.budget_holds = (storage.budget_holds or 0) + 1 end
     -- (Its temper by ground and by air apart: a guarded target a thief would not walk into it may still fly at.)
     local ground_ok = temper_allows(b, t)
     local air_only = not ground_ok and by_air and temper_allows(b, t, true)
-    if not ground_ok and not air_only then held = true end
+    if not ground_ok and not air_only then if player and not held then hold("temper") end; held = true end
     -- Pressed (the ladder's second rung against a player it is at war with): that player's targets only, self-defence
     -- excepted (weighted 0.2, a rival's lander still won every choice on the user's save: 48 raids on landers, none on
     -- the player, visit).
@@ -673,13 +677,14 @@ local function choose(b, army)
     local dh = player and storage.director and storage.director.power_hold and storage.director.power_hold[t.owner]
     -- An export contract (director.lua): this corporation's camps hold every operation against that player.
     local dc = player and storage.director and storage.director.contract
-    if dc and dc.corp == b.corp and dc.owner == t.owner and game.tick < dc.till and not battery(t) then held = true end
+    if dc and dc.corp == b.corp and dc.owner == t.owner and game.tick < dc.till and not battery(t) then if not held then hold("contract") end; held = true end
     if dh and game.tick < dh and not battery(t) then
+      if not held then hold("power") end
       held = true
       storage.director.power_held = (storage.director.power_held or 0) + 1
     end
     -- Stood down (war.lua): nothing against a player but self-defence.
-    if b.quiescent and player and not battery(t) and threat_bonus(b, t) == 0 then held = true end
+    if b.quiescent and player and not battery(t) and threat_bonus(b, t) == 0 then if not held then hold("stood_down") end; held = true end
     -- (Why the player's targets were not taken, for the director's measure: ops.tick, b.dir_miss.)
     local cooled = game.tick < (t.cool or 0) or cooling(t)
     if player then
@@ -693,7 +698,10 @@ local function choose(b, army)
       local mind = mind_of(b)
       local p = odds((battery(t) or threat_bonus(b, t) > 0) and cap(b, army) or max_field, d)
       -- (On foot below its odds, it may still go by air: weighed both ways, s 0 for a way it cannot take.)
+      -- (Not where a raid found no way on foot lately, t.no_foot: by air only, army.air_want; else it was chosen on foot
+      -- again each time its cooling ran out, and failed again.)
       local on_foot = ground_ok and p >= mind.min_odds * (desperate and DESPERATE_ODDS or 1) - 1e-9
+        and not (t.no_foot and game.tick - t.no_foot < ops.NO_FOOT_TICKS)
       if player and not on_foot and not by_air then why.odds = why.odds + 1 end
       if on_foot or by_air then
         local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
@@ -1000,7 +1008,9 @@ local function finish(b, outcome, trace, army)
   local lost = op.launched - alive(op)
   b.next_op = game.tick + tune.sooner(b.corp, (outcome == "done" or outcome == "spent" or outcome == "claimed") and GAP_DONE
     or GAP_ABORTED)
-    + math.floor(lost / 5) * GAP_PER_5_LOST
+    -- (At most 10 minutes for its losses, 0.3.1: sieges by what is home lose more, and 55 lost held the next one 21
+    -- minutes, the user's nw game.)
+    + math.min(10, math.floor(lost / 5)) * GAP_PER_5_LOST
   -- (Why it waits, for the director: a pace it may pull in, never a hold after a failure to launch, director.lua.)
   b.next_op_why = "pace"
   if op.clearance then b.next_op = game.tick + 3600 end
@@ -1053,7 +1063,9 @@ local function finish(b, outcome, trace, army)
       -- enough: a raid of 2 attacked from its staging and died to the nests on its 7 waypoints, none near.)
       reached = ((op.closest or math.huge) <= REACHED or (op.shells_fired or 0) > 0 or got > 0) and true or false,
       rams = op.kind == "siege" and op.tier or nil, breach = {tpos[1], tpos[2]}, area = all > 0 and area / all or nil}
-    tactics.record(b.corp, (t and t.owner) or op.owner or "player", tpos, op.kind, e)
+    -- (An air raid under its own method, "air": a ground raid that could not cross the water to an island held its air
+    -- raid there as failed, the ladder's one name for both; airplan tilted, 0.3.1.)
+    tactics.record(b.corp, (t and t.owner) or op.owner or "player", tpos, op.air and "air" or op.kind, e)
     -- (And under the way its assault took at a closed wall, its menu's own record: assault.lua.)
     if op.way_method then
       e.rams = nil
@@ -1643,6 +1655,9 @@ local function launch(b, key, trace, army, opts)
     -- Longer when the march itself is the problem (water and turrets): the same unreachable substation was chosen every
     -- two minutes for half an hour while the factory had hundreds of others (visit nw).
     t.cool = game.tick + ((t.owner ~= "enemy" and not why:find("nests = [1-9]")) and 15 or 2) * 3600
+    -- No way on foot (army.air_want: fliers made for what only the air reaches; the user, 2026-11-26: "shouldn't it judge
+    -- air raids feasible and then start building fliers for it?").
+    if against_player(t.owner) then t.no_foot = game.tick end
     -- Behind turrets it cannot get round: guarded, whatever stands by it (a substation inside a laser wall counted as
     -- undefended, and Grubstake's flares, which go at guarded targets, never knew of one, visit nw).
     if why and not why:find("turrets = 0[,}]") then t.exposure = math.max(t.exposure or 0, 1) end
@@ -2254,6 +2269,8 @@ function ops.tick(b, tick, trace, army)
   if tick % 3600 == (b.id * 53) % 3600 then ops.perimeter(b, tick) end
   if tick % 1800 == (b.id * 59 + 13) % 1800 then ops.sever(b) end
   if tick % 600 == 200 then field_sight(b) end
+  -- (Orbital sight, intel.lua: a step a second.)
+  if tick % 60 == (b.id * 17 + 11) % 60 then intel_.orbit(b) end
   if tick % SURVEY_TICKS == (b.id * 131 + 7) % SURVEY_TICKS then survey(b) end
   if tick % CUT_TICKS == (b.id * 173 + 11) % CUT_TICKS then survey_power(b, trace) end
   -- An answer goes before anything the decider would choose, and does not wait on its clock (b.next_op).
@@ -2358,7 +2375,7 @@ function ops.tick(b, tick, trace, army)
         attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos), nil, nil, true)
     end
     local options = {}
-    local lr, ls, lt = ladder(key, "raid"), ladder(skey, "siege"), ladder(tkey, "strip")
+    local lr, ls, lt = ladder(key, rmode == "air" and "air" or "raid"), ladder(skey, "siege"), ladder(tkey, "strip")
     -- (Set aside where it failed lately, tactics.LADDER_HOLD: it saves for the next method instead.)
     -- (Not a collection's (ledger.lua): an overdue bill is collected where it failed before; the hazard's collection was
     -- called and held there for the rest of the hour, 0.2.325.)

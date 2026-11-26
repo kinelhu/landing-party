@@ -118,6 +118,7 @@ army.withdrawing = withdrawing
 -- least a tenth. counter is its mind's (how hard it adapts); none, or under three losses, the mix as it is.
 local COUNTERS = require("__landing-party__.counters")
 local COMPOSE_WINDOW = 20 * 3600
+local RAIL_SHARE = 0.3            -- railgunners at most this share of its cap (produce)
 local KILLER_COLUMN = {vehicle = "lp-battle-tank", character = "lp-trooper"}
 -- Fliers where the air is open (the user, 2026-11-09, on air raids: "build more fliers against weak-AA defences"): over
 -- the player's targets it has sensed (AIR_SEEN at least), what defends them on foot against what shoots up round them
@@ -138,6 +139,14 @@ local function air_tilt(b)
   return tilt
 end
 army.air_tilt = air_tilt
+local AIR_SQUAD, AIR_WANT_COVER = 8, 4
+function army.air_want(b)
+  local ticks = ops.NO_FOOT_TICKS or 0
+  for _, t in pairs((b.intel or {}).targets or {}) do
+    if t.no_foot and game.tick - t.no_foot < ticks and (t.air_near or 0) < AIR_WANT_COVER then return AIR_SQUAD end
+  end
+  return 0
+end
 
 local function counter_composition(b, m)
   local mind = (shared.CORPS[b.corp] or {}).mind or {}
@@ -197,6 +206,34 @@ local function produce(b, trace)
   -- A clearance waiting for railgunners (ops.clearance) gets them first.
   if (b.want_rails and not b.next_unit and shared.units["lp-railgunner"] and (mix(b)["lp-railgunner"] or 0) > 0) or full then
     name = "lp-railgunner"
+  end
+  -- Fliers for what only the air reaches (the user, 2026-11-26: "shouldn't it judge air raids feasible and then start
+  -- building fliers for it?"): targets of a player's its raids found no way to on foot (ops' t.no_foot: water, or no way
+  -- round the guns) and that little shoots up round (t.air_near under AIR_WANT_COVER): fliers first, up to AIR_SQUAD at
+  -- home, its counter tilt aside (losses to biters had cut its drones to a tenth, nw).
+  if not b.next_unit and not (b.want_rails and shared.kind_of(name) == "lp-railgunner") then
+    local want = army.air_want(b)
+    if want > 0 then
+      local fl = {}
+      for k, w in pairs(mix(b)) do if airraid.is_flier(shared.variant(b.corp, k)) then fl[k] = w end end
+      if next(fl) and #airraid.fliers(b) < want then name = rng.weighted(b.rng, fl) end
+    end
+  end
+  -- Railgunners at most RAIL_SHARE of its cap, and never fewer than a clearance's want (the user's nw game, 2026-11-26:
+  -- 108 of 150 units made were railgunners, 37% of its mix: they never left home, the others went out and died, and a
+  -- stale want_rails kept asking). Past it, another kind of its mix.
+  if shared.kind_of(name) == "lp-railgunner" and not over then
+    local rails = 0
+    for _, u in ipairs(b.garrison) do if u.valid and shared.kind_of(u.name) == "lp-railgunner" then rails = rails + 1 end end
+    local s = b.lander and b.lander.valid and b.lander.surface
+    local least = s and 2 * ops.clear_rails(s, "lp-howitzer") or 0
+    if rails >= math.max(least, math.floor(RAIL_SHARE * cap(b))) then
+      local m = composition(b, mix(b))
+      for k in pairs(m) do if shared.kind_of(k) == "lp-railgunner" then m[k] = nil end end
+      name = next(m) and rng.weighted(b.rng, m) or nil
+      b.want_rails = nil
+      if not name then return end
+    end
   end
   b.next_unit = name
   local cost = shared.unit_cost(b.corp, name)
@@ -716,6 +753,7 @@ end
 -- broke 205 of the player's buildings (a deathworld visit, 0.2.128). Its clearances take them out of the garrison.
 local LEASH = shared.LEASH
 local RAIL_LEASH = shared.RAIL_LEASH
+local RAIL_HOME = RAIL_LEASH - 16   -- where a leashed railgunner stops on its way back
 local function leash(b, trace)
   local h = b.depots[1] and b.depots[1].valid and b.depots[1] or (b.lander.valid and b.lander)
   if not h then return end
@@ -732,9 +770,16 @@ local function leash(b, trace)
       and (not c.has_command or c.command and c.command.type == defines.command.wander)
     -- Idle ones only: re-ordered straight home, raiders coming back round a nest field walked through it (country).
     if far then
-      u.commandable.set_command{type = defines.command.go_to_location, destination = lp, radius = 16, distraction = d}
+      -- Back within RAIL_HOME of it (16 once: a hundred sent to 16 tiles of a lander inside rings of wall could not all get
+      -- there and pushed; the user's nw game, 2026-11-26: "like 100 railgunners all spazzing out"). Arrived, it stands:
+      -- below.
+      u.commandable.set_command{type = defines.command.go_to_location, destination = lp, radius = RAIL_HOME, distraction = d}
       trace(b, string.format("leash: railgunner %d at %.0f,%.0f called back to its lander (%s)", u.unit_number, u.position.x,
         u.position.y, c.has_command and "wandering" or "idle"))
+    elseif rail and lp and (not c.has_command or (c.command and c.command.type == defines.command.wander)) then
+      -- A railgunner idle or wandering within its leash stands where it is (a stop, answering damage, as the yard's units
+      -- do; not a compound, which the watchdog takes for stuck): idle by the lander they wandered, a crowd shoving.
+      c.set_command{type = defines.command.stop, distraction = d}
     elseif u.valid and not u.commandable.has_command
       and (u.position.x - b.origin.x) ^ 2 + (u.position.y - b.origin.y) ^ 2 > r * r then
       u.commandable.set_command{type = defines.command.go_to_location, destination = hp, radius = 10, distraction = d}

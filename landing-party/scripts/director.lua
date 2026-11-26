@@ -1816,6 +1816,7 @@ function director.spot(s, k)
   shared.event("strike_seen", {key = k.spot.key, lead = secs})
 end
 
+local POWER_HOLD_AFTER = 2 * 3600   -- a power strike's hold past its end
 local function strike_over(s, key, k, why)
   local b, mine = storage.bases[k.base], {}
   local live = {}
@@ -1850,6 +1851,14 @@ local function strike_over(s, key, k, why)
   shared.event("strike_over", {key = key, left = left, sent = k.sent, why = why, joined = k.joined, shipped = k.shipped})
   s.strikes[key] = nil
   for un, kk in pairs(s.strike_unit or {}) do if kk == key then s.strike_unit[un] = nil end end
+  -- A power strike over, its hold lifts POWER_HOLD_AFTER on, unless another stands against that player (the user's nw game,
+  -- 2026-11-26: every camp held against the player for its full 18 minutes, 581 targets known, Kessler-Hayashi's raids
+  -- among them, a strike that was long over).
+  if k.advertised and s.power_hold and s.power_hold[k.owner] then
+    local other = false
+    for _, kk in pairs(s.strikes) do if kk.advertised and kk.owner == k.owner then other = true end end
+    if not other then s.power_hold[k.owner] = math.min(s.power_hold[k.owner], game.tick + POWER_HOLD_AFTER) end
+  end
 end
 function director.strikes(s, tick)
   for key, k in pairs(s.strikes or {}) do
