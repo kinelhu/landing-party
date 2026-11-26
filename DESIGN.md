@@ -271,8 +271,9 @@ above in the same commit; when one is dropped, move it to Dropped below with the
   - A squad on hold still chases what distracts it: director armyhold on 777 went out 154 tiles after a lone
     Kessler-Hayashi railgunner at a hub's stand (23 with stands off; 190 once before, command.lua). Next: the hold's leash
     enforced while it is distracted.
-  - Seven scenarios flip with the seed whatever the code (tap natural fails on 777 and 4242 before and after; airraid
-    grubstake on 777 both ways): attackmove (its bad mode on 3 of 9 seeds before stands, 6 of 9
+  - Eight scenarios flip with the seed whatever the code (tap natural fails on 777 and 4242 before and after; airraid
+    grubstake on 777 both ways; plate grubstake fails on 12345 after, passes on 777 both ways, two of its units dying in a
+    fight; the 2493451a full regression: 10 of 426, these and director armyhold): attackmove (its bad mode on 3 of 9 seeds before stands, 6 of 9
     with), nestclear tech (fails on 777 before), line turret and watchdog army (both fail on 4242 before and after),
     director repel (passes 3 of 4 seeds before, 2 of 4 after, failing on different ones). The camps' decisions the same
     line for line where checked: the engine's shared random stream. Next: checks over several seeds, or bounds that
