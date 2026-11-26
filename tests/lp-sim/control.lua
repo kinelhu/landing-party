@@ -12459,7 +12459,13 @@ scenarios.leader = function()
   for t = 3 * 3600 + 60, END - 300, 30 do
     schedule(t, function()
       if rails then
-        S.rails_out = math.max(S.rails_out or 0, surface().count_entities_filtered{name = "lp-railgunner", position = S.c, radius = 70})
+        -- (On the raid: out of its camp's garrison, debug_garrison_reach nil. Its garrison's railgunners walk between their
+        -- hubs' stands, army.rail_stands, and one passing 70 tiles of the outpost is not on the raid.)
+        local on = 0
+        for _, u in ipairs(surface().find_entities_filtered{name = "lp-railgunner", position = S.c, radius = 70}) do
+          if lp("debug_garrison_reach", u) == nil then on = on + 1 end
+        end
+        S.rails_out = math.max(S.rails_out or 0, on)
         S.raiders = math.max(S.raiders or 0, surface().count_entities_filtered{type = "unit", force = "lp-serenity", position = S.c, radius = 70})
       end
       if S.shot then return end

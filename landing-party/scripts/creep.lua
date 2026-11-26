@@ -300,7 +300,8 @@ function creep.drink(seconds, pens)
         + p * math.min(1, c.pens * shared.PEN_SHARE * seconds))
       if took > 0 then
         surface.pollute({c.x, c.y}, -took, c.pens > 0 and "lp-pen" or nil)
-        local got = took * shared.YIELD * tune.income("biotech") * creep.evo_rate(surface)
+        -- (Its culture's rate, farm.price_rate, set by its farm; else evolution's, creep.evo_rate.)
+        local got = took * shared.YIELD * tune.income("biotech") * (cul.rate or creep.evo_rate(surface))
         creep.earn(cul, got)
         cul.drunk = (cul.drunk or 0) + got
         cul.eaten = (cul.eaten or 0) + took
@@ -366,6 +367,7 @@ creep.GROWTH_SHARE = 1 / 3
 creep.YOUNG_SHARE = 1 / 2
 creep.GROWTH_HOLD = 450
 function creep.earn(c, amount)
+  c.earned = (c.earned or 0) + amount   -- all it ever earned, for its farm's income rate (farm.lua gap_of)
   local share = c.share or creep.YOUNG_SHARE
   local g = (c.growth or 0) + amount * share
   local spill = math.max(0, g - creep.GROWTH_HOLD)

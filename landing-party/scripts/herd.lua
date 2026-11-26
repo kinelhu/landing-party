@@ -17,6 +17,7 @@
 -- 360-tile route of waypoints whole; a stop in a compound command holds the scout; turrets are the `cause` of their
 -- hits, lasers included.
 local ground = require("__landing-party__.scripts.ground")
+local prof = require("__landing-party__.scripts.prof")
 local know = require("__landing-party__.scripts.know")
 local firemap = require("__landing-party__.scripts.firemap")
 local threat = require("__landing-party__.scripts.threat")
@@ -1122,10 +1123,14 @@ function herd.plan(surface, from, target, forces, n)
   -- after it, farm.ways_step.)
   -- (A reading read in slices, over a big base, serves a wave leaving within SHARE_NEAR of where it was read from: its
   -- incubators are not its farm's middle, and each wave read the whole way afresh, 215 ms in a tick, the user's nw save.)
-  local near = sm and sm.sliced and (sm.from[1] - from.x) ^ 2 + (sm.from[2] - from.y) ^ 2 <= SHARE_NEAR * SHARE_NEAR
+  -- (Or anywhere on its map: with waves sent while others were out, those from its far incubators read their own, up to
+  -- 581 ms a tick, the user's nw save; the wave walks to where it was read from, and on.)
+  local near = sm and sm.sliced and ((sm.from[1] - from.x) ^ 2 + (sm.from[2] - from.y) ^ 2 <= SHARE_NEAR * SHARE_NEAR
+    or costmap.cost(sm.cm, from) ~= nil)
   if sm and game.tick - sm.tick < herd.SHARED_FOR and (near or sm.from[1] == from.x and sm.from[2] == from.y) and costmap.cost(sm.cm, target) then
     fmap, cm = sm.fmap, sm.cm
   else
+    local _sp = prof.start("herd.plan.read")
     local mid = {x = (from.x + target.x) / 2, y = (from.y + target.y) / 2}
     local radius = math.max(WAY_REACH, math.sqrt(d2(from, target)) / 2 + WAY_MARGIN)
     fmap = firemap.read(surface, mid, radius * firemap.BOX, hostiles(), herd.price_of, threat.ARMED)
@@ -1133,6 +1138,7 @@ function herd.plan(surface, from, target, forces, n)
     cm = costmap.read(surface, mid, radius, forces, {fire = fmap, n = n, from = from, deaths = herd.deaths(),
       blocked = herd.blocked(), hidden = herd.hidden_cost(name), scale = B.mind.calibrate and know.scale("biotech", name) or 1,
       cell = herd.PLAN_CELL, margin = herd.spread(n), ground_cost = costmap.GROUND_COST, wall_forces = hostiles()})
+    prof.stop(_sp)
   end
   local way = costmap.staging(cm, target)
   local path = costmap.path(cm, target)
@@ -4034,7 +4040,7 @@ function herd.tick(tick)
   if tick % 60 == 31 and h.covers then herd.cover_tick(h, tick) end
   local every
   for _, w in pairs(h.waves) do
-    if w.stage == "scout" or tick % 60 == 0 then step(w, tick)
+    if w.stage == "scout" or tick % 60 == 0 then local _sp = prof.start("herd.step." .. tostring(w.stage)); step(w, tick); prof.stop(_sp)
     elseif w.big_targets and not storage.biotech_slow_rams then
       every = every or herd.rk.look_every()
       if tick % every == 0 then detonate(w) end
@@ -4475,6 +4481,12 @@ end
 function herd.out(farm_id)
   for _, w in pairs(st().waves) do if w.farm == farm_id then return true end end
   return false
+end
+-- How many of a farm's are out in its waves (farm.lua: another wave while one is out, up to its largest).
+function herd.out_units(farm_id)
+  local n = 0
+  for _, w in pairs(st().waves) do if w.farm == farm_id then n = n + alive(w) end end
+  return n
 end
 
 function herd.state()

@@ -17,6 +17,7 @@
 -- pod brought. Spent at each birth (on_entity_spawned); at nothing left its incubators stop (inactive) until it earns.
 local shared = require("__landing-party__.shared")
 local achievements = require("__landing-party__.scripts.achievements")
+local prof = require("__landing-party__.scripts.prof")
 local herd = require("__landing-party__.scripts.herd")
 local tactics = require("__landing-party__.scripts.tactics")
 local pods = require("__landing-party__.scripts.pods")
@@ -99,6 +100,7 @@ farm.cap_of = cap_of
 -- plan, read again once its siege is bred, no longer paid by any siege it can field.
 local UNFIT = -0.5                -- a breed scoring under this against a defence's killers is not sent at it
 local WAVE_GAP = 20 * 3600
+local gap_of   -- below: the gap between its waves, by its income
 local FIRST_WAVE = 10 * 3600  -- after landing
 local RELAND = 60 * 3600
 local RETRY = 10 * 3600       -- a surface with no field for it is looked at again after this
@@ -793,6 +795,33 @@ local function chance(f, surface, tilt)
   table.sort(list, function(a, b) return a.name < b.name end)
   return list, total, total > 0 and sum / total or 7, total > 0 and worth / total or 1
 end
+-- Its income's rate: the mean price of what it breeds by chance at its evolution over that at evolution 0 (a reading of
+-- the breeds' prices and the engine's spawn table, breeds_at; none typed). At evolution 0.92 on the user's nw save a
+-- wave of 97 was about 3,900 biomass, its income 125 a minute (creep.evo_rate's 2.4 at most), one wave in 25 to 30
+-- minutes; priced so, a wave holds about the heads it held early (the user, 2026-11-26: "a serious enemy that is
+-- late-game-relevant"; "I don't want hard coding").
+local function mean_at(evo)
+  local total, sum = 0, 0
+  for name, w in pairs(breeds_at(evo)) do
+    if w > 0 and shared.BREEDS[name] then total, sum = total + w, sum + w * shared.BREEDS[name].cost end
+  end
+  return total > 0 and sum / total or nil
+end
+function farm.price_rate(f, surface)
+  local _, _, m = chance(f, surface)
+  local base = mean_at(0)
+  return base and m and math.max(1, m / base) or 1
+end
+-- The gap between its waves: what a full wave of its chance breeds costs (cap_of heads at their mean price) over its
+-- income, at most WAVE_GAP (the prior it was, flat). A clock alone held a farm earning 2,800 a minute at one wave in 20
+-- minutes, 49,000 banked (the user's nw save with farm.price_rate: "a serious enemy that is late-game-relevant").
+local INCOME_EMA = 1 / 6   -- each 10 s reading's weight in its income (about a minute's memory)
+gap_of = function(f, surface)
+  local inc = f.income or 0
+  if inc <= 0 then return WAVE_GAP end
+  local _, _, mean = chance(f, surface)
+  return math.min(WAVE_GAP, math.ceil(cap_of(f) * mean / inc))
+end
 -- How many it could hatch with what it holds over keep: its biomass over its chance breeds' mean price.
 local function hatchable(f, surface, keep)
   local cul = creep.of(f.id)
@@ -1332,8 +1361,12 @@ local function send(f, tick)
   if hatching() then avail = field_n end
   local per = field_n > 0 and field / field_n or 1
   local function ready(n) return n * per end
+  local _spt = prof.start("farm.target_from")
   local target, rival, choice, why_not = target_from(s, f.pos, f, ready(math.min(avail, cap_of(f))), {bursters = bursters, field = field,
     budget = budget})
+  prof.stop(_spt)
+  -- (Weighed: not again within a gap unless it sends, farm.tick.)
+  if why_not ~= "reading" then f.weighed_at = tick end
   if why_not == "reading" then
     f.escalate_retry = tick + 60
     return holds(f, tick, "reads the ways in")
@@ -2163,10 +2196,10 @@ end
 
 function farm.tick(tick)
   -- (Its reading in slices, a step a tick: farm.ways_job_step.)
-  for _, f in pairs(st().list) do if f.ways_job then farm.ways_job_step(f) end end
+  for _, f in pairs(st().list) do if f.ways_job then local _sp = prof.start("farm.ways_job"); farm.ways_job_step(f); prof.stop(_sp) end end
   -- (Its reading's sieges and cuts, one a second between its steps: farm.ways_step.)
   if tick % 60 == 30 then
-    for _, f in pairs(st().list) do if f.ways and f.ways.todo and #f.ways.todo > 0 then farm.ways_step(f) end end
+    for _, f in pairs(st().list) do if f.ways and f.ways.todo and #f.ways.todo > 0 then local _sp = prof.start("farm.ways_step"); farm.ways_step(f); prof.stop(_sp) end end
   end
   if tick % 600 ~= 300 then return end
   local s = st()
@@ -2258,7 +2291,13 @@ function farm.tick(tick)
     elseif have then f.short = short(want, have) elseif tick % 3600 == 300 then f.short = nil end
     local cul = creep.of(id)
     if cul then
-      local t = #f.pens * TRICKLE / 6 * tune.income("biotech") * creep.evo_rate(surface)
+      cul.rate = farm.price_rate(f, surface)
+      -- Its income a tick, read over the last 10 minutes from what it earned (gap_of).
+      local e0 = f.earned_at or cul.earned or 0
+      local got = (cul.earned or 0) - e0
+      f.income = f.income and (f.income * (1 - INCOME_EMA) + got / 600 * INCOME_EMA) or got / 600
+      f.earned_at = cul.earned or 0
+      local t = #f.pens * TRICKLE / 6 * tune.income("biotech") * cul.rate
       creep.earn(cul, t)
       cul.trickled = (cul.trickled or 0) + t
       -- An order short: chance breeding waits while the biomass is kept for it, and a siege's sweep (its runts, one a mine on
@@ -2317,8 +2356,16 @@ function farm.tick(tick)
       gone(f, "every pen dead")
     else
       if not f.tagged then tag(f) end
-      if not storage.herd_off and not herd.out(id) and tick - f.last_wave >= tune.sooner("biotech", WAVE_GAP) then send(f, tick) end
-      if not storage.seed_off then seed(f, tick); carry(f, tick) end
+      -- (Another while one is out when its income pays its waves sooner than WAVE_GAP, its units out at most its largest
+      -- wave, cap_of: one at a time, a wave's 800-tile march held the next 17 minutes, 49,000 banked, the user's nw save.)
+      local gap = gap_of(f, surface)
+      local out = herd.out(id)
+      local free = not out or (gap < WAVE_GAP and herd.out_units(id) < cap_of(f))
+      -- (Weighed since its last wave and sent nothing: not again within its gap, the time its income takes to pay a wave.
+      -- Waves free to go, it weighed every 10 s, about 100 ms each, the user's nw save.)
+      if f.weighed_at and f.weighed_at > f.last_wave and tick - f.weighed_at < gap and not f.escalate_retry then free = false end
+      if not storage.herd_off and free and tick - f.last_wave >= tune.sooner("biotech", gap) then local _sp = prof.start("farm.send"); send(f, tick); prof.stop(_sp) end
+      if not storage.seed_off then local _sp = prof.start("farm.seed"); seed(f, tick); carry(f, tick); prof.stop(_sp) end
     end
   end
   if s.landing and tick - s.landing.sent > POD_WAIT then
@@ -2556,7 +2603,7 @@ function farm.wave_soon(within)
   local tick = game.tick
   for id, f in pairs(st().list) do
     if herd.out(id) then return true end
-    if f.last_wave and tick + within - f.last_wave >= tune.sooner("biotech", WAVE_GAP) then return true end
+    if f.last_wave and tick + within - f.last_wave >= tune.sooner("biotech", gap_of(f, game.surfaces[f.surface])) then return true end
   end
   return false
 end

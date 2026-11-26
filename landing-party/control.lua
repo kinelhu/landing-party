@@ -54,6 +54,7 @@ local stun = require("__landing-party__.scripts.stun")
 local fall = require("__landing-party__.scripts.fall")
 local lifeline = require("__landing-party__.scripts.lifeline")
 local separate = require("__landing-party__.scripts.separate")
+local prof = require("__landing-party__.scripts.prof")
 local cannon = require("__landing-party__.scripts.cannon")
 local ram = require("__landing-party__.scripts.ram")
 local map = require("__landing-party__.scripts.map")
@@ -149,14 +150,89 @@ local WATCH_DEPS = {
     return weight > 0 and price / weight or 0
   end,
 }
+-- Every module's tick, in order (the first: a promotion swaps a unit before any module walks its lists this tick).
+-- storage.spike_prof (debug_tune spike_prof; scripts/spikes.sh): each timed apart, a line a tick to spikes.txt, for the
+-- spike guard (the user, 2026-11-27: "any such spike is inacceptable even if rare").
+local TICKERS = {
+  {"veterancy", function(t) veterancy.tick(t) end},
+  {"biters", function(t) biters.tick() end},
+  {"base", function(t) base.tick(t) end},
+  {"faction", function(t) faction.tick(t) end},
+  {"command", function(t) command.tick(t) end},
+  {"cards", function(t) cards.tick(t) end},
+  {"phases", function(t) phases.tick(t) end},
+  {"rd", function(t) rd.tick(t) end},
+  {"war", function(t) war.tick(t) end},
+  {"pact", function(t) pact.tick(t) end},
+  {"jumper", function(t) jumper.tick(t) end},
+  {"tap", function(t) tap.tick(t) end},
+  {"bait", function(t) bait.tick(t) end},
+  {"strike", function(t) strike.tick(t) end},
+  {"marker", function(t) marker.tick(t) end},
+  {"crew", function(t) crew.tick(t) end},
+  {"prospect", function(t) prospect.tick(t) end},
+  {"standing", function(t) standing.tick(t) end},
+  {"road", function(t) road.tick(t) end},
+  {"ledger", function(t) ledger.tick(t) end},
+  {"skim", function(t) skim.tick(t) end},
+  {"prowl", function(t) prowl.tick(t) end},
+  {"dome", function(t) dome.tick(t) end},
+  {"dome.player_tick", function(t) dome.player_tick(t) end},
+  {"orbital", function(t) orbital.tick(t) end},
+  {"map", function(t) map.tick(t) end},
+  {"jammer", function(t) jammer.tick(t) end},
+  {"scanner", function(t) scanner.tick(t) end},
+  {"roads", function(t) roads.tick(t) end},
+  {"pods", function(t) pods.tick(t) end},
+  {"landfx", function(t) landfx.tick(t) end},
+  {"burstfx", function(t) burstfx.tick(t) end},
+  {"belts", function(t) belts.tick(t) end},
+  {"scorcher", function(t) scorcher.tick(t) end},
+  {"stun", function(t) stun.tick(t) end},
+  {"fall", function(t) fall.tick(t) end},
+  {"separate", function(t) separate.tick(t) end},
+  {"ram", function(t) ram.tick(t) end},
+  {"ram.charge_tick", function(t) ram.charge_tick(t) end},
+  {"cannon", function(t) cannon.tick(t) end},
+  {"herd", function(t) herd.tick(t) end},
+  {"farm", function(t) farm.tick(t) end},
+  {"creep", function(t) creep.tick(t) end},
+  {"know", function(t) know.tick(t) end},
+  {"director", function(t) director.tick(t) end},
+  {"director_gui", function(t) director_gui.tick(t) end},
+  {"lifeline", function(t) lifeline.tick(t) end},
+  {"squadgui", function(t) if t % 60 == 40 then squadgui.tick() end end},
+  {"paving", function(t) paving.tick() end},
+  {"oplog", function(t) oplog.tick(t) end},
+  {"watch", function(t) watch.tick(t, WATCH_DEPS) end},
+}
+local spike_p
 script.on_event(defines.events.on_tick, function(e)
-  -- (First: a promotion swaps a unit before any module walks its lists this tick.)
-  veterancy.tick(e.tick)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); cards.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); road.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); separate.tick(e.tick); ram.tick(e.tick); ram.charge_tick(e.tick); cannon.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick); director.tick(e.tick); director_gui.tick(e.tick); lifeline.tick(e.tick)
-  if e.tick % 60 == 40 then squadgui.tick() end
-  paving.tick()
-  oplog.tick(e.tick)
-  watch.tick(e.tick, WATCH_DEPS)
+  local t = e.tick
+  if not storage.spike_prof then
+    for i = 1, #TICKERS do TICKERS[i][2](t) end
+    return
+  end
+  spike_p = spike_p or {}
+  for i = 1, #TICKERS do
+    local p = spike_p[i]
+    if p then p.reset() else p = helpers.create_profiler(); spike_p[i] = p end
+    TICKERS[i][2](t)
+    p.stop()
+  end
+  -- (A localised string holds 20 parameters at most: groups of 9 name and time pairs.)
+  local out, group = {"", tostring(t)}, nil
+  for i = 1, #TICKERS do
+    if not group or #group >= 19 then group = {""}; out[#out + 1] = group end
+    group[#group + 1] = " " .. TICKERS[i][1] .. "="
+    group[#group + 1] = spike_p[i]
+  end
+  -- (And the tick's named spans, scripts/prof.lua, in a group of groups of their own.)
+  local spans = {""}
+  prof.flush(spans)
+  out[#out + 1] = spans
+  out[#out + 1] = "\n"
+  helpers.write_file("spikes.txt", out, true)
 end)
 
 -- A tile laid or taken up: the road router reads that chunk again (scripts/paving.lua).
@@ -692,6 +768,7 @@ remote.add_interface("landing-party", {
     if t.army_off ~= nil then storage.army_off = t.army_off end
     if t.yard_off ~= nil then storage.yard_off = t.yard_off end
     if t.stands_off ~= nil then storage.stands_off = t.stands_off end
+    if t.spike_prof ~= nil then storage.spike_prof = t.spike_prof or nil end
     if t.raids_off ~= nil then storage.raids_off = t.raids_off end
     if t.ops_off ~= nil then storage.ops_off = t.ops_off end
     if t.phases_fast ~= nil then storage.phases_fast = t.phases_fast end
