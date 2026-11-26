@@ -698,7 +698,7 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
     local q = u.valid and s.find_non_colliding_position(u.name, beside, 12, 0.5)
     if q then u.teleport(q) end
   end
-  b.op = {kind = "siege", target = key, phase = "march", members = guards, launched = #guards, hauler = hauler, drop = drop or nil,
+  b.op = {kind = "siege", target = key, target_kind = t and t.kind, phase = "march", members = guards, launched = #guards, hauler = hauler, drop = drop or nil,
     site = site, started = game.tick, phase_at = game.tick, shells_fired = 0, tier = tier,
     convoys_left = spec.convoys or 0,
     -- Whose (oplog reads it once its target is gone from intel: razed before the siege ended, its entry named no owner,

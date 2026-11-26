@@ -1090,8 +1090,10 @@ local function finish(b, outcome, trace, army)
     end
   end
   b.ops_log = b.ops_log or {}
-  -- The owner as at launch (a target destroyed is forgotten, and its raid read as at nobody: nests).
-  table.insert(b.ops_log, {op = op.kind, kind = t and t.kind or "gone", owner = t and t.owner or op.owner, outcome = outcome,
+  -- The owner and kind as at launch (a target destroyed is forgotten, and its raid read as at nobody: nests; and as at
+  -- "gone": orbital sight forgets a razed one, 0.3.1, and a raid that razed the player's battery read as at nothing,
+  -- counterbattery).
+  table.insert(b.ops_log, {op = op.kind, kind = t and t.kind or op.target_kind or "gone", owner = t and t.owner or op.owner, outcome = outcome,
     launched = op.launched, started = op.started, pos = (t and t.pos) or op.pos or op.site,
     back = alive(op), shells = op.shells_fired, site = op.site, cut = op.cut})
   if #b.ops_log > 10 then table.remove(b.ops_log, 1) end
@@ -1423,7 +1425,7 @@ local function launch_air(b, key, trace, army)
   local muster = muster_at
   order_all(members, {type = defines.command.go_to_location, destination = muster, radius = 6,
     distraction = defines.distraction.by_damage})
-  b.op = {kind = "raid", air = true, overflight = true, target = key, phase = "muster", members = members, launched = #members,
+  b.op = {kind = "raid", air = true, overflight = true, target = key, target_kind = t and t.kind, phase = "muster", members = members, launched = #members,
     muster = muster, air_cmd = {type = defines.command.compound, structure_type = defines.compound_command.return_last,
       commands = cmds},
     staging = {h.position.x, h.position.y}, owner = t.owner, pos = {t.pos[1], t.pos[2]}, started = game.tick,
@@ -1512,7 +1514,7 @@ local function launch(b, key, trace, army, opts)
     trace(b, string.format("raid on %s at %.0f,%.0f: no staging point on dry land; not sent", t.kind, t.pos[1], t.pos[2]))
     return false
   end
-  b.op = {kind = "raid", answer = is_answer or nil, cut = t.cut, target = key, phase = "stage", members = members, launched = #members, staging = stage, owner = t.owner,
+  b.op = {kind = "raid", answer = is_answer or nil, cut = t.cut, target = key, target_kind = t and t.kind, phase = "stage", members = members, launched = #members, staging = stage, owner = t.owner,
     started = game.tick, phase_at = game.tick, kills_at = b.razed, last_kill = game.tick, razed0 = b.razed}
   -- (Self-defence counted: a static threat on its ground, as a stood-down camp may still answer; scenario quiet's check.)
   if threat_bonus(b, t) > 0 then b.ops_self = (b.ops_self or 0) + 1 end

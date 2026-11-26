@@ -202,6 +202,7 @@ document still says Serenity where it records history.
 | Orbital sight (Kessler-Hayashi, shared.CORPS orbital_intel): every building of its foes within 1,500 tiles found from orbit, a few chunks a second (intel.orbit); before, its radars, units and one survey line only | built 0.3.1 | `orbit` (and off) |
 | Air plan: a target its raids found no way to on foot weighed by air alone, an air squad made for it where little shoots up (army.air_want); air raids on a ladder of their own | built 0.3.1 | `airplan` (and tilted) |
 | Sieges by what is home (up to half, at most 80, railgunners among them), refused below 30% of their escort kept on the way; railgunners at most 30% of the cap | built 0.3.1 | `siegetier` big, biters; `rivalsiege` |
+| Railgunners' stands: a squad at each hub (army.rail_stands), kept even, standing, leashed to their stand | built 0.3.1 | `stands` (and off) |
 | Legibility: every mechanic told in the world (audit below) | audited 2026-10-20; gaps open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
 
@@ -266,14 +267,6 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - The uplink fortress that varies (one fixed template).
 - A new corporation landing after both are gone (`withdrawing` is never cleared); the rivals' war on each other.
 - After 0.3.1, from the user's nw game (2026-11-26):
-  - Idle railgunners still mill about their lander (the user: "like 100 railgunners all spazzing out"). 0.3.1 stopped
-    them where they stood: made by the depot and stopped there, they filled the ground a crew's drone or truck is put down
-    on, no crew went out, and seven scenarios failed its full regression (strip and register, crew doomed, push, line
-    turret, airraid, counterbattery, watchdog army). Stood only 20 tiles clear of the lander and depots, four still failed,
-    their games moved. Taken out of 0.3.1, and the wider way home with it (called back to 32 tiles of the lander, not 16:
-    in clear culture Kessler-Hayashi's raids never razed the assembler its clearance opened the way to; bisected to that
-    line alone, the cause not found). The cap at 30% kept. Next: a stand of their own (the yard's, clear of every spawn
-    and crew point), checked against those seven and clear culture.
   - Veterancy's names: ranks are vanilla qualities, so a veteran's tooltip says "Uncommon" and wears the engine's quality
     badge beside our chevrons (the user: "a little miffed regarding the 'rarity' language"). Proposed: three qualities of
     the mod's own (Veteran, Elite, Heroic; levels 1 to 3, a chain of their own no recipe makes, our chevron their icon).
@@ -9019,9 +9012,23 @@ Bugs and surprises the headless runs caught, each kept as a check:
   sent (a siege had marched 460 tiles at "keeps 0.00" and lost all 17). (6) Idle railgunners wandered by the lander, the
   yard leaving them out when it lies past their leash: 115 of 120 wandering, 2 tiles in 10 s each; stopped, 0.2 to 0.4
   (on the save). Taken out before release: stopped by the depot they filled the ground crews are put down on, and seven
-  scenarios failed the full regression (the backlog). The way home at 32 tiles, not 16, taken out too: the next full
-  regression failed clear culture alone (the assembler its clearance opened the way to never razed), bisected by file to
-  army.lua and within it to that line (the cap at 30% and the air plan off, it still failed). And air
+  scenarios failed the full regression. The way home at 32 tiles, not 16, taken out too: the next full regression failed
+  clear culture alone (the assembler its clearance opened the way to never razed), bisected by file to army.lua and within
+  it to that line (the cap at 30% and the air plan off, it still failed). The cause of their milling: the yard left
+  railgunners out wherever it lay past their leash from the lander. Now (the user: "split in squads per cluster perhaps?
+  And stop milling about the origin?") each hub has a stand (army.rail_stands: open ground outside its walls, 22 tiles
+  from its lander and every depot, 24 from another stand, 64 from anything of an enemy's, few trees), its railgunners
+  shared out evenly (a new hub's stand takes its share; made with one hub, all forty had kept the first), each on a slot
+  of a spiral, standing, distracted only by damage, its leash from the stand. One sent and unmoved 2 minutes (among
+  trees by the depot: the watchdog's stuck alarm) stands where it is, off the ground by its lander and depots. They do
+  not refuse the camp's building ground (shared.own_unit) and keep their stand through a promotion (veterancy.KEYED).
+  Scenario stands: 42 railgunners over 4 to 5 stands, none wandering, 3 by the lander and depots; off, 11 of 43 there (seen
+  failing). Its first runs failed attackmove, nestclear tech, line turret and watchdog army on 12345; each fails on other
+  seeds without stands too (attackmove high on 3 of 9 seeds before, 6 of 9 with; nestclear tech on 777 before; line
+  turret and watchdog army on 4242 both ways), and the camp's decision trace is the same line for line (attackmove 4242):
+  the engine's shared random stream moved by the railgunners' walks. And the operations log kept a razed target's kind
+  (op.target_kind): orbital sight forgets a razed target, and a raid that razed the player's battery read as at "gone"
+  (counterbattery). And air
   raids: none had fliers (5 drones built, all lost to biters; its counter tilt cut them to a tenth). Raids that find no
   way on foot mark the target (t.no_foot) and it is weighed by air alone; such targets with little anti-air ask for an
   air squad of 8 first (army.air_want); an air raid's ladder is its own ("air"), not the ground raid's that failed there

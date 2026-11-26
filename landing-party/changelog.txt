@@ -11,6 +11,7 @@ Date: 2026-11-27
     - Sieges take up to half of the camp's army at home, railgunners included, instead of a fixed 6 to 16 guards.
     - A siege whose route would cost it most of its escort is not sent. Kessler-Hayashi shells the nests along the way first.
     - Railgunners are at most 30% of a camp's army; they made up most of it on maps with many biters.
+    - Kessler-Hayashi's railgunners stand guard in squads, one at each cluster of its camp, instead of milling around its lander.
     - A corporation that cannot reach your buildings on foot (water, or no way past your guns) and finds little anti-air there builds fliers and raids them from the air.
     - The wait after a costly operation is at most 10 minutes longer than after one that lost nothing.
 ---------------------------------------------------------------------------------------------------

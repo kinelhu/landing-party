@@ -925,6 +925,8 @@ function base.stats(b)
     convoy_spread = army.convoy_spread(b), convoy_spread_moving = army.convoy_spread(b, true), convoy_debug = army.convoy_debug(b),
     -- Its landing pad's box (layout.land) and its idle garrison's yard (army.yard_spot), for scenario idle.
     yard = b.yard, yard_moves = b.yard_moves or 0,
+    -- Its railgunners' stands (army.rail_stands), for scenario stands.
+    rails = army.rail_stats(b), stand_moves = b.stand_moves or 0,
     garrison_ids = (function() local t = {} for _, u in ipairs(b.garrison) do
       if u.valid and u.unit_number then t[#t + 1] = u.unit_number end end return t end)(),
     pad_box = (function() for _, m in ipairs(b.blocks) do

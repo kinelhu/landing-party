@@ -690,6 +690,7 @@ remote.add_interface("landing-party", {
     if t.tesla_off ~= nil then storage.tesla_off = t.tesla_off or nil end
     if t.army_off ~= nil then storage.army_off = t.army_off end
     if t.yard_off ~= nil then storage.yard_off = t.yard_off end
+    if t.stands_off ~= nil then storage.stands_off = t.stands_off end
     if t.raids_off ~= nil then storage.raids_off = t.raids_off end
     if t.ops_off ~= nil then storage.ops_off = t.ops_off end
     if t.phases_fast ~= nil then storage.phases_fast = t.phases_fast end
@@ -1225,7 +1226,9 @@ remote.add_interface("landing-party", {
       if b.force == u.force.name and b.lander and b.lander.valid then
         for _, g in ipairs(b.garrison or {}) do
           if g == u then
-            local p = b.lander.position
+            -- (From its stand when it has one, army.rail_stands: its leash's home.)
+            local st = army.rail_stand(b, u)
+            local p = st and {x = st[1], y = st[2]} or b.lander.position
             return math.sqrt((u.position.x - p.x) ^ 2 + (u.position.y - p.y) ^ 2)
           end
         end

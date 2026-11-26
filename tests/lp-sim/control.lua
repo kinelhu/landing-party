@@ -22315,6 +22315,49 @@ local function yard_truce()
   end)
 end
 
+-- Railgunners' stands (army.rail_stands; the user's nw game, 2026-11-26: "like 100 railgunners all spazzing out", "split
+-- in squads per cluster perhaps? And stop milling about the origin?"). Kessler-Hayashi grows with three depots' parts and
+-- 40 railgunners at home, no operations; four samples over its last 15 minutes. Its railgunners stand on their hubs' stands,
+-- spread over them, off the ground by its lander and depots (where units are made and crews put down: stopped there,
+-- 0.3.1's first try, no crew went out). LP_MIX=off (stands_off): the yard alone, its checks turned round (the bug shown).
+scenarios.stands = function()
+  schedule(60, function()
+    lp("debug_tune", {era = 2, ops_off = true, raids_off = true, mature_blocks = 3, stands_off = params.mix == "off" or nil})
+    for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
+    lp("debug_units", storage.id, "lp-railgunner", 40)
+  end)
+  S.worst = nil
+  for k = 3, 0, -1 do
+    schedule(END - 60 - k * 5 * 3600, function()
+      local st = lp("stats", storage.id)
+      local r = st.rails
+      info(string.format("stands: minute %d, hubs %d, %s", math.floor(game.tick / 3600), st.hubs, serpent.line(r)))
+      if not S.worst or r.at_stand < S.worst.r.at_stand then S.worst = {r = r, hubs = st.hubs} end
+    end)
+  end
+  schedule(END - 60, function()
+    local w = S.worst
+    local r, used = w.r, 0
+    for _, v in pairs(r.per) do if v > 0 then used = used + 1 end end
+    info("stands: at worst " .. serpent.line(w))
+    check("stands: railgunners at home", r.n >= 20, tostring(r.n))
+    -- (Off, the yard alone: its railgunners crowd the ground by its lander and depots, 11 of 43 on 12345.)
+    if params.mix == "off" then
+      check("stands: off, none", r.stands == 0, tostring(r.stands))
+      check("stands: off, the ground by its lander and depots crowded", r.near_home > math.max(1, math.floor(r.n / 10)),
+        r.near_home .. " of " .. r.n)
+      return
+    end
+    check("stands: a stand for each of two hubs at least", w.hubs >= 2 and r.stands >= 2, r.stands .. " of " .. w.hubs .. " hubs")
+    -- (Seen failing with LP_MIX=off: the yard leaves railgunners out past their leash, and they wander by the lander.)
+    check("stands: few railgunners wander", r.wander <= math.floor(r.n / 10), r.wander .. " of " .. r.n)
+    check("stands: most stand at their hubs' stands", r.at_stand >= 0.7 * r.n, r.at_stand .. " of " .. r.n)
+    check("stands: spread over its stands", used >= math.min(2, r.stands), used .. " of " .. r.stands .. " used")
+    check("stands: the ground by its lander and depots kept clear", r.near_home <= math.max(1, math.floor(r.n / 10)),
+      r.near_home .. " of " .. r.n)
+  end)
+end
+
 scenarios.idle = function()
   if params.mix == "pillbox" then return pillbox() end
   if params.mix == "truce" then return yard_truce() end

@@ -765,7 +765,10 @@ local function leash(b, trace)
   for _, u in ipairs(b.garrison) do
     local rail = u.valid and shared.kind_of(u.name) == "lp-railgunner"
     local c = u.valid and u.commandable
-    local far = rail and lp and (u.position.x - lp.x) ^ 2 + (u.position.y - lp.y) ^ 2 > RAIL_LEASH * RAIL_LEASH
+    -- (From its stand, when it has one: army.rail_stands.)
+    local st = rail and army.rail_stand(b, u)
+    local home = st and {x = st[1], y = st[2]} or lp
+    local far = rail and home and (u.position.x - home.x) ^ 2 + (u.position.y - home.y) ^ 2 > RAIL_LEASH * RAIL_LEASH
       and (not c.has_command or c.command and c.command.type == defines.command.wander)
     -- Idle ones only: re-ordered straight home, raiders coming back round a nest field walked through it (country).
     if far then
@@ -774,9 +777,10 @@ local function leash(b, trace)
       -- and stopped there, they filled the ground a crew's drone or truck is put down on, no crew went out, and seven
       -- scenarios failed 0.3.1's full regression; called back to 32, clear culture's assembler was never razed. In the
       -- backlog.)
-      u.commandable.set_command{type = defines.command.go_to_location, destination = lp, radius = 16, distraction = d}
-      trace(b, string.format("leash: railgunner %d at %.0f,%.0f called back to its lander (%s)", u.unit_number, u.position.x,
-        u.position.y, c.has_command and "wandering" or "idle"))
+      u.commandable.set_command{type = defines.command.go_to_location, destination = home, radius = st and 8 or 16,
+        distraction = d, pathfind_flags = st and {low_priority = true} or nil}
+      trace(b, string.format("leash: railgunner %d at %.0f,%.0f called back to its %s (%s)", u.unit_number, u.position.x,
+        u.position.y, st and "stand" or "lander", c.has_command and "wandering" or "idle"))
     elseif u.valid and not u.commandable.has_command
       and (u.position.x - b.origin.x) ^ 2 + (u.position.y - b.origin.y) ^ 2 > r * r then
       u.commandable.set_command{type = defines.command.go_to_location, destination = hp, radius = 10, distraction = d}
@@ -888,7 +892,8 @@ local function yard(b, trace)
   for _, u in ipairs(b.garrison) do
     local c = u.valid and u.commandable
     local kind = c and shared.kind_of(u.name)
-    if c and (u.type == "unit" or u.type == "spider-unit") and kind ~= "lp-hauler" and (kind ~= "lp-railgunner" or rail_ok)
+    if c and (u.type == "unit" or u.type == "spider-unit") and kind ~= "lp-hauler"
+      and (kind ~= "lp-railgunner" or (rail_ok and not army.rail_stand(b, u)))
       and (not c.has_command or (c.command and (c.command.type == defines.command.wander
         or c.command.type == defines.command.stop))) then
       local n = u.unit_number
@@ -942,6 +947,237 @@ local function yard(b, trace)
     end
     trace(b, string.format("yard: %d units sent to %.0f,%.0f", sent, spot[1], spot[2]))
   end
+end
+
+-- Railgunners' stands (the user, 2026-11-26: "Railgunners could be split in squads per cluster perhaps? And stop milling
+-- about the origin?"): one per hub of its camp, a squad on each. The yard left them out wherever it lay past their leash
+-- from the lander (nw: 115 of 120 wandering by it), and two fixes of 0.3.1 at the lander broke crews and raids (the
+-- backlog). A hub's stand is looked for as the yard is: on rings round the middle of its blocks, from the side away from
+-- the player's spawn, on open ground outside its walled blocks, and also STAND_CLEAR from its lander and every depot (where
+-- units are made and crews put down), STAND_APART from another hub's stand, and STAND_QUIET from anything of an enemy's
+-- (past a railgun's reach: one made past its cordon shot the player's wall from beyond its guns, 0.2.128). Kept while
+-- its ground stays good. Each railgunner keeps its hub (the one with fewest when it first comes home), a slot of its own
+-- on a spiral round the stand, and stands there; the leash holds it to its stand. No stand found: the lander's leash.
+local STAND_RINGS = {10, 16, 22, 28}
+local STAND_CLEAR = 22
+local STAND_APART = 24
+local STAND_QUIET = 64
+local STAND_REFRESH = 2 * 3600
+local STAND_TREES = 4
+local STAND_UNMOVED = 2 * 3600   -- walking and not 3 tiles on in this long: given up (the watchdog's stuck is 3 minutes)
+local function stand_ok(b, s, x, y, boxes, homes, taken)
+  if in_boxes(boxes, x, y, YARD_CLEAR) then return false end
+  for _, q in ipairs(homes) do if (q.x - x) ^ 2 + (q.y - y) ^ 2 < STAND_CLEAR * STAND_CLEAR then return false end end
+  for _, q in pairs(taken) do if (q[1] - x) ^ 2 + (q[2] - y) ^ 2 < STAND_APART * STAND_APART then return false end end
+  local f = game.forces[b.force]
+  -- (Not among trees: a railgunner sent to one stood unmoved 3 minutes among 24, the watchdog's stuck alarm.)
+  if s.count_entities_filtered{position = {x, y}, radius = 8, type = "tree", limit = STAND_TREES + 1} > STAND_TREES then return false end
+  return open_ground(s, x, y) and not s.find_nearest_enemy{position = {x, y}, max_distance = STAND_QUIET, force = f}
+    and not truced_gun(s, x, y, f)
+end
+function army.rail_stands(b)
+  if b.stands and game.tick - (b.stands_at or 0) < STAND_REFRESH then return b.stands end
+  if not (b.lander and b.lander.valid) then return b.stands or {} end
+  local s = b.lander.surface
+  local boxes = walled_boxes(b)
+  local homes = {b.lander.position}
+  for _, d in ipairs(b.depots or {}) do if d.valid then homes[#homes + 1] = d.position end end
+  local mid, ids = {}, {}
+  for _, m in ipairs(b.blocks or {}) do
+    if m.hub then
+      local c = mid[m.hub]
+      if not c then c = {0, 0, 0}; mid[m.hub] = c; ids[#ids + 1] = m.hub end
+      c[1], c[2], c[3] = c[1] + m.x0 + m.w / 2, c[2] + m.y0 + m.h / 2, c[3] + 1
+    end
+  end
+  table.sort(ids)
+  local pf = game.forces.player
+  local sp = pf and pf.get_spawn_position(s)
+  local old, out = b.stands or {}, {}
+  for _, id in ipairs(ids) do
+    local c = mid[id]
+    local cx, cy = c[1] / c[3], c[2] / c[3]
+    local keep = old[id]
+    if keep and stand_ok(b, s, keep[1], keep[2], boxes, homes, out) then
+      out[id] = keep
+    else
+      local away = sp and math.atan2(cy - sp.y, cx - sp.x) or -math.pi / 2
+      for _, r in ipairs(STAND_RINGS) do
+        for k = 0, YARD_ANGLES - 1 do
+          local turn = math.ceil(k / 2) * (k % 2 == 1 and 1 or -1)
+          local a = away + turn * 2 * math.pi / YARD_ANGLES
+          local x, y = cx + r * math.cos(a), cy + r * math.sin(a)
+          if stand_ok(b, s, x, y, boxes, homes, out) then out[id] = {x, y}; break end
+        end
+        if out[id] then break end
+      end
+    end
+  end
+  b.stands, b.stands_at = out, game.tick
+  return out
+end
+-- Its stand (a railgunner of its garrison), or nil.
+function army.rail_stand(b, u)
+  local id = b.stand_of and u.valid and u.unit_number and b.stand_of[u.unit_number]
+  return id and b.stands and b.stands[id] or nil
+end
+-- Within 12 of its lander or a depot: where units are made and crews put down.
+local function near_home(b, p)
+  if b.lander and b.lander.valid and (p.x - b.lander.position.x) ^ 2 + (p.y - b.lander.position.y) ^ 2 <= 144 then return true end
+  for _, d in ipairs(b.depots or {}) do
+    if d.valid and (p.x - d.position.x) ^ 2 + (p.y - d.position.y) ^ 2 <= 144 then return true end
+  end
+  return false
+end
+local function stands(b, trace)
+  local st = army.rail_stands(b)
+  if not next(st) then return end
+  local s = b.lander.surface
+  b.stand_of, b.stand_slot, b.stand_sent, b.stand_dest, b.stand_tries, b.stand_seen =
+    b.stand_of or {}, b.stand_slot or {}, b.stand_sent or {}, b.stand_dest or {}, b.stand_tries or {}, b.stand_seen or {}
+  local live, count, used = {}, {}, {}
+  for id in pairs(st) do count[id], used[id] = 0, {} end
+  for _, u in ipairs(b.garrison) do
+    if u.valid and u.unit_number and shared.kind_of(u.name) == "lp-railgunner" then
+      local n = u.unit_number
+      live[n] = true
+      local id = b.stand_of[n]
+      if id and not st[id] then b.stand_of[n], b.stand_slot[n], b.stand_dest[n], b.stand_tries[n] = nil, nil, nil, nil; id = nil end
+      if id then count[id] = count[id] + 1; used[id][b.stand_slot[n]] = true end
+    end
+  end
+  for n in pairs(b.stand_of) do
+    if not live[n] then
+      b.stand_of[n], b.stand_slot[n], b.stand_sent[n], b.stand_dest[n], b.stand_tries[n], b.stand_seen[n] = nil, nil, nil, nil, nil, nil
+    end
+  end
+  local ids, total = {}, 0
+  for id in pairs(st) do ids[#ids + 1] = id; total = total + count[id] end
+  table.sort(ids)
+  -- Squads kept even (a new hub's stand takes its share: made while it had one hub, all forty kept the first): one
+  -- standing on a stand above its share goes to the one with fewest below it.
+  local share = math.ceil(total / #ids)
+  for _, u in ipairs(b.garrison) do
+    local c = u.valid and u.commandable
+    local n = c and u.unit_number
+    local id = n and b.stand_of[n]
+    if id and count[id] > share and c.command and c.command.type == defines.command.stop then
+      local j
+      for _, q in ipairs(ids) do if count[q] < share and (not j or count[q] < count[j]) then j = q end end
+      if not j then break end
+      used[id][b.stand_slot[n]] = nil
+      local k = 0
+      while used[j][k] do k = k + 1 end
+      count[id], count[j], used[j][k] = count[id] - 1, count[j] + 1, true
+      b.stand_of[n], b.stand_slot[n], b.stand_dest[n], b.stand_tries[n], b.stand_sent[n] = j, k, nil, nil, nil
+      c.set_command{type = defines.command.wander, radius = 1, distraction = defines.distraction.by_damage}
+    end
+  end
+  local sent = 0
+  for _, u in ipairs(b.garrison) do
+    local c = u.valid and u.commandable
+    -- Sent and unmoved since (among trees by the depot: six stood 3 minutes among 86, the watchdog's stuck alarm in
+    -- scenario stands): given up on, it stands where it is, off the ground by its lander and depots.
+    -- (Any order to walk, the leash's too: where it was when last seen moving, b.stand_seen.)
+    local n0 = c and u.unit_number
+    if n0 and b.stand_of[n0] and c.command and c.command.type == defines.command.go_to_location then
+      local q = b.stand_seen[n0]
+      if not q or (u.position.x - q[1]) ^ 2 + (u.position.y - q[2]) ^ 2 >= 9 then
+        b.stand_seen[n0] = {u.position.x, u.position.y, game.tick}
+      elseif game.tick - q[3] >= STAND_UNMOVED then
+        b.stand_seen[n0], b.stand_tries[n0] = nil, YARD_TRIES
+        if near_home(b, u.position) then c.set_command{type = defines.command.wander, radius = 5}
+        else c.set_command{type = defines.command.stop, distraction = defines.distraction.by_damage} end
+      end
+    elseif n0 then
+      b.stand_seen[n0] = nil
+    end
+    if c and shared.kind_of(u.name) == "lp-railgunner"
+      and (not c.has_command or (c.command and (c.command.type == defines.command.wander
+        or c.command.type == defines.command.stop))) then
+      local n = u.unit_number
+      local id = b.stand_of[n]
+      if not id then
+        for _, j in ipairs(ids) do if not id or count[j] < count[id] then id = j end end
+        local k = 0
+        while used[id][k] do k = k + 1 end
+        b.stand_of[n], b.stand_slot[n], used[id][k], count[id] = id, k, true, count[id] + 1
+      end
+      local spot, k = st[id], b.stand_slot[n]
+      local a, r = k * 2.39996, 3 * math.sqrt(k)
+      local x, y = spot[1] + r * math.cos(a), spot[2] + r * math.sin(a)
+      -- (Where it was sent, while its stand has not moved.)
+      local t = b.stand_dest[n]
+      if t and t[3] == spot[1] and t[4] == spot[2] then x, y = t[1], t[2] end
+      if (u.position.x - x) ^ 2 + (u.position.y - y) ^ 2 <= YARD_AT * YARD_AT then
+        -- On its slot it stands, as at the yard, distracted only by damage (by_enemy, standing at their hubs they joined
+        -- the player's fights by the camp: attackmove and nestclear tech failed).
+        b.stand_tries[n] = nil
+        if not (c.command and c.command.type == defines.command.stop) then
+          c.set_command{type = defines.command.stop, distraction = defines.distraction.by_damage}
+        end
+      elseif (b.stand_tries[n] or 0) < YARD_TRIES and game.tick - (b.stand_sent[n] or -YARD_RESEND) >= YARD_RESEND
+        and not s.find_nearest_enemy{position = u.position, max_distance = 24, force = u.force} then
+        local p = s.find_non_colliding_position(u.name, {spot[1] + r * math.cos(a), spot[2] + r * math.sin(a)}, 6, 0.5)
+        p = p and {p.x, p.y} or {x, y}
+        -- (Low priority: walks of a hundred tiles and more to far hubs held the pathfinder, and the player's troopers 400
+        -- tiles off waited on their paths under fire, attackmove: 111 of 766 samples walking, 3 of 589 before.)
+        c.set_command{type = defines.command.go_to_location, destination = {p[1], p[2]}, radius = 1,
+          distraction = defines.distraction.by_damage, pathfind_flags = {low_priority = true}}
+        b.stand_sent[n], b.stand_dest[n], b.stand_tries[n] = game.tick, {p[1], p[2], spot[1], spot[2], u.position.x,
+          u.position.y}, (b.stand_tries[n] or 0) + 1
+        sent = sent + 1
+      elseif (b.stand_tries[n] or 0) >= YARD_TRIES and not (c.command and c.command.type == defines.command.stop)
+        and not near_home(b, u.position) then
+        -- Three sends and never there (its slot past water or a building): it stands where it is, off the ground by its
+        -- lander and depots (it wandered: 5 of 42, scenario stands).
+        c.set_command{type = defines.command.stop, distraction = defines.distraction.by_damage}
+      end
+    end
+  end
+  if sent > 0 then
+    b.stand_moves = (b.stand_moves or 0) + sent
+    trace(b, string.format("stands: %d railgunners sent to their hubs' stands", sent))
+  end
+end
+
+-- Its railgunners at home (stats; scenario stands): how many, wandering, standing, at their stand's slots, within 12 of
+-- its lander or a depot (the ground units are made and crews put down on), and per stand.
+function army.rail_stats(b)
+  local o = {n = 0, wander = 0, stood = 0, at_stand = 0, near_home = 0, stands = 0, per = {}}
+  o.at = {}
+  for id, q in pairs(b.stands or {}) do o.stands = o.stands + 1; o.per[tostring(id)] = 0; o.at[tostring(id)] = string.format("%.0f,%.0f", q[1], q[2]) end
+  local homes = {}
+  if b.lander and b.lander.valid then homes[1] = b.lander.position end
+  for _, d in ipairs(b.depots or {}) do if d.valid then homes[#homes + 1] = d.position end end
+  for _, u in ipairs(b.garrison or {}) do
+    if u.valid and shared.kind_of(u.name) == "lp-railgunner" then
+      o.n = o.n + 1
+      local c = u.commandable
+      if c.has_command and c.command.type == defines.command.wander then o.wander = o.wander + 1 end
+      if c.has_command and c.command.type == defines.command.stop then o.stood = o.stood + 1 end
+      local st, p = army.rail_stand(b, u), u.position
+      -- (At its stand: within its slot's ring and 5, army.stands' spiral.)
+      local ring = 3 * math.sqrt(b.stand_slot and b.stand_slot[u.unit_number] or 0) + 5
+      if st and (p.x - st[1]) ^ 2 + (p.y - st[2]) ^ 2 > ring * ring and #(o.away or {}) < 10 then
+        o.away = o.away or {}
+        local cn = "none"
+        for k, v in pairs(defines.command) do if c.has_command and v == c.command.type then cn = k end end
+        o.away[#o.away + 1] = string.format("%d s%s %.0f off at %.0f,%.0f %s t%s", u.unit_number,
+          tostring(b.stand_of[u.unit_number]), math.sqrt((p.x - st[1]) ^ 2 + (p.y - st[2]) ^ 2), p.x, p.y, cn,
+          tostring(b.stand_tries[u.unit_number]))
+      end
+      if st and (p.x - st[1]) ^ 2 + (p.y - st[2]) ^ 2 <= ring * ring then
+        o.at_stand = o.at_stand + 1
+        local id = tostring(b.stand_of[u.unit_number])
+        o.per[id] = (o.per[id] or 0) + 1
+      end
+      for _, q in ipairs(homes) do
+        if (p.x - q.x) ^ 2 + (p.y - q.y) ^ 2 <= 144 then o.near_home = o.near_home + 1; break end
+      end
+    end
+  end
+  return o
 end
 
 -- Where a unit is made: the free spot nearest `at`, by rings, with none of its own walls within SPAWN_CLEAR. The first
@@ -1060,6 +1296,7 @@ function army.tick(b, tick, trace)
   if tick % 300 == 150 and not storage.army_off then patrol(b, trace) end
   if tick % 300 == 250 and not storage.army_off then leash(b, trace) end
   if tick % 300 == 270 and not storage.army_off and not storage.yard_off then yard(b, trace) end
+  if tick % 300 == 290 and not storage.army_off and not storage.yard_off and not storage.stands_off then stands(b, trace) end
   if tick % BUILD_TICKS == 0 then produce(b, trace) end
 end
 

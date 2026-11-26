@@ -761,8 +761,9 @@ for k = 1, 3 do shared.DECOR_PROPS["crash-site-spaceship-wreck-medium-" .. k] = 
 -- (construction.make_way). Standing there, they refused the ground the camp grew on (occupy). Only those: passing over
 -- every unit of its own changed how a dozen scenarios' camps grew (pool, plate grubstake, crew island).
 function shared.own_unit(b, e)
-  return b ~= nil and b.yard_dest ~= nil and (e.type == "unit" or e.type == "spider-unit") and e.force.name == b.force
-    and b.yard_dest[e.unit_number] ~= nil
+  -- (At the yard, or on a railgunner's stand: army.rail_stands.)
+  return b ~= nil and (e.type == "unit" or e.type == "spider-unit") and e.force.name == b.force
+    and ((b.yard_dest ~= nil and b.yard_dest[e.unit_number] ~= nil) or (b.stand_dest ~= nil and b.stand_dest[e.unit_number] ~= nil))
 end
 
 function shared.refused(b, why)

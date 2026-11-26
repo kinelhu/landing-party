@@ -137,7 +137,8 @@ for _, p in ipairs({"merit", "unit_owner", "crew_owner", "carrying", "scorch", "
   "bases.*.returning_since", "bases.*.op.resent", "herd.waves.*.units", "herd.waves.*.straggling", "herd.waves.*.holders",
   "herd.waves.*.known", "herd.waves.*.left_behind", "herd.waves.*.big_busy", "herd.waves.*.fodder_set", "herd.waves.*.aim",
   "herd.waves.*.sapper_at", "herd.waves.*.sapper_last", "herd.waves.*.seen", "bases.*.yard_slot", "bases.*.yard_sent",
-  "bases.*.yard_dest", "bases.*.yard_tries"}) do KEYED[p] = true end
+  "bases.*.yard_dest", "bases.*.yard_tries", "bases.*.stand_of", "bases.*.stand_slot", "bases.*.stand_sent",
+  "bases.*.stand_dest", "bases.*.stand_tries", "bases.*.stand_seen"}) do KEYED[p] = true end
 veterancy.KEYED = KEYED
 
 -- What the rewiring does not walk: what in storage holds no unit, and grows with a game (the stutter: at two hours of
