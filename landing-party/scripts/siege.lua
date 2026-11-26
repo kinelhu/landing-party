@@ -336,7 +336,18 @@ end
 -- load would part a game from its peers); its launch the same tick reads it back (siege_read). On nwa its sieges went for
 -- the player's artillery 560 tiles off through the base, every hauler killed or stuck on the way (0.2.152).
 local siege_read
+local read_ways_now
+-- (Read once a tick: the battery pass and the pass after it read the same map, 128 and 146 ms on the user's nw game.
+-- Kept out of storage, and only within its tick: nothing of it is saved or outlives the decision.)
+local ways_cache = {}
 local function read_ways(b, h, targets)
+  local c = ways_cache[b.id]
+  if c and c.tick == game.tick and c.home == h then return c.cm end
+  local cm = read_ways_now(b, h, targets)
+  ways_cache = {[b.id] = {tick = game.tick, home = h, cm = cm}}
+  return cm
+end
+read_ways_now = function(b, h, targets)
   local s = game.surfaces[b.surface]
   local foes = enemies(game.forces[b.force])
   local far = 0
@@ -413,7 +424,9 @@ local function choose_siege(b, army, only_battery)
     -- Its defence read now, not when its sensors last looked (orbital intelligence: a substation ringed by 32 lasers
     -- placed after its survey read 0 and drew a siege of two mortars, standsiege 0.2.152), and before the test of it
     -- below (read after, the stale 0 had already set the target aside: standsiege nests, 0.2.154).
-    if orbital and t.pos and against_player(t.owner) then
+    -- (Not in the battery pass but for a battery: the pass after it weighs them all again, the same tick, and with 321
+    -- targets from orbital sight the two cost 520 ms every 30 s, the user's nw game: "huge stutters".)
+    if orbital and t.pos and against_player(t.owner) and (not only_battery or battery(t)) then
       t.defence, t.dmg = ops.weigh(game.surfaces[b.surface], t.pos, t.owner, nil, b.corp)
     end
     if (not only_battery or battery(t)) and (capable or (counter and battery(t))) and ((t.defence or 0) >= 2 or battery(t))

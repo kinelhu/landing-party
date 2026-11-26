@@ -22325,6 +22325,9 @@ scenarios.stands = function()
     lp("debug_tune", {era = 2, ops_off = true, raids_off = true, mature_blocks = 3, stands_off = params.mix == "off" or nil})
     for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
     lp("debug_units", storage.id, "lp-railgunner", 40)
+    -- A field army past the yard's hold (40): the user's nw game, 527 at one yard, tanks penned by water and a wall.
+    lp("debug_units", storage.id, "lp-infantry", 50)
+    lp("debug_units", storage.id, "lp-tank", 20)
   end)
   S.worst = nil
   for k = 3, 0, -1 do
@@ -22355,6 +22358,10 @@ scenarios.stands = function()
     check("stands: spread over its stands", used >= math.min(2, r.stands), used .. " of " .. r.stands .. " used")
     check("stands: the ground by its lander and depots kept clear", r.near_home <= math.max(1, math.floor(r.n / 10)),
       r.near_home .. " of " .. r.n)
+    -- (The yard holds 40; seen failing before the hold: all 70 at the yard.)
+    check("stands: the yard holds at most 40", r.yard_n <= 40, tostring(r.yard_n))
+    check("stands: the rest of the army at the stands", r.others >= 20 and r.others_at >= 0.7 * r.others,
+      r.others_at .. " of " .. r.others .. " posted")
   end)
 end
 

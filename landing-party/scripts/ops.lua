@@ -2267,7 +2267,7 @@ function ops.tick(b, tick, trace, army)
   end
   if tick % 60 == 30 then siege_leash(b) end
   if tick % 600 == 300 then stand_down(b) end
-  if tick % SENSE_TICKS == (b.id * 97) % SENSE_TICKS then scan(b) end
+  if tick % SENSE_TICKS == (b.id * 97) % SENSE_TICKS then scan(b) elseif b.scan_queue then intel_.scan_step(b) end
   if tick % 3600 == (b.id * 53) % 3600 then ops.perimeter(b, tick) end
   if tick % 1800 == (b.id * 59 + 13) % 1800 then ops.sever(b) end
   if tick % 600 == 200 then field_sight(b) end

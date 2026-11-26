@@ -203,6 +203,7 @@ document still says Serenity where it records history.
 | Air plan: a target its raids found no way to on foot weighed by air alone, an air squad made for it where little shoots up (army.air_want); air raids on a ladder of their own | built 0.3.1 | `airplan` (and tilted) |
 | Sieges by what is home (up to half, at most 80, railgunners among them), refused below 30% of their escort kept on the way; railgunners at most 30% of the cap | built 0.3.1 | `siegetier` big, biters; `rivalsiege` |
 | Railgunners' stands: a squad at each hub (army.rail_stands), kept even, standing, leashed to their stand | built 0.3.1 | `stands` (and off) |
+| The yard holds 40 while there are stands, the rest of the idle army at the stands; a camp's army at most 200 (times its strength lever) | built 0.3.1 | `stands`; `caps` |
 | Legibility: every mechanic told in the world (audit below) | audited 2026-10-20; gaps open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
 
@@ -267,6 +268,14 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - The uplink fortress that varies (one fixed template).
 - A new corporation landing after both are gone (`withdrawing` is never cleared); the rivals' war on each other.
 - After 0.3.1, from the user's nw game (2026-11-26):
+  - The decision every 30 s costs about 0.5 ms a known target (ops choose; defence, relevance, odds each), 66 to 89 ms
+    on the user's nw save with 80 to 104 targets, 0.3.0's 44 to 54: a stutter each 30 s. Next: weigh the nearest or the
+    likeliest few dozen, or split the decision over ticks.
+  - Five scenarios flip with the seed whatever the code: attackmove (its bad mode on 3 of 9 seeds before stands, 6 of 9
+    with), nestclear tech (fails on 777 before), line turret and watchdog army (both fail on 4242 before and after),
+    director repel (passes 3 of 4 seeds before, 2 of 4 after, failing on different ones). The camps' decisions the same
+    line for line where checked: the engine's shared random stream. Next: checks over several seeds, or bounds that
+    hold across them.
   - Veterancy's names: ranks are vanilla qualities, so a veteran's tooltip says "Uncommon" and wears the engine's quality
     badge beside our chevrons (the user: "a little miffed regarding the 'rarity' language"). Proposed: three qualities of
     the mod's own (Veteran, Elite, Heroic; levels 1 to 3, a chain of their own no recipe makes, our chevron their icon).
@@ -9028,7 +9037,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   turret and watchdog army on 4242 both ways), and the camp's decision trace is the same line for line (attackmove 4242):
   the engine's shared random stream moved by the railgunners' walks. And the operations log kept a razed target's kind
   (op.target_kind): orbital sight forgets a razed target, and a raid that razed the player's battery read as at "gone"
-  (counterbattery). And air
+  (counterbattery). Then on the user's save in the test build: 100 tanks penned between a wall and the water. The yard
+  had 527 units on one spiral, 60 tiles across; now it holds YARD_HOLD (40) while there are stands, and the rest go to
+  them (railgunners never to the yard then: the first pass had given them its 40). A camp's cap at most ARMY_MAX (200, its
+  largest siege of 80 being half of what is home, the reserve kept; times its strength lever): its cap was 580. And
+  "huge stutters": a benchmark of the save, 0.3.1 against 0.3.0, put spikes at 675 ms against 176, script time each.
+  Orbital sight had filled a camp's targets (14 to 321 and growing), and every decision weighs each one (choose about
+  0.5 ms a target, the siege pass's ops.weigh on all of them twice): the nearest ORBIT_MAX (80) of the player's are kept,
+  past it orbit only forgets; the battery pass weighs batteries alone; the siege cost map is read once a tick (128 and
+  146 ms, twice). And 0.3.0's own: every camp's sensors read in one tick each 2 minutes (100 to 131 ms), now two a tick.
+  After: worst tick 241 ms (0.3.0's 176), the decision every 30 s 66 to 89 ms, 99% of ticks under 15.6 ms. And air
   raids: none had fliers (5 drones built, all lost to biters; its counter tilt cut them to a tenth). Raids that find no
   way on foot mark the target (t.no_foot) and it is weighed by air alone; such targets with little anti-air ask for an
   air squad of 8 first (army.air_want); an air raid's ladder is its own ("air"), not the ground raid's that failed there

@@ -221,6 +221,24 @@ local function sense_nests(b, surface)
   end
 end
 
+-- (Its sensors read SCAN_STEP a tick, not all in one: a camp of dozens of radars before the player's factory read them
+-- in one tick, 100 to 131 ms every 2 minutes on the user's nw game, "huge stutters". Each sensor reads as before.)
+local SCAN_STEP = 2
+local function scan_step(b)
+  local q = b.scan_queue
+  if not q then return end
+  local surface = game.surfaces[b.surface]
+  for _ = 1, SCAN_STEP do
+    local s = table.remove(q)
+    if not s then break end
+    if s.valid then
+      local r = SENSORS[shared.kind_of(s.name)] or 100
+      sense(b, surface, s.position, r)
+      forget(b, s.position, r)
+    end
+  end
+  if #q == 0 then b.scan_queue = nil end
+end
 local function scan(b)
   local surface = game.surfaces[b.surface]
   if not b.lander.valid then return end
@@ -228,11 +246,11 @@ local function scan(b)
   local sensors = {b.lander}
   for _, d in ipairs(b.depots) do if d.valid then table.insert(sensors, d) end end
   for _, r in ipairs(b.radars or {}) do if r.valid then table.insert(sensors, r) end end
-  for _, s in ipairs(sensors) do
-    local r = SENSORS[shared.kind_of(s.name)] or 100
-    sense(b, surface, s.position, r)
-    forget(b, s.position, r)
-  end
+  -- (Read last first, table.remove: the lander first of all.)
+  local q = {}
+  for i = #sensors, 1, -1 do q[#q + 1] = sensors[i] end
+  b.scan_queue = q
+  scan_step(b)
 end
 
 -- A landing is heard: every other corporation learns where a newcomer came down (as the player is told), and
@@ -289,6 +307,31 @@ end
 -- seen. Spread over ticks: ORBIT_LOOK chunks looked at a step (one cheap count each), and ORBIT_SENSE of those with
 -- buildings sensed (each its cells' defence, exposure and way in, as any sensor's), what is gone forgotten.
 local ORBIT_RANGE, ORBIT_LOOK, ORBIT_SENSE = 1500, 32, 2
+-- At most ORBIT_MAX of the player's targets known (the nearest kept, past it orbit only forgets): every decision weighs
+-- each known target, and 321 of them cost the decider 110 to 160 ms and its sieges 520 ms every 30 s (the user's nw game,
+-- 2026-11-26: "huge stutters"). Its raids go at the near ones.
+local ORBIT_MAX = 80
+local function player_targets(b)
+  local out = {}
+  for key, t in pairs(b.intel.targets) do
+    local f = t.pos and t.owner and game.forces[t.owner]
+    if f and shared.is_player_force(f) then out[#out + 1] = key end
+  end
+  return out
+end
+-- The farthest past ORBIT_MAX forgotten (not one an operation is at, nor a battery).
+local function trim(b)
+  local keys = player_targets(b)
+  if #keys <= ORBIT_MAX then return #keys end
+  local o, at = b.origin, b.op and b.op.target
+  local function d2(key) local p = b.intel.targets[key].pos return (p[1] - o.x) ^ 2 + (p[2] - o.y) ^ 2 end
+  table.sort(keys, function(p, q) local a, c = d2(p), d2(q) if a ~= c then return a < c end return p < q end)
+  for i = #keys, ORBIT_MAX + 1, -1 do
+    local t = b.intel.targets[keys[i]]
+    if keys[i] ~= at and not (t.kind == "artillery-turret" or t.kind == "artillery-wagon") then b.intel.targets[keys[i]] = nil end
+  end
+  return ORBIT_MAX
+end
 local function orbit(b)
   if not ((shared.CORPS[b.corp] or {}).orbital_intel and b.origin and b.lander.valid) or storage.orbit_off then return end
   local s = game.surfaces[b.surface]
@@ -304,6 +347,7 @@ local function orbit(b)
     table.sort(ring, function(p, q) return p[3] < q[3] end)
     o = {ring = ring, i = 1, queue = {}, passes = (o and o.passes or 0), sensed = (o and o.sensed or 0)}
     b.orbit = o
+    o.known = trim(b)
   end
   local foes = {}
   for _, f in ipairs(enemies(game.forces[b.force])) do
@@ -323,7 +367,9 @@ local function orbit(b)
     local c = table.remove(o.queue, 1)
     if not c then break end
     local mid = {x = c[1] * 32 + 16, y = c[2] * 32 + 16}
-    sense(b, s, mid, 23)
+    -- (Past ORBIT_MAX known, only what is gone forgotten; counted again each pass, and each 30 sensings.)
+    if o.sensed % 30 == 0 then o.known = #player_targets(b) end
+    if (o.known or 0) < ORBIT_MAX then sense(b, s, mid, 23) end
     forget(b, mid, 23)
     o.sensed = o.sensed + 1
   end
@@ -342,7 +388,7 @@ local function field_sight(b)
     end
   end
 end
-return {SURVEY_TICKS = SURVEY_TICKS, UNITS_TICKS = UNITS_TICKS, enemies = enemies, field_sight = field_sight, mobile = mobile, orbit = orbit, scan = scan, sense = sense, survey = survey}
+return {SURVEY_TICKS = SURVEY_TICKS, UNITS_TICKS = UNITS_TICKS, enemies = enemies, field_sight = field_sight, mobile = mobile, orbit = orbit, scan = scan, scan_step = scan_step, sense = sense, survey = survey}
 end
 
 return intel
