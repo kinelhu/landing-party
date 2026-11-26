@@ -268,10 +268,11 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - The uplink fortress that varies (one fixed template).
 - A new corporation landing after both are gone (`withdrawing` is never cleared); the rivals' war on each other.
 - After 0.3.1, from the user's nw game (2026-11-26):
-  - Synthexis's wave planning in one tick (farm send: its sieges sized, its methods weighed, its plan read again): 105 to
-    597 ms ticks every 10 s while a wave is planned, on the user's nw save (0.3.0's). Next: sliced, as Kessler-Hayashi's
-    siege ways are (b.ways_job).
-  - Five scenarios flip with the seed whatever the code: attackmove (its bad mode on 3 of 9 seeds before stands, 6 of 9
+  - A squad on hold still chases what distracts it: director armyhold on 777 went out 154 tiles after a lone
+    Kessler-Hayashi railgunner at a hub's stand (23 with stands off; 190 once before, command.lua). Next: the hold's leash
+    enforced while it is distracted.
+  - Seven scenarios flip with the seed whatever the code (tap natural fails on 777 and 4242 before and after; airraid
+    grubstake on 777 both ways): attackmove (its bad mode on 3 of 9 seeds before stands, 6 of 9
     with), nestclear tech (fails on 777 before), line turret and watchdog army (both fail on 4242 before and after),
     director repel (passes 3 of 4 seeds before, 2 of 4 after, failing on different ones). The camps' decisions the same
     line for line where checked: the engine's shared random stream. Next: checks over several seeds, or bounds that
@@ -9059,7 +9060,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   back so at 34000): now it pushes on to what stands nearest within ASSAULT_PUSH (60), PUSHES (3) times (b.assault_pushes;
   standsiege checks one, seen failing before). And on the user's 09:54 autosave: a camp's lab district searched for and
   not found every plan, 22 to 41 ms every 5 s, now not again for LAB_WAIT (2 minutes). Synthexis's wave planning (farm
-  send: its sieges sized and weighed, 105 to 597 ms ticks every 10 s while it plans; 0.3.0's) is in the backlog. And air
+  send: its sieges sized and weighed, 105 to 597 ms ticks every 10 s while it plans; 0.3.0's) is in the backlog. Then the
+  full regression of that tree failed 14; four were today's: (1) the sensors read two a tick forgot each other's targets as
+  stale (forget's "not seen this tick"), now not seen since the scan began, nests passes; (2) the yard's hold and its
+  overflow posted were every camp's, and Grubstake's buggies at its hubs' stands prowled and stole nothing (strip, strip
+  register): only a camp of railgunners now (army.posts); (3) a stand 67 tiles from an outpost of assemblers and radars
+  (find_nearest_enemy finds military targets alone): any entity of an enemy force within STAND_QUIET, now 80, checked each
+  pass (leader rails); (4) director armyhold (the backlog). Synthexis's reading over a big base read in slices
+  (f.ways_job, WAYS_SLICE_R 250; its map kept in storage with the reading, herd.shared set from it before each plan, a
+  load no longer losing it), a wave leaving within SHARE_NEAR (128) of where it was read planning on it: on the user's
+  09:54 autosave its 597-ms ticks gone, 99.9% of ticks under 24 ms. And air
   raids: none had fliers (5 drones built, all lost to biters; its counter tilt cut them to a tenth). Raids that find no
   way on foot mark the target (t.no_foot) and it is weighed by air alone; such targets with little anti-air ask for an
   air squad of 8 first (army.air_want); an air raid's ladder is its own ("air"), not the ground raid's that failed there

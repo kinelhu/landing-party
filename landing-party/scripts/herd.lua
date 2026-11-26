@@ -1113,13 +1113,17 @@ herd.PLAN_CELL = costmap.CELL   -- at the grain its waves read near their target
 -- Kept for the tick alone, so every game reads the same: a map kept longer would decide differently after a load.)
 herd.shared = nil
 herd.SHARED_FOR = 5 * 3600   -- a reading's map is its plans' while this young (farm.lua's WAYS_FOR)
+local SHARE_NEAR = 128          -- a sliced reading serves a wave leaving this near where it was read from (its pens 70 off, nw)
 function herd.plan(surface, from, target, forces, n)
   from, target = xy(from), xy(target)
   local fmap, cm
   local sm = herd.shared
   -- (The reading for as long as it holds, SHARED_FOR, not its tick alone: its sieges and cuts are planned on it a step
   -- after it, farm.ways_step.)
-  if sm and game.tick - sm.tick < herd.SHARED_FOR and sm.from[1] == from.x and sm.from[2] == from.y and costmap.cost(sm.cm, target) then
+  -- (A reading read in slices, over a big base, serves a wave leaving within SHARE_NEAR of where it was read from: its
+  -- incubators are not its farm's middle, and each wave read the whole way afresh, 215 ms in a tick, the user's nw save.)
+  local near = sm and sm.sliced and (sm.from[1] - from.x) ^ 2 + (sm.from[2] - from.y) ^ 2 <= SHARE_NEAR * SHARE_NEAR
+  if sm and game.tick - sm.tick < herd.SHARED_FOR and (near or sm.from[1] == from.x and sm.from[2] == from.y) and costmap.cost(sm.cm, target) then
     fmap, cm = sm.fmap, sm.cm
   else
     local mid = {x = (from.x + target.x) / 2, y = (from.y + target.y) / 2}

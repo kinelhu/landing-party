@@ -2,7 +2,7 @@
 Version: 0.3.1
 Date: 2026-11-27
   Bugfixes:
-    - Fewer stutters on large maps: a camp's sensors, its siege routes and the search for tanks to keep apart are spread over many ticks instead of one, each decision reads your research once instead of once per target, and Kessler-Hayashi's orbital sight keeps the nearest 80 of your buildings in mind instead of every one in range.
+    - Fewer stutters on large maps: a camp's sensors, its siege routes, Synthexis's reading of your base and the search for tanks to keep apart are spread over many ticks instead of one, each decision reads your research once instead of once per target, and Kessler-Hayashi's orbital sight keeps the nearest 80 of your buildings in mind instead of every one in range.
     - Grubstake's flame turrets are now military targets: your turrets and units fire on them by themselves, and Kessler-Hayashi's mortars shell them. Its sieges on Grubstake sat loaded and fired nothing.
     - A siege's guards now fight biters and Synthexis units that attack it. They stood still while their mortars were destroyed.
     - After an orbital strike opens your wall, a siege's assault pushes on to your buildings behind the breach. It turned back to its mortars once the breach itself was clear.
@@ -13,7 +13,7 @@ Date: 2026-11-27
     - Sieges take up to half of the camp's army at home, railgunners included, instead of a fixed 6 to 16 guards.
     - A siege whose route would cost it most of its escort is not sent. Kessler-Hayashi shells the nests along the way first.
     - Railgunners are at most 30% of a camp's army; they made up most of it on maps with many biters.
-    - Kessler-Hayashi's railgunners stand guard in squads, one at each cluster of its camp, instead of milling around its lander. A camp's idle army past 40 units waits at those stands too, instead of piling into one spot.
+    - Kessler-Hayashi's railgunners stand guard in squads, one at each cluster of its camp, instead of milling around its lander. Its idle army past 40 units waits at those stands too, instead of piling into one spot.
     - A camp's army is at most 200 units, times the strength setting.
     - A corporation that cannot reach your buildings on foot (water, or no way past your guns) and finds little anti-air there builds fliers and raids them from the air.
     - The wait after a costly operation is at most 10 minutes longer than after one that lost nothing.

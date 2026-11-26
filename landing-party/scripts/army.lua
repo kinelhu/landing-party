@@ -898,7 +898,7 @@ local function yard(b, trace)
   -- At most YARD_HOLD at the yard when its hubs have stands (army.rail_stands): the rest go to the stands, and a slot
   -- past it is given up (the user's nw game, 2026-11-26: a garrison of 527 at one yard, its spiral 60 tiles across water
   -- and walls, "100 tanks blocked between a wall and water").
-  local posts = not storage.stands_off and next(army.rail_stands(b)) ~= nil
+  local posts = army.posts(b)
   local held = 0
   -- (A railgunner's slot given up too: they go to the stands, and the first pass had given the yard's 40 to them.)
   local rail_n = {}
@@ -986,10 +986,21 @@ end
 local STAND_RINGS = {10, 16, 22, 28}
 local STAND_CLEAR = 22
 local STAND_APART = 24
-local STAND_QUIET = 64
+local STAND_QUIET = 80   -- (64 once: a squad's spiral reached 70 of an outpost the player built by it, leader rails)
 local STAND_REFRESH = 2 * 3600
 local STAND_TREES = 4
 local STAND_UNMOVED = 2 * 3600   -- walking and not 3 tiles on in this long: given up (the watchdog's stuck is 3 minutes)
+-- Whether its yard holds YARD_HOLD and the rest of its idle army goes to its hubs' stands: a camp whose mix has railgunners
+-- (Kessler-Hayashi). Grubstake's thefts and prowls set out from its yard; with its army at stands, strip and tap natural
+-- mounted nothing.
+function army.posts(b)
+  return not storage.stands_off and (mix(b)["lp-railgunner"] or 0) > 0 and next(army.rail_stands(b)) ~= nil
+end
+local function foe_near(s, x, y, f)
+  local foes = {}
+  for _, o in pairs(game.forces) do if o ~= f and f.is_enemy(o) then foes[#foes + 1] = o end end
+  return #foes > 0 and s.count_entities_filtered{position = {x, y}, radius = STAND_QUIET, force = foes, limit = 1} > 0
+end
 local function stand_ok(b, s, x, y, boxes, homes, taken)
   if in_boxes(boxes, x, y, YARD_CLEAR) then return false end
   for _, q in ipairs(homes) do if (q.x - x) ^ 2 + (q.y - y) ^ 2 < STAND_CLEAR * STAND_CLEAR then return false end end
@@ -997,8 +1008,9 @@ local function stand_ok(b, s, x, y, boxes, homes, taken)
   local f = game.forces[b.force]
   -- (Not among trees: a railgunner sent to one stood unmoved 3 minutes among 24, the watchdog's stuck alarm.)
   if s.count_entities_filtered{position = {x, y}, radius = 8, type = "tree", limit = STAND_TREES + 1} > STAND_TREES then return false end
-  return open_ground(s, x, y) and not s.find_nearest_enemy{position = {x, y}, max_distance = STAND_QUIET, force = f}
-    and not truced_gun(s, x, y, f)
+  -- (Anything of an enemy force's, not its military targets alone: find_nearest_enemy passed over the assemblers and radars
+  -- of an outpost 67 tiles off, and a squad stood by it, leader rails.)
+  return open_ground(s, x, y) and not foe_near(s, x, y, f) and not truced_gun(s, x, y, f)
 end
 function army.rail_stands(b)
   if b.stands and game.tick - (b.stands_at or 0) < STAND_REFRESH then return b.stands end
@@ -1059,12 +1071,25 @@ local function posted(b, u)
   if not (u.valid and u.unit_number and (u.type == "unit" or u.type == "spider-unit")) then return false end
   local kind = shared.kind_of(u.name)
   if kind == "lp-hauler" then return false end
-  return kind == "lp-railgunner" or not (b.yard_slot and b.yard_slot[u.unit_number])
+  -- (The rest only in a camp of railgunners, army.posts: Grubstake's buggies, posted, were not its prowls' and thefts', and
+  -- strip and tap natural mounted nothing.)
+  return kind == "lp-railgunner" or (army.posts(b) and not (b.yard_slot and b.yard_slot[u.unit_number]))
 end
 local function stands(b, trace)
   local st = army.rail_stands(b)
   if not next(st) then return end
   local s = b.lander.surface
+  -- (Something of an enemy's come within STAND_QUIET of a stand since it was found: all found again now, not at the next
+  -- refresh, up to 2 minutes on.)
+  local f = game.forces[b.force]
+  for _, q in pairs(st) do
+    if foe_near(s, q[1], q[2], f) then
+      b.stands_at = nil
+      st = army.rail_stands(b)
+      break
+    end
+  end
+  if not next(st) then return end
   b.stand_of, b.stand_slot, b.stand_sent, b.stand_dest, b.stand_tries, b.stand_seen =
     b.stand_of or {}, b.stand_slot or {}, b.stand_sent or {}, b.stand_dest or {}, b.stand_tries or {}, b.stand_seen or {}
   local live, count, used = {}, {}, {}

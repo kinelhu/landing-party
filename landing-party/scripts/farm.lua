@@ -425,10 +425,49 @@ end
 
 -- What reaching each place costs it one way, in its own (costmap from `pos` over a box round it and them all): {[cell
 -- key] = cost}. Kept on the farm (numbers only) WAYS_FOR, or until a wave ends.
+-- A reading over a box past WAYS_SLICE_R is read in slices (f.ways_job, farm.ways_job_step, a step a tick: WAYS_ROWS of
+-- fire, WAYS_CELLS of cost), and kept in storage with its map (f.ways.shared, herd.shared set from it before each use:
+-- kept in a module, a load lost it and its plans read afresh, deciding otherwise). Read in one tick over the user's nw
+-- base it took up to 597 ms every 10 s while a wave was planned ("Need to fix that", 2026-11-26). A smaller box reads at
+-- once, as before.
+local WAYS_SLICE_R, WAYS_ROWS, WAYS_STEP_CELLS, WAYS_STEP_BLOCKS = 250, 48, 24, 2
+local function ways_done(f, job, cm, fmap)
+  local by, cover = {}, {}
+  for key, at in pairs(job.cells) do
+    local q = {x = at[1], y = at[2]}
+    by[key] = costmap.cost(cm, q)
+    local way = by[key] and costmap.way_in(cm, q)
+    cover[key] = way and #firemap.cover(fmap, way.breach) or 0
+  end
+  f.ways = {tick = game.tick, ended = job.ended, by = by, cover = cover, sieges = {}, fresh = true,
+    shared = {tick = game.tick, from = {job.from[1], job.from[2]}, cm = cm, fmap = fmap, sliced = true}}
+  herd.shared = f.ways.shared
+end
+function farm.ways_job_step(f)
+  local job = f.ways_job
+  if not job then return end
+  if job.phase == "fire" then
+    local m = firemap.step(job.fire, WAYS_ROWS)
+    if not m then return end
+    job.fmap, job.fire, job.phase = m, nil, "cost"
+    local o = job.opts
+    o.fire, o.sliced = m, true
+    job.cm = costmap.start(job.surface, job.mid, job.radius, job.forces, o)
+    return
+  end
+  local m = costmap.step(job.cm, {blocks = WAYS_STEP_BLOCKS, cells = WAYS_STEP_CELLS})
+  if not m then return end
+  f.ways_job = nil
+  ways_done(f, job, m, job.fmap)
+end
 local function ways_from(surface, pos, f, cells)
   local ended = storage.herd and storage.herd.log and #storage.herd.log or 0
   local kept = f.ways
-  if kept and game.tick - kept.tick < WAYS_FOR and kept.ended == ended then return kept.by, kept.cover or {} end
+  if kept and game.tick - kept.tick < WAYS_FOR and kept.ended == ended then
+    if kept.shared then herd.shared = kept.shared end
+    return kept.by, kept.cover or {}
+  end
+  if f.ways_job then return nil end
   -- From where it is, in a box round it and them all (from the box's every edge, a place across a lake from its pens read
   -- as close, and its waves, unable to route there, broke in 1,200 tiles from it; 2026-10-27).
   local x0, y0, x1, y1 = pos.x, pos.y, pos.x, pos.y
@@ -444,6 +483,21 @@ local function ways_from(surface, pos, f, cells)
     -- (Its foes' hidden costs, the dearest: one reading for all of them.)
     local hidden = 0
     for _, fo in ipairs(forces) do hidden = math.max(hidden, herd.hidden_cost(fo.name)) end
+    -- (Past WAYS_SLICE_R, in slices: the job started, its reading kept when done. Not while timed, debug_time_ways.)
+    if radius > WAYS_SLICE_R and not storage.biotech_time_parts then
+      local scale = 1
+      if B.mind.calibrate then for _, fo in ipairs(forces) do scale = math.max(scale, know.scale("biotech", fo.name)) end end
+      local fire = firemap.start(surface, mid, radius * firemap.BOX, herd.hostiles(), B.mind.per_turret or firemap.AFFORD, threat.ARMED)
+      fire.corp = "biotech"
+      local at = {}
+      for key, c in pairs(cells) do at[key] = {c.at.x, c.at.y} end
+      f.ways_job = {phase = "fire", fire = fire, surface = surface, mid = mid, radius = radius, forces = forces,
+        from = {pos.x, pos.y}, ended = ended, cells = at,
+        opts = {n = WAVE_MAX, deaths = herd.deaths(), blocked = herd.blocked(), hidden = hidden, from = {pos.x, pos.y},
+          scale = scale, cell = storage.biotech_ways_cell or herd.PLAN_CELL, margin = herd.spread(WAVE_MAX),
+          ground_cost = costmap.GROUND_COST, wall_forces = herd.hostiles()}}
+      return nil
+    end
     -- (LAB_TIME: its parts timed apart, landing-party/timing.txt.)
     local prof = storage.biotech_time_parts and helpers.create_profiler()
     local fmap = firemap.read(surface, mid, radius * firemap.BOX, herd.hostiles(), herd.price_of, threat.ARMED)
@@ -455,9 +509,11 @@ local function ways_from(surface, pos, f, cells)
     -- tick (herd.shared): its weighing and its waves' plans read the same map (the design consult, 2026-10-30, step 2:
     -- read at 32 and 48 tiles without walls, rams or screens, its weighing and its plans disagreed, and the farm wrote
     -- refusals back between them; at 16 tiles a weighing of the user's fort cost 100 ms, a plan already 116).
-    local cm = costmap.read(surface, mid, radius, forces, {fire = fmap, n = WAVE_MAX, deaths = herd.deaths(), blocked = herd.blocked(), hidden = hidden, from = pos, scale = scale,
+    local copts = {n = WAVE_MAX, deaths = herd.deaths(), blocked = herd.blocked(), hidden = hidden, from = pos, scale = scale,
       cell = storage.biotech_ways_cell or herd.PLAN_CELL, margin = herd.spread(WAVE_MAX), ground_cost = costmap.GROUND_COST,
-      wall_forces = herd.hostiles()})
+      wall_forces = herd.hostiles()}
+    copts.fire = fmap
+    local cm = costmap.read(surface, mid, radius, forces, copts)
     if prof then helpers.write_file("landing-party/timing.txt", {"", "  cost map: ", prof, "\n"}, true); prof.reset() end
     herd.shared = {tick = game.tick, from = {pos.x, pos.y}, cm = cm, fmap = fmap}
     -- (And how many guns cover where each way breaks in: what its bursters would be sent at, herd.way_cost.)
@@ -486,7 +542,8 @@ local function ways_from(surface, pos, f, cells)
         hidden = hidden, scale = scale}))
     end
   end
-  f.ways = {tick = game.tick, ended = ended, by = by, cover = cover, sieges = {}}
+  f.ways = {tick = game.tick, ended = ended, by = by, cover = cover, sieges = {},
+    shared = herd.shared and herd.shared.tick == game.tick and herd.shared or nil}
   return by, cover
 end
 
@@ -536,6 +593,8 @@ local function target_from(surface, pos, f, n, opts)
   -- the base's edge), read over the base in one search and kept WAYS_FOR or until a wave ends (its rays read a megabase's
   -- way in as free over water and through minefields, and it sent waves of 25 to 42 that all died; 2026-10-27).
   local ways, covers = ways_from(surface, pos, f, cells)
+  -- (Its reading still being read in slices: nothing weighed yet, farm.ways_job_step.)
+  if not ways then return nil, nil, nil, "reading" end
   local field = math.max(n or 0, opts.field or 0)
   for _, c in pairs(cells) do
     c.entry = ways[c.key] or NO_WAY
@@ -627,7 +686,9 @@ local function target_from(surface, pos, f, n, opts)
   -- Its sieges and its cuts, sized and planned on the reading, one a step after it (farm.ways_step: each a plan, 17 ms on
   -- the user's fort, and in one tick with the reading, 235 ms; the sieges at its SIEGE_LOOKS most valuable places a wave of
   -- what it has does not win, the cuts round its best place).
-  if f.ways and f.ways.tick == game.tick and f.ways.sieges and field > 0 then
+  -- (A fresh reading, f.ways.fresh: its tick, or the first weighing after a reading read in slices.)
+  if f.ways and (f.ways.tick == game.tick or f.ways.fresh) and f.ways.sieges and field > 0 then
+    f.ways.fresh, f.ways.queued_at = nil, game.tick
     local todo, looked = {}, 0
     for _, c in ipairs(by_worth) do
       if looked >= SIEGE_LOOKS then break end
@@ -1202,6 +1263,7 @@ local function probe(f, s, choice, tick)
   for _, top in ipairs(choice.places or choice.top or {}) do
     local rival = not shared.is_player_force(game.forces[top.force]) and {top.force} or nil
     local at = {x = top.at[1], y = top.at[2]}
+    if f.ways and f.ways.shared then herd.shared = f.ways.shared end
     local pl = herd.plan(s, f.pos, at, rival or players(), shared.WAVE_MIN)
     local foe = rival and rival[1] or "player"
     local _, wt = herd.attempt(foe, at, "siege")
@@ -1270,14 +1332,18 @@ local function send(f, tick)
   if hatching() then avail = field_n end
   local per = field_n > 0 and field / field_n or 1
   local function ready(n) return n * per end
-  local target, rival, choice = target_from(s, f.pos, f, ready(math.min(avail, cap_of(f))), {bursters = bursters, field = field,
+  local target, rival, choice, why_not = target_from(s, f.pos, f, ready(math.min(avail, cap_of(f))), {bursters = bursters, field = field,
     budget = budget})
+  if why_not == "reading" then
+    f.escalate_retry = tick + 60
+    return holds(f, tick, "reads the ways in")
+  end
   if not target then return holds(f, tick, string.format("nothing to go for within %d tiles (%d ready)", B.mind.reach, avail)) end
   -- A fresh reading's sieges are sized over the seconds after it (farm.ways_step, one a second, kept with the reading
   -- WAYS_FOR): weighed at once, its menu held none of them ("no method worth it (sieges allowed, 0 sized)") and it sent a
   -- probe or a raid in place of the siege it was about to size (farm LP_MIX=siege, 2026-11-11, failing since 0.2.272 as
   -- chance tipped the menu its way). It weighs again on the reading once they are sized.
-  if not f.siege and not f.debug_size and not f.debug_now and f.ways and f.ways.tick == game.tick then
+  if not f.siege and not f.debug_size and not f.debug_now and f.ways and (f.ways.tick == game.tick or f.ways.queued_at == game.tick) then
     for _, it in ipairs(f.ways.todo or {}) do
       if it.kind == "siege" then
         f.escalate_retry = tick + 60 * (#f.ways.todo + 1)
@@ -1566,6 +1632,7 @@ local function send(f, tick)
   -- (From the incubator it leaves from: planned from the farm's middle, a wave sent from an incubator 90 tiles off walked
   -- back there first, its first legs failed; the fed lab fort, 2026-10-30.)
   local from = origin and origin.pen and origin.pen.valid and origin.pen.position or f.pos
+  if f.ways and f.ways.shared then herd.shared = f.ways.shared end
   local plan = herd.plan(s, from, target, rival or players(), #units)
   -- (A siege with its rams and screen pays the crossing, not the standing at the wall: siege_size.)
   local screened = siege and big > 0 and (siege.fodder or 0) > 0
@@ -1627,6 +1694,7 @@ local function send(f, tick)
     while k < #units - shared.WAVE_MIN and not herd.affords(k * per_u, cut.plan.cost) do k = k + 1 end
     local cutters = {}
     for i = 1, k do cutters[#cutters + 1] = table.remove(units, 1) end
+    if f.ways and f.ways.shared then herd.shared = f.ways.shared end
     local cut_plan = herd.plan(s, from, cut.at, rival or players(), #cutters) or cut.plan
     local id = herd.launch(origin, cut.at, {units = cutters, farm = f.id, forces = rival, no_probe = true, plan = cut_plan,
       trust = "probe", cut = {e = cut.e, worth = 0, starves = cut.starves, for_strike = true},
@@ -2037,6 +2105,7 @@ end
 function farm.ways_step(f)
   local item = f.ways and f.ways.todo and table.remove(f.ways.todo, 1)
   if not item then return end
+  if f.ways.shared then herd.shared = f.ways.shared end
   local surface = game.surfaces[f.surface]
   local pos = f.pos
   local rival = item.force and not shared.is_player_force(game.forces[item.force]) and {item.force} or nil
@@ -2093,6 +2162,8 @@ function farm.ways_step(f)
 end
 
 function farm.tick(tick)
+  -- (Its reading in slices, a step a tick: farm.ways_job_step.)
+  for _, f in pairs(st().list) do if f.ways_job then farm.ways_job_step(f) end end
   -- (Its reading's sieges and cuts, one a second between its steps: farm.ways_step.)
   if tick % 60 == 30 then
     for _, f in pairs(st().list) do if f.ways and f.ways.todo and #f.ways.todo > 0 then farm.ways_step(f) end end

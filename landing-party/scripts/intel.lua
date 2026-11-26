@@ -198,10 +198,13 @@ local function sense(b, surface, pos, r)
 end
 
 -- A sensor sweep over the cells it covers: what is gone is forgotten.
-local function forget(b, pos, r)
+local function forget(b, pos, r, since)
+  -- (Not seen since `since`, the scan's start when its sensors read over several ticks: read so, each forgot what the one
+  -- before it had just seen, as stale, and the camps lost their targets; nests and strip failed, 0.3.1.)
+  local before = since or game.tick
   for key, t in pairs(b.intel.targets) do
     -- A cut (the power survey) is kept until the next survey says otherwise.
-    if (t.pos[1] - pos.x) ^ 2 + (t.pos[2] - pos.y) ^ 2 <= r * r and t.seen < game.tick and not t.cut then
+    if (t.pos[1] - pos.x) ^ 2 + (t.pos[2] - pos.y) ^ 2 <= r * r and t.seen < before and not t.cut then
       b.intel.targets[key] = nil
     end
   end
@@ -234,10 +237,10 @@ local function scan_step(b)
     if s.valid then
       local r = SENSORS[shared.kind_of(s.name)] or 100
       sense(b, surface, s.position, r)
-      forget(b, s.position, r)
+      forget(b, s.position, r, b.scan_since)
     end
   end
-  if #q == 0 then b.scan_queue = nil end
+  if #q == 0 then b.scan_queue, b.scan_since = nil, nil end
 end
 local function scan(b)
   local surface = game.surfaces[b.surface]
@@ -249,7 +252,7 @@ local function scan(b)
   -- (Read last first, table.remove: the lander first of all.)
   local q = {}
   for i = #sensors, 1, -1 do q[#q + 1] = sensors[i] end
-  b.scan_queue = q
+  b.scan_queue, b.scan_since = q, game.tick
   scan_step(b)
 end
 
