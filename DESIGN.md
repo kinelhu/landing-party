@@ -270,8 +270,10 @@ above in the same commit; when one is dropped, move it to Dropped below with the
     them where they stood: made by the depot and stopped there, they filled the ground a crew's drone or truck is put down
     on, no crew went out, and seven scenarios failed its full regression (strip and register, crew doomed, push, line
     turret, airraid, counterbattery, watchdog army). Stood only 20 tiles clear of the lander and depots, four still failed,
-    their games moved. Taken out of 0.3.1; the cap at 30% and the wider way home kept. Next: a stand of their own (the
-    yard's, clear of every spawn and crew point), checked against those seven.
+    their games moved. Taken out of 0.3.1, and the wider way home with it (called back to 32 tiles of the lander, not 16:
+    in clear culture Kessler-Hayashi's raids never razed the assembler its clearance opened the way to; bisected to that
+    line alone, the cause not found). The cap at 30% kept. Next: a stand of their own (the yard's, clear of every spawn
+    and crew point), checked against those seven and clear culture.
   - Veterancy's names: ranks are vanilla qualities, so a veteran's tooltip says "Uncommon" and wears the engine's quality
     badge beside our chevrons (the user: "a little miffed regarding the 'rarity' language"). Proposed: three qualities of
     the mod's own (Veteran, Elite, Heroic; levels 1 to 3, a chain of their own no recipe makes, our chevron their icon).
@@ -9017,7 +9019,9 @@ Bugs and surprises the headless runs caught, each kept as a check:
   sent (a siege had marched 460 tiles at "keeps 0.00" and lost all 17). (6) Idle railgunners wandered by the lander, the
   yard leaving them out when it lies past their leash: 115 of 120 wandering, 2 tiles in 10 s each; stopped, 0.2 to 0.4
   (on the save). Taken out before release: stopped by the depot they filled the ground crews are put down on, and seven
-  scenarios failed the full regression (the backlog). And air
+  scenarios failed the full regression (the backlog). The way home at 32 tiles, not 16, taken out too: the next full
+  regression failed clear culture alone (the assembler its clearance opened the way to never razed), bisected by file to
+  army.lua and within it to that line (the cap at 30% and the air plan off, it still failed). And air
   raids: none had fliers (5 drones built, all lost to biters; its counter tilt cut them to a tenth). Raids that find no
   way on foot mark the target (t.no_foot) and it is weighed by air alone; such targets with little anti-air ask for an
   air squad of 8 first (army.air_want); an air raid's ladder is its own ("air"), not the ground raid's that failed there

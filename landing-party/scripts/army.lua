@@ -753,7 +753,6 @@ end
 -- broke 205 of the player's buildings (a deathworld visit, 0.2.128). Its clearances take them out of the garrison.
 local LEASH = shared.LEASH
 local RAIL_LEASH = shared.RAIL_LEASH
-local RAIL_HOME = RAIL_LEASH - 16   -- where a leashed railgunner stops on its way back
 local function leash(b, trace)
   local h = b.depots[1] and b.depots[1].valid and b.depots[1] or (b.lander.valid and b.lander)
   if not h then return end
@@ -770,12 +769,12 @@ local function leash(b, trace)
       and (not c.has_command or c.command and c.command.type == defines.command.wander)
     -- Idle ones only: re-ordered straight home, raiders coming back round a nest field walked through it (country).
     if far then
-      -- Back within RAIL_HOME of it (16 once: a hundred sent to 16 tiles of a lander inside rings of wall could not all get
-      -- there and pushed; the user's nw game, 2026-11-26: "like 100 railgunners all spazzing out"). (Not stopped where it
-      -- stands, idle within the leash, in 0.3.1: made by the depot and stopped there, they filled the ground a crew's drone
-      -- or truck is put down on and no crew went out, and seven scenarios failed in 0.3.1's full regression; standing them
-      -- clear of the lander and depots moved those games and four still failed. In the backlog.)
-      u.commandable.set_command{type = defines.command.go_to_location, destination = lp, radius = RAIL_HOME, distraction = d}
+      -- (Within 16 of it. Neither stopped where it stands, idle within the leash, nor called back to RAIL_LEASH - 16, in
+      -- 0.3.1, both for the user's nw game, 2026-11-26: "like 100 railgunners all spazzing out". Stopped, made by the depot
+      -- and stopped there, they filled the ground a crew's drone or truck is put down on, no crew went out, and seven
+      -- scenarios failed 0.3.1's full regression; called back to 32, clear culture's assembler was never razed. In the
+      -- backlog.)
+      u.commandable.set_command{type = defines.command.go_to_location, destination = lp, radius = 16, distraction = d}
       trace(b, string.format("leash: railgunner %d at %.0f,%.0f called back to its lander (%s)", u.unit_number, u.position.x,
         u.position.y, c.has_command and "wandering" or "idle"))
     elseif u.valid and not u.commandable.has_command
