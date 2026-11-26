@@ -268,9 +268,6 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - The uplink fortress that varies (one fixed template).
 - A new corporation landing after both are gone (`withdrawing` is never cleared); the rivals' war on each other.
 - After 0.3.1, from the user's nw game (2026-11-26):
-  - The decision every 30 s costs about 0.5 ms a known target (ops choose; defence, relevance, odds each), 66 to 89 ms
-    on the user's nw save with 80 to 104 targets, 0.3.0's 44 to 54: a stutter each 30 s. Next: weigh the nearest or the
-    likeliest few dozen, or split the decision over ticks.
   - Five scenarios flip with the seed whatever the code: attackmove (its bad mode on 3 of 9 seeds before stands, 6 of 9
     with), nestclear tech (fails on 777 before), line turret and watchdog army (both fail on 4242 before and after),
     director repel (passes 3 of 4 seeds before, 2 of 4 after, failing on different ones). The camps' decisions the same
@@ -9046,7 +9043,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   0.5 ms a target, the siege pass's ops.weigh on all of them twice): the nearest ORBIT_MAX (80) of the player's are kept,
   past it orbit only forgets; the battery pass weighs batteries alone; the siege cost map is read once a tick (128 and
   146 ms, twice). And 0.3.0's own: every camp's sensors read in one tick each 2 minutes (100 to 131 ms), now two a tick.
-  After: worst tick 241 ms (0.3.0's 176), the decision every 30 s 66 to 89 ms, 99% of ticks under 15.6 ms. And air
+  After: worst tick 241 ms (0.3.0's 176), the decision every 30 s 66 to 89 ms, 99% of ticks under 15.6 ms. Then (the
+  user: "still too much of a spike"), timed per helper and per module on the save: budget() read the player's era for
+  each target, walking every technology (48 ms of a 47-ms choice), now once a tick (ops.era); the hulls' separation
+  found them by one search of the whole map each 600 ticks (27 ms), now a slice of the chunks each look, the chunk list
+  kept by on_chunk_generated (built each cycle it cost 28 to 35 ms itself); a siege's ways read in slices (b.ways_job:
+  64 rows of fire, 24 cells of cost a tick, the map kept 2 minutes, learned prices through firemap.price_of; no map yet,
+  no siege at a player but a battery). After: worst tick 52 ms (a lab's district found, once), none other past 27 ms,
+  99.9% under 23.5 ms. And air
   raids: none had fliers (5 drones built, all lost to biters; its counter tilt cut them to a tenth). Raids that find no
   way on foot mark the target (t.no_foot) and it is weighed by air alone; such targets with little anti-air ask for an
   air squad of 8 first (army.air_want); an air raid's ladder is its own ("air"), not the ground raid's that failed there

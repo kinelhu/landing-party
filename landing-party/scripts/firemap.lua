@@ -68,7 +68,10 @@ function firemap.step(job, rows)
     -- (Its own strip's alone: one on the line between two is read by the first.)
     if py >= y0 and (py < y1 or y1 >= job.y + r) and (px - job.x) ^ 2 + (py - job.y) ^ 2 <= r * r
       and threat.firing(t) and threat.reach(t) > 0 then
-      local e = {x = px, y = py, r = threat.reach(t), p = job.prior and threat.prior(t, job.prior) or firemap.AFFORD, e = t}
+      -- (A corporation's learned prices where the job names one, firemap.price_of, set by siege.lua: its siege ways read
+      -- in slices, 0.3.1, priced as their one-tick read was.)
+      local lp = job.corp and firemap.price_of and firemap.price_of(job.corp, t)
+      local e = {x = px, y = py, r = threat.reach(t), p = lp or (job.prior and threat.prior(t, job.prior)) or firemap.AFFORD, e = t}
       local prof = threat.profile(t.name)
       if prof then
         if prof.arc and prof.arc < 1 then e.arc, e.o = prof.arc, (t.direction or 0) / 16 end

@@ -69,11 +69,44 @@ function separate.tick(tick)
   local st = storage.sep
   local hn = hull_names()
   if #hn == 0 then return end
-  if not st.list or tick - (st.scanned or -SCAN) >= SCAN then
-    st.list, st.scanned = {}, tick
-    for _, s in pairs(game.surfaces) do
-      for _, u in ipairs(s.find_entities_filtered{type = "unit", name = hn}) do st.list[#st.list + 1] = u end
+  -- (A slice of the map's chunks each look, the whole in SCAN: one search of the whole map every SCAN ticks cost 27 ms
+  -- on the user's nw save, "still too much of a spike". Those already listed and still valid kept; the new list swapped
+  -- in when the slice reaches the end. Chunk ids in storage, numbers only.)
+  if not st.cq or (st.ci or 1) > #st.cq then
+    if st.next_list then
+      local seen, out = {}, {}
+      for _, u in ipairs(st.next_list) do if u.valid and not seen[u.unit_number] then seen[u.unit_number] = true; out[#out + 1] = u end end
+      for _, u in ipairs(st.list or {}) do if u.valid and not seen[u.unit_number] then seen[u.unit_number] = true; out[#out + 1] = u end end
+      st.list = out
     end
+    -- (The chunk list built once, then kept by on_chunk_generated, separate.on_chunk: built every cycle on a map this
+    -- size it cost 28 to 35 ms itself.)
+    if not st.chunks then
+      st.chunks = {}
+      for _, s in pairs(game.surfaces) do
+        for c in s.get_chunks() do st.chunks[#st.chunks + 1] = (s.index * 4096 + (c.x + 2048)) * 4096 + (c.y + 2048) end
+      end
+    end
+    st.cq, st.ci, st.next_list = st.chunks, 1, {}
+    st.list = st.list or {}
+  end
+  do
+    local per = math.max(1, math.ceil(#st.cq / (SCAN / H.EVERY)))
+    local last = math.min(#st.cq, st.ci + per - 1)
+    for i = st.ci, last do
+      local v = st.cq[i]
+      local cy = v % 4096 - 2048
+      local rest = (v - (cy + 2048)) / 4096
+      local cx = rest % 4096 - 2048
+      local si = (rest - (cx + 2048)) / 4096
+      local s = game.surfaces[si]
+      if s and s.is_chunk_generated({cx, cy}) then
+        for _, u in ipairs(s.find_entities_filtered{area = {{cx * 32, cy * 32}, {cx * 32 + 32, cy * 32 + 32}}, type = "unit", name = hn}) do
+          st.next_list[#st.next_list + 1] = u
+        end
+      end
+    end
+    st.ci = last + 1
   end
   -- Who stands still since the last look, and who ram.lua steers.
   st.at = st.at or {}
@@ -121,6 +154,13 @@ function separate.tick(tick)
       end
     end
   end
+end
+
+-- A chunk generated: on the list the hulls are looked for in (its slice comes round in its turn).
+function separate.on_chunk(e)
+  local st = storage.sep
+  if not (st and st.chunks) then return end
+  st.chunks[#st.chunks + 1] = (e.surface.index * 4096 + (e.position.x + 2048)) * 4096 + (e.position.y + 2048)
 end
 
 function separate.stats()

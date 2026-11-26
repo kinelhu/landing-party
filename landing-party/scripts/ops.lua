@@ -286,7 +286,17 @@ local function floor_of(b, army, committed) return pool.floor(cap(b, army), comm
 -- nw 4; nwa and nwaoo 5 where 4.) Infinite research is not in it (its levels are the director's depth); nor techs that
 -- take no packs (a trigger's).
 local ERA_SHARE = 0.6
+-- (Read once a tick for each force: it walks every technology, about 0.5 ms, and the decision's budget() asked it for
+-- each target, 48 ms of a 47-ms choice on the user's nw save, "still too much of a spike". Kept out of storage.)
+local era_cache = {tick = -1}
+local era_now
 function ops.era(force)
+  if era_cache.tick ~= game.tick then era_cache = {tick = game.tick} end
+  local e = era_cache[force.index]
+  if e == nil then e = era_now(force); era_cache[force.index] = e end
+  return e
+end
+era_now = function(force)
   local done, all = {}, {}
   for _, t in pairs(force.technologies) do
     if t.prototype.max_level < 4294967295 then
@@ -2268,6 +2278,7 @@ function ops.tick(b, tick, trace, army)
   if tick % 60 == 30 then siege_leash(b) end
   if tick % 600 == 300 then stand_down(b) end
   if tick % SENSE_TICKS == (b.id * 97) % SENSE_TICKS then scan(b) elseif b.scan_queue then intel_.scan_step(b) end
+  if b.ways_job then ops.ways_tick(b) end
   if tick % 3600 == (b.id * 53) % 3600 then ops.perimeter(b, tick) end
   if tick % 1800 == (b.id * 59 + 13) % 1800 then ops.sever(b) end
   if tick % 600 == 200 then field_sight(b) end

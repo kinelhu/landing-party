@@ -104,6 +104,7 @@ script.on_event(defines.events.on_script_trigger_effect, function(e)
   aim.on_trigger(e); studies.on_trigger(e); burstfx.on_trigger(e)
 end)
 script.on_nth_tick(3600, aim.sweep)
+script.on_event(defines.events.on_chunk_generated, separate.on_chunk)
 war.forgive = standing.forgive
 rd.era = ops.era
 rd.trace = function(corp, text)

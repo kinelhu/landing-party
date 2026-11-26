@@ -337,14 +337,66 @@ end
 -- the player's artillery 560 tiles off through the base, every hauler killed or stuck on the way (0.2.152).
 local siege_read
 local read_ways_now
--- (Read once a tick: the battery pass and the pass after it read the same map, 128 and 146 ms on the user's nw game.
--- Kept out of storage, and only within its tick: nothing of it is saved or outlives the decision.)
-local ways_cache = {}
+-- Its ways read in slices (0.3.1, the user's nw save: "still too much of a spike"): read in one tick at a decision, the
+-- fire and cost maps out to its farthest target took 128 to 146 ms, every 30 s while a siege was in reach. Now a job in
+-- storage (b.ways_job) reads WAYS_FIRE rows of fire and WAYS_CELLS cells of cost a tick (siege.ways_tick, from
+-- ops.tick); a decision reads the last finished map (b.ways), and starts the next once it is WAYS_AGE old. No map yet:
+-- none (choose_siege holds its player sieges but a battery's). With storage.dump_ways (tests), read whole as before.
+local WAYS_FIRE, WAYS_BLOCKS, WAYS_CELLS, WAYS_AGE = 64, 2, 24, 2 * 3600
+firemap.price_of = function(corp, e)
+  local p = know.price(corp, e.force.name, e.name)
+  return p and p * shared.rank_scale(e) or nil
+end
+local function ways_start(b, h, targets)
+  local s = game.surfaces[b.surface]
+  local foes = enemies(game.forces[b.force])
+  local far = 0
+  for _, t in pairs(targets) do
+    if t.pos and against_player(t.owner) then
+      far = math.max(far, math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2))
+    end
+  end
+  if far == 0 then return nil end
+  local radius = far + 60
+  local shooters, types, deaths = foes, threat.ARMED, nil
+  if not ops.pact(b.force) then
+    shooters, types, deaths = {}, {"ammo-turret", "electric-turret", "fluid-turret", "unit", "turret"}, {}
+    for _, f in ipairs(foes) do shooters[#shooters + 1] = f end
+    for _, n in ipairs(shared.NEST_FORCES) do if game.forces[n] then shooters[#shooters + 1] = game.forces[n] end end
+    for _, e in ipairs(s.find_entities_filtered{position = h.position, radius = radius, type = "unit-spawner",
+      force = shared.NEST_FORCES}) do
+      deaths[#deaths + 1] = {e.position.x, e.position.y, ops.PER_TURRET}
+    end
+    for _, l in ipairs(b.hazard and b.hazard.log or {}) do deaths[#deaths + 1] = {l[2], l[3], 1} end
+  end
+  local fire = firemap.start(s, h.position, radius, shooters, ops.PER_TURRET, types)
+  fire.corp = b.corp
+  return {phase = "fire", fire = fire, surface = s, from = {h.position.x, h.position.y}, radius = radius, foes = foes,
+    deaths = deaths, home = h.unit_number}
+end
+function ops.ways_tick(b)
+  local w = b.ways_job
+  if not w then return end
+  if w.phase == "fire" then
+    local m = firemap.step(w.fire, WAYS_FIRE)
+    if not m then return end
+    w.fmap, w.fire, w.phase = m, nil, "cost"
+    w.cm = costmap.start(w.surface, {x = w.from[1], y = w.from[2]}, w.radius, w.foes, {fire = w.fmap,
+      n = SIEGE_TIERS[#SIEGE_TIERS].guards, deaths = w.deaths, from = w.from,
+      cell = w.radius > 1200 and costmap.CELL * 3 or costmap.CELL * 2, wall_forces = w.foes, sliced = true})
+    return
+  end
+  local m = costmap.step(w.cm, {blocks = WAYS_BLOCKS, cells = WAYS_CELLS})
+  if not m then return end
+  b.ways, b.ways_job = {map = m, at = game.tick, home = w.home}, nil
+end
 local function read_ways(b, h, targets)
-  local c = ways_cache[b.id]
-  if c and c.tick == game.tick and c.home == h then return c.cm end
-  local cm = read_ways_now(b, h, targets)
-  ways_cache = {[b.id] = {tick = game.tick, home = h, cm = cm}}
+  if storage.dump_ways then return read_ways_now(b, h, targets) end
+  local w = b.ways
+  if w and w.home ~= h.unit_number then w = nil end
+  if (not w or game.tick - w.at >= WAYS_AGE) and not b.ways_job then b.ways_job = ways_start(b, h, targets) end
+  local cm = w and w.map
+  siege_read = cm and {tick = game.tick, id = b.id, cm = cm} or siege_read
   return cm
 end
 read_ways_now = function(b, h, targets)
@@ -452,6 +504,8 @@ local function choose_siege(b, army, only_battery)
         -- What it keeps of a siege's guards on the way to its site (the cost map, from its home), its score times the
         -- share kept, as Synthexis weighs a place; no way there, none. (Measured first to where its way in starts, the
         -- last cell out of all fire: on nwa, ringed by nests, that was its own doorstep, and every target read 0.98.)
+        -- (No map read yet, its ways read in slices: no siege on a player but at a battery, for now.)
+        if p and orbital and not cm and against_player(t.owner) and not battery(t) then p = nil end
         if p and cm and against_player(t.owner) then
           local lost = costmap.cost(cm, {x = p[1], y = p[2]})
           local keeps = lost and valuemap.keeps_one_way(guards_for(b, army, SIEGE_TIERS[#SIEGE_TIERS].guards), lost) or 0

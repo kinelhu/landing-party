@@ -2,7 +2,7 @@
 Version: 0.3.1
 Date: 2026-11-27
   Bugfixes:
-    - Fewer stutters on large maps: a camp's sensors are read over several ticks instead of one, and Kessler-Hayashi's orbital sight keeps the nearest 80 of your buildings in mind instead of every one in range.
+    - Fewer stutters on large maps: a camp's sensors, its siege routes and the search for tanks to keep apart are spread over many ticks instead of one, each decision reads your research once instead of once per target, and Kessler-Hayashi's orbital sight keeps the nearest 80 of your buildings in mind instead of every one in range.
     - Grubstake's flame turrets are now military targets: your turrets and units fire on them by themselves, and Kessler-Hayashi's mortars shell them. Its sieges on Grubstake sat loaded and fired nothing.
     - A siege's guards now fight biters and Synthexis units that attack it. They stood still while their mortars were destroyed.
     - After a strike on your power, the other camps' operations against you resume two minutes after the strike is over, instead of 18 minutes after it landed.
