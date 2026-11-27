@@ -393,14 +393,28 @@ local function orbit(b)
       o.queue[#o.queue + 1] = {c[1], c[2]}
     end
   end
+  -- (A chunk's cells weighed SCAN_CELLS a step, as the scan's (o.cells): one chunk by a factory weighed at once, 13 ms,
+  -- the spike guard. Its forget once they are, from when it was found.)
+  if o.cells and #o.cells > 0 then
+    for _ = 1, SCAN_CELLS do
+      local it = table.remove(o.cells)
+      if not it then break end
+      if it.forget then forget(b, it.pos, 23, it.since)
+      elseif it.other.valid then sense_cell(b, s, it.key, it.c, it.other) end
+    end
+    return
+  end
   for _ = 1, ORBIT_SENSE do
     local c = table.remove(o.queue, 1)
     if not c then break end
     local mid = {x = c[1] * 32 + 16, y = c[2] * 32 + 16}
     -- (Past ORBIT_MAX known, only what is gone forgotten; counted again each pass, and each 30 sensings.)
     if o.sensed % 30 == 0 then o.known = #player_targets(b) end
-    if (o.known or 0) < ORBIT_MAX then sense(b, s, mid, 23) end
-    forget(b, mid, 23)
+    o.cells = {{forget = true, pos = mid, since = game.tick}}
+    if (o.known or 0) < ORBIT_MAX then
+      local found = sense_find(b, s, mid, 23)
+      for i = #found, 1, -1 do o.cells[#o.cells + 1] = found[i] end
+    end
     o.sensed = o.sensed + 1
   end
   if not o.ring[o.i] and #o.queue == 0 then o.ring, o.passes = nil, o.passes + 1 end
