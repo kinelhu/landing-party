@@ -107,7 +107,10 @@ shared.CORPS = {
       way_in = true,   -- its raids weigh the turrets on their way in (ops.way_in): a thief goes round a wall
       max_exposure = 1.0,
       -- Where it lands (faction.site): by ore first and away from its rivals; the way to the player matters less.
-      site = {ore = 1.5, approach = 0.5, density = 0.3, rival = 1},
+      -- (And a site within rival_near of a rival camp refused on the first sweep, as Kessler-Hayashi's: on a copy of nw
+      -- its search held two sites and it landed 230 tiles from Kessler-Hayashi's camp, 2026-11-27. Nearer than
+      -- Kessler-Hayashi's 500: a thief squats close to the player.)
+      site = {ore = 1.5, approach = 0.5, density = 0.3, rival = 1, rival_near = 300},
       -- A thief does not keep a vendetta: a grudge at most half as much again (Kessler-Hayashi's five times), or each
       -- loss to Kessler-Hayashi's raids sent a punitive raid into a fortress, its defenders' losses a reprisal back,
       -- until Grubstake's camp was gone (rivals, 2026-10-24).

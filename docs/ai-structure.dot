@@ -34,7 +34,7 @@ digraph ai {
     "director_gui" [label="director_gui\n130 lines", width=0.94, fillcolor="#eef2f7"];
   }
   subgraph cluster_4 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "faction" [label="faction\n1225 lines", width=2.16, fillcolor="#f7dede"];
+    "faction" [label="faction\n1255 lines", width=2.19, fillcolor="#f7dede"];
     "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
     "war" [label="war\n706 lines", width=1.58, fillcolor="#eef2f7"];
     "standing" [label="standing\n114 lines", width=0.93, fillcolor="#eef2f7"];

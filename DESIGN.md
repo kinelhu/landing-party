@@ -276,7 +276,8 @@ above in the same commit; when one is dropped, move it to Dropped below with the
     fight; director armylate (777 fails before and after, 4242 passes both, 12345 flipped in the 0.3.1 batch) and
     director recallfar (777 fails before; on 12345 posted garrison tanks pass the test's guns and answer them in the
     truce); shotrate (its flame trooper's round count: 101 and 31337 fail before the 0.3.1 batch, 777 and 31337
-    after); clear culture (12345 flipped in the batch, 777 passes both); turretmodel on 777 (its vanilla turrets' tally, 17
+    after); clear culture (12345 flipped in the batch, 777 passes both); tap and tap cmd since Grubstake keeps 300 tiles
+    from Kessler-Hayashi (12345 fails 1 on, passes off; 4242 1 on, 9 off; 777 9 on, 4 off); turretmodel on 777 (its vanilla turrets' tally, 17
     to Grubstake's 21, moves with the camp's paving between build steps: its rows stand where the camp lands); nests on 12345 since the 0.3.1 regression, its one raid of 4 on three spawners lost where 2 came home, 777,
     4242 and 101 passing; the 2493451a full regression: 10 of 426, these and director armyhold): attackmove (its bad mode on 3 of 9 seeds before stands, 6 of 9
     with), nestclear tech (fails on 777 before), line turret and watchdog army (both fail on 4242 before and after),
@@ -9112,3 +9113,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   and 777 (123 and 152 with the rule off). The check counted the garrison's drones too at first (192 on 777 both ways,
   one of its stands by the nests): the raid's members alone now. And /lp incidents crashed (the panel's Incidents
   button): dev.lua's helper `standing` hid the standing module; checked in scenario dev.
+- Why Kessler-Hayashi lands south on nw (the user, 2026-11-27: "Why doesn't it like the west or the north?"): each
+  landing's refusals by direction now in its trace ("landing search by direction"). On a copy of nw: the west's sites lie
+  inside the factory ("factory"), the north-west's by its turrets ("army", within 100 tiles) or on spent ore, the north's in
+  nest fields, the east's and south-east's behind nests on the way; the south and south-west are left. And Grubstake's
+  landing, unweighed there (the first clear), came 230 tiles from Kessler-Hayashi's: the rival refusal now holds weighed
+  or not, Grubstake's at site.rival_near 300 (it squats near the player). nw's copy: 316 tiles. Scenario apart grub:
+  328 or more on 12345, 777 and 4242 (272, 301 and 209 off). Every Grubstake scenario starts elsewhere now: 45 of 48 pass
+  on 12345; tap and tap cmd fail with it on and off across seeds (already seed-sensitive), cordon fails without it too.

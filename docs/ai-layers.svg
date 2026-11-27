@@ -101,8 +101,8 @@
 <title>Corporation</title>
 <path fill="#f7dede" stroke="black" d="M351.12,-546.75C351.12,-546.75 248.88,-546.75 248.88,-546.75 242.88,-546.75 236.88,-540.75 236.88,-534.75 236.88,-534.75 236.88,-514.75 236.88,-514.75 236.88,-508.75 242.88,-502.75 248.88,-502.75 248.88,-502.75 351.12,-502.75 351.12,-502.75 357.12,-502.75 363.12,-508.75 363.12,-514.75 363.12,-514.75 363.12,-534.75 363.12,-534.75 363.12,-540.75 357.12,-546.75 351.12,-546.75"/>
 <text xml:space="preserve" text-anchor="middle" x="300" y="-532.3" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="300" y="-520.3" font-family="Helvetica,sans-Serif" font-size="11.00">10 modules, 3706 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="300" y="-508.3" font-family="Helvetica,sans-Serif" font-size="11.00">faction 1225</text>
+<text xml:space="preserve" text-anchor="middle" x="300" y="-520.3" font-family="Helvetica,sans-Serif" font-size="11.00">10 modules, 3736 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="300" y="-508.3" font-family="Helvetica,sans-Serif" font-size="11.00">faction 1255</text>
 </g>
 <!-- The director (above every faction)&#45;&gt;Corporation -->
 <g id="edge32" class="edge">

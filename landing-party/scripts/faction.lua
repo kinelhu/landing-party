@@ -321,9 +321,17 @@ end
 
 -- Why each spot the search looked at was refused, by pass (the landing's trace): nwa's second camp took a site under
 -- its guns, and no record said what refused the rest.
+-- (And by direction from where it searches, faction.site_dir: the user, 2026-11-27, "Why doesn't it like the west or the
+-- north?", and no record said.)
+local DIRS = {"E", "SE", "S", "SW", "W", "NW", "N", "NE"}
 local function refuse(why)
   local r = faction.refused
   if not r then return end
+  if faction.site_dir and faction.refused_dir then
+    local d = faction.refused_dir[faction.site_dir] or {}
+    faction.refused_dir[faction.site_dir] = d
+    d[why] = (d[why] or 0) + 1
+  end
   local k = "p" .. (faction.pass or "?") .. " " .. why
   r[k] = (r[k] or 0) + 1
 end
@@ -380,6 +388,11 @@ function faction.site(surface, from, distance, count, outer)
       local a = 2 * math.pi * cell[5] / 8
       local p = {from.x + distance * math.cos(a), from.y + distance * math.sin(a)}
       local spot = {c[1] + (p[1] - c[1]) / 3, c[2] + (p[2] - c[2]) / 3}
+      do
+        local an = math.atan2(spot[2] - from.y, spot[1] - from.x)
+        if an < 0 then an = an + 2 * math.pi end
+        faction.site_dir = DIRS[math.floor(an / (math.pi / 4) + 0.5) % 8 + 1]
+      end
       local clear = true
       for _, l in ipairs(avoid) do
         if (l.x - spot[1]) ^ 2 + (l.y - spot[2]) ^ 2 < APART * APART then clear = false end
@@ -479,10 +492,13 @@ function faction.site(surface, from, distance, count, outer)
         -- nest field is: its next ring tried first (the user's nw game, 2026-11-27: Kessler-Hayashi's camps came down
         -- all round Grubstake's; weighed alone, a ring held one to four sites and none moved, scenario apart).
         local near_rival = false
-        if n > SITE_MIN_ORE and weigh and weigh.rival_near and not faction.dense_ok and not storage.rival_apart_off then
+        -- (Weighed or not: Grubstake's landing on a copy of nw took the first clear site, unweighed, 230 tiles from
+        -- Kessler-Hayashi's camp.)
+        local rival_near = mind and mind.site and mind.site.rival_near
+        if n > SITE_MIN_ORE and rival_near and not faction.dense_ok and not storage.rival_apart_off then
           for _, o in pairs(storage.bases or {}) do
             if o.corp ~= faction.site_corp and not o.fallen and o.lander and o.lander.valid and o.surface == surface.index
-              and (o.lander.position.x - spot[1]) ^ 2 + (o.lander.position.y - spot[2]) ^ 2 < weigh.rival_near ^ 2 then
+              and (o.lander.position.x - spot[1]) ^ 2 + (o.lander.position.y - spot[2]) ^ 2 < rival_near ^ 2 then
               near_rival = true
               break
             end
@@ -647,7 +663,7 @@ function faction.arrive(surface, from, opts, quiet)
   -- candidate sites" of every podded landing, nwa's second camp's among them.)
   -- (Kept only where they are: they are not saved, and a podded landing whose search came before a load, or one handed
   -- its site, found them nil and crashed the trace; pool and heist at 0.2.370.)
-  if not (opts and opts.at) or not faction.candidates then faction.generated, faction.candidates, faction.refused = 0, 0, {} end
+  if not (opts and opts.at) or not faction.candidates then faction.generated, faction.candidates, faction.refused, faction.refused_dir = 0, 0, {}, {} end
   faction.pending = false
   faction.pact_site = opts and opts.corp and pact.has(opts.corp) or false
   -- Here (its pod touched down at this site): no search; failing that (built over meanwhile), the search as ever.
@@ -817,6 +833,20 @@ function faction.arrive(surface, from, opts, quiet)
     local parts = {}
     for _, k in ipairs(ks) do parts[#parts + 1] = k .. " " .. faction.refused[k] end
     base.trace(b, "landing search, spots by pass: " .. table.concat(parts, ", "))
+    -- (By direction from where it searched: what refused each, its most first.)
+    local dirs = {}
+    for _, dn in ipairs(DIRS) do
+      local d = faction.refused_dir and faction.refused_dir[dn]
+      if d then
+        local ws = {}
+        for w, n in pairs(d) do ws[#ws + 1] = {w, n} end
+        table.sort(ws, function(x, y) if x[2] ~= y[2] then return x[2] > y[2] end return x[1] < y[1] end)
+        local bits = {}
+        for i = 1, math.min(4, #ws) do bits[#bits + 1] = ws[i][1] .. " " .. ws[i][2] end
+        dirs[#dirs + 1] = dn .. ": " .. table.concat(bits, ", ")
+      end
+    end
+    if #dirs > 0 then base.trace(b, "landing search by direction: " .. table.concat(dirs, "; ")) end
   end
   faction.site_scored = nil
   if not quiet then announce(b, surface) end

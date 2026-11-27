@@ -783,6 +783,35 @@ scenarios.apart = function()
   local mix = params.mix or ""
   local off = mix == "off" or mix == "spreadoff"
   local spread = mix == "spread" or mix == "spreadoff"
+  -- LP_MIX=grub and gruboff: the other way round, Grubstake's landing by the real search with Kessler-Hayashi's camps
+  -- standing (its mind's site.rival_near, 300: on a copy of nw it took a site 230 tiles from one).
+  if mix == "grub" or mix == "gruboff" then
+    schedule(60, function() lp("debug_tune", {raids_off = true, rival_apart_off = mix == "gruboff"}) end)
+    for i, t in ipairs({300, 3000, 6000}) do
+      schedule(t, function() lp("arrive_async", 1, {x = 0, y = 0}, 250 + 50 * i, {corp = "grubstake"}) end)
+    end
+    schedule(END - 300, function()
+      local kh, gs = {}, {}
+      for _, id in ipairs(lp("bases")) do
+        local w = lp("camp_where", id)
+        if w then table.insert(w.corp == "grubstake" and gs or kh, w.origin) end
+      end
+      local near, ds = math.huge, {}
+      for _, g in ipairs(gs) do
+        local d = math.huge
+        for _, k in ipairs(kh) do d = math.min(d, math.sqrt((g.x - k.x) ^ 2 + (g.y - k.y) ^ 2)) end
+        ds[#ds + 1] = math.floor(d); near = math.min(near, d)
+      end
+      info("apart: Grubstake's camps from Kessler-Hayashi's: " .. table.concat(ds, ", "))
+      metric("apart_near", near < math.huge and math.floor(near) or -1)
+      if mix == "grub" then
+        check("apart: Grubstake's landings 270 tiles or more from Kessler-Hayashi's camps", #ds > 0 and near >= 270, table.concat(ds, ", "))
+      else
+        check("apart: gruboff, what it was (measured)", #ds > 0, table.concat(ds, ", "))
+      end
+    end)
+    return
+  end
   -- LP_MIX=clear and clearoff: the spread's ground rule itself (layout.spread_clear): a Kessler-Hayashi camp and
   -- Grubstake's, a point 150 tiles from Grubstake's camp on the far side from the other, free of everything else.
   if mix == "clear" or mix == "clearoff" then

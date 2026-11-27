@@ -5,7 +5,7 @@ Date: 2026-11-27
     - Air raids fly around biter nests instead of straight over them, where spitters shot them down.
     - /lp incidents (and the debug panel's Incidents button) crashed the game.
   Changes:
-    - Kessler-Hayashi lands at least 500 tiles from Grubstake's camps when it can, and founds no new cluster within 200 tiles of them. It no longer crowds Grubstake's ground between itself and you.
+    - Kessler-Hayashi lands at least 500 tiles from Grubstake's camps when it can, and founds no new cluster within 200 tiles of them. Grubstake keeps 300 tiles from Kessler-Hayashi's camps when it can. Each now crowds the other less on the way to you.
   Features:
     - A debug panel for admins (setting "Debug panel", then Ctrl + Shift + L, or /lp panel): each camp's state, what holds it and its decisions as they come, Synthexis's farms and waves, the director, the dev tools as buttons, a jump to any camp, operation, farm or wave, and a snapshot to a file for bug reports.
 ---------------------------------------------------------------------------------------------------
