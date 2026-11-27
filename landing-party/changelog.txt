@@ -2,7 +2,6 @@
 Version: 0.3.2
 Date: 2026-11-27
   Bugfixes:
-    - Kessler-Hayashi's perimeter line gets its lamps again: 0.3.1 laid floors too slowly, and lamps fell behind the line's posts.
     - Air raids fly around biter nests instead of straight over them, where spitters shot them down.
     - /lp incidents (and the debug panel's Incidents button) crashed the game.
   Changes:

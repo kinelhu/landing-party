@@ -46,7 +46,7 @@ digraph ai {
     "lifeline" [label="lifeline\n155 lines", width=0.97, fillcolor="#eef2f7"];
   }
   subgraph cluster_5 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n960 lines", width=1.87, fillcolor="#eef2f7"];
+    "base" [label="base\n959 lines", width=1.87, fillcolor="#eef2f7"];
     "construction" [label="construction\n507 lines", width=1.36, fillcolor="#eef2f7"];
     "planner" [label="planner\n512 lines", width=1.37, fillcolor="#eef2f7"];
     "layout" [label="layout\n1857 lines", width=2.86, fillcolor="#f7dede"];

@@ -9121,7 +9121,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   or not, Grubstake's at site.rival_near 300 (it squats near the player). nw's copy: 316 tiles. Scenario apart grub:
   328 or more on 12345, 777 and 4242 (272, 301 and 209 off). Every Grubstake scenario starts elsewhere now: 45 of 48 pass
   on 12345; tap and tap cmd fail with it on and off across seeds (already seed-sensitive), cordon fails without it too.
-- 0.3.1 shipped with cordon failing on 12345 ("a lamp on every standing post": 20 lamps, 41 turrets): floors between build
-  steps paved each 15 ticks (to spare the biters' paths, turretmodel) held its lamps behind its posts. Bisected on the
-  Studio to d91fa166 (b56191e5's per tick passed); each 5 ticks now: cordon, turretmodel and line pass on 12345. cordon on
-  4242 fails before tonight's batch too (pads left where posts came down).
+- 0.3.2's full regression on the Studio (441 runs, 20 failed; 13 had passed in 0.3.1's, each run again on 0.3.1 and
+  0.3.2): 7 failed on both, 5 were 0.3.2's. Grubstake's rival refusal moved the second camp of tap, tap cmd, crew doomed
+  and biters outpost (-385,-55 to -280,-260, 273 tiles from the first): their checks are of the old ground, so they run
+  with LP_OFF=rival_apart in regress.sh (the rule's own checks are scenario apart's). And paving each 5 ticks (a
+  commit for cordon on 12345, reverted) built the camps otherwise: cordon lake, rivalhit and biters outpost failed. Its
+  cause was the check: "a lamp on every standing post" counted two turrets a lamp, and the run ended with a post going
+  up (its turret before its lamp, 20 lamps to 41 turrets on 0.3.1); now each post turret beyond 100 tiles with a lamp
+  within 5, those within 6 of a post pending aside (0.3.1's run: 0 dark). rivalhit passes too when the camp stayed silent
+  only as turrets_cover and the rival was gone (its outpost under two guns; with LP_OFF=army: fails).

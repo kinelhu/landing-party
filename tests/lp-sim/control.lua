@@ -1083,9 +1083,15 @@ scenarios.rivalhit = function()
   schedule(END - 60, function()
     info("rivalhit: " .. serpent.line({hit = S.hit_name, far = S.far, depot = S.depot, made = S.made, responses = S.resp, silent = S.silent,
       garrison = {S.garrison0, S.garrison}, foes_left = S.foes_left}))
-    check("rivalhit: the camp answered the rival at its outpost within three minutes", (S.resp or 0) > 0,
-      string.format("%s responses, silent %s, outpost %.0f from the lander, %.0f from a depot, garrison %s", tostring(S.resp),
-        serpent.line(S.silent), S.far or -1, S.depot or -1, tostring(S.garrison0)))
+    -- (Or its turrets there answered: the rival gone within the three minutes and the camp silent only as its guns covered
+    -- the outpost, army.alarm's turrets_cover. Paving each 5 ticks at 0.3.2 built 12345's camp otherwise, its farthest
+    -- turret two guns' cover, and the rival's squad died to them, 0 left; a camp standing by while the rival stays is the
+    -- failure, the user's 2026-11-17 playtest.)
+    local covered = (S.resp or 0) == 0 and S.foes_left == 0 and S.silent and S.silent.turrets_cover
+      and table_size(S.silent) == 1
+    check("rivalhit: the camp answered the rival at its outpost within three minutes", (S.resp or 0) > 0 or covered,
+      string.format("%s responses, silent %s, %s foes left, outpost %.0f from the lander, %.0f from a depot, garrison %s",
+        tostring(S.resp), serpent.line(S.silent), tostring(S.foes_left), S.far or -1, S.depot or -1, tostring(S.garrison0)))
   end)
 end
 
@@ -14799,7 +14805,21 @@ scenarios.cordon = function()
     check("cordon: no pads left where posts came down", ringmix or (litter == 0 and (cs.recovered or 0) > 0),
       string.format("%d pad tiles with no post, %s pieces recovered", litter, tostring(cs.recovered)))
     info(string.format("cordon: %d post lamps, %d stripe tiles beyond 100", lamps, stripe))
-    check("cordon: a lamp on every standing post", lamps > 0 and 2 * lamps >= turrets, string.format("%d lamps, %d turrets", lamps, turrets))
+    -- Each post turret with its lamp by it, a post still going up aside (its turret before its lamp: paving each 5 ticks
+    -- at 0.3.2, lake's run ended on one, 18 lamps to 37 turrets; counted two turrets a lamp, that read as a dark post).
+    local dark = 0
+    for _, t in pairs(surface().find_entities_filtered{name = "lp-gun-turret", force = FORCE, position = {S.o.x, S.o.y}, radius = 400}) do
+      local going_up = false
+      for _, q in ipairs(cs.pending_at or {}) do
+        if (t.position.x - q[1]) ^ 2 + (t.position.y - q[2]) ^ 2 <= 6 * 6 then going_up = true end
+      end
+      local dr = (t.position.x - S.o.x) ^ 2 + (t.position.y - S.o.y) ^ 2
+      if dr > 100 ^ 2 and not going_up
+        and surface().count_entities_filtered{name = "lp-post-lamp", position = t.position, radius = 5} == 0 then
+        dark = dark + 1
+      end
+    end
+    check("cordon: a lamp on every standing post", lamps > 0 and dark == 0, string.format("%d lamps, %d turrets, %d with no lamp by them", lamps, turrets, dark))
     check("cordon: the line painted post to post", stripe >= 60 * (cs.arcs or 0), string.format("%d tiles, %s arcs", stripe, tostring(cs.arcs)))
     -- Its back (Fable's look consult, item 2): grown, a ring of posts round the camp, every bearing covered.
     local st = lp("stats", storage.id)
