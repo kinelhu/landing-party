@@ -3,6 +3,7 @@
 -- rule builds. The code is as it was in base; install runs it with base's helpers bound (K) and returns what base calls.
 local shared = require("__landing-party__.shared")
 local rd = require("__landing-party__.scripts.rd")
+local prof = require("__landing-party__.scripts.prof")
 
 local planner = {}
 
@@ -407,7 +408,8 @@ local function plan(b, only)
             block.center[2], b.target)
         end
         local d = layout.district(b, "lab", b.target)
-        if not d then b.lab_wait = game.tick + LAB_WAIT end
+        -- (Still looking, layout.district_step: not a search that found none.)
+        if not d and not layout.district_pending(b) then b.lab_wait = game.tick + LAB_WAIT end
         return d and string.format("district planned at %.0f,%.0f for %s", d.center[1], d.center[2], b.target)
       end},
     -- Serenity spreads out to its line (the user, 2026-10-20: "We need organic looking bases that look menacing, like
@@ -458,8 +460,13 @@ local function plan(b, only)
       end},
   }
   for _, r in ipairs(rules) do
-    if (not only or r[1] == only) and r[2]() then
+    local _pt = prof.start("rule." .. r[1] .. ".test")
+    local ok = (not only or r[1] == only) and r[2]()
+    prof.stop(_pt)
+    if ok then
+      local _pa = prof.start("rule." .. r[1] .. ".act")
       local did = r[3]()
+      prof.stop(_pa)
       if did then
         b.rule = r[1]
         if r[1] == "grow" then b.grow_failed = 0 end

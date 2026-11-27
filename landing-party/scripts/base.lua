@@ -818,6 +818,8 @@ function base.tick(tick)
       local withdrawing = storage.corps and storage.corps[b.corp] and storage.corps[b.corp].withdrawing
       -- A compound being laid out (layout.wfc_step): one stage a second.
       if b.wfc_job and tick % 60 == 17 then layout.wfc_step(b) end
+      -- (A district's site looked for a step a tick, layout.district_step.)
+      if b.district_job then layout.district_step(b) end
       if tick % BUILD_TICKS == 0 and not withdrawing then
         local _sb = prof.start("base.build"); build(b); prof.stop(_sb)
         -- The fortress's own jobs go faster; everything else at the usual pace (a burst for all once

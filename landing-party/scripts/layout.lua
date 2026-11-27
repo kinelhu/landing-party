@@ -1044,34 +1044,58 @@ end
 -- of the player's buildings and rivals' claims. Its own wall and rooms: districts walled apart, the curtain round all.
 function layout.districts(b) return not storage.wfc_core_off and WFC_TILES[b.corp] ~= nil end
 -- role "lab": a research district, its lab (the kind `lab`) at its heart (its tile pinned at the middle cell).
+-- A district's site looked for in steps (b.district_job, layout.district_step from base.tick, DISTRICT_TRIES spots a
+-- step: all of up to 250 at once, each a count of the player's within 90 tiles, took 23 ms, the spike guard on the user's
+-- nw save). layout.district starts it and returns its district once found (nil meanwhile, or none found).
+local DISTRICT_TRIES = 8
 function layout.district(b, role, lab)
   if b.wfc_job then return nil end
-  local surface = game.surfaces[b.surface]
+  local job = b.district_job
+  if job and job.role == role and job.lab == lab then
+    if not job.done then return nil end
+    b.district_job = nil
+    return job.found
+  end
+  if job and not job.done then return nil end
   local side = WFC_CELLS * WFC_TILES[b.corp].size
+  b.district_job = {role = role, lab = lab, side = side, r = side / 2 + 30, k = 0}
+  return nil
+end
+function layout.district_pending(b) return b.district_job ~= nil and not b.district_job.done end
+function layout.district_step(b)
+  local job = b.district_job
+  if not job or job.done then return end
+  if b.wfc_job then return end
+  local surface = game.surfaces[b.surface]
+  local side = job.side
   local ox, oy = b.origin.x, b.origin.y
-  for r = side / 2 + 30, side / 2 + 230, 20 do
+  for _ = 1, DISTRICT_TRIES do
+    if job.r > side / 2 + 230 then job.done = true return end
+    local r = job.r
     local steps = math.max(6, math.floor(2 * math.pi * r / 40))
-    local a0 = 2 * math.pi * rng.next(b.rng)
-    for k = 0, steps - 1 do
-      local a = a0 + 2 * math.pi * k / steps
-      local cx, cy = ox + r * math.cos(a), oy + r * math.sin(a)
-      local clear = true
-      for _, f in ipairs(shared.player_forces()) do
-        if surface.count_entities_filtered{position = {cx, cy}, radius = side / 2 + 30, force = f, limit = 1} > 0 then clear = false end
+    if job.k == 0 then job.a0 = 2 * math.pi * rng.next(b.rng) end
+    local a = job.a0 + 2 * math.pi * job.k / steps
+    job.k = job.k + 1
+    if job.k >= steps then job.k, job.r = 0, job.r + 20 end
+    local cx, cy = ox + r * math.cos(a), oy + r * math.sin(a)
+    local clear = true
+    for _, f in ipairs(shared.player_forces()) do
+      if surface.count_entities_filtered{position = {cx, cy}, radius = side / 2 + 30, force = f, limit = 1} > 0 then clear = false end
+    end
+    for _, o in pairs(storage.bases) do
+      if o ~= b and not o.fallen and o.surface == b.surface and o.claim_radius
+        and (o.origin.x - cx) ^ 2 + (o.origin.y - cy) ^ 2 < (o.claim_radius + side / 2) ^ 2 then clear = false end
+    end
+    if clear then
+      local h = new_hub(b, math.floor(cx), math.floor(cy))
+      h.district, h.walled = true, true
+      local role = job.role
+      local need = role == "lab" and {B = 1} or role == "depot" and {D = 1} or {[role == "gen" and "G" or "F"] = 2}
+      if layout.wfc_plan(b, h, math.floor(cx - side / 2), math.floor(cy - side / 2), need, job.lab) then
+        job.done, job.found = true, {kind = "district (planned)", center = {cx, cy}, wfc = true}
+        return
       end
-      for _, o in pairs(storage.bases) do
-        if o ~= b and not o.fallen and o.surface == b.surface and o.claim_radius
-          and (o.origin.x - cx) ^ 2 + (o.origin.y - cy) ^ 2 < (o.claim_radius + side / 2) ^ 2 then clear = false end
-      end
-      if clear then
-        local h = new_hub(b, math.floor(cx), math.floor(cy))
-        h.district, h.walled = true, true
-        local need = role == "lab" and {B = 1} or role == "depot" and {D = 1} or {[role == "gen" and "G" or "F"] = 2}
-        if layout.wfc_plan(b, h, math.floor(cx - side / 2), math.floor(cy - side / 2), need, lab) then
-          return {kind = "district (planned)", center = {cx, cy}, wfc = true}
-        end
-        table.remove(b.hubs)
-      end
+      table.remove(b.hubs)
     end
   end
 end
