@@ -1437,8 +1437,8 @@ function army.tick(b, tick, trace)
   if tick % 600 == 300 then local _sp = prof.start("army.intercept"); intercept(b, trace); prof.stop(_sp) end
   if tick % 60 == 45 then local _sp = prof.start("army.travel"); travel(b, trace); prof.stop(_sp) end
   if tick % 300 == 0 then local _sp = prof.start("army.settle"); settle(b, trace); prof.stop(_sp) end
-  -- Its army at its cap (b.army_full): the planner spreads not, its line steps not, and it does not stand down, its
-  -- surplus going to war (the user, 2026-11-27: "make spreading inattractive in the AI planner vs actually turning
+  -- Its army at its cap (b.army_full): the planner spreads not (its line steps still: held, its cordon's arcs were never
+  -- recovered, cordon), and it does not stand down, its surplus going to war (the user, 2026-11-27: "make spreading inattractive in the AI planner vs actually turning
   -- agressive"; on nw a camp of 527 at home spread over the map).
   if tick % 300 == 10 then b.army_full = strength(b) >= cap(b) end
   if tick % 300 == 75 then local _sp = prof.start("army.pool.tick"); pool.tick(b); prof.stop(_sp) end

@@ -3,6 +3,7 @@
 -- delay, its build step, what it does when a building dies, and the repair of old saves' lines. The code is as it was
 -- in base; install runs it with base's helpers bound (K) and returns what base calls.
 local shared = require("__landing-party__.shared")
+local prof = require("__landing-party__.scripts.prof")
 
 local construction = {}
 
@@ -26,6 +27,7 @@ local RING_KINDS = {curtain = true, post = true}
 -- Floors in the corporation's own tiles: roads, and pads (paved yards, docs/corporations.md).
 -- A post's pad remembers the ground under it (module.under), put back when the post comes down (cordon.lua: recovered
 -- arcs and rings left their pads as litter, the user's screenshot and spread2).
+local PAVE_TILES = 256   -- tiles paved a build step at most (build)
 local function pave(b, tiles, floor, module)
   local surface = game.surfaces[b.surface]
   local name = shared.variant(b.corp, "lp-" .. (floor or "road"))
@@ -229,10 +231,17 @@ function base.reserve(b, name)
 end
 army.reserve = base.reserve
 
+-- (REBUILD_LOOKS due jobs looked at a step, their reserve read only for one it places: each looked at with its reserve,
+-- footing, crew and ground, a long list after losses took 7 ms a step, the spike guard.)
+local REBUILD_LOOKS = 16
 local function rebuild(b)
   local surface = game.surfaces[b.surface]
+  local looks = 0
   for i, job in ipairs(b.rebuild) do
-    local reserve = base.reserve(b, job.name)
+    if game.tick >= job.due then
+      looks = looks + 1
+      if looks > REBUILD_LOOKS then break end
+    end
     if game.tick < job.due then
       -- still on its way
     elseif base.footing and not base.footing(b, job) then
@@ -246,6 +255,7 @@ local function rebuild(b)
     else
       job.occupied = nil
       local economy = ECONOMY[shared.kind_of(job.name)]
+      local reserve = economy and 0 or base.reserve(b, job.name)
       local need = (shared.cost[job.name] or 0) + (economy and 0 or reserve)
       -- Held back for the reserve: it steps aside, the rebuilds of what makes parts behind it go first.
       if b.parts < need and not economy and reserve > 0 then goto continue end
@@ -274,23 +284,42 @@ end
 
 -- Place the next queued entity if parts allow. A failed key entity abandons the rest of its module.
 local function build(b)
-  if rebuild(b) then return end
+  local _r = prof.start("build.rebuild"); local _rb = rebuild(b); prof.stop(_r)
+  if _rb then return end
   -- Road tiles cost nothing and take no build step.
   -- Floors cost nothing and take no build step.
   -- A crew's module's floor waits for the crew (crew.take takes it with the rest): paved at once, a cordon post's pad
   -- lay out on the ground before its drone came (the user, 2026-10-17).
-  while b.queue[1] and b.queue[1].tiles do
-    if b.queue[1].module and base.crew_take and base.crew_take(b, b.queue[1]) then return end
-    local job = table.remove(b.queue, 1)
-    pave(b, job.tiles, job.floor, job.module)
+  -- (PAVE_TILES a step at most, a job past it paved in parts, the rest kept at the head: its compounds' floors paved at
+  -- once took 12.5 ms, the spike guard, the user's nw save.)
+  local _pv = prof.start("build.pave")
+  local budget = PAVE_TILES
+  while b.queue[1] and b.queue[1].tiles and budget > 0 do
+    if b.queue[1].module and base.crew_take and base.crew_take(b, b.queue[1]) then prof.stop(_pv) return end
+    local job = b.queue[1]
+    if #job.tiles <= budget then
+      table.remove(b.queue, 1)
+      budget = budget - #job.tiles
+      pave(b, job.tiles, job.floor, job.module)
+    else
+      local part, rest = {}, {}
+      for i, t in ipairs(job.tiles) do if i <= budget then part[#part + 1] = t else rest[#rest + 1] = t end end
+      job.tiles = rest
+      pave(b, part, job.floor, job.module)
+      budget = 0
+    end
   end
+  prof.stop(_pv)
+  -- (Floors still to pave at the head: the rest of this step waits for them, as before.)
+  if b.queue[1] and b.queue[1].tiles then return end
   local job = b.queue[1]
   if not job then return end
   -- A module beyond every yard goes to a crew (crew.lua), which takes its jobs off the queue or holds them for one.
   -- Held there (still the head: waiting for a crew or for parts), what makes parts behind it goes first, as past a job
   -- waiting for parts below: a young camp's drill behind the line's first arc (60 jobs, its posts a crew's) waited 34
   -- minutes, the camp at four drills and 60 ore a minute all that while (cordon broken).
-  if base.crew_take and base.crew_take(b, job) then
+  local _ct = prof.start("build.crew_take"); local _taken = base.crew_take and base.crew_take(b, job); prof.stop(_ct)
+  if _taken then
     if b.queue[1] == job then
       for i = 2, #b.queue do
         local q = b.queue[i]
@@ -328,7 +357,7 @@ local function build(b)
   end
   b.waiting = nil
   table.remove(b.queue, 1)
-  local e = place(b, job)
+  local _pl = prof.start("build.place"); local e = place(b, job); prof.stop(_pl)
   if job.slot then job.slot.filled = e ~= nil end
   -- (arcguard's, planner.lua: skipped, never its module abandoned; a mine's flamer refused would have given up the mine.)
   if not e and job.water then return end   -- (a ring's piece over water: left out, its module kept; place)

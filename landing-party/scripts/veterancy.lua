@@ -154,7 +154,13 @@ for _, p in ipairs({"oplog.recent", "oplog.live", "owner.*", "bases.*.queue", "b
   "bases.*.ore_cells", "bases.*.pylon_spots", "bases.*.arcs_drawn", "bases.*.cordon", "bases.*.pylons", "bases.*.bins",
   "bases.*.drills", "bases.*.fabs", "bases.*.gens", "bases.*.turrets", "bases.*.radars", "bases.*.walls", "bases.*.depots",
   "bases.*.launchpads", "bases.*.lamps", "bases.*.mines", "bases.*.flamers", "bases.*.modules", "bases.*.cells",
-  "bases.*.rebuild", "bases.*.gate_list", "bases.*.domes", "bases.*.drop_gens", "bases.*.camp_turrets"}) do
+  "bases.*.rebuild", "bases.*.gate_list", "bases.*.domes", "bases.*.drop_gens", "bases.*.camp_turrets",
+  -- (0.3.1's kept maps and readings, numbers and positions, no unit: walked, a promotion took 20 to 23 ms, the spike
+  -- guard on the user's nw save.)
+  -- (Not the stand tables keyed by unit, KEYED: a promotion moves those.)
+  "bases.*.ways", "bases.*.ways_job", "bases.*.stands", "bases.*.scan_queue", "bases.*.orbit", "farms.list.*.ways", "farms.list.*.ways_job", "farms.list.*.census",
+  "farms.list.*.census_job", "farms.list.*.seed_job", "creep.cultures.*.land", "creep.cultures.*.land_job", "creep.chunks",
+  "sep.chunks", "sep.cq"}) do
   SKIP[p] = true
 end
 
