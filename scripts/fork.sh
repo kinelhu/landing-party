@@ -14,6 +14,7 @@ SIM="$HOME/Library/Application Support/factorio-lp-sim/fork-$SCENARIO$MIXTAG-$SE
 mkdir -p "$FORKS" "$SIM/config" "$SIM/mods" "$SIM/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$SIM" > "$SIM/config/config.ini"
 ln -sfn "$REPO/landing-party" "$SIM/mods/landing-party"
+ln -sfn "$REPO/landing-party-graphics" "$SIM/mods/landing-party-graphics"
 rm -rf "$SIM/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$SIM/mods/lp-sim"
 # (LP_FORK_MINUTES: the harness's end, for a film that plays past the strike; it ends the game there, so a time-lapse of
 # a culture growing from minute 2 needs it at 40, 2026-11-05.)
@@ -21,7 +22,7 @@ DOCTRINE="nil"; [ -n "${LP_DOCTRINE:-}" ] && DOCTRINE="\"$LP_DOCTRINE\""
 printf 'return {scenario = "%s", minutes = %s, every = %s, strike = %s, distance = 300, radius = 220, doctrine = %s, units = 0, move = false, fast = %s, mix = "%s", save_at = %s}\n' \
   "$SCENARIO" "${LP_FORK_MINUTES:-$((STRIKE + 1))}" "${LP_FORK_MINUTES:-$((STRIKE + 1))}" "$STRIKE" "$DOCTRINE" "${LP_FAST:-false}" "${LP_FORK_MIX:-}" "$((STRIKE - FORK_LEAD))" > "$SIM/mods/lp-sim/params.lua"
 cat > "$SIM/mods/mod-list.json" <<JSON
-{"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},
+{"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},{"name":"landing-party-graphics","enabled":true},
   {"name": "lp-sim", "enabled": true}, {"name": "space-age", "enabled": true},
   {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}]}
 JSON

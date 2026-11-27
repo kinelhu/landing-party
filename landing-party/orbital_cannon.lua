@@ -11,7 +11,7 @@ local SHEETS = require("graphics.sheets")
 -- A rendered sheet's layer (tools/blender/orbital_cannon.py, targeting_array.py; the barracks' way, player.lua).
 local function layer(key, file, speed, extra)
   local S = SHEETS[key]
-  local l = {filename = "__landing-party__/graphics/" .. key .. "/" .. file .. ".png", width = S.width, height = S.height,
+  local l = {filename = "__landing-party-graphics__/graphics/" .. key .. "/" .. file .. ".png", width = S.width, height = S.height,
     frame_count = S.frames, line_length = S.line_length, scale = 0.5, shift = S.shift, animation_speed = speed}
   for k, v in pairs(extra or {}) do l[k] = v end
   return l
@@ -76,7 +76,7 @@ cannon.disabled_when_recipe_not_researched = false
 -- Its own body, a set a direction (cannon_sheets.py: the body and shadow one frame, the glow at half size, its coils lit in
 -- turn while it charges).
 local DIRS = SHEETS["player/orbital-cannon"]
-local function dir_file(d, part) return "__landing-party__/graphics/player/orbital-cannon/" .. d .. "-" .. part .. ".png" end
+local function dir_file(d, part) return "__landing-party-graphics__/graphics/player/orbital-cannon/" .. d .. "-" .. part .. ".png" end
 local function still(d)
   local S = DIRS[d]
   return {layers = {

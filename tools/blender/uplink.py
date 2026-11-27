@@ -7,7 +7,7 @@ them, a lattice mast on the control block, small kit everywhere. No slab: it sta
 directions, the dish turning (its shadow with it).
 
     /Applications/Blender.app/Contents/MacOS/Blender -b -P tools/blender/uplink.py -- <out_dir> [serenity|grubstake]
-    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party/graphics/<corp>/uplink
+    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party-graphics/graphics/<corp>/uplink
 """
 import math, os, random, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

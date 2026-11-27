@@ -16,9 +16,10 @@ mkdir -p "$V/config" "$V/mods" "$V/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$V" > "$V/config/config.ini"
 cp "$SAVE" "$V/saves/original.zip"; cp "$SAVE" "$V/saves/visit.zip"; rm -f "$V/saves/$SNAME.zip" "$V/saves/_autosave-$SNAME.zip"
 ln -sfn "$REPO/landing-party" "$V/mods/landing-party"
+ln -sfn "$REPO/landing-party-graphics" "$V/mods/landing-party-graphics"
 rm -rf "$V/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$V/mods/lp-sim"
 printf 'return {scenario = "visit", minutes = %s, every = %s, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "%s"}\n' "$MINS" "$MINS" "$MIX" > "$V/mods/lp-sim/params.lua"
-echo '{"mods": [{"name": "base", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true}, {"name": "lp-sim", "enabled": true}]}' > "$V/mods/mod-list.json"
+echo '{"mods": [{"name": "base", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true},{"name":"landing-party-graphics","enabled":true}, {"name": "lp-sim", "enabled": true}]}' > "$V/mods/mod-list.json"
 # (The game's own example, with nothing public and nothing paused or autosaved: a partial file is refused.)
 python3 - "$APP/data/server-settings.example.json" "$V/server-settings.json" <<'PY2'
 import json, sys

@@ -1,0 +1,5 @@
+---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Date: 2026-11-27
+  Info:
+    - Landing Party's graphics, split from it: its updates no longer download its art again.

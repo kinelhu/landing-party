@@ -10,10 +10,11 @@ PLAY="$HOME/Library/Application Support/factorio-lp-arena-gui"
 mkdir -p "$PLAY/config" "$PLAY/mods" "$PLAY/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$PLAY" > "$PLAY/config/config.ini"
 ln -sfn "$REPO/landing-party" "$PLAY/mods/landing-party"
+ln -sfn "$REPO/landing-party-graphics" "$PLAY/mods/landing-party-graphics"
 rm -rf "$PLAY/mods/lp-arena"; cp -R "$REPO/tests/lp-arena" "$PLAY/mods/lp-arena"
 echo 'return {mode = "guitest"}' > "$PLAY/mods/lp-arena/params.lua"
 cat > "$PLAY/mods/mod-list.json" <<JSON
-{"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},
+{"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},{"name":"landing-party-graphics","enabled":true},
   {"name": "lp-arena", "enabled": true}, {"name": "space-age", "enabled": true},
   {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}]}
 JSON

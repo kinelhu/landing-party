@@ -9,7 +9,7 @@
 -- storage.falls: a list of {k, s, x, y, lx, ly, side, dir, corpse, o, at, h, sx, sy, body, shadow}.
 local shared = require("__landing-party__.shared")
 local rng = require("__landing-party__.scripts.rng")
-local SHEETS = require("__landing-party__.graphics.sheets")
+local SHEETS = require("__landing-party-graphics__.graphics.sheets")
 
 local LAND_MIN, LAND_MAX = 1.5, 4
 local CURVE = 0.6           -- tiles the path bows to one side at its middle

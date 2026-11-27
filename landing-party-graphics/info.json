@@ -1,0 +1,11 @@
+{
+  "name": "landing-party-graphics",
+  "version": "1.0.0",
+  "title": "Landing Party: Graphics",
+  "author": "kinelhu",
+  "description": "The art of Landing Party (its factions' buildings, units and icons), kept apart so that updates of Landing Party download only its code. Installed with Landing Party; nothing on its own.",
+  "factorio_version": "2.1",
+  "dependencies": [
+    "base >= 2.1"
+  ]
+}

@@ -4,7 +4,7 @@ and the cannon housing, each with the other a holdout (so they hide each other r
 and their shadow together.
 
     /Applications/Blender.app/Contents/MacOS/Blender -b -P tools/blender/kh_guns.py -- <mortar|howitzer> <out_dir> [N=64] [serenity|grubstake]
-    then: uv run --with pillow python tools/blender/gun_sheet.py <out_dir> landing-party/graphics/serenity/<gun>
+    then: uv run --with pillow python tools/blender/gun_sheet.py <out_dir> landing-party-graphics/graphics/serenity/<gun>
 """
 import math, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

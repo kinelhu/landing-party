@@ -50,7 +50,7 @@ def lab(canvas, cx, cy):
 
 
 def fabricator(canvas, cx, cy):
-    d = f"{REPO}/landing-party/graphics/grubstake/fabricator"
+    d = f"{REPO}/landing-party-graphics/graphics/grubstake/fabricator"
     j = json.load(open(f"{d}/sheet.json"))
     w, h, sh = j["width"], j["height"], j["shift"]
     shift = (sh[0] * T, sh[1] * T)

@@ -21,7 +21,7 @@ Grubstake's builds of it apart, KH clean corporate blue-grey with cyan lights, G
               lattice derrick over a pit whose lid is a ship's hull section (concepts as the depot's).
 
     Blender -b -P tools/blender/faction_works.py -- <what> <kh|gs> <out_dir>      (LP_CLAY=1: one grey, for silhouettes)
-    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party/graphics/<serenity|grubstake>/<what>
+    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party-graphics/graphics/<serenity|grubstake>/<what>
 """
 import math, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

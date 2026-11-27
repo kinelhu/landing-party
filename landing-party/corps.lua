@@ -130,7 +130,7 @@ end
 local SHEETS = require("graphics.sheets")
 local function sheet_layer(key, file, extra)
   local S = SHEETS[key]
-  local l = {filename = "__landing-party__/graphics/" .. key .. "/" .. file .. ".png", width = S.width, height = S.height,
+  local l = {filename = "__landing-party-graphics__/graphics/" .. key .. "/" .. file .. ".png", width = S.width, height = S.height,
     frame_count = S.frames, line_length = S.line_length, scale = 0.5, shift = S.shift}
   for k, v in pairs(extra or {}) do l[k] = v end
   return l

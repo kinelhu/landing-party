@@ -12,6 +12,7 @@ SIM="$HOME/Library/Application Support/factorio-lp-watch/$SCENARIO-$SEED${LP_MIX
 mkdir -p "$SIM/config" "$SIM/mods" "$SIM/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$SIM" > "$SIM/config/config.ini"
 ln -sfn "$REPO/landing-party" "$SIM/mods/landing-party"
+ln -sfn "$REPO/landing-party-graphics" "$SIM/mods/landing-party-graphics"
 rm -rf "$SIM/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$SIM/mods/lp-sim"
 printf 'return {scenario = "%s", minutes = %s, every = %s, strike = 1, distance = %s, radius = %s, doctrine = nil, units = 0, move = false, fast = false, mix = "%s"}\n' \
   "$SCENARIO" "$MINUTES" "$MINUTES" "${LP_DISTANCE:-300}" "${LP_RADIUS:-220}" "${LP_MIX:-}" > "$SIM/mods/lp-sim/params.lua"
@@ -23,7 +24,7 @@ for m in EditorExtensions flib; do
   if [ -n "$z" ]; then cp "$z" "$SIM/mods/"; extra="$extra, {\"name\": \"$m\", \"enabled\": true}"; else echo "no $m in $REAL"; fi
 done
 cat > "$SIM/mods/mod-list.json" <<JSON
-{"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},
+{"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},{"name":"landing-party-graphics","enabled":true},
   {"name": "lp-sim", "enabled": true}, {"name": "space-age", "enabled": true},
   {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}$extra]}
 JSON

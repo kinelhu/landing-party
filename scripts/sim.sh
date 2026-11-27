@@ -16,6 +16,7 @@ SIM="$HOME/Library/Application Support/factorio-lp-sim/$RUN$WT"
 mkdir -p "$SIM/config" "$SIM/mods" "$SIM/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$SIM" > "$SIM/config/config.ini"
 ln -sfn "$REPO/landing-party" "$SIM/mods/landing-party"
+ln -sfn "$REPO/landing-party-graphics" "$SIM/mods/landing-party-graphics"
 # The test mod is copied, not linked: each run writes its own params.lua into it.
 rm -rf "$SIM/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$SIM/mods/lp-sim"
 DOCTRINE="nil"; [ -n "${LP_DOCTRINE:-}" ] && DOCTRINE="\"$LP_DOCTRINE\""
@@ -25,7 +26,7 @@ printf 'return {scenario = "%s", minutes = %s, every = %s, strike = %s, distance
   "$SCENARIO" "$MINUTES" "$EVERY" "$STRIKE" "$DISTANCE" "$RADIUS" "$DOCTRINE" "${LP_UNITS:-0}" "${LP_MOVE:-false}" "${LP_FAST:-false}" "${LP_MIX:-}" "${LP_OFF:-}" "${LP_AIR:-}" "${LP_DIRECTOR:-}" \
   > "$SIM/mods/lp-sim/params.lua"
 cat > "$SIM/mods/mod-list.json" <<JSON
-{"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},
+{"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},{"name":"landing-party-graphics","enabled":true},
   {"name": "lp-sim", "enabled": true}, {"name": "space-age", "enabled": true},
   {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}]}
 JSON

@@ -352,7 +352,7 @@ end
 -- role, one virtual signal each, and its icon.
 -- (Each signal the icon of a unit of its role, tools/icons/units.py: the user, 2026-11-10, of the units' icons: "Those are
 -- going to show up in the threat scanner, no?"); the railgunner the railgun's, its unit wearing the infantry's body.)
-local U = "__landing-party__/graphics/icons/units/"
+local U = "__landing-party-graphics__/graphics/icons/units/"
 shared.SCAN_GROUPS = {
   {signal = "lp-scan-infantry", icon = U .. "lp-infantry.png",
     kinds = {"lp-infantry", "lp-lance", "lp-shock", "lp-sapper", "lp-slug"}},

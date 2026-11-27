@@ -5,7 +5,7 @@ toy soldiers, the user, 2026-11-04):
   muster    1x1: a post, a radio box, a whip antenna, a floodlight (one frame).
 
     /Applications/Blender.app/Contents/MacOS/Blender -b -P tools/blender/player_army.py -- <barracks|muster> <out_dir>
-    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party/graphics/player/<name>
+    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party-graphics/graphics/player/<name>
 """
 import math, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

@@ -5,7 +5,7 @@
             climbing it; 32 frames.
 
     /Applications/Blender.app/Contents/MacOS/Blender -b -P tools/blender/antennas.py -- <relay|pacifier> <out_dir> [serenity|grubstake]
-    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party/graphics/<corp>/<name>
+    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party-graphics/graphics/<corp>/<name>
 """
 import math, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

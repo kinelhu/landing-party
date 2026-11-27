@@ -72,7 +72,7 @@ do
   local SHEETS = require("graphics.sheets")
   local function part(p, extra)
     local K = SHEETS["player/flak-turret/" .. p]
-    local l = {filename = "__landing-party__/graphics/player/flak-turret/" .. p .. "/body.png", width = K.width, height = K.height,
+    local l = {filename = "__landing-party-graphics__/graphics/player/flak-turret/" .. p .. "/body.png", width = K.width, height = K.height,
       scale = 0.5, shift = K.shift}
     if p == "head" then l.direction_count, l.line_length = K.frames, K.line_length end
     for k, v in pairs(extra or {}) do l[k] = v end
@@ -80,7 +80,7 @@ do
   end
   local function shadow(p)
     local l = part(p, {draw_as_shadow = true})
-    l.filename = "__landing-party__/graphics/player/flak-turret/" .. p .. "/shadow.png"
+    l.filename = "__landing-party-graphics__/graphics/player/flak-turret/" .. p .. "/shadow.png"
     return l
   end
   local head = {layers = {part("head"), shadow("head")}}

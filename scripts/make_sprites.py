@@ -13,7 +13,7 @@ looks flat. The user chose a mixed treatment (2026-10-14):
              assembler's, the turrets') turned amber.
   The lander, the centrepiece, takes both more strongly.
 --write recolours every body file of each building (shadows, lights, glows, remnants, circuit connectors left as they
-are) into landing-party/graphics/<corp>/<path under graphics/entity> and writes landing-party/graphics/manifest.lua,
+are) into landing-party-graphics/graphics/<corp>/<path under graphics/entity> and writes landing-party-graphics/graphics/manifest.lua,
 which corps.lua reads to point each corporation's prototypes at its files (and drop the whole-sprite tint on them).
 --sheet draws a review sheet: vanilla, today's tint, the new recolour, for each corporation.
 --prune (after scripts/check.sh has dumped the prototypes) deletes the recolours no prototype draws any more and their
@@ -153,7 +153,7 @@ def body_files(proto):
     # original, else its files fell out of the manifest on the next run, 260 to 248.)
     def original(f):
         for corp in CORPS:
-            pre = f"__landing-party__/graphics/{corp}/"
+            pre = f"__landing-party-graphics__/graphics/{corp}/"
             if f.startswith(pre):
                 r = f[len(pre):]
                 return ("__space-age__/graphics/entity/" + r[len("space-age/"):]) if r.startswith("space-age/") \
@@ -230,14 +230,14 @@ def main():
                 for f in sorted(d.glob("*.png")):
                     for corp in CORPS:
                         if corp != "serenity" and (OUT / corp / d.name / f.name).exists():
-                            manifest[corp].add(f"__landing-party__/graphics/serenity/{d.name}/{f.name}")
+                            manifest[corp].add(f"__landing-party-graphics__/graphics/serenity/{d.name}/{f.name}")
         lines = ["-- Written by scripts/make_sprites.py: the vanilla files each corporation has its own recolour of.",
                  "return {"]
         for corp, fs in manifest.items():
             lines.append(f"  {corp} = {{")
             for f in sorted(fs):
                 to = f.replace("/graphics/serenity/", f"/graphics/{corp}/") if f.startswith("__landing-party__") \
-                    else f"__landing-party__/graphics/{corp}/{rel(f)}"
+                    else f"__landing-party-graphics__/graphics/{corp}/{rel(f)}"
                 lines.append(f'    ["{f}"] = "{to}",')
             lines.append("  },")
         lines.append("}")
@@ -277,7 +277,7 @@ def prune():
     lines = path.read_text().splitlines()
     keep, gone, size = [], 0, 0
     for line in lines:
-        m = re.search(r'= "(__landing-party__/graphics/[^"]+)",$', line)
+        m = re.search(r'= "(__landing-party-graphics__/graphics/[^"]+)",$', line)
         if m and m[1] not in used:
             f = OUT.parent / m[1][len("__landing-party__/"):]
             if f.exists():

@@ -10,6 +10,7 @@ Date: 2026-11-27
     - After a strike on your power, the other camps' operations against you resume two minutes after the strike is over, instead of 18 minutes after it landed.
     - A camp held back by a power strike no longer counts that time towards standing down.
   Changes:
+    - Landing Party's graphics are now a mod of their own, Landing Party: Graphics, installed with it. Updates download only the code, a few megabytes instead of 192.
     - Kessler-Hayashi sees your buildings from orbit within 1,500 tiles of its camps, not only what its radars, units and survey see.
     - Sieges take up to half of the camp's army at home, railgunners included, instead of a fixed 6 to 16 guards.
     - A siege whose route would cost it most of its escort is not sent. Kessler-Hayashi shells the nests along the way first.

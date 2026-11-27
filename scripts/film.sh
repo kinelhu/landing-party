@@ -36,6 +36,6 @@ if [ -n "${LP_FILM_SIM:-}" ]; then
   COPY="lp-sim=$H/lp-sim"
 fi
 export APP FACTORIO
-FILM_MODS="space-age quality elevated-rails" FILM_LINK="landing-party=$REPO/landing-party" \
+FILM_MODS="space-age quality elevated-rails" FILM_LINK="landing-party=$REPO/landing-party;landing-party-graphics=$REPO/landing-party-graphics" \
   FILM_PLUGIN="lp-film-hooks=$REPO/tests/lp-film-hooks" FILM_COPY="$COPY" \
   exec "$FILM_HOME/scripts/film.sh" "$V" "$SAVE" "$PARAMS" "$OUT"

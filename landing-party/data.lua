@@ -149,7 +149,7 @@ fabricator.allowed_effects = nil
 
 local turret = copy("electric-turret", "laser-turret", "lp-turret")
 -- Its charge glow cyan, as its beam (scripts/kh_glow.py: the red-orange image's hue turned, a tint could only darken it).
-turret.energy_glow_animation.filename = "__landing-party__/graphics/serenity/laser-turret/laser-turret-shooting-light.png"
+turret.energy_glow_animation.filename = "__landing-party-graphics__/graphics/serenity/laser-turret/laser-turret-shooting-light.png"
 turret.energy_glow_animation.tint = nil
 
 -- The mortar: a siege emplacement (scripts/ops.lua), the artillery turret's body at 60%, its own short gun
@@ -171,7 +171,7 @@ end
 -- directions (each rendered with the other a holdout, so they hide each other rightly), their shadow together. Sizes and
 -- shifts from gun.json; drawn from the entity's centre (cannon_base_shift none: the renders hold the height).
 local function rendered_gun(t, gun, G)
-  local dir = "__landing-party__/graphics/serenity/" .. gun .. "/"
+  local dir = "__landing-party-graphics__/graphics/serenity/" .. gun .. "/"
   local function one(name, extra)
     local l = {filename = dir .. name .. ".png", width = G[name].width, height = G[name].height, shift = G[name].shift, scale = 0.5}
     for k, v in pairs(extra or {}) do l[k] = v end
@@ -535,7 +535,7 @@ local function blued(t)
   for k, v in pairs(t) do
     if type(v) == "string" then
       local n = v:match("^__base__/graphics/entity/fire%-flame/fire%-flame%-0(%d)%.png$")
-      if n then t[k] = "__landing-party__/graphics/serenity/arc-fire/fire-flame-0" .. n .. ".png"; t.tint = nil end
+      if n then t[k] = "__landing-party-graphics__/graphics/serenity/arc-fire/fire-flame-0" .. n .. ".png"; t.tint = nil end
     else
       blued(v)
     end
@@ -598,7 +598,7 @@ relay.max_health = 2000
 do
   local R = SHEETS["serenity/relay"]
   local function rl(file, extra)
-    local l = {filename = "__landing-party__/graphics/serenity/relay/" .. file .. ".png", width = R.width, height = R.height,
+    local l = {filename = "__landing-party-graphics__/graphics/serenity/relay/" .. file .. ".png", width = R.width, height = R.height,
       direction_count = R.frames, line_length = R.line_length, scale = 0.5, shift = R.shift}
     for k, v in pairs(extra or {}) do l[k] = v end
     return l
@@ -622,7 +622,7 @@ local tesla = sa("electric-turret", "tesla-turret")
 -- shift from sheet.json. The tesla turret kitbash below is the fallback.
 local TOWER = SHEETS["serenity/tower"]
 local function tower(file, extra)
-  local l = {filename = "__landing-party__/graphics/serenity/tower/" .. file .. ".png", width = TOWER.width,
+  local l = {filename = "__landing-party-graphics__/graphics/serenity/tower/" .. file .. ".png", width = TOWER.width,
     height = TOWER.height, direction_count = 32, line_length = 8, scale = 0.5, shift = TOWER.shift}
   for k, v in pairs(extra or {}) do l[k] = v end
   return l
@@ -644,7 +644,7 @@ end
 -- rendered in Blender (tools/blender/dome_ripple.py, anim_sheet.py: 16 frames, 32 px a tile, frame size and shift from
 -- sheet.json), drawn as glow.
 data:extend({{type = "explosion", name = "lp-dome-ripple", flags = {"not-on-map"}, hidden = true,
-  animations = {{filename = "__landing-party__/graphics/serenity/ripple/sheet.png", width = 290, height = 335,
+  animations = {{filename = "__landing-party-graphics__/graphics/serenity/ripple/sheet.png", width = 290, height = 335,
     frame_count = 16, line_length = 8, scale = 1, shift = {0, -0.71875}, draw_as_glow = true, blend_mode = "additive",
     animation_speed = 0.5}},
   light = {intensity = 0.5, size = 12, color = {r = 0.3, g = 0.75, b = 1}}}})
@@ -654,27 +654,27 @@ data:extend({{type = "explosion", name = "lp-dome-ripple", flags = {"not-on-map"
 local DW = shared.DOME_WAVE
 for k = 1, DW.dirs do
   local W = SHEETS["serenity/wave/d" .. k]
-  data:extend({{type = "animation", name = "lp-dome-wave-" .. k, filename = "__landing-party__/graphics/serenity/wave/d" .. k .. "/sheet.png",
+  data:extend({{type = "animation", name = "lp-dome-wave-" .. k, filename = "__landing-party-graphics__/graphics/serenity/wave/d" .. k .. "/sheet.png",
     width = W.width, height = W.height, frame_count = DW.frames, line_length = 8, scale = 32 / DW.px,
     draw_as_glow = true, blend_mode = "additive"}})
 end
 -- The orbital platform's shadow crossing a strike (orbital.lua; tools/art/platform_shadow.py: a silhouette, 8 px a tile,
 -- white on alpha, tinted dark where drawn).
 -- Its impact flash (orbital.lua: drawn additively over each impact, so it lights in daylight; tools/art/impact_flash.py).
-data:extend({{type = "sprite", name = "lp-impact-flash", filename = "__landing-party__/graphics/serenity/impact-flash.png",
+data:extend({{type = "sprite", name = "lp-impact-flash", filename = "__landing-party-graphics__/graphics/serenity/impact-flash.png",
   width = 256, height = 256, scale = 0.5, blend_mode = "additive", flags = {"no-crop"}}})
-data:extend({{type = "sprite", name = "lp-platform-shadow", filename = "__landing-party__/graphics/serenity/platform-shadow.png",
+data:extend({{type = "sprite", name = "lp-platform-shadow", filename = "__landing-party-graphics__/graphics/serenity/platform-shadow.png",
   width = 512, height = 640, scale = 4, flags = {"no-crop"}}})
 -- A splat of a silhouette (orbital.lua: the player's own platform's shadow, a Gaussian blob a cell, overlapping into one
 -- soft shape; white, tinted; one tile at scale 1; sigma a quarter of its width).
-data:extend({{type = "sprite", name = "lp-shadow-blob", filename = "__landing-party__/graphics/serenity/shadow-blob.png",
+data:extend({{type = "sprite", name = "lp-shadow-blob", filename = "__landing-party-graphics__/graphics/serenity/shadow-blob.png",
   width = 64, height = 64, scale = 0.5, flags = {"no-crop"}}})
 -- A ranked unit's badge (veterancy.lua: one to three chevrons, tools/icons/ranks.py), worn from its promotion on.
 for r = 1, 3 do
-  data:extend({{type = "sprite", name = "lp-rank-" .. r, filename = "__landing-party__/graphics/icons/ranks/rank-" .. r .. ".png",
+  data:extend({{type = "sprite", name = "lp-rank-" .. r, filename = "__landing-party-graphics__/graphics/icons/ranks/rank-" .. r .. ".png",
     width = 64, height = 64, scale = 0.5, flags = {"gui-icon"}}})
 end
-data:extend({{type = "animation", name = "lp-dome-rise", filename = "__landing-party__/graphics/serenity/ripple/sheet.png",
+data:extend({{type = "animation", name = "lp-dome-rise", filename = "__landing-party-graphics__/graphics/serenity/ripple/sheet.png",
   width = 290, height = 335, frame_count = DW.rise_frames, line_length = 8, scale = 1, draw_as_glow = true, blend_mode = "additive"}})
 if TOWER_ON then
   projector.pictures = {layers = {tower("body"), tower("glow", {draw_as_glow = true, blend_mode = "additive"}),
@@ -796,7 +796,7 @@ grow(pacifier.pictures, 1.4, {})
 do
   local function pc(file, extra)
     local P = SHEETS["serenity/pacifier"]
-    local l = {filename = "__landing-party__/graphics/serenity/pacifier/" .. file .. ".png", width = P.width,
+    local l = {filename = "__landing-party-graphics__/graphics/serenity/pacifier/" .. file .. ".png", width = P.width,
       height = P.height, direction_count = P.frames, line_length = P.line_length, scale = 0.5, shift = P.shift}
     for k, v in pairs(extra or {}) do l[k] = v end
     return l
@@ -941,7 +941,7 @@ end
 if SHEETS["serenity/uplink"] then
   local U = SHEETS["serenity/uplink"]
   local function up(file, extra)
-    local l = {filename = "__landing-party__/graphics/serenity/uplink/" .. file .. ".png", width = U.width, height = U.height,
+    local l = {filename = "__landing-party-graphics__/graphics/serenity/uplink/" .. file .. ".png", width = U.width, height = U.height,
       direction_count = U.frames, line_length = U.line_length, scale = 0.5, shift = U.shift}
     for k, v in pairs(extra or {}) do l[k] = v end
     return l
@@ -1049,7 +1049,7 @@ data:extend({{type = "simple-entity-with-force", name = "lp-jammer", hidden = tr
 do
   local J = SHEETS["serenity/jammer"]
   local function jam(file, extra)
-    local l = {filename = "__landing-party__/graphics/serenity/jammer/" .. file .. ".png", width = J.width, height = J.height,
+    local l = {filename = "__landing-party-graphics__/graphics/serenity/jammer/" .. file .. ".png", width = J.width, height = J.height,
       frame_count = 16, line_length = 8, scale = 0.5, shift = J.shift, animation_speed = 0.4}
     for k, v in pairs(extra or {}) do l[k] = v end
     return l
@@ -1100,7 +1100,7 @@ do
     if type(t) ~= "table" or seen[t] then return end
     seen[t] = true
     if type(t.filename) == "string" and t.filename:find("__base__/graphics/entity/laser-turret/", 1, true) then
-      t.filename = t.filename:gsub("__base__/graphics/entity/laser%-turret/", "__landing-party__/graphics/serenity/laser-turret/")
+      t.filename = t.filename:gsub("__base__/graphics/entity/laser%-turret/", "__landing-party-graphics__/graphics/serenity/laser-turret/")
       t.tint = nil
     end
     for _, v in pairs(t) do paint(v) end

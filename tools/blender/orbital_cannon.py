@@ -16,7 +16,7 @@ Materials: gunmetal darkened by ambient occlusion in the crevices and lightened 
 rust; oxidised copper; a few hazard bands. Rendered in four directions: the body once, the glow GLOW_FRAMES times, a shadow.
 
     /Applications/Blender.app/Contents/MacOS/Blender -b -P tools/blender/orbital_cannon.py -- <out_dir>
-    then: uv run --with pillow python tools/blender/cannon_sheets.py <out_dir> landing-party/graphics/player/orbital-cannon
+    then: uv run --with pillow python tools/blender/cannon_sheets.py <out_dir> landing-party-graphics/graphics/player/orbital-cannon
 LP_DIRS=north LP_FRAMES=1 LP_SAMPLES=24 for a look.
 """
 import math, os, random, sys

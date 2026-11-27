@@ -32,9 +32,9 @@ worn and grimed materials halve the paint's albedo, and vanilla's 3 % are its sa
 
     Blender -b -P tools/blender/landers.py -- concept <name> <out.png>          (clay, one still with its shadow)
     Blender -b -P tools/blender/landers.py -- build <kh|gs> <out_dir>           (body, glow, shadow; LP_CLAY=1 grey)
-    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party/graphics/<serenity|grubstake>/lander
-          uv run --with pillow python tools/blender/lander_sheets.py trim landing-party/graphics/<corp>/lander   (one frame wide)
-          uv run --with pillow --with numpy python tools/blender/shadow_solid.py landing-party/graphics/<corp>/lander/shadow.png
+    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party-graphics/graphics/<serenity|grubstake>/lander
+          uv run --with pillow python tools/blender/lander_sheets.py trim landing-party-graphics/graphics/<corp>/lander   (one frame wide)
+          uv run --with pillow --with numpy python tools/blender/shadow_solid.py landing-party-graphics/graphics/<corp>/lander/shadow.png
 """
 import math, os, sys, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

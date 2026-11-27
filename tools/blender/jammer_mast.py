@@ -3,7 +3,7 @@ rendered for Factorio: a slender lattice mast on a 2x2 footing, three emitter no
 between them, new each frame.
 
     /Applications/Blender.app/Contents/MacOS/Blender -b -P tools/blender/jammer_mast.py -- <out_dir> [frames=16]
-    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party/graphics/serenity/jammer
+    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party-graphics/graphics/serenity/jammer
 """
 import math, os, random, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

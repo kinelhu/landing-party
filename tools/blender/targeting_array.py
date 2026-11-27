@@ -4,7 +4,7 @@ the faction's cyan (the fight with Kessler-Hayashi is what opened it). The playe
 beacon's pulse.
 
     /Applications/Blender.app/Contents/MacOS/Blender -b -P tools/blender/targeting_array.py -- <out_dir>
-    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party/graphics/player/targeting-array
+    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party-graphics/graphics/player/targeting-array
 """
 import math, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

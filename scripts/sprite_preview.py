@@ -9,7 +9,8 @@ from PIL import Image, ImageDraw
 APP, DUMP, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
 d = json.load(open(DUMP))
 roots = {"__base__": APP + "/data/base", "__core__": APP + "/data/core", "__space-age__": APP + "/data/space-age",
-         "__landing-party__": os.path.expanduser("~/Dev/landing-party/landing-party")}
+         "__landing-party__": os.path.expanduser("~/Dev/landing-party/landing-party"),
+         "__landing-party-graphics__": os.path.expanduser("~/Dev/landing-party/landing-party-graphics")}
 def path(f):
     for k, v in roots.items():
         if f.startswith(k): return v + f[len(k):]

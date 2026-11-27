@@ -1,4 +1,4 @@
-"""Every sheet.json under landing-party/graphics to one Lua table, graphics/sheets.lua, which data.lua reads: a sheet's
+"""Every sheet.json under landing-party-graphics/graphics to one Lua table, graphics/sheets.lua, which data.lua reads: a sheet's
 frame size and shift are written once, by the tool that made it, and a re-render needs no number typed again.
 
     python3 tools/blender/sheets_lua.py

@@ -18,12 +18,13 @@ shard() {   # shard <i> <n>: one game's share, into its own profile
   mkdir -p "$SIM/config" "$SIM/mods" "$SIM/saves"
   printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$SIM" > "$SIM/config/config.ini"
   ln -sfn "$REPO/landing-party" "$SIM/mods/landing-party"
+  ln -sfn "$REPO/landing-party-graphics" "$SIM/mods/landing-party-graphics"
   rm -rf "$SIM/mods/lp-arena"; cp -R "$REPO/tests/lp-arena" "$SIM/mods/lp-arena"
   local sh="nil"; [ "$n" -gt 1 ] && sh="{$i, $n}"
   printf 'return {mode = "batch", only = "%s", rounds = %s, shard = %s, tier = "%s", tier_exp = "%s", tech = "%s"}\n' "${LP_ARENA_ONLY:-}" "${LP_ARENA_ROUNDS:-3}" "$sh" "${LP_ARENA_TIER:-}" "${LP_ARENA_TIER_EXP:-}" "${LP_ARENA_TECH:-}" \
     > "$SIM/mods/lp-arena/params.lua"
   cat > "$SIM/mods/mod-list.json" <<JSON
-{"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},
+{"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},{"name":"landing-party-graphics","enabled":true},
   {"name": "lp-arena", "enabled": true}, {"name": "space-age", "enabled": true},
   {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}]}
 JSON

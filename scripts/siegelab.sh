@@ -26,8 +26,9 @@ profile() {  # $1: the profile's folder
   mkdir -p "$P/config" "$P/mods" "$P/saves"
   printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$P" > "$P/config/config.ini"
   ln -sfn "$REPO/landing-party" "$P/mods/landing-party"
+  ln -sfn "$REPO/landing-party-graphics" "$P/mods/landing-party-graphics"
   rm -rf "$P/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$P/mods/lp-sim"
-  echo '{"mods": [{"name": "base", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true}, {"name": "lp-sim", "enabled": true}]}' > "$P/mods/mod-list.json"
+  echo '{"mods": [{"name": "base", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true},{"name":"landing-party-graphics","enabled":true}, {"name": "lp-sim", "enabled": true}]}' > "$P/mods/mod-list.json"
   python3 - "$APP/data/server-settings.example.json" "$P/server-settings.json" <<'PY'
 import json, re, sys
 s = json.loads(re.sub(r"^\s*//.*$", "", open(sys.argv[1]).read(), flags=re.M))
@@ -125,6 +126,7 @@ play)
   if [ -f "$EDIT" ]; then echo "opening your edit: $EDIT"; else cp "$SAVE" "$EDIT"; echo "copied to $EDIT"; fi
   rm -rf "$P/mods/lp-sim"
   ln -sfn "$REPO/landing-party" "$P/mods/landing-party"
+  ln -sfn "$REPO/landing-party-graphics" "$P/mods/landing-party-graphics"
   REAL="$HOME/Library/Application Support/factorio/mods"
   extra=""
   for m in EditorExtensions flib; do

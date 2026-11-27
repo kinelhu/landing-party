@@ -9,10 +9,11 @@ SH="$HOME/Library/Application Support/factorio-lp-vista"
 mkdir -p "$SH/config" "$SH/mods" "$SH/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$SH" > "$SH/config/config.ini"
 ln -sfn "$REPO/landing-party" "$SH/mods/landing-party"
+ln -sfn "$REPO/landing-party-graphics" "$SH/mods/landing-party-graphics"
 ln -sfn "$REPO/tests/lp-vista" "$SH/mods/lp-vista"
 cat > "$SH/mods/mod-list.json" <<JSON
 {"mods": [{"name": "base", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true},
-  {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true}, {"name": "lp-vista", "enabled": true}]}
+  {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true},{"name":"landing-party-graphics","enabled":true}, {"name": "lp-vista", "enabled": true}]}
 JSON
 out="$SH/script-output/lp-vista"
 close_game() {

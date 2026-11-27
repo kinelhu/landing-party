@@ -2,7 +2,7 @@
 its promotion on (the turret-rank mods keep a badge on the entity; a label that faded left nothing to see). Gold on a
 dark outline, so they read on sand, grass and snow, at the scale a unit is seen at.
 
-    uv run --with pillow python tools/icons/ranks.py landing-party/graphics/icons/ranks
+    uv run --with pillow python tools/icons/ranks.py landing-party-graphics/graphics/icons/ranks
 """
 import os, sys
 from PIL import Image, ImageDraw

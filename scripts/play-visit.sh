@@ -22,6 +22,7 @@ else
 fi
 rm -rf "$V/mods/lp-sim"
 ln -sfn "$REPO/landing-party" "$V/mods/landing-party"
+ln -sfn "$REPO/landing-party-graphics" "$V/mods/landing-party-graphics"
 REAL="$HOME/Library/Application Support/factorio/mods"
 extra=""
 for m in EditorExtensions flib; do

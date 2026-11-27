@@ -5,7 +5,7 @@ again?"), each the whole sprite a frame (lpkit.passes, sheet.py), one a run:
   flak-turret    2x2, a base (once) and its head in 64 directions (the turret turns the head toward its target)
 
     Blender -b -P tools/blender/turning_buildings.py -- <out dir> <name>
-    then: uv run --with pillow python tools/blender/sheet.py <out dir>/<part> landing-party/graphics/player/<name>/<part>
+    then: uv run --with pillow python tools/blender/sheet.py <out dir>/<part> landing-party-graphics/graphics/player/<name>/<part>
 """
 import math, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

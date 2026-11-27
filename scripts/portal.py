@@ -21,6 +21,11 @@ import json, os, re, subprocess, sys
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 API = "https://mods.factorio.com/api/v2/mods"
 MOD = "landing-party"
+# --graphics: the same steps for landing-party-graphics, Landing Party's art apart (the user, 2026-11-27: its updates
+# were 192 MB, the art all but 3 MB of it): its own version and zip, a short page of its own, no gallery, and its first
+# publish left listed (a mod Landing Party requires: players' games download it with Landing Party).
+GRAPHICS = "--graphics" in sys.argv[1:]
+if GRAPHICS: MOD = "landing-party-graphics"
 # The portal's enums (Mod details API): our category and tags.
 CATEGORY, TAGS, LICENSE = "content", ["combat", "enemies"], "default_mit"
 SOURCE = "https://github.com/kinelhu/landing-party"
@@ -33,7 +38,8 @@ steps = [a for a in args if a in ("publish", "details", "images", "release", "li
 if go and len(steps) != 1:
     sys.exit("--go runs exactly one step: publish, details, images, release or live")
 
-version = json.load(open(os.path.join(REPO, "landing-party", "info.json")))["version"]
+info = json.load(open(os.path.join(REPO, MOD, "info.json")))
+version = info["version"]
 zip_path = os.path.join(REPO, "media", "release", "%s_%s.zip" % (MOD, version))
 assets = opt("--assets", "%s/releases/download/v%s" % (SOURCE, version))
 trailer = opt("--trailer")
@@ -44,11 +50,14 @@ def field(name):
     return m and m.group(1).strip()
 title, summary = field("Title"), field("Summary (one line)")
 body = md.split("\n---\n", 1)[1].split("## Gallery captions")[0].strip() + "\n"
+if GRAPHICS:
+    title, summary = info["title"], info["description"]
+    body = info["description"] + "\n\nRequired by [Landing Party](https://mods.factorio.com/mod/landing-party); installed with it.\n"
 body = re.sub(r"\[gif: ([a-z-]+)\]", lambda m: "![%s](%s/%s.mp4)" % (m.group(1), assets, m.group(1)), body)
 if trailer:
     body = body.replace("[Trailer: link]", "[The trailer](%s)" % trailer)
 left = re.findall(r"\[(?:Trailer: link|link|gif: [a-z-]+|[a-z ]+ link[^\]]*)\]", body)
-gallery = sorted(os.path.join(REPO, "docs", "release", "gallery", f)
+gallery = [] if GRAPHICS else sorted(os.path.join(REPO, "docs", "release", "gallery", f)
                  for f in os.listdir(os.path.join(REPO, "docs", "release", "gallery")) if f.endswith(".jpg"))
 
 def key():
@@ -96,7 +105,7 @@ def details(deprecated=None):
     if r.status_code >= 400 or j.get("error"): sys.exit("FAILED: HTTP %d %s: %s" % (r.status_code, j.get("error"), j.get("message")))
     print("  edit_details: ok")
 
-print("Landing Party %s, %s" % (version, "SENDING (--go)" if go else "dry run: nothing is sent"))
+print("%s %s, %s" % (MOD, version, "SENDING (--go)" if go else "dry run: nothing is sent"))
 print("  zip: %s (%s)" % (zip_path, "%.1f MB" % (os.path.getsize(zip_path) / 1e6) if os.path.exists(zip_path) else "MISSING: run scripts/package.sh"))
 print("  title %r, summary %d chars, description %d chars, category %s, tags %s" % (title, len(summary or ""), len(body), CATEGORY, TAGS))
 print("  loops linked from %s; trailer %s; gallery %d images" % (assets, trailer or "NOT SET (--trailer URL)", len(gallery)))
@@ -110,7 +119,7 @@ for step in steps or ["publish", "details", "images", "live"]:
         j = post(API + ("/init_publish" if step == "publish" else "/releases/init_upload"), {"mod": MOD})
         extra = {"description": body, "category": CATEGORY, "license": LICENSE, "source_url": SOURCE} if step == "publish" else {}
         post(j["upload_url"], extra, {"file": zip_path})
-        if step == "publish":
+        if step == "publish" and not GRAPHICS:
             print("  (then hidden at once, for the user to look before it lists:)"); details(deprecated=True)
     elif step == "details":
         details()

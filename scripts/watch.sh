@@ -11,11 +11,12 @@ W="$HOME/Library/Application Support/factorio-lp-watch"
 mkdir -p "$W/config" "$W/mods" "$W/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$W" > "$W/config/config.ini"
 ln -sfn "$REPO/landing-party" "$W/mods/landing-party"
+ln -sfn "$REPO/landing-party-graphics" "$W/mods/landing-party-graphics"
 rm -rf "$W/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$W/mods/lp-sim"
 printf 'return {scenario = "%s", minutes = %s, every = %s, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "%s", watch = true, watch_speed = %s}\n' \
   "$SCENARIO" "$MINUTES" "$MINUTES" "${LP_MIX:-}" "$SPEED" > "$W/mods/lp-sim/params.lua"
 cat > "$W/mods/mod-list.json" <<JSON
-{"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},
+{"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},{"name":"landing-party-graphics","enabled":true},
   {"name": "lp-sim", "enabled": true}, {"name": "space-age", "enabled": true},
   {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}]}
 JSON

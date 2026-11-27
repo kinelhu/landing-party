@@ -28,7 +28,7 @@ run() { "$FACTORIO" --config "$V/config/config.ini" "$@" > "$V/run.out" 2>&1 || 
   echo "VISIT FAILED ($NAME): factorio exited non-zero"; grep -hnE -A8 "Error" "$V/run.out" | head -30; exit 1; }; }
 
 # Baseline: the factory alone.
-rm -rf "$V/mods/landing-party" "$V/mods/lp-sim"
+rm -rf "$V/mods/landing-party" "$V/mods/landing-party-graphics" "$V/mods/lp-sim"
 echo "{\"mods\": [$base]}" > "$V/mods/mod-list.json"
 cp "$V/saves/original.zip" "$V/saves/baseline.zip"
 VERB=""; [ -n "${LP_PROFILE:-}" ] && VERB="--benchmark-verbose wholeUpdate,scriptUpdate"
@@ -61,6 +61,7 @@ b_avg=$(grep -oE "avg: [0-9.]+ ms" "$V/run.out" | head -1 | grep -oE "[0-9.]+" |
 
 # The visit.
 ln -sfn "$REPO/landing-party" "$V/mods/landing-party"
+ln -sfn "$REPO/landing-party-graphics" "$V/mods/landing-party-graphics"
 rm -rf "$V/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$V/mods/lp-sim"
 # (LP_DIRECTOR=off|gentle|steady|chaotic: the director's personality, on 30 minutes after the first camp: sim.sh's.
 # LP_OFF=biotech,...: systems off by name, as sim.sh's; in the run's name.)

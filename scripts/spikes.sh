@@ -19,9 +19,10 @@ rm -rf "$P"; mkdir -p "$P/config" "$P/mods/lp-spikes" "$P/saves" "$OUT"
 cp "$SAVE" "$P/saves/s.zip"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$P" > "$P/config/config.ini"
 ln -sfn "$REPO/landing-party" "$P/mods/landing-party"
+ln -sfn "$REPO/landing-party-graphics" "$P/mods/landing-party-graphics"
 cat > "$P/mods/mod-list.json" <<'JSON'
 {"mods":[{"name":"base","enabled":true},{"name":"elevated-rails","enabled":true},{"name":"quality","enabled":true},
-{"name":"recycler","enabled":true},{"name":"space-age","enabled":true},{"name":"landing-party","enabled":true},
+{"name":"recycler","enabled":true},{"name":"space-age","enabled":true},{"name":"landing-party","enabled":true},{"name":"landing-party-graphics","enabled":true},
 {"name":"lp-spikes","enabled":true}]}
 JSON
 echo '{"name": "lp-spikes", "version": "0.0.1", "title": "LP spikes", "author": "dev", "factorio_version": "2.1", "dependencies": ["landing-party"]}' > "$P/mods/lp-spikes/info.json"

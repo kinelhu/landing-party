@@ -3,7 +3,7 @@ from below, long along its course (north in the image), a tapered bow, a ribbed 
 in panels, a radiator cross and an antenna mast; softened at the edges, as a shadow from high up is. White on alpha: the
 game tints it dark (orbital.lua).
 
-    uv run --with pillow python tools/art/platform_shadow.py landing-party/graphics/serenity/platform-shadow.png
+    uv run --with pillow python tools/art/platform_shadow.py landing-party-graphics/graphics/serenity/platform-shadow.png
 """
 import sys
 from PIL import Image, ImageDraw, ImageFilter

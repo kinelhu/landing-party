@@ -2,7 +2,7 @@
 in the threat scanner, no?"): every unit of every faction from its cut-out (docs/manual/shots/matte.py, from the matte
 films docs/manual/shots/portraits-matte.lua (the gun buggy's alone, 0.2.481), docs/release/units-extra-matte.lua and walkers-matte.lua), its shadow
 dropped as cut.py drops it, squared on transparency. A unit's resistance variants (-fire, -laser, -physical) take their
-base unit's (icons.lua). Written to landing-party/graphics/icons/units/<unit>.png.
+base unit's (icons.lua). Written to landing-party-graphics/graphics/icons/units/<unit>.png.
 
     uv run --with pillow --with numpy python tools/icons/units.py <cut-outs dir>... <out dir>
 Fails on a unit it has no cut-out for (UNITS: the mod's base units, as the dump lists them).

@@ -876,7 +876,7 @@ do
     if type(t) ~= "table" or seen[t] then return end
     seen[t] = true
     if type(t.filename) == "string" and t.filename:find("__base__/graphics/entity/laser-turret/", 1, true) then
-      t.filename = t.filename:gsub("__base__/graphics/entity/laser%-turret/", "__landing-party__/graphics/serenity/laser-turret/")
+      t.filename = t.filename:gsub("__base__/graphics/entity/laser%-turret/", "__landing-party-graphics__/graphics/serenity/laser-turret/")
       t.tint = nil
     end
     for _, v in pairs(t) do repoint(v) end
@@ -1139,7 +1139,7 @@ local function layered(u, root, parts)
     local B = SHEETS[root .. "/" .. p[1]]
     local fc = B.frames / DIRS
     for _, f in ipairs(p[2]) do
-      local dir = "__landing-party__/graphics/" .. root .. "/" .. p[1] .. "/"
+      local dir = "__landing-party-graphics__/graphics/" .. root .. "/" .. p[1] .. "/"
       local l = {width = B.width, height = B.height, direction_count = DIRS, frame_count = fc, repeat_count = most / fc,
         line_length = B.line_length, scale = 0.5, shift = B.shift}
       if B.files then                                  -- a tall sheet on several files (sheet.py)
@@ -1172,7 +1172,7 @@ local function wreck(name, sheet)
   local W = SHEETS[sheet]
   local c = table.deepcopy(data.raw.corpse["car-remnants"])
   c.name = name
-  c.animation = {filename = "__landing-party__/graphics/" .. sheet .. "/body.png", width = W.width, height = W.height,
+  c.animation = {filename = "__landing-party-graphics__/graphics/" .. sheet .. "/body.png", width = W.width, height = W.height,
     direction_count = W.frames, line_length = W.line_length, scale = 0.5, shift = W.shift}
   c.localised_name = nil
   data:extend({c})
@@ -1321,7 +1321,7 @@ for _, k in pairs(shared.FALL.kinds) do
   local B, R = SHEETS[k.sheet .. "/base"], SHEETS[k.sheet .. "/" .. k.rotor]
   if B and R then
     local function layer(sheet, S, file, rel, extra)
-      local l = {filename = "__landing-party__/graphics/" .. k.sheet .. "/" .. sheet .. "/" .. file .. ".png", width = S.width,
+      local l = {filename = "__landing-party-graphics__/graphics/" .. k.sheet .. "/" .. sheet .. "/" .. file .. ".png", width = S.width,
         height = S.height, x = 0, y = 0, scale = 0.5, shift = rel}
       for a, v in pairs(extra or {}) do l[a] = v end
       return l

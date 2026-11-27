@@ -2,7 +2,7 @@
 "They should give light instead?"): a soft radial glow, white at its heart going to warm amber, drawn additively over
 each impact so it lights in daylight too (a game light shows only in the dark).
 
-    uv run --with pillow python tools/art/impact_flash.py landing-party/graphics/serenity/impact-flash.png
+    uv run --with pillow python tools/art/impact_flash.py landing-party-graphics/graphics/serenity/impact-flash.png
 """
 import math, sys
 from PIL import Image

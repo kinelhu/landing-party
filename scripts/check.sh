@@ -17,8 +17,9 @@ P="$HOME/Library/Application Support/factorio-lp-check"
 mkdir -p "$P/config" "$P/mods" "$P/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$P" > "$P/config/config.ini"
 ln -sfn "$REPO/landing-party" "$P/mods/landing-party"
+ln -sfn "$REPO/landing-party-graphics" "$P/mods/landing-party-graphics"
 cat > "$P/mods/mod-list.json" <<JSON
-{"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},
+{"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},{"name":"landing-party-graphics","enabled":true},
   {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}]}
 JSON
 log="$P/factorio-current.log"

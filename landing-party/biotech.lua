@@ -433,7 +433,7 @@ pen.graphics_set = {animations = {table.deepcopy(data.raw["assembling-machine"][
 -- rose-mauve, its metal, cables and glass as they were (the user, 2026-11-12: tinting "is also hitting the metal parts";
 -- all green was "a little jarring" beside the wild nests: "Halfway is good").
 for _, l in ipairs(pen.graphics_set.animations[1].layers) do
-  if l.filename and l.filename:find("captive%-anim") then l.filename = "__landing-party__/graphics/synthexis/pen.png" end
+  if l.filename and l.filename:find("captive%-anim") then l.filename = "__landing-party-graphics__/graphics/synthexis/pen.png" end
 end
 pen.map_color = B.color
 -- It eats by script (creep.drink), as a wild spawner would: the engine's absorption off, or it would eat uncounted.
@@ -511,8 +511,8 @@ creep.map_color = {150, 50, 170}
 -- then a violet tint {0.8, 0.55, 1} shouted (the user, 2026-11-12: "the purple creep"): dark plum keeps its veins apart
 -- and reads at the wide zoom as Synthexis's ground (nothing is built on it) while quiet beside dirt and grass.
 creep.tint = nil
-for _, v in ipairs(creep.variants.main) do v.picture = "__landing-party__/graphics/synthexis/creep.png" end
-creep.variants.transition.spritesheet = "__landing-party__/graphics/synthexis/creep.png"
+for _, v in ipairs(creep.variants.main) do v.picture = "__landing-party-graphics__/graphics/synthexis/creep.png" end
+creep.variants.transition.spritesheet = "__landing-party-graphics__/graphics/synthexis/creep.png"
 creep.hidden_in_factoriopedia = true
 table.insert(out, creep)
 
@@ -534,7 +534,7 @@ do
     for k, v in pairs(t) do
       if type(v) == "string" then
         local part = v:match("^__base__/graphics/terrain/concrete/refined%-concrete(.*)%.png$")
-        if part and not part:find("mask", 1, true) then t[k] = "__landing-party__/graphics/synthexis/floor" .. part .. ".png" end
+        if part and not part:find("mask", 1, true) then t[k] = "__landing-party-graphics__/graphics/synthexis/floor" .. part .. ".png" end
       else
         regraded(v)
       end
@@ -569,7 +569,7 @@ for _, a in ipairs(tumor.animations) do
     -- it still reads as the target it is, the herd alone green on its base.
     if not l.draw_as_shadow then
       local k = l.filename:match("spawner%-upper%-small%-(%d)")
-      if k then l.filename = "__landing-party__/graphics/synthexis/tumor-" .. k .. ".png" end
+      if k then l.filename = "__landing-party-graphics__/graphics/synthexis/tumor-" .. k .. ".png" end
     end
   end
 end
@@ -656,7 +656,7 @@ do
   local function regraded(t)
     if type(t) ~= "table" then return end
     for k, v in pairs(t) do
-      if type(v) == "string" and v:find("biolab/biolab%-anim%.png$") then t[k] = "__landing-party__/graphics/synthexis/clinic.png"
+      if type(v) == "string" and v:find("biolab/biolab%-anim%.png$") then t[k] = "__landing-party-graphics__/graphics/synthexis/clinic.png"
       else regraded(v) end
     end
   end

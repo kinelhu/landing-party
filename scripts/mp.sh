@@ -23,9 +23,10 @@ profile() {
   printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n[graphics]\nfullscreen=false\n' "$p" > "$p/config/config.ini"
   rm -rf "$p/mods/lp-sim" "$p/mods/lp-mp" "$p/script-output/lp-mp"
   ln -sfn "$REPO/landing-party" "$p/mods/landing-party"
+  ln -sfn "$REPO/landing-party-graphics" "$p/mods/landing-party-graphics"
   local extra=""
   if [ -n "${LP_ARMY:-}" ]; then ln -sfn "$REPO/tests/lp-mp" "$p/mods/lp-mp"; extra=', {"name": "lp-mp", "enabled": true}'; fi
-  echo '{"mods": [{"name": "base", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true}'"$extra"']}' > "$p/mods/mod-list.json"
+  echo '{"mods": [{"name": "base", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true},{"name":"landing-party-graphics","enabled":true}'"$extra"']}' > "$p/mods/mod-list.json"
   rm -rf "$p/desync-report"* "$p/temp/desync-report"* 2>/dev/null
 }
 S="$ROOT/server"; C="$ROOT/client"; C2="$ROOT/client2"

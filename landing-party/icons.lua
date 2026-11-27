@@ -14,7 +14,7 @@ local function set(p, file)
   p.icon, p.icon_size, p.icons = file, 64, nil
 end
 for _, name in ipairs(NAMES) do
-  local file = "__landing-party__/graphics/icons/" .. name .. ".png"
+  local file = "__landing-party-graphics__/graphics/icons/" .. name .. ".png"
   local item
   for _, ty in ipairs(ITEM_TYPES) do item = item or (data.raw[ty] and data.raw[ty][name]) end
   assert(item, "icons.lua: no item " .. name)
@@ -30,7 +30,7 @@ end
 -- The ammunition tiers' orders (tools/icons/tiers.py, 0.2.481): its unit with its round's badge, as the base orders. (Made
 -- in player.lua before this ran, they had copied their base order's vanilla icon: the car, the tank, a bare magazine.)
 for name in pairs(require("__landing-party__.shared").ORDER_TIERS) do
-  local file = "__landing-party__/graphics/icons/" .. name .. ".png"
+  local file = "__landing-party-graphics__/graphics/icons/" .. name .. ".png"
   assert(data.raw.item[name], "icons.lua: no tier item " .. name)
   set(data.raw.item[name], file)
   if data.raw.recipe[name] then set(data.raw.recipe[name], file) end
@@ -50,7 +50,7 @@ local function base(name)
 end
 for _, ty in ipairs({"unit", "spider-unit"}) do
   for name, u in pairs(data.raw[ty]) do
-    if name:sub(1, 3) == "lp-" then set(u, "__landing-party__/graphics/icons/units/" .. base(name) .. ".png") end
+    if name:sub(1, 3) == "lp-" then set(u, "__landing-party-graphics__/graphics/icons/units/" .. base(name) .. ".png") end
   end
 end
 
@@ -63,5 +63,5 @@ local TECHS = {"lp-player-dome", "lp-command-bandwidth-1", "lp-command-bandwidth
 for _, name in ipairs(TECHS) do
   local t = data.raw.technology[name]
   assert(t, "icons.lua: no technology " .. name)
-  t.icon, t.icon_size, t.icons = "__landing-party__/graphics/technology/" .. name .. ".png", 256, nil
+  t.icon, t.icon_size, t.icons = "__landing-party-graphics__/graphics/technology/" .. name .. ".png", 256, nil
 end

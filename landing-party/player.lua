@@ -23,7 +23,7 @@ local SHEETS = require("graphics.sheets")
 do
   local S = SHEETS["player/barracks"]
   local function bk(file, extra)
-    local l = {filename = "__landing-party__/graphics/player/barracks/" .. file .. ".png", width = S.width,
+    local l = {filename = "__landing-party-graphics__/graphics/player/barracks/" .. file .. ".png", width = S.width,
       height = S.height, frame_count = S.frames, line_length = S.line_length, scale = 0.5, shift = S.shift,
       animation_speed = 0.4}
     for k, v in pairs(extra or {}) do l[k] = v end
@@ -50,7 +50,7 @@ relay.localised_description = {"entity-description.lp-command-relay", tostring(s
 do
   local function sheet(key, part, extra)
     local S = SHEETS[key]
-    local base = "__landing-party__/graphics/" .. key .. "/" .. part
+    local base = "__landing-party-graphics__/graphics/" .. key .. "/" .. part
     local l = {width = S.width, height = S.height, direction_count = S.frames, line_length = S.line_length, scale = 0.5, shift = S.shift}
     if S.files then
       l.filenames, l.lines_per_file = {}, S.lines_per_file
@@ -82,7 +82,7 @@ beacon.fast_replaceable_group = nil
 -- wire posts where the render put them (posts in the sheet's registry), no vanilla activity lamp.
 local function combinator_look(e, key)
   local D = SHEETS[key]
-  local function f(d, part) return "__landing-party__/graphics/" .. key .. "/" .. d .. "-" .. part .. ".png" end
+  local function f(d, part) return "__landing-party-graphics__/graphics/" .. key .. "/" .. d .. "-" .. part .. ".png" end
   local sprites, points = {}, {}
   for _, d in ipairs({"north", "east", "south", "west"}) do
     local S = D[d]
@@ -119,14 +119,14 @@ local function signal(name, icon, tint, order)
 end
 local S_TINT, G_TINT = {r = 0.62, g = 0.8, b = 1, a = 1}, {r = 1, g = 0.75, b = 0.35, a = 1}
 for k, g in ipairs(shared.SCAN_GROUPS) do signal(g.signal, g.icon, nil, string.format("a%02d", k)) end
-signal("lp-scan-crew", "__landing-party__/graphics/icons/units/lp-technician.png", nil, "b")
+signal("lp-scan-crew", "__landing-party-graphics__/graphics/icons/units/lp-technician.png", nil, "b")
 signal("lp-scan-serenity", "__base__/graphics/icons/signal/signal_S.png", S_TINT, "c")
 signal("lp-scan-grubstake", "__base__/graphics/icons/signal/signal_G.png", G_TINT, "d")
 signal("lp-scan-biters", "__base__/graphics/icons/small-biter.png", nil, "e")
 signal("lp-scan-jammed", "__space-age__/graphics/icons/tesla-turret.png", S_TINT, "f")
 -- With bred-biter telemetry (a field study, studies.lua): Synthexis's biters, and its scout.
-signal("lp-scan-synthexis", "__landing-party__/graphics/icons/units/lp-bred-medium-biter.png", nil, "g")
-signal("lp-scan-scout", "__landing-party__/graphics/icons/units/lp-bred-scout.png", nil, "h")
+signal("lp-scan-synthexis", "__landing-party-graphics__/graphics/icons/units/lp-bred-medium-biter.png", nil, "g")
+signal("lp-scan-scout", "__landing-party-graphics__/graphics/icons/units/lp-bred-scout.png", nil, "h")
 -- A squad's size by unit, set on a rally beacon (scripts/command.lua): the order's icon, the army's green.
 local SQUAD_ICON = {["lp-trooper"] = "__base__/graphics/icons/firearm-magazine.png", ["lp-breacher"] = "__base__/graphics/icons/grenade.png",
   ["lp-rocket-trooper"] = "__base__/graphics/icons/rocket-launcher.png", ["lp-flame-trooper"] = "__base__/graphics/icons/flamethrower.png",
@@ -157,11 +157,11 @@ muster.hidden = true
 do
   local S = SHEETS["player/muster"]
   muster.picture = {layers = {
-    {filename = "__landing-party__/graphics/player/muster/body.png", width = S.width, height = S.height, scale = 0.5,
+    {filename = "__landing-party-graphics__/graphics/player/muster/body.png", width = S.width, height = S.height, scale = 0.5,
       shift = S.shift},
-    {filename = "__landing-party__/graphics/player/muster/glow.png", width = S.width, height = S.height, scale = 0.5,
+    {filename = "__landing-party-graphics__/graphics/player/muster/glow.png", width = S.width, height = S.height, scale = 0.5,
       shift = S.shift, draw_as_glow = true, blend_mode = "additive"},
-    {filename = "__landing-party__/graphics/player/muster/shadow.png", width = S.width, height = S.height, scale = 0.5,
+    {filename = "__landing-party-graphics__/graphics/player/muster/shadow.png", width = S.width, height = S.height, scale = 0.5,
       shift = S.shift, draw_as_shadow = true}}}
 end
 
@@ -173,7 +173,7 @@ do
   local PD = shared.PLAYER_DOME
   local T = SHEETS["serenity/tower"]
   local function tw(file, extra)
-    local l = {filename = "__landing-party__/graphics/serenity/tower/" .. file .. ".png", width = T.width, height = T.height,
+    local l = {filename = "__landing-party-graphics__/graphics/serenity/tower/" .. file .. ".png", width = T.width, height = T.height,
       frame_count = T.frames, line_length = T.line_length, scale = 0.5, shift = T.shift, animation_speed = 0.5}
     for k, v in pairs(extra or {}) do l[k] = v end
     return l
@@ -234,7 +234,7 @@ depot.localised_description = {"entity-description.lp-supply-depot", tostring(sh
 do
   local S = SHEETS["player/supply-depot"]
   local function layer(file, extra)
-    local l = {filename = "__landing-party__/graphics/player/supply-depot/" .. file .. ".png", priority = "extra-high",
+    local l = {filename = "__landing-party-graphics__/graphics/player/supply-depot/" .. file .. ".png", priority = "extra-high",
       width = S.width, height = S.height, frame_count = S.frames, line_length = S.line_length, scale = 0.5, shift = S.shift}
     for k, v in pairs(extra or {}) do l[k] = v end
     return l
@@ -274,7 +274,7 @@ end
 data:extend({
   barracks, beacon, relay, scanner, muster, depot,
   (function()
-    local it = item("lp-supply-depot", "__landing-party__/graphics/icons/lp-supply-depot.png", "lp-supply-depot")
+    local it = item("lp-supply-depot", "__landing-party-graphics__/graphics/icons/lp-supply-depot.png", "lp-supply-depot")
     it.localised_description = depot.localised_description
     return it
   end)(),
@@ -510,7 +510,7 @@ strip.fast_replaceable_group = nil
 do
   local function anim(d, part, extra)
     local S = SHEETS["player/strip-drill/" .. d]
-    local l = {filename = "__landing-party__/graphics/player/strip-drill/" .. d .. "/" .. part .. ".png", width = S.width,
+    local l = {filename = "__landing-party-graphics__/graphics/player/strip-drill/" .. d .. "/" .. part .. ".png", width = S.width,
       height = S.height, frame_count = S.frames, line_length = S.line_length, scale = 0.5, shift = S.shift, animation_speed = 0.5}
     for k, v in pairs(extra or {}) do l[k] = v end
     return l

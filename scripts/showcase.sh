@@ -12,11 +12,13 @@ mkdir -p "$SIM/config" "$SIM/mods" "$SIM/saves" "$PLAY/config" "$PLAY/mods" "$PL
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$SIM" > "$SIM/config/config.ini"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$PLAY" > "$PLAY/config/config.ini"
 ln -sfn "$REPO/landing-party" "$SIM/mods/landing-party"
+ln -sfn "$REPO/landing-party-graphics" "$SIM/mods/landing-party-graphics"
 ln -sfn "$REPO/landing-party" "$PLAY/mods/landing-party"
+ln -sfn "$REPO/landing-party-graphics" "$PLAY/mods/landing-party-graphics"
 rm -rf "$SIM/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$SIM/mods/lp-sim"
 printf 'return {scenario = "showcase", minutes = %s, every = %s, strike = %s, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "%s"}\n' \
   "$((MINUTE + 1))" "$((MINUTE + 1))" "$MINUTE" "${LP_MIX:-}" > "$SIM/mods/lp-sim/params.lua"
-mods='{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}'
+mods='{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},{"name":"landing-party-graphics","enabled":true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}'
 echo "{\"mods\": [$mods, {\"name\": \"lp-sim\", \"enabled\": true}]}" > "$SIM/mods/mod-list.json"
 # Editor Extensions (and flib) for flying round without pausing: copied from the real profile, never linked.
 REAL="$HOME/Library/Application Support/factorio/mods"

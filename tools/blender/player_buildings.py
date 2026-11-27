@@ -5,7 +5,7 @@ its shadow; and for a combinator its red and green wire posts' tips projected to
 entity's centre, its shadow's too) for its circuit_wire_connection_points.
 
     /Applications/Blender.app/Contents/MacOS/Blender -b -P tools/blender/player_buildings.py -- <out dir> [name ...]
-    then: uv run --with pillow python tools/blender/cannon_sheets.py <out dir>/<name> landing-party/graphics/player/<name>
+    then: uv run --with pillow python tools/blender/cannon_sheets.py <out dir>/<name> landing-party-graphics/graphics/player/<name>
 """
 import json, math, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

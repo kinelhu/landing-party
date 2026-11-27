@@ -11,7 +11,7 @@ local SHEETS = require("graphics.sheets")
 -- frame (a container's picture is a sprite).
 local function modelled(key, still)
   local S = SHEETS["player/" .. key].north
-  local function f(part) return "__landing-party__/graphics/player/" .. key .. "/north-" .. part .. ".png" end
+  local function f(part) return "__landing-party-graphics__/graphics/player/" .. key .. "/north-" .. part .. ".png" end
   local body = {filename = f("body"), width = S.width, height = S.height, scale = 0.5, shift = S.shift}
   local shadow = {filename = f("shadow"), width = S.width, height = S.height, scale = 0.5, shift = S.shift, draw_as_shadow = true}
   local glow = {filename = f("glow"), width = S.width / 2, height = S.height / 2, scale = 1, shift = S.shift, draw_as_glow = true,

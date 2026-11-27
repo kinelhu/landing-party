@@ -9,7 +9,7 @@ corner of the cage, a radio whip with a rag on another; a spare wheel, a shovel,
 N directions (north first, clockwise), one frame each: body, glow (the lamps), and a shadow a direction.
 
     /Applications/Blender.app/Contents/MacOS/Blender -b -P tools/blender/buggy.py -- <out_dir> [N=64]
-    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party/graphics/grubstake/buggy [preview.gif]
+    then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party-graphics/graphics/grubstake/buggy [preview.gif]
 """
 import math, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

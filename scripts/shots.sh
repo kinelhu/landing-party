@@ -12,13 +12,14 @@ mkdir -p "$SH/config" "$SH/mods" "$SH/saves"
 # Events, and nobody is at that screen to give it. LP_NOTAB=1 skips the Tab.)
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n[interface]\nshow-tips-and-tricks-notifications=false\n' "$SH" > "$SH/config/config.ini"
 ln -sfn "$REPO/landing-party" "$SH/mods/landing-party"
+ln -sfn "$REPO/landing-party-graphics" "$SH/mods/landing-party-graphics"
 ln -sfn "$REPO/tests/lp-shots" "$SH/mods/lp-shots"
 # LP_SHOTS=town: Grubstake's town only, grown at once; LP_SHOTS=culture: a Synthexis culture eight minutes on
 # (tests/lp-shots/mode.lua, not in git).
 echo "return \"${LP_SHOTS:-all}\"" > "$REPO/tests/lp-shots/mode.lua"
 cat > "$SH/mods/mod-list.json" <<JSON
 {"mods": [{"name": "base", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true},
-  {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true}, {"name": "lp-shots", "enabled": true}]}
+  {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true},{"name":"landing-party-graphics","enabled":true}, {"name": "lp-shots", "enabled": true}]}
 JSON
 out="$SH/script-output/lp-shots"
 close_game() {
