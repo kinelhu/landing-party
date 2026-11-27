@@ -415,7 +415,8 @@ local function plan(b, only)
     -- road and pylons, up to GROW_CAP blocks; once grown and its launch pad open (its mines are ore-bound, this is
     -- ground-bound); towards its line once it has one.
     {"spread", function()
-      return spreads(b) and b.launch_opened and size(b) < GROW_CAP and not b.wfc_job
+      -- (Not with its army at its cap, b.army_full: its surplus goes to war, army.lua.)
+      return spreads(b) and b.launch_opened and size(b) < GROW_CAP and not b.wfc_job and not b.army_full
         and b.parts > SPREAD_PARTS + keep(b) and (b.spread_wait or 0) <= game.tick end,
       function()
         local block = layout.spread(b)

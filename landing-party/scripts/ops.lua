@@ -1017,11 +1017,23 @@ local function finish(b, outcome, trace, army)
     elseif outcome ~= "recalled" then b.fail_streak = (b.fail_streak or 0) + 1 end
   end
   local lost = op.launched - alive(op)
-  b.next_op = game.tick + tune.sooner(b.corp, (outcome == "done" or outcome == "spent" or outcome == "claimed") and GAP_DONE
+  local gap = tune.sooner(b.corp, (outcome == "done" or outcome == "spent" or outcome == "claimed") and GAP_DONE
     or GAP_ABORTED)
     -- (At most 10 minutes for its losses, 0.3.1: sieges by what is home lose more, and 55 lost held the next one 21
     -- minutes, the user's nw game.)
     + math.min(10, math.floor(lost / 5)) * GAP_PER_5_LOST
+  -- Paced by what it can replace: the time its parts income takes to build again what it lost, at the mean price of its
+  -- mix, with the gap above at most (the prior it was, flat; the user, 2026-11-27: "not fun"; a camp of 527 at home
+  -- waited out its gaps). Its army at its cap, its next at once.
+  if b.army_full or (b.rate_parts or 0) > 0 then
+    local m, sum, n = army.mix(b), 0, 0
+    for name, w in pairs(m) do sum, n = sum + w * shared.unit_cost(b.corp, name), n + w end
+    local price = n > 0 and sum / n or 0
+    local replace = (b.rate_parts or 0) > 0 and lost * price / (b.rate_parts / 3600) or math.huge
+    if b.army_full then replace = 0 end
+    gap = math.min(gap, math.ceil(replace))
+  end
+  b.next_op = game.tick + gap
   -- (Why it waits, for the director: a pace it may pull in, never a hold after a failure to launch, director.lua.)
   b.next_op_why = "pace"
   if op.clearance then b.next_op = game.tick + 3600 end
@@ -1493,6 +1505,9 @@ local function launch(b, key, trace, army, opts)
     and cd.provoked[t.owner] then
     want = math.max(want, math.min(n, math.ceil(ENEMY_SHARE * n)))
   end
+  -- So does any camp with its army at its cap, b.army_full, against a player: a raid of 4 on a roboport left 457 at home
+  -- (the user's nw save, 2026-11-27: "400 units at home just jorking it in front of their walls").
+  if b.army_full and against_player(t.owner) then want = math.max(want, math.min(n, math.ceil(ENEMY_SHARE * n))) end
   local committed = battery(t) or threat_bonus(b, t) > 0 or desperate or is_answer
   local members = pool.take(b, want, floor_of(b, army, committed), SOLDIER)
   -- (Its ranked ones as more than one (shared.rank_scale: a Rare about two): the highest first till they make up what it

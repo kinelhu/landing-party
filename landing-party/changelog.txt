@@ -15,6 +15,8 @@ Date: 2026-11-27
     - Railgunners are at most 30% of a camp's army; they made up most of it on maps with many biters.
     - Kessler-Hayashi's railgunners stand guard in squads, one at each cluster of its camp, instead of milling around its lander. Its idle army past 40 units waits at those stands too, instead of piling into one spot.
     - A camp's army is at most 200 units, times the strength setting.
+    - A camp whose army is full stops spreading and pushing its line out, never stands down, sends raids of half what it can field, and attacks again as soon as it can replace what it lost. Kessler-Hayashi no longer colonises the map while hundreds of its units wait at home.
+    - Synthexis's income rises with the price of what evolution lets it breed, and it sends its next wave as soon as it can pay for one, several at once when it can afford them: late in the game its waves come every few minutes.
     - A corporation that cannot reach your buildings on foot (water, or no way past your guns) and finds little anti-air there builds fliers and raids them from the air.
     - The wait after a costly operation is at most 10 minutes longer than after one that lost nothing.
 ---------------------------------------------------------------------------------------------------

@@ -628,7 +628,8 @@ local function quiet(tick)
         -- An aggressive corporation keeps at it longer before it stands down (tune.lua).
         local streak = math.max(2, math.floor(FAIL_STREAK * tune.aggression(b.corp) + 0.5))
         local losing = (b.fail_streak or 0) >= streak
-        if tick - since >= span * tune.aggression(b.corp) or losing then
+        -- (Not with its army at its cap, b.army_full: a camp of 527 at home stood down and its army waited, nw.)
+        if (tick - since >= span * tune.aggression(b.corp) or losing) and not b.army_full then
           b.quiescent = tick
           shared.event("stood_down", {base = b.id, corp = b.corp, losing = losing and true or false})
           b.stood_down_streak = losing and (b.stood_down_streak or 0) + 1 or b.stood_down_streak

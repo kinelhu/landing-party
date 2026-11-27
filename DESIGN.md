@@ -204,6 +204,8 @@ document still says Serenity where it records history.
 | Sieges by what is home (up to half, at most 80, railgunners among them), refused below 30% of their escort kept on the way; railgunners at most 30% of the cap | built 0.3.1 | `siegetier` big, biters; `rivalsiege` |
 | Railgunners' stands: a squad at each hub (army.rail_stands), kept even, standing, leashed to their stand | built 0.3.1 | `stands` (and off) |
 | The yard holds 40 while there are stands, the rest of the idle army at the stands; a camp's army at most 200 (times its strength lever) | built 0.3.1 | `stands`; `caps` |
+| A full camp (b.army_full) to war: no spread, no line step, no stand-down, raids of half its field, its next op once its losses are replaced | built 0.3.1 | (the user's nw save) |
+| Synthexis's income by the price of what it breeds (farm.price_rate), its waves' gap by its income (gap_of, at most WAVE_GAP), overlapping when paid, its first at first_at | built 0.3.1 | `farm` and its variants |
 | Legibility: every mechanic told in the world (audit below) | audited 2026-10-20; gaps open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
 
