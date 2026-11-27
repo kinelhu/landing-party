@@ -246,7 +246,7 @@ local function build(p)
   grip.drag_target = f
   bar.add{type = "sprite-button", sprite = "utility/close", style = "frame_action_button", tags = {lp_dbg = "close"}}
   f.location = pr.location or {x = 40, y = 80}
-  local tp = f.add{type = "tabbed-pane", name = "tabs"}
+  local tp = f.add{type = "tabbed-pane", name = "lp_tabs"}
   for i, name in ipairs(TABS) do
     local tab = tp.add{type = "tab", caption = name}
     local body = tp.add{type = "flow", name = "t" .. i, direction = "vertical"}
@@ -323,7 +323,7 @@ local function fill(p)
   local f = p.gui.screen[NAME]
   if not f then return end
   local pr = prefs(p)
-  local tp = f.tabs
+  local tp = f.lp_tabs
   local tab = tp.selected_tab_index or 1
   pr.tab = tab
   if tab == 1 then
@@ -493,7 +493,7 @@ function panel.on_selection(e)
 end
 
 function panel.on_tab(e)
-  if e.element and e.element.valid and e.element.name == "tabs" then fill(game.get_player(e.player_index)) end
+  if e.element and e.element.valid and e.element.name == "lp_tabs" then fill(game.get_player(e.player_index)) end
 end
 
 -- Its key: for admins with its setting on.
