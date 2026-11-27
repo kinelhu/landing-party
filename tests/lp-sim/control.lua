@@ -6891,8 +6891,11 @@ scenarios.turretmodel = function()
     local v, g = sum["gun-turret"] or {}, sum["lp-grubstake-turret"] or {}
     metric("turretmodel_vanilla_used", v.used or -1)
     metric("turretmodel_grubstake_used", g.used or -1)
+    -- (Kills within 2 or 10%: alike in rounds and health a second, three of each tallied 19 and 21, a biter apart a turret,
+    -- when floors were paved a tick at a time, the 0.3.1 quick regression; within 1 it failed. A turret at half its rate
+    -- fails it.)
     check("turretmodel: Grubstake's turret fights as vanilla's gun turret (rounds, kills, health within 10%)",
-      math.abs((g.used or 0) - (v.used or 0)) <= 0.1 * math.max(1, v.used or 0) and math.abs((g.kills or 0) - (v.kills or 0)) <= 1
+      math.abs((g.used or 0) - (v.used or 0)) <= 0.1 * math.max(1, v.used or 0) and math.abs((g.kills or 0) - (v.kills or 0)) <= math.max(2, 0.1 * (v.kills or 0))
       and math.abs((g.hp or 0) - (v.hp or 0)) <= 0.1 * math.max(1, v.hp or 0), serpent.line({vanilla = v, grubstake = g}))
   end)
 end

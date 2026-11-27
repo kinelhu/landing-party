@@ -285,7 +285,7 @@ end
 -- Place the next queued entity if parts allow. A failed key entity abandons the rest of its module.
 -- Floors at the queue's head, PAVE_TILES at most (a job past it paved in parts, the rest kept at the head): its
 -- compounds' floors paved at once took 12.5 ms, the spike guard, the user's nw save. Run by each build step and, while
--- floors wait at the head, every tick between (base.tick): at 256 a build step (90 ticks) all building waited on a big
+-- floors wait at the head, each 15 ticks between (base.tick): at 256 a build step (90 ticks) all building waited on a big
 -- floor, and the line's relays came late (line, the 0.3.1 regression). True when a crew took the head's job.
 local function pave_step(b)
   local _pv = prof.start("build.pave")
