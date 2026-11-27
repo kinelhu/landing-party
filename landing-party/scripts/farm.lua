@@ -2633,10 +2633,11 @@ function farm.tick(tick)
       local free = not out or (gap < WAVE_GAP and not f.siege and herd.out_units(id) < cap_of(f))
       -- (Weighed since its last wave and sent nothing: not again within its gap, the time its income takes to pay a wave.
       -- Waves free to go, it weighed every 10 s, about 100 ms each, the user's nw save.)
-      if f.weighed_at and f.weighed_at > f.last_wave and tick - f.weighed_at < gap and not f.escalate_retry then free = false end
+      if f.weighed_at and f.weighed_at > f.last_wave and tick - f.weighed_at < gap and not f.escalate_retry
+        and not f.debug_now then free = false end
       -- (Not before its first wave's time, first_at: with its gap by its income, the first came 2.2 minutes after its
       -- landing, farm.)
-      if tick < (f.first_at or 0) then free = false end
+      if tick < (f.first_at or 0) and not f.debug_now then free = false end
       if not storage.herd_off and free and tick - f.last_wave >= tune.sooner("biotech", gap) then local _sp = prof.start("farm.send"); send(f, tick); prof.stop(_sp) end
       if not storage.seed_off then local _sp = prof.start("farm.seed"); seed(f, tick); carry(f, tick); prof.stop(_sp) end
     end

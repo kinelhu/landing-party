@@ -1141,8 +1141,17 @@ function herd.plan(surface, from, target, forces, n)
   -- 581 ms a tick, the user's nw save; the wave walks to where it was read from, and on.)
   local near = sm and sm.sliced and ((sm.from[1] - from.x) ^ 2 + (sm.from[2] - from.y) ^ 2 <= SHARE_NEAR * SHARE_NEAR
     or costmap.cost(sm.cm, from) ~= nil)
+  local memo_key
   if sm and game.tick - sm.tick < herd.SHARED_FOR and (near or sm.from[1] == from.x and sm.from[2] == from.y) and costmap.cost(sm.cm, target) then
     fmap, cm = sm.fmap, sm.cm
+    -- (A sliced reading's plans kept with it, by target: sized in its siege's step and planned again as its wave went,
+    -- 9.4 ms more, the spike guard. Its route is the reading's either way; its mines' margin, the first one's.)
+    if sm.sliced then
+      memo_key = string.format("%d,%d", math.floor(target.x), math.floor(target.y))
+      sm.plans = sm.plans or {}
+      local kept = sm.plans[memo_key]
+      if kept then return kept end
+    end
   else
     local _sp = prof.start("herd.plan.read")
     local mid = {x = (from.x + target.x) / 2, y = (from.y + target.y) / 2}
@@ -1205,10 +1214,12 @@ function herd.plan(surface, from, target, forces, n)
   local spots = herd.sapper_spots(mines, rest[1])
   local sappers = 0
   for _, k in ipairs(herd.sweepers_at(surface, forces, spots, rest[1])) do sappers = sappers + k end
-  return {path = pts, upto = upto, start = {way.start.x, way.start.y}, breach = {way.breach.x, way.breach.y},
+  local plan = {path = pts, upto = upto, start = {way.start.x, way.start.y}, breach = {way.breach.x, way.breach.y},
     cost = way.cost, cover = #cover, openable = openable, target = {target.x, target.y}, mines = #mines, walled = walled,
     sappers = sappers,
     standing = standing, cover_price = cover_price}
+  if memo_key then sm.plans[memo_key] = plan end
+  return plan
 end
 
 -- The spread assault's points (the adaptive tactics consult, 2026-11-05, R2; the user: "many rams at many points, one
