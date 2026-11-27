@@ -19,6 +19,18 @@ local airraid = {}
 local UP = {["ammo-turret"] = {1, "bullet"}, ["electric-turret"] = {1.5, "laser"}, turret = {1}}
 local TYPES = {"ammo-turret", "electric-turret", "turret"}
 local AIR_LEN, AIR_STEP = 400, 8   -- the line's last AIR_LEN tiles, looked at every AIR_STEP
+-- Nests on the way (the user, 2026-11-27: "Air raids are getting pwned by flying over vanilla spitters"): the biters'
+-- and Synthexis's spawners and worms, whatever force the raid is against. A spawner shoots up through its spitters, at its
+-- biters' reach (threat.nest_reach), a gun turret's weight a nest (a named prior: its spitters' fire is not read); a worm
+-- as a gun. Before, only the target's own forces were read, and an air route crossed nest fields as open sky.
+local NEST_UP = 2   -- (1, a gun's: on 777 its way still crossed a nest's edge, cheaper than going wide)
+local NEST_MARGIN = 8   -- tiles past its biters' sight its spitters still reach a flier (their chase and their acid's)
+local NEST_TYPES = {"unit-spawner", "turret"}
+local function biter_forces()
+  local out = {}
+  for _, f in pairs(game.forces) do if shared.is_biters(f.name) then out[#out + 1] = f end end
+  return out
+end
 airraid.MIN = 3                    -- fliers at the least for an air raid
 airraid.EDGE = 1.5                 -- the air's score over the ground's to go by air
 -- What fliers are for, taken from the air (bomb drones on what a ground raid cannot reach: artillery, radars, power).
@@ -62,6 +74,21 @@ function airraid.weigh(surface, from, pos, forces, corp, r)
   for _, e in pairs(surface.find_entities_filtered{position = pos, radius = r, force = forces, type = TYPES}) do add(e) end
   local dx, dy = pos[1] - from[1], pos[2] - from[2]
   local len = math.sqrt(dx * dx + dy * dy)
+  -- (The nests along it, by their reach: NEST_UP each, once.)
+  if len >= 1 and not storage.air_nests_off then
+    local nf, bf = threat.nest_far(), biter_forces()
+    for d = 0, math.min(len, AIR_LEN), AIR_STEP * 2 do
+      local p = {pos[1] - dx / len * d, pos[2] - dy / len * d}
+      for _, e in pairs(surface.find_entities_filtered{position = p, radius = nf, force = bf, type = NEST_TYPES}) do
+        local id = e.unit_number
+        local rr = threat.nest_reach(e) + NEST_MARGIN
+        if id and not seen[id] and (e.position.x - p[1]) ^ 2 + (e.position.y - p[2]) ^ 2 <= rr * rr then
+          seen[id] = true
+          w = w + NEST_UP
+        end
+      end
+    end
+  end
   if len >= 1 then
     local far = threat.far()
     for d = 0, math.min(len, AIR_LEN), AIR_STEP do
@@ -101,6 +128,20 @@ function airraid.route(surface, from, pos, forces, corp, r)
   local fm = firemap.read(surface, mid, radius * firemap.BOX, forces, function(e)
     return at[e.unit_number] and 0 or weight(e, corp)
   end, TYPES)
+  -- (The nests in its box, priced NEST_UP at their reach: its way round them, or over them at their price.)
+  if not storage.air_nests_off then
+    local box = radius * firemap.BOX + threat.nest_far()
+    for _, e in pairs(surface.find_entities_filtered{position = mid, radius = box, force = biter_forces(), type = NEST_TYPES}) do
+      local rr = threat.nest_reach(e)
+      if rr > 0 then
+        local x = {x = e.position.x, y = e.position.y, r = rr + NEST_MARGIN, p = NEST_UP, e = e}
+        fm.list[#fm.list + 1] = x
+        local key = math.floor(x.x / fm.size) .. "," .. math.floor(x.y / fm.size)
+        fm.cells[key] = fm.cells[key] or {}
+        table.insert(fm.cells[key], x)
+      end
+    end
+  end
   local map = costmap.read(surface, mid, radius, forces, {air = true, fire = fm, from = from, margin = AIR_MARGIN})
   local c = costmap.cost(map, pos)
   if not c then return airraid.weigh(surface, from, pos, forces, corp, r), {} end

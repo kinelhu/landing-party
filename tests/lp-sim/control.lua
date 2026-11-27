@@ -7659,6 +7659,9 @@ scenarios.dev = function()
     S.before = lp("bases")
     lp("dev", {"land", "grubstake", tostring(params.distance)}, {0, 0})
   end)
+  -- /lp incidents (caught: dev.lua's helper `standing` hid the standing module, and the panel's Incidents button crashed the
+  -- game, the user, 2026-11-27): it runs; a step that errs fails the run.
+  schedule(150, function() lp("dev", {"incidents"}, {0, 0}) end)
   -- /lp dry (0.2.468): a trooper of the player's, enlisted, emptied by its last round through the shot handler; dry and
   -- alerted (the flag its alert follows: headless has no player) a second later. Nothing to rearm from: it stays dry.
   schedule(180, function()
@@ -21789,6 +21792,10 @@ end
 scenarios.airraid = function()
   local aa, off = params.mix == "aa", params.mix == "off"
   local detour = params.mix == "detour" or params.mix == "detour-straight"
+  -- LP_MIX=nests (the user, 2026-11-27: "Air raids are getting pwned by flying over vanilla spitters"): five spitter
+  -- spawners across the straight line, halfway, 56 tiles wide; it goes by air round them, no flier within 30 tiles of one.
+  -- LP_MIX=nests-off: the nests not read (debug_tune air_nests_off), its fliers over them (seen failing).
+  local nests = params.mix == "nests" or params.mix == "nests-off"
   local gs = params.mix == "grubstake"
   -- LP_MIX=cmd: its own air raids off, /lp airraid called at the radar (dev.lua, ops.force): it goes by air all the same.
   local cmd = params.mix == "cmd"
@@ -21799,7 +21806,7 @@ scenarios.airraid = function()
   end
   schedule(60, function()
     lp("debug_tune", {era = 2, raids_off = true, history_off = true, provoke = true, air_off = (off or cmd) or nil,
-      air_straight = params.mix == "detour-straight" or nil})
+      air_straight = params.mix == "detour-straight" or nil, air_nests_off = params.mix == "nests-off" or nil})
     -- (Grubstake across spawn from Serenity's camp: 270 tiles off it raided Serenity's fabricators, not the radar.)
     S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = gs and "grubstake" or "serenity", at = gs and across_first() or nil})
     for _ = 1, 3 do lp("debug_depot", S.id, 4000) end
@@ -21848,6 +21855,17 @@ scenarios.airraid = function()
         if t then t.insert{name = "firearm-magazine", count = 200}; S.picket[#S.picket + 1] = t end
       end
       S.picket_in = 0
+    end
+    if nests then
+      local m = {o.x - ux * 70, o.y - uy * 70}
+      S.nests = {}
+      for k = -2, 2 do
+        local p = {math.floor(m[1] - uy * k * 14) + 0.5, math.floor(m[2] + ux * k * 14) + 0.5}
+        flatten(p[1] - 4, p[2] - 4, p[1] + 4, p[2] + 4)
+        local n = surface().create_entity{name = "spitter-spawner", position = p, force = "enemy"}
+        if n then S.nests[#S.nests + 1] = n end
+      end
+      S.nest_in = 0
     end
     -- Three outposts 40 tiles out, held as the radar is (flamers, or guns in aa): for its build's tilt to fliers
     -- (army.air_tilt: three of the player's targets sensed at least).
@@ -21902,6 +21920,33 @@ scenarios.airraid = function()
         end
       end)
     end
+  end
+  if nests then
+    -- Its fliers within 30 of a nest (its spitters' reach), looked at every 20 ticks once it went by air.
+    for t = 8 * 3600 + 600, END - 120, 20 do
+      schedule(t, function()
+        if not S.air_at then return end
+        -- (The raid's own members alone, ops.stats' op_members: on 777 its garrison's drones at a stand by the nests
+        -- counted 192 with the rule and without it.)
+        local members = (lp("stats", S.id).ops or {}).op_members or {}
+        for _, n in ipairs(S.nests or {}) do
+          if n.valid then
+            for _, m in ipairs(members) do
+              if (m[1] - n.position.x) ^ 2 + (m[2] - n.position.y) ^ 2 <= 30 * 30 then S.nest_in = S.nest_in + 1 end
+            end
+          end
+        end
+      end)
+    end
+    schedule(END - 60, function()
+      if params.mix == "nests" then
+        check("airraid: nests, it went by air round the nests (no flier within 30 tiles of one)", (S.air or 0) > 0
+          and S.nest_in == 0, string.format("air raids %d, flier sightings by a nest %d", S.air or 0, S.nest_in or -1))
+      else
+        check("airraid: nests-off, its fliers over the nests (what it was)", (S.air or 0) > 0 and S.nest_in > 0,
+          string.format("air raids %d, flier sightings by a nest %d", S.air or 0, S.nest_in or -1))
+      end
+    end)
   end
   -- When each flier first came within 25 of the radar (the user, 2026-11-13, watching it: "they didn't group up before
   -- going on their raid, so they were very far apart"): the first and last in, 2 s apart at most.
@@ -21974,8 +22019,9 @@ scenarios.airraid = function()
       if detour then
         check("airraid: detour, round the picket (no flier within its guns' reach)", S.picket_in == 0, tostring(S.picket_in))
       end
-      -- (Not in detour: the picket's guns shoot up, and its build reads them.)
-      if not off and not detour then
+      -- (Not in detour: the picket's guns shoot up, and its build reads them. Nor in nests: the nests count among what
+      -- shoots up on its ways, 777 and 4242 read no tilt with them, with the rule or without.)
+      if not off and not detour and not nests then
         check("airraid: and its build tilted to fliers (flamers on foot, nothing shooting up)", (S.tilt or 1) > 1.5,
           tostring(S.tilt))
       end

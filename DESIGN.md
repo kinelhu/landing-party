@@ -9104,3 +9104,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   ground within spread_rival (200) of a rival camp: apart clear, refused at 150 tiles, allowed at 400, allowed at 150 with
   the rule off. A camp set 150 tiles from Grubstake's razed it; growth over 45 minutes founded one cluster at most, so
   the rule is checked directly. Assumed, not tested: the effect on nw's own spread over hours.
+- Air raids flew over nests (the user's nw game, 2026-11-27: "Air raids are getting pwned by flying over vanilla
+  spitters"): their ways (airraid.route, and the straight line's weighing) read what shoots up of the target's forces
+  alone, and the biters' spawners and worms were open sky. Now each spawner is a threat at its biters' sight plus
+  NEST_MARGIN (8), priced NEST_UP (2: at 1, a way grazed a nest's edge) gun turrets; worms of the biter forces too.
+  Scenario airraid nests: five spitter spawners across the line, its raid's members within 30 tiles of one 0 on 12345
+  and 777 (123 and 152 with the rule off). The check counted the garrison's drones too at first (192 on 777 both ways,
+  one of its stands by the nests): the raid's members alone now. And /lp incidents crashed (the panel's Incidents
+  button): dev.lua's helper `standing` hid the standing module; checked in scenario dev.

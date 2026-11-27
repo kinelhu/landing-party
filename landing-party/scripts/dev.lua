@@ -51,7 +51,7 @@ local base = require("__landing-party__.scripts.base")
 local faction = require("__landing-party__.scripts.faction")
 local jumper = require("__landing-party__.scripts.jumper")
 local tap = require("__landing-party__.scripts.tap")
-local standing = require("__landing-party__.scripts.standing")
+local incidents = require("__landing-party__.scripts.standing")   -- (not `standing`: the helper below is named so)
 local farm = require("__landing-party__.scripts.farm")
 -- (At load: required inside dev.run, /lp director crashed the playtest, "Require can't be used outside of control.lua
 -- parsing", 0.2.498; check.sh's lint now fails any require below the top level.)
@@ -150,7 +150,7 @@ function dev.run(player, args)
     player.print(why and ("strike: " .. why) or string.format("strike from %d %s: painted for 12 s, then it falls", b.id,
       shared.CORPS[b.corp].name))
   elseif what == "incidents" then
-    standing.list(player)
+    incidents.list(player)
   elseif what == "biotech" then
     player.print(farm.arrive_now(player.surface) and "the biotech's pod is coming down (a map tag marks its farm)"
       or "no nest field of three spawners 250 to 1,500 tiles from your factory")

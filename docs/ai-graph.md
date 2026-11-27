@@ -73,6 +73,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `site` | 180 | modules | base, control, faction, layout |  |  |  |  |
 | `separate` | 179 | rng | control |  |  |  | sep |
 | `power` | 175 | threat | feeds, ops |  |  |  |  |
+| `airraid` | 168 | attempt, costmap, firemap, know, threat, veterancy | army, ops |  |  |  |  |
 | `watch` | 161 | (leaf) | control |  |  |  | watch |
 | `lifeline` | 155 | base, pods, threat | control |  | 3600 |  | orbitals |
 | `stun` | 145 | rng | control, dev |  | 3600 |  | stun, stun_arc_rng, stun_by, stun_first, stun_gap, stun_rng, stunned, stuns |
@@ -82,7 +83,6 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `answers` | 138 | (leaf) | ops |  |  |  |  |
 | `wfc_serenity` | 134 | (leaf) |  |  |  |  |  |
 | `director_gui` | 130 | director | control, dev, devpanel |  | 60 |  |  |
-| `airraid` | 127 | attempt, costmap, firemap, know, threat, veterancy | army, ops |  |  |  |  |
 | `chart` | 116 | (leaf) | base, map, prospect |  |  |  |  |
 | `standing` | 114 | ops | control, crew, dev, ledger, map, prospect, road |  | 3600 |  | corps, incidents, standing_seen |
 | `pact` | 112 | base, lights, rng | control, faction, marker |  | 600 |  | pact_broken, pact_state |
