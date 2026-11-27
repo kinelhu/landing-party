@@ -283,19 +283,15 @@ local function rebuild(b)
 end
 
 -- Place the next queued entity if parts allow. A failed key entity abandons the rest of its module.
-local function build(b)
-  local _r = prof.start("build.rebuild"); local _rb = rebuild(b); prof.stop(_r)
-  if _rb then return end
-  -- Road tiles cost nothing and take no build step.
-  -- Floors cost nothing and take no build step.
-  -- A crew's module's floor waits for the crew (crew.take takes it with the rest): paved at once, a cordon post's pad
-  -- lay out on the ground before its drone came (the user, 2026-10-17).
-  -- (PAVE_TILES a step at most, a job past it paved in parts, the rest kept at the head: its compounds' floors paved at
-  -- once took 12.5 ms, the spike guard, the user's nw save.)
+-- Floors at the queue's head, PAVE_TILES at most (a job past it paved in parts, the rest kept at the head): its
+-- compounds' floors paved at once took 12.5 ms, the spike guard, the user's nw save. Run by each build step and, while
+-- floors wait at the head, every tick between (base.tick): at 256 a build step (90 ticks) all building waited on a big
+-- floor, and the line's relays came late (line, the 0.3.1 regression). True when a crew took the head's job.
+local function pave_step(b)
   local _pv = prof.start("build.pave")
   local budget = PAVE_TILES
   while b.queue[1] and b.queue[1].tiles and budget > 0 do
-    if b.queue[1].module and base.crew_take and base.crew_take(b, b.queue[1]) then prof.stop(_pv) return end
+    if b.queue[1].module and base.crew_take and base.crew_take(b, b.queue[1]) then prof.stop(_pv) return true end
     local job = b.queue[1]
     if #job.tiles <= budget then
       table.remove(b.queue, 1)
@@ -310,6 +306,17 @@ local function build(b)
     end
   end
   prof.stop(_pv)
+  return false
+end
+
+local function build(b)
+  local _r = prof.start("build.rebuild"); local _rb = rebuild(b); prof.stop(_r)
+  if _rb then return end
+  -- Road tiles cost nothing and take no build step.
+  -- Floors cost nothing and take no build step.
+  -- A crew's module's floor waits for the crew (crew.take takes it with the rest): paved at once, a cordon post's pad
+  -- lay out on the ground before its drone came (the user, 2026-10-17).
+  if pave_step(b) then return end
   -- (Floors still to pave at the head: the rest of this step waits for them, as before.)
   if b.queue[1] and b.queue[1].tiles then return end
   local job = b.queue[1]
@@ -494,7 +501,7 @@ function base.heal_lines()
     end
   end
 end
-return {build = build, rebuild = rebuild}
+return {build = build, rebuild = rebuild, pave_step = pave_step}
 end
 
 return construction
