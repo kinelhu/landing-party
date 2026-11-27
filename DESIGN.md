@@ -9074,3 +9074,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   way on foot mark the target (t.no_foot) and it is weighed by air alone; such targets with little anti-air ask for an
   air squad of 8 first (army.air_want); an air raid's ladder is its own ("air"), not the ground raid's that failed there
   (scenario airplan, tilted, seen failing both ways: no air raid without the ladder's split, 5 fliers without the plan).
+- The corporations' infantry took acid whole (2026-11-27, the user's nw game: "columns of KH infantry melt in an
+  instant to a handful of vanilla spitters"): only the player's trained troopers took their armour's acid resistance
+  (player.lua). Scenario acid, 30 Kessler-Hayashi infantry against 4 behemoth spitters: 1 alive at 8 s, all dead at
+  12 s, 1 spitter killed. Each infantry kind now resists acid as the armour it is drawn in (units.lua: the mech armour
+  70%, heavy 40%): 14 alive at 8 s, all dead by 30 s. Behemoth acid pools stack under infantry that stand to shoot, so a
+  column still loses to behemoths; against big spitters 21 of 30 live (18 before). A sealed plate (warden's physical
+  plate and 20% more acid, node `sealed` after `warden`, on 10 acid kills) takes it to 90%: 25 live against big spitters,
+  the column holds a few seconds more against behemoths. Assumed, not tested: that a camp buys it in a real game. The
+  check: acid's 8 of 30 alive at 8 s (seen failing at 1 with the resistance taken out).

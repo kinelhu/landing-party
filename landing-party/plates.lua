@@ -24,6 +24,16 @@ for corp in pairs(shared.CORPS) do
           end
         end
         if not merged then table.insert(res, {type = r.type, percent = r.percent, decrease = r.decrease}) end
+        for _, a in ipairs(r.also or {}) do
+          local found = false
+          for _, x in ipairs(res) do
+            if x.type == a.type then
+              x.percent, x.decrease = math.min(90, (x.percent or 0) + (a.percent or 0)), (x.decrease or 0) + (a.decrease or 0)
+              found = true
+            end
+          end
+          if not found then table.insert(res, {type = a.type, percent = a.percent, decrease = a.decrease}) end
+        end
         p.resistances = res
         p.localised_name = {"", base.localised_name or {"entity-name." .. kind}, " [", {"lp.plate-" .. plate}, "]"}
         p.localised_description = base.localised_description or {"?", {"entity-description." .. kind}, ""}

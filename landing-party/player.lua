@@ -603,7 +603,10 @@ for item, unit in pairs(shared.ORDERS) do
       if armor and data.raw.unit[unit] then
         for _, res in ipairs(armor.resistances or {}) do
           if res.type == "acid" then
-            u.resistances = u.resistances or {}
+            -- (In place of the acid its body's armour gave it, units.lua.)
+            local kept = {}
+            for _, x in ipairs(u.resistances or {}) do if x.type ~= "acid" then kept[#kept + 1] = x end end
+            u.resistances = kept
             table.insert(u.resistances, {type = "acid", decrease = res.decrease, percent = res.percent})
           end
         end
