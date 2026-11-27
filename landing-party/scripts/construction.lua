@@ -233,7 +233,7 @@ army.reserve = base.reserve
 
 -- (REBUILD_LOOKS due jobs looked at a step, their reserve read only for one it places: each looked at with its reserve,
 -- footing, crew and ground, a long list after losses took 7 ms a step, the spike guard.)
-local REBUILD_LOOKS = 16
+local REBUILD_LOOKS = 6   -- (16: up to 9.6 ms a step)
 local function rebuild(b)
   local surface = game.surfaces[b.surface]
   local looks = 0

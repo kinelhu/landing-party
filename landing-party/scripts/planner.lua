@@ -20,7 +20,20 @@ local function size(b) local n = 0 for _, k in ipairs(b.blocks) do n = n + (k.we
 local LAB_PARTS = 150          -- parts in hand before it plans a research district
 local LAB_WAIT = 2 * 3600       -- a lab's district not looked for again this long after none was found
 -- A lab of this kind standing, owed (queued, carried, awaiting rebuild) or planned in any camp of b's corporation.
+-- (Read once each LAB_LOOK for a corporation and a kind, kept in storage: every camp's queue walked for each of its plans,
+-- 334 jobs at one camp, 4 ms a plan, the spike guard on the user's nw save.)
+local LAB_LOOK = 300
+local lab_coming_now
 local function lab_coming(b, kind)
+  storage.lab_coming = storage.lab_coming or {}
+  local key = b.corp .. "|" .. kind
+  local c = storage.lab_coming[key]
+  if c and game.tick - c.t < LAB_LOOK then return c.v end
+  local v = lab_coming_now(b, kind)
+  storage.lab_coming[key] = {t = game.tick, v = v}
+  return v
+end
+lab_coming_now = function(b, kind)
   for _, o in pairs(storage.bases) do
     if o.corp == b.corp and not o.fallen then
       for _, e in ipairs(o.labs or {}) do if e.valid and e.name == shared.variant(o.corp, kind) then return true end end

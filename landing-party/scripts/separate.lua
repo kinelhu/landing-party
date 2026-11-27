@@ -18,6 +18,7 @@ local rng = require("__landing-party__.scripts.rng")
 local separate = {}
 local H = shared.HULL
 local SCAN = 600
+local SEP_SLICE = 24   -- hulls looked round a look (separate.tick)
 local STILL = 0.1
 local DEEP = 0.6
 
@@ -126,7 +127,14 @@ function separate.tick(tick)
   end
   for k in pairs(st.at) do if not seen[k] then st.at[k] = nil end end
   do
-    local list = st.list
+    -- (SEP_SLICE hulls a look, in turn: all of them, each a search round it, took 7 ms a look with 78 tanks at one camp,
+    -- the spike guard on the user's nw save.)
+    local list = {}
+    local all = st.list
+    local from = (st.sep_cursor or 0) % math.max(1, #all) + 1
+    local last = math.min(#all, from + SEP_SLICE - 1)
+    st.sep_cursor = last >= #all and 0 or last
+    for i = from, last do list[#list + 1] = all[i] end
     for _, a in ipairs(list) do
       local s = a.valid and not steered[a.unit_number] and a.surface
       if s then
