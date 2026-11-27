@@ -793,6 +793,7 @@ end
 
 -- Open a block of `role` in the newest hub, or found a new hub when it is full or boxed in.
 -- Returns the block opened (a new hub's compound when one was founded), or nil.
+local OPEN_TRIES = 12   -- a hub's cells tried a call (open_role)
 function layout.open_role(b, role)
   local surface = game.surfaces[b.surface]
   local hub = b.hubs[#b.hubs]
@@ -809,8 +810,11 @@ function layout.open_role(b, role)
     return layout.found(b, (first or role == "launch") and role)
   end
   if hub.count < layout.DOCTRINES[b.doctrine].hub_cap or first then
+    -- (OPEN_TRIES cells a call: those that do not fit are marked bad and not tried again, so the next call goes on; all
+    -- of a full hub's at once took 22 ms, the spike guard on the user's nw save.)
     local cands = candidates(b, hub)
-    for _, c in ipairs(cands) do
+    for n, c in ipairs(cands) do
+      if n > OPEN_TRIES then return nil end
       local x0, y0 = hub.x + c.i * PITCH, hub.y + c.j * PITCH
       if fits(b, surface, x0, y0, S, S) then
         return open(b, hub, role, x0, y0, S, S, {{c.i, c.j}}), hub
