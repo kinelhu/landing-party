@@ -2362,22 +2362,42 @@ function farm.ways_step(f)
   local pos = f.pos
   local rival = item.force and not shared.is_player_force(game.forces[item.force]) and {item.force} or nil
   if item.kind == "siege" then
+    local _w1 = prof.start("wstep.plan")
     local pl = herd.plan(surface, pos, item.at, rival or players(), WAVE_MAX)
+    prof.stop(_w1)
     if not pl then trace(string.format("farm %d sizes its siege at %.0f,%.0f: no plan", f.id, item.at.x, item.at.y)); return end
+    local _w2 = prof.start("wstep.size")
     local k, n, price, breed, need, fodder, proven = siege_size(f, pl, {guns = item.guns, extra = item.extra, value = item.value, rival = rival})
+    prof.stop(_w2)
     trace(string.format("farm %d sizes its siege at %.0f,%.0f: plan %.0f (%d guns, walled %s): %s", f.id, item.at.x, item.at.y,
       pl.cost, pl.cover, tostring(pl.walled), k and string.format("%d rams, %d, %d biomass", k, n, price) or "none fits"))
     if k then
       f.ways.sieges[item.key] = {at = item.at, key = item.key, k = k, n = n, price = price, breed = breed,
         need = need, fodder = fodder, plan = pl, cover = pl.cover, defence = item.defence, value = item.value or 0,
         rival = rival, guns = item.guns, extra = item.extra, dist = item.dist, proven = proven,
-        spread = k > 0 and spread_of(f, pl, rival, k, n, fodder) or nil}
+        spread = k > 0 and (function() local _w3 = prof.start("wstep.spread"); local r = spread_of(f, pl, rival, k, n, fodder); prof.stop(_w3); return r end)() or nil}
     end
   elseif item.kind == "cuts" then
     local sm = herd.shared
     if not (sm and sm.cm) then return end
+    -- (Its box read a quarter a step, each feed's sums added: read whole, CUT_R round its best place, 12 ms on the user's
+    -- nw save, the spike guard. A feed whose guns straddle two quarters is read in each, its parts summed.)
+    item.part = (item.part or 0) + 1
+    local h = CUT_R / 2
+    local ox, oy = (item.part % 2 == 1) and -h or h, (item.part <= 2) and -h or h
+    local _w4 = prof.start("wstep.feeds")
+    local got = feeds.read(surface, {x = item.at.x + ox, y = item.at.y + oy}, h, rival or players(), herd.price_of)
+    prof.stop(_w4)
+    item.acc = item.acc or {}
+    for k2, c in pairs(got) do
+      local a = item.acc[k2]
+      if a then a.starves, a.price, a.held = a.starves + c.starves, a.price + c.price, a.held + c.held
+      else item.acc[k2] = c end
+    end
+    if item.part < 4 then table.insert(f.ways.todo, 1, item); return end
+    local fed = item.acc
     local list = {}
-    for _, c in pairs(feeds.read(surface, item.at, CUT_R, rival or players(), herd.price_of)) do
+    for _, c in pairs(fed) do
       local reach = c.e.valid and costmap.cost(sm.cm, c.e.position)
       if reach and reach < NO_WAY then
         c.reach, c.v = reach, c.price / (1 + reach)
