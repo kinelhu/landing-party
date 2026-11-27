@@ -15,6 +15,7 @@ local EVERY = 600
 local ECONOMY_TICKS = 10 * 3600
 local QUEUE_TICKS = 5 * 3600
 local STUCK_TICKS, STUCK_MOVE = 3 * 3600, 3
+local TREES_TICKS, TREES_R = 30 * 60, 4   -- unmoved this long among trees: those within TREES_R go down
 local ARMY_TICKS = 10 * 3600
 
 local function st()
@@ -72,6 +73,13 @@ local function stuck(b, tick, trace, units)
       local p = u.position
       if not rec or (p.x - rec.x) ^ 2 + (p.y - rec.y) ^ 2 > STUCK_MOVE * STUCK_MOVE or not (cmd and MOVING[cmd.type]) then
         w.units[u.unit_number] = {x = p.x, y = p.y, t = tick}
+      elseif tick - rec.t > TREES_TICKS and not rec.trees then
+        -- Unmoved under orders among trees: the trees round it go down, as a crew's truck cuts its lane (crew.lua). Its
+        -- weapons may not reach them: a flak buggy shoots fliers alone, and those landed by a lander in a forest stood
+        -- there (the user's nw game, 2026-11-27: "flak buggies ... get stuck in trees. Their attacks cant damage trees").
+        rec.trees = true
+        local s = u.surface
+        for _, t in ipairs(s.find_entities_filtered{position = p, radius = TREES_R, type = "tree"}) do t.die() end
       elseif tick - rec.t > STUCK_TICKS and not rec.told then
         rec.told = true
         caught = caught + 1
@@ -110,15 +118,19 @@ end
 
 -- deps: {trace, units(b) (its roster's units), strength(b), cap(b), price(b), reserve(b)}.
 function watch.tick(tick, deps)
-  if tick % EVERY ~= 0 or not storage.trace then return end
+  if tick % EVERY ~= 0 then return end
   local w = st()
+  -- (Its stuck units in every game, their trees cleared, stuck; its alarms and the rest only while tracing.)
+  local traced = storage.trace
   for _, b in pairs(storage.bases or {}) do
     if not b.fallen and b.lander and b.lander.valid then
-      local reserve = deps.reserve(b)
-      economy(b, tick, deps.trace)
-      queue(b, tick, deps.trace, reserve)
+      if traced then
+        local reserve = deps.reserve(b)
+        economy(b, tick, deps.trace)
+        queue(b, tick, deps.trace, reserve)
+        army_(b, tick, deps.trace, deps.strength(b), deps.cap(b), deps.price(b), reserve)
+      end
       stuck(b, tick, deps.trace, deps.units(b))
-      army_(b, tick, deps.trace, deps.strength(b), deps.cap(b), deps.price(b), reserve)
     end
   end
   -- Units gone: forgotten.
