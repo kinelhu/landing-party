@@ -28,6 +28,7 @@ GRAPHICS = "--graphics" in sys.argv[1:]
 if GRAPHICS: MOD = "landing-party-graphics"
 # The portal's enums (Mod details API): our category and tags.
 CATEGORY, TAGS, LICENSE = "content", ["combat", "enemies"], "default_mit"
+if GRAPHICS: CATEGORY, TAGS = "internal", []   # internal: for other mods, nothing on its own
 SOURCE = "https://github.com/kinelhu/landing-party"
 
 args = sys.argv[1:]
