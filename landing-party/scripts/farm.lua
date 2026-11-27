@@ -1942,6 +1942,23 @@ function farm.seed_step(f)
   local job = f.seed_job
   if not job or job.done then return end
   local s = game.surfaces[f.surface]
+  -- Its carrier's way there, a map of the ground read in slices (herd.route's grid out to SEED_FARTHEST at once, in seed,
+  -- took 16 ms, the spike guard): done, the path its legs follow (carrier_legs).
+  if job.phase == "route" then
+    if not job.dest then job.done = true return end
+    if not job.cm then
+      local mid = {x = (f.pos.x + job.dest.x) / 2, y = (f.pos.y + job.dest.y) / 2}
+      local r = math.sqrt(d2(f.pos, job.dest)) / 2 + 64
+      job.cm = costmap.start(s, mid, r, players(), {from = {f.pos.x, f.pos.y}, cell = r > 200 and 16 or 10, sliced = true})
+      return
+    end
+    local m = costmap.step(job.cm, {blocks = 1, cells = 24})
+    if not m then return end
+    local way = {}
+    for _, q in ipairs(costmap.path(m, job.dest) or {}) do way[#way + 1] = {q.x, q.y} end
+    job.way, job.cm, job.done = #way > 0 and way or nil, nil, true
+    return
+  end
   if job.phase == "scan" then
     local last = math.min(#job.chunks, job.i + SEED_CHUNKS - 1)
     for i = job.i, last do
@@ -1979,21 +1996,25 @@ function farm.seed_step(f)
       return
     end
     if job.fed or job.near then
-      job.done, job.dest, job.food = true, job.fed or job.near, job.fed and job.ff or nil
+      job.dest, job.food = job.fed or job.near, job.fed and job.ff or nil
+      job.phase = "route"
       return
     end
     job.phase, job.k = "bare", 0
     return
   end
-  -- Bare ground, sixteen ways at three distances, four a step.
+  -- Bare ground, sixteen ways at three distances, four a step: out to SEED_FAR first, then out to SEED_FARTHEST (as
+  -- seed_site(SEED_FAR) then seed_site(SEED_FARTHEST): its first ring alone missed a cloud 450 out, farm seedbare).
   for _ = 1, 4 do
-    if job.k >= 48 then
+    if job.k == 48 and job.best or job.k >= 96 then
       if job.best then job.best.bare = true end
-      job.done, job.dest, job.food = true, job.best, job.bf
+      job.dest, job.food = job.best, job.bf
+      job.phase = "route"
       return
     end
-    local a = math.floor(job.k / 3) * math.pi / 8
-    local r = ({SEED_NEAR, (SEED_NEAR + SEED_FARTHEST) / 2, SEED_FARTHEST})[job.k % 3 + 1]
+    local far = job.k < 48 and SEED_FAR or SEED_FARTHEST
+    local a = math.floor((job.k % 48) / 3) * math.pi / 8
+    local r = ({SEED_NEAR, (SEED_NEAR + far) / 2, far})[job.k % 3 + 1]
     job.k = job.k + 1
     local p = {x = f.pos.x + math.cos(a) * r, y = f.pos.y + math.sin(a) * r}
     local t = s.is_chunk_generated({math.floor(p.x / 32), math.floor(p.y / 32)}) and s.get_tile(p.x, p.y)
@@ -2076,7 +2097,7 @@ local function seed(f, tick)
     if not f.seed_job then seed_job_start(f, s) end
     return
   end
-  local dest, food = f.seed_job.dest, f.seed_job.food
+  local dest, food, path = f.seed_job.dest, f.seed_job.food, f.seed_job.way
   f.seed_job = nil
   f.seed_tried = tick
   if not dest then
@@ -2119,7 +2140,7 @@ local function seed(f, tick)
   creep.spend_growth(cul, SEED_BANK)
   local from = carrier.position
   local far = math.sqrt(d2(from, dest))
-  local legs, way = carrier_legs(f, from, dest)
+  local legs, way = carrier_legs(f, from, dest, path)
   f.carrier = {group = g, unit = carrier, escort = escort, legs = legs, leg = 1, dest = dest, t = tick,
     bank = SEED_BANK / 2}
   storage.carrying = storage.carrying or {}
@@ -2133,10 +2154,11 @@ end
 -- Its way, from `from` to `dest`: round the turrets known to it and round cliffs and the player's buildings (solid; a
 -- carrier stood 17 minutes at a line of cliffs, its every order ending at once: farm seedbare, 0.2.28), a leg at most
 -- 60 tiles; failing that, straight in 60-tile legs. Returns its legs and whether it was routed.
-carrier_legs = function(f, from, dest)
+carrier_legs = function(f, from, dest, path)
   local far = math.sqrt(d2(from, dest))
-  local way = herd.route and herd.route({surface = f.surface, force = B.force}, {from.x, from.y}, {dest.x, dest.y},
-    {turrets = true, nests = false, solid = players(), cell = far > 400 and 16 or 10}, true)
+  -- (Its seed job's path when it read one, else the grid route as before.)
+  local way = path or (herd.route and herd.route({surface = f.surface, force = B.force}, {from.x, from.y}, {dest.x, dest.y},
+    {turrets = true, nests = false, solid = players(), cell = far > 400 and 16 or 10}, true))
   local pts, legs = {}, {}
   for _, p in ipairs(way or {}) do pts[#pts + 1] = {x = p[1], y = p[2]} end
   pts[#pts + 1] = dest
