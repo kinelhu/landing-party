@@ -60,17 +60,26 @@ local function worked(s, pos)
 end
 
 -- The nearest charted, unworked patch: chunk by chunk, a capped count each.
+-- Its look for a patch, FIND_ROWS rows of chunks a step (b.prospect_scan; prospect.tick each second while it runs): all
+-- 1,936 chunks within its reach at once took 12 ms, the spike guard on the user's nw save. Returns the patch (or false)
+-- once all rows are read, else nil.
+local FIND_ROWS = 5
 local function find(b)
   local s = game.surfaces[b.surface]
   local ox, oy = b.origin.x, b.origin.y
   local players = player_forces()
-  local best, bd
-  local why = {inside = 0, uncharted = 0, ore = 0, fluid = 0, worked = 0, staked = 0, taken = 0}
   local radius = storage.prospect_radius or RADIUS
+  local n = math.ceil(radius / CHUNK)
+  local sc = b.prospect_scan
+  if not sc then
+    sc = {i = -n, why = {inside = 0, uncharted = 0, ore = 0, fluid = 0, worked = 0, staked = 0, taken = 0}}
+    b.prospect_scan = sc
+  end
+  local best, bd, why = sc.best, sc.bd, sc.why
   -- The player's base: their spawn (the first player force's).
   local home = storage.prospect_home or (players[1] and players[1].get_spawn_position(s)) or {x = 0, y = 0}
-  local n = math.ceil(radius / CHUNK)
-  for i = -n, n do
+  local last = math.min(n, sc.i + FIND_ROWS - 1)
+  for i = sc.i, last do
     for j = -n, n do
       local cx, cy = math.floor(ox / CHUNK) + i, math.floor(oy / CHUNK) + j
       local x, y = cx * CHUNK + CHUNK / 2, cy * CHUNK + CHUNK / 2
@@ -108,6 +117,9 @@ local function find(b)
       end
     end
   end
+  sc.best, sc.bd, sc.i = best, bd, last + 1
+  if sc.i <= n then return nil end
+  b.prospect_scan = nil
   b.prospect_why = why
   -- On its ore, not the chunk's middle: the claim's drills go on ore within 8 tiles of it (claim), and a patch in a
   -- chunk's corner got none (prospect, 0.2.370's site on 12345: three claims standing, 0 drills on the patches, 0 ore
@@ -133,11 +145,11 @@ local function find(b)
       if (q[1] - best.x) ^ 2 + (q[2] - best.y) ^ 2 <= 24 * 24 then
         b.prospected = b.prospected or {}
         b.prospected[best.key] = true
-        return nil
+        return false
       end
     end
   end
-  return best
+  return best or false
 end
 
 -- Labelled once in a neighbourhood: a second patch near a labelled one has the icon only (the user's map, 2026-10-21: two
@@ -352,6 +364,8 @@ local function consider(b)
   if storage.prospect_off or not (shared.CORPS[b.corp].temper or {}).prospects then return end
   if b.fallen or b.quiescent or not b.mature or game.tick < (b.next_prospect or 0) then return end
   local p = find(b)
+  -- (Still looking: on at its next step, prospect.tick.)
+  if p == nil then return end
   if not p then
     if game.tick >= (b.prospect_said or 0) then
       b.prospect_said = game.tick + 30 * 3600
@@ -377,7 +391,8 @@ function prospect.tick(tick)
   if tick % 60 ~= 29 then return end
   for _, b in pairs(storage.bases or {}) do
     if b.prospect then step(b)
-    elseif tick % 3600 == 29 + 60 * 17 then consider(b) end
+    -- (Each second while it looks, b.prospect_scan; else once a minute.)
+    elseif tick % 3600 == 29 + 60 * 17 or b.prospect_scan then consider(b) end
     -- A built claim's tag: down once nothing of its works stands for its camp (razed, or captured).
     if tick % 600 == 29 then
       for _, m in ipairs(b.modules or {}) do

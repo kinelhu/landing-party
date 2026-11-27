@@ -336,7 +336,7 @@ end
 -- walled front its survey line met, and raided nothing in 15 minutes: the stretches defended by water alone it had never
 -- seen. Spread over ticks: ORBIT_LOOK chunks looked at a step (one cheap count each), and ORBIT_SENSE of those with
 -- buildings sensed (each its cells' defence, exposure and way in, as any sensor's), what is gone forgotten.
-local ORBIT_RANGE, ORBIT_LOOK, ORBIT_SENSE = 1500, 32, 2
+local ORBIT_RANGE, ORBIT_LOOK, ORBIT_SENSE = 1500, 32, 1   -- (2 sensed a step: 8 ms, the spike guard)
 -- At most ORBIT_MAX of the player's targets known (the nearest kept, past it orbit only forgets): every decision weighs
 -- each known target, and 321 of them cost the decider 110 to 160 ms and its sieges 520 ms every 30 s (the user's nw game,
 -- 2026-11-26: "huge stutters"). Its raids go at the near ones.
