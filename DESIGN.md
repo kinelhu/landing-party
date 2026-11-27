@@ -272,7 +272,9 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - After 0.3.1, from the user's nw game (2026-11-26):
   - Eight scenarios flip with the seed whatever the code (tap natural fails on 777 and 4242 before and after; airraid
     grubstake on 777 both ways; plate grubstake fails on 12345 after, passes on 777 both ways, two of its units dying in a
-    fight; nests on 12345 since the 0.3.1 regression, its one raid of 4 on three spawners lost where 2 came home, 777,
+    fight; director armylate (777 fails before and after, 4242 passes both, 12345 flipped in the 0.3.1 batch) and
+    director recallfar (777 fails before; on 12345 posted garrison tanks pass the test's guns and answer them in the
+    truce); nests on 12345 since the 0.3.1 regression, its one raid of 4 on three spawners lost where 2 came home, 777,
     4242 and 101 passing; the 2493451a full regression: 10 of 426, these and director armyhold): attackmove (its bad mode on 3 of 9 seeds before stands, 6 of 9
     with), nestclear tech (fails on 777 before), line turret and watchdog army (both fail on 4242 before and after),
     director repel (passes 3 of 4 seeds before, 2 of 4 after, failing on different ones). The camps' decisions the same
