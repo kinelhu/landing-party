@@ -3,6 +3,7 @@
 -- Variety comes from the settlement's doctrine, each hub's archetype, each block's layout variant and
 -- mirror/transpose, and the terrain cells drop out on. Every draw comes from the settlement's seeded rng.
 local shared = require("__landing-party__.shared")
+local prof = require("__landing-party__.scripts.prof")
 local threat = require("__landing-party__.scripts.threat")
 local blocks = require("__landing-party__.scripts.blocks")
 local rng = require("__landing-party__.scripts.rng")
@@ -710,7 +711,7 @@ local function town_launch(b, hub, open_block)
 end
 
 local function open(b, hub, role, x0, y0, w, h, cells, lobed)
-  clear_ground(b, x0, y0, w, h)
+  local _c = prof.start("open.clear"); clear_ground(b, x0, y0, w, h); prof.stop(_c)
   local variants = blocks[role]
   local v = rng.pick(b.rng, variants)
   local t = {}
@@ -740,7 +741,7 @@ local function open(b, hub, role, x0, y0, w, h, cells, lobed)
     block.walls = false
     block.embellished = true
     push(b, {tiles = lobe(x0, y0, w, h), floor = "pad", module = block})
-    if hub and hub.walled then layout.wall_cluster(b, hub, block) end
+    if hub and hub.walled then local _w = prof.start("open.walls"); layout.wall_cluster(b, hub, block); prof.stop(_w) end
     block.liveried = true
   elseif hub and hub.lots then
     -- A town's pad or launch pad: no road ring (its lots' streets reach it).
@@ -751,7 +752,7 @@ local function open(b, hub, role, x0, y0, w, h, cells, lobed)
   end
   for _, e in ipairs(v.fixed) do
     local pos = at(e)
-    if e[1] == "lp-pylon" then layout.connect(b, pos[1], pos[2], block) end
+    if e[1] == "lp-pylon" then local _p = prof.start("open.connect"); layout.connect(b, pos[1], pos[2], block); prof.stop(_p) end
     if e[1] == "lp-launchpad" and not lobed then layout.launch_floor(b, block, pos) end
     push(b, {name = e[1], pos = pos, module = block})
   end
@@ -804,7 +805,9 @@ function layout.open_role(b, role)
   if hub.lots then
     if hub.count < TOWN_CAP or first then
       local block
+      local _o1 = prof.start("open.town")
       if role == "launch" then block = town_launch(b, hub, open) else block = town_role(b, hub, role) end
+      prof.stop(_o1)
       if block then return block, hub end
     end
     return layout.found(b, (first or role == "launch") and role)
@@ -812,7 +815,9 @@ function layout.open_role(b, role)
   if hub.count < layout.DOCTRINES[b.doctrine].hub_cap or first then
     -- (OPEN_TRIES cells a call: those that do not fit are marked bad and not tried again, so the next call goes on; all
     -- of a full hub's at once took 22 ms, the spike guard on the user's nw save.)
+    local _o2 = prof.start("open.cands")
     local cands = candidates(b, hub)
+    prof.stop(_o2)
     for n, c in ipairs(cands) do
       if n > OPEN_TRIES then return nil end
       local x0, y0 = hub.x + c.i * PITCH, hub.y + c.j * PITCH
@@ -827,27 +832,35 @@ function layout.open_role(b, role)
   -- asked for (a walled compound first spent its last parts on walls: 4 left for a fabricator of 25).
   -- The launch pad too: founded as a compound, the rule asked again and founded another (eight on 12345 by minute 60,
   -- and never a pad; spread1, 2026-10-20).
-  return layout.found(b, (first or role == "launch") and role)
+  local _o3 = prof.start("open.found")
+  local fb, fh = layout.found(b, (first or role == "launch") and role)
+  prof.stop(_o3)
+  return fb, fh
 end
 
 -- A hub's open slot for `role` (fabricator, generator), opening a block if every one is taken.
 -- Returns the slot, or the block opened instead (its slots are taken next time), or nil.
 function layout.slot(b, role, entity)
+  local _s1 = prof.start("slot.scan")
   for _, block in ipairs(b.blocks) do
     if block.kind == role then
       for _, s in ipairs(block.slots) do
-        if not s.queued and s.name == entity then return s, block end
+        if not s.queued and s.name == entity then prof.stop(_s1) return s, block end
       end
     end
   end
-  return nil, layout.open_role(b, role)
+  prof.stop(_s1)
+  local _s2 = prof.start("slot.open_role")
+  local ob, oh = layout.open_role(b, role)
+  prof.stop(_s2)
+  return nil, ob, oh
 end
 
 -- Found a hub: near the outpost furthest from every hub when one is far, else a step from the newest hub.
 -- A new hub's ground looked for FOUND_TRIES spots a call, where it left off (b.found_job: its target and place on its
 -- rings; all of up to 500 at once took 22 ms, the spike guard on the user's nw save). Nil meanwhile: the planner asks
 -- again at its next plan.
-local FOUND_TRIES = 48
+local FOUND_TRIES = 12   -- (48: each an area check, 22 ms a call)
 function layout.found(b, near)
   -- near: the role of a block to open by the newest hub (a first fabricator's), not a compound at the doctrine's reach.
   local surface = game.surfaces[b.surface]
