@@ -819,9 +819,10 @@ function base.tick(tick)
       if b.wfc_job and tick % 60 == 17 then layout.wfc_step(b) end
       -- (A district's site looked for a step a tick, layout.district_step.)
       if b.district_job then layout.district_step(b) end
-      -- (Each 15 ticks: a tick at a time, the biters' paths near it were read again each tick, turretmodel's three gun
-      -- turrets killed 17 to 19, the 0.3.1 quick regression.)
-      if tick % 15 == 7 and not withdrawing and b.queue[1] and b.queue[1].tiles then pave_step(b) end
+      -- (Each 5 ticks: a tick at a time, the biters' paths near it were read again each tick, turretmodel's three gun
+      -- turrets killed 17 to 19, the 0.3.1 quick regression; each 15, its line's lamps fell behind its posts, cordon
+      -- failed on 12345 in 0.3.1 as released.)
+      if tick % 5 == 2 and not withdrawing and b.queue[1] and b.queue[1].tiles then pave_step(b) end
       if tick % BUILD_TICKS == 0 and not withdrawing then
         local _sb = prof.start("base.build"); build(b); prof.stop(_sb)
         -- The fortress's own jobs go faster; everything else at the usual pace (a burst for all once
