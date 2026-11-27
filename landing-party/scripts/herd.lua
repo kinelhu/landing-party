@@ -552,7 +552,9 @@ function herd.launch(p, target, opts)
   local units = opts.units or stock(p)
   if #units < 2 then return end
   local forces = opts.forces or players()
+  local _l1 = prof.start("launch.base_box")
   local c, hx, hy, reach = base_box(s, target, forces)
+  prof.stop(_l1)
   local h = st()
   -- What its scouts learnt round this base: the nearest memory within two cells (a wave that broke half a base moved the
   -- next one's middle 25 tiles, into another cell, and its scout looped no wider where the last was killed).
@@ -623,7 +625,9 @@ function herd.launch(p, target, opts)
   end
   w.entry = entry
   w.farm = opts.farm
+  local _l2 = prof.start("launch.corridor")
   w.gen = corridor(s, p.pen.position, c)
+  prof.stop(_l2)
   -- By the engine's route, not straight legs (a leg's waypoint across a lake had no path); its track becomes the
   -- approach the herd marches (w.crumbs, step).
   w.approach, w.crumbs = {}, {xy(w.scout.position)}
@@ -633,8 +637,18 @@ function herd.launch(p, target, opts)
   local cmds = {}
   if herd.route then
     local e = loop_point(w, entry, true)
-    local way = herd.route({surface = s.index, force = B.force}, {w.scout.position.x, w.scout.position.y}, {e.x, e.y},
+    local _l3 = prof.start("launch.route")
+    -- (On its farm's reading read in slices when it reaches there, from where it was read: its own grid round the way, in
+    -- one tick, took 97 ms a wave on the user's nw save, the spike guard.)
+    local sm, way = herd.shared, nil
+    if sm and sm.sliced and game.tick - sm.tick < herd.SHARED_FOR and costmap.cost(sm.cm, e) then
+      way = {}
+      for _, q in ipairs(costmap.path(sm.cm, e) or {}) do way[#way + 1] = {q.x, q.y} end
+      if #way == 0 then way = nil end
+    end
+    way = way or herd.route({surface = s.index, force = B.force}, {w.scout.position.x, w.scout.position.y}, {e.x, e.y},
       {turrets = true, nests = false})
+    prof.stop(_l3)
     for _, q in ipairs(way or {}) do table.insert(cmds, go({x = q[1], y = q[2]}, defines.distraction.none, 6)) end
   end
   table.insert(cmds, go(loop_point(w, entry, true), defines.distraction.none, 6))

@@ -10,6 +10,7 @@
 --            can take (it turns back unhurt). An aborted target is remembered (tried, defence seen, cool).
 local shared = require("__landing-party__.shared")
 local ram = require("__landing-party__.scripts.ram")
+local prof = require("__landing-party__.scripts.prof")
 local tune = require("__landing-party__.scripts.tune")
 local rd = require("__landing-party__.scripts.rd")
 local know = require("__landing-party__.scripts.know")
@@ -2275,17 +2276,17 @@ function ops.tick(b, tick, trace, army)
     b.dir_miss = b.dir_miss or {}
     b.dir_miss.busy = (b.dir_miss.busy or 0) + 1
   end
-  if tick % 60 == 30 then siege_leash(b) end
-  if tick % 600 == 300 then stand_down(b) end
-  if tick % SENSE_TICKS == (b.id * 97) % SENSE_TICKS then scan(b) elseif b.scan_queue then intel_.scan_step(b) end
-  if b.ways_job then ops.ways_tick(b) end
-  if tick % 3600 == (b.id * 53) % 3600 then ops.perimeter(b, tick) end
-  if tick % 1800 == (b.id * 59 + 13) % 1800 then ops.sever(b) end
-  if tick % 600 == 200 then field_sight(b) end
+  if tick % 60 == 30 then local _sp = prof.start("ops.siege_leash"); siege_leash(b); prof.stop(_sp) end
+  if tick % 600 == 300 then local _sp = prof.start("ops.stand_down"); stand_down(b); prof.stop(_sp) end
+  if tick % SENSE_TICKS == (b.id * 97) % SENSE_TICKS then scan(b) elseif b.scan_queue then local _sp = prof.start("ops.intel_.scan_step"); intel_.scan_step(b); prof.stop(_sp) end
+  if b.ways_job then local _sp = prof.start("ops.ops.ways_tick"); ops.ways_tick(b); prof.stop(_sp) end
+  if tick % 3600 == (b.id * 53) % 3600 then local _sp = prof.start("ops.ops.perimeter"); ops.perimeter(b, tick); prof.stop(_sp) end
+  if tick % 1800 == (b.id * 59 + 13) % 1800 then local _sp = prof.start("ops.ops.sever"); ops.sever(b); prof.stop(_sp) end
+  if tick % 600 == 200 then local _sp = prof.start("ops.field_sight"); field_sight(b); prof.stop(_sp) end
   -- (Orbital sight, intel.lua: a step a second.)
-  if tick % 60 == (b.id * 17 + 11) % 60 then intel_.orbit(b) end
-  if tick % SURVEY_TICKS == (b.id * 131 + 7) % SURVEY_TICKS then survey(b) end
-  if tick % CUT_TICKS == (b.id * 173 + 11) % CUT_TICKS then survey_power(b, trace) end
+  if tick % 60 == (b.id * 17 + 11) % 60 then local _sp = prof.start("ops.intel_.orbit"); intel_.orbit(b); prof.stop(_sp) end
+  if tick % SURVEY_TICKS == (b.id * 131 + 7) % SURVEY_TICKS then local _sp = prof.start("ops.survey"); survey(b); prof.stop(_sp) end
+  if tick % CUT_TICKS == (b.id * 173 + 11) % CUT_TICKS then local _sp = prof.start("ops.survey_power"); survey_power(b, trace); prof.stop(_sp) end
   -- An answer goes before anything the decider would choose, and does not wait on its clock (b.next_op).
   if not b.op and b.answer and tick % 300 == 150 and not storage.raids_off and not storage.army_off
     and not army.withdrawing(b) and home(b) then
@@ -2350,11 +2351,18 @@ function ops.tick(b, tick, trace, army)
     -- Counter-battery first: a battery it knows is besieged before anything else (a raid on a substation was
     -- always available, so the siege was never considered); one that never besieges raids it (choose weighs
     -- it by its value and threat).
+    local _d0 = prof.start("dec.siege_battery")
     local bkey, bsite = choose_siege(b, army, true)
+    prof.stop(_d0)
     if bkey then return launch_siege(b, bkey, bsite, trace, army) end
     -- Then a hazard on its ground: the nests whose waves it keeps losing to (siege.lua).
-    if ops.hazard_clear(b, trace, army) then return end
+    local _d1 = prof.start("dec.hazard")
+    local _hz = ops.hazard_clear(b, trace, army)
+    prof.stop(_d1)
+    if _hz then return end
+    local _d2 = prof.start("dec.choose")
     local key, rs, rmode = choose(b, army)
+    prof.stop(_d2)
     local ropts = rmode == "air" and {air = true} or nil
     if key and battery(b.intel.targets[key]) then return launch(b, key, trace, army, ropts) end
     -- Then the best of a raid, a siege and a strip, each weighed by what the corporation prefers (its mind's prefer;
@@ -2367,14 +2375,18 @@ function ops.tick(b, tick, trace, army)
       prefer = {raid = (prefer.raid or 1) * (dm.raid or 1), siege = (prefer.siege or 0) * (dm.siege or 1),
         strip = (prefer.strip or 0) * (dm.strip or 1)}
     end
+    local _d3 = prof.start("dec.siege")
     local skey, ssite, ss, spiece = choose_siege(b, army)
+    prof.stop(_d3)
     -- An armed camp sieges no player before its ground first reads clear (war.lua sets b.ground_clear, once): its first
     -- siege went out 1.8 minutes after landing, and its hauler died to the nests round it every time (fed nw,
     -- 2026-11-02). (10 minutes from its landing before, whatever stood there.)
     if skey and b.armed and not b.ground_clear and against_player((b.intel.targets[skey] or {}).owner) then
       skey = nil
     end
+    local _d4 = prof.start("dec.strip")
     local tkey, tsite, ts = choose_strip(b, army)
+    prof.stop(_d4)
     -- (Desperate against a player: its siege weighs DESPERATE_SIEGE times as much, what it saves for.)
     local st_ = skey and b.intel.targets[skey]
     if st_ and against_player(st_.owner) and ladder(st_.owner, b.force) >= 3 then

@@ -8,6 +8,7 @@ local chart = require("__landing-party__.scripts.chart")
 local names = require("__landing-party__.scripts.names")
 local blocks = require("__landing-party__.scripts.blocks")
 local army = require("__landing-party__.scripts.army")
+local prof = require("__landing-party__.scripts.prof")
 local rng = require("__landing-party__.scripts.rng")
 local tune = require("__landing-party__.scripts.tune")
 local ops = require("__landing-party__.scripts.ops")
@@ -797,8 +798,8 @@ function base.tick(tick)
     if b.fallen then
       collapse(b)
     elseif b.lander.valid then
-      if tick % 60 == 0 then hull(b); pack_camp(b) end
-      if tick % 120 == 53 then park(b) end
+      if tick % 60 == 0 then local _sp = prof.start("base.hull"); hull(b); pack_camp(b); prof.stop(_sp) end
+      if tick % 120 == 53 then local _sp = prof.start("base.park"); park(b); prof.stop(_sp) end
       -- A damaged lander mends slowly, 1% a minute, smoking while it is below 90% (Fable's engagement consult: damage
       -- that a strike leaves stays long enough to be built on).
       if tick % 3600 == (b.id * 17) % 3600 and b.lander.health < b.lander.max_health then
@@ -811,14 +812,14 @@ function base.tick(tick)
           position = {b.lander.position.x + (tick % 7) - 3, b.lander.position.y - 2}}
       end
       if tick % 7200 == (b.id * 61) % 7200 then base.claim_map(b) end
-      site.scan_step(game.surfaces[b.surface], b)
-      if tick % ECONOMY_TICKS == 0 then economy(b) end
+      local _ss = prof.start("base.site_scan"); site.scan_step(game.surfaces[b.surface], b); prof.stop(_ss)
+      if tick % ECONOMY_TICKS == 0 then local _sp = prof.start("base.economy"); economy(b); prof.stop(_sp) end
       -- A withdrawing corporation builds nothing more (its headquarters fell).
       local withdrawing = storage.corps and storage.corps[b.corp] and storage.corps[b.corp].withdrawing
       -- A compound being laid out (layout.wfc_step): one stage a second.
       if b.wfc_job and tick % 60 == 17 then layout.wfc_step(b) end
       if tick % BUILD_TICKS == 0 and not withdrawing then
-        build(b)
+        local _sb = prof.start("base.build"); build(b); prof.stop(_sb)
         -- The fortress's own jobs go faster; everything else at the usual pace (a burst for all once
         -- grew the uplink's settlement to 12 blocks in 11 minutes).
         for _ = 2, b.burst or 1 do
@@ -828,7 +829,8 @@ function base.tick(tick)
         end
       end
       army.tick(b, tick, trace)
-      if tick % EXPORT_TICKS == 0 and not withdrawing then export(b) end
+      if tick % EXPORT_TICKS == 0 and not withdrawing then local _sp = prof.start("base.export"); export(b); prof.stop(_sp) end
+      local _spl = tick % PLAN_TICKS == 0 and prof.start("base.plan")
       if tick % PLAN_TICKS == 0 then
         local pending = false
         for _, job in ipairs(b.rebuild) do
@@ -875,6 +877,7 @@ function base.tick(tick)
         end
         label(b)
       end
+      if _spl then prof.stop(_spl) end
     end
   end
 end

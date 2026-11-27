@@ -288,7 +288,8 @@ function farm.land(surface, pos, seeded)
   if bf and enemy then bf.set_evolution_factor(enemy.get_evolution_factor(surface), surface) end
   local f = {id = s.next, surface = surface.index, pos = {x = pos.x, y = pos.y}, pens = {}, tags = {},
     evo = enemy and enemy.get_evolution_factor(surface) or 0,
-    last_wave = game.tick - tune.sooner("biotech", WAVE_GAP) + tune.sooner("biotech", FIRST_WAVE), landed = game.tick}
+    last_wave = game.tick - tune.sooner("biotech", WAVE_GAP) + tune.sooner("biotech", FIRST_WAVE), landed = game.tick,
+    first_at = game.tick + tune.sooner("biotech", FIRST_WAVE)}
   s.next = s.next + 1
   for i = 1, math.min(seeded and 1 or PENS, #field) do
     local id = field[i].name == "lp-pen" and herd.add_pen(field[i]) or herd.capture(field[i])
@@ -432,35 +433,59 @@ end
 -- kept in a module, a load lost it and its plans read afresh, deciding otherwise). Read in one tick over the user's nw
 -- base it took up to 597 ms every 10 s while a wave was planned ("Need to fix that", 2026-11-26). A smaller box reads at
 -- once, as before.
-local WAYS_SLICE_R, WAYS_ROWS, WAYS_STEP_CELLS, WAYS_STEP_BLOCKS = 250, 48, 24, 2
+local WAYS_SLICE_R, WAYS_ROWS, WAYS_STEP_CELLS, WAYS_STEP_BLOCKS = 250, 16, 12, 1
+-- Its places' costs and covers, WAYS_DONE_CELLS a step (each a way in on the map: all at once, 38 ms, the spike guard);
+-- true once all are read and the reading kept.
+local WAYS_DONE_CELLS = 16
 local function ways_done(f, job, cm, fmap)
-  local by, cover = {}, {}
-  for key, at in pairs(job.cells) do
-    local q = {x = at[1], y = at[2]}
-    by[key] = costmap.cost(cm, q)
-    local way = by[key] and costmap.way_in(cm, q)
-    cover[key] = way and #firemap.cover(fmap, way.breach) or 0
+  if not job.keys then
+    job.keys, job.ki, job.by, job.cover = {}, 1, {}, {}
+    for key in pairs(job.cells) do job.keys[#job.keys + 1] = key end
+    table.sort(job.keys)
   end
-  f.ways = {tick = game.tick, ended = job.ended, by = by, cover = cover, sieges = {}, fresh = true,
+  local last = math.min(#job.keys, job.ki + WAYS_DONE_CELLS - 1)
+  for i = job.ki, last do
+    local key = job.keys[i]
+    local at = job.cells[key]
+    local q = {x = at[1], y = at[2]}
+    job.by[key] = costmap.cost(cm, q)
+    local way = job.by[key] and costmap.way_in(cm, q)
+    job.cover[key] = way and #firemap.cover(fmap, way.breach) or 0
+  end
+  job.ki = last + 1
+  if job.ki <= #job.keys then return false end
+  f.ways = {tick = game.tick, ended = job.ended, by = job.by, cover = job.cover, sieges = {}, fresh = true,
     shared = {tick = game.tick, from = {job.from[1], job.from[2]}, cm = cm, fmap = fmap, sliced = true}}
   herd.shared = f.ways.shared
+  return true
 end
 function farm.ways_job_step(f)
   local job = f.ways_job
   if not job then return end
   if job.phase == "fire" then
+    local _a = prof.start("ways.fire")
     local m = firemap.step(job.fire, WAYS_ROWS)
+    prof.stop(_a)
     if not m then return end
     job.fmap, job.fire, job.phase = m, nil, "cost"
     local o = job.opts
     o.fire, o.sliced = m, true
+    local _b = prof.start("ways.start")
     job.cm = costmap.start(job.surface, job.mid, job.radius, job.forces, o)
+    prof.stop(_b)
     return
   end
-  local m = costmap.step(job.cm, {blocks = WAYS_STEP_BLOCKS, cells = WAYS_STEP_CELLS})
-  if not m then return end
-  f.ways_job = nil
-  ways_done(f, job, m, job.fmap)
+  if job.phase == "cost" then
+    local _c = prof.start("ways.cost")
+    local m = costmap.step(job.cm, {blocks = WAYS_STEP_BLOCKS, cells = WAYS_STEP_CELLS})
+    prof.stop(_c)
+    if not m then return end
+    job.map, job.cm, job.phase = m, nil, "done"
+    return
+  end
+  local _d = prof.start("ways.done")
+  if ways_done(f, job, job.map, job.fmap) then f.ways_job = nil end
+  prof.stop(_d)
 end
 local function ways_from(surface, pos, f, cells)
   local ended = storage.herd and storage.herd.log and #storage.herd.log or 0
@@ -560,33 +585,135 @@ local RAMS_SHARE = 0.5   -- of a siege, its big bursters at the most
 local RAMS_MAX = 5       -- its big bursters at a walled breach, at the most
 local CUT_LOOKS, CUT_R = 3, 200   -- cuts a fresh reading plans a way to, and how far round its best place it reads feeds
 local SIEGE_LOOKS = 4   -- places a fresh reading sizes a siege at: its best that a wave of what it has does not win
+-- Its census of what it could go for (its foes' buildings within its reach, by 64-tile cell: their worth, their guns'
+-- price, the nearest of them), read at once on a small base and in slices on a big one (the spike guard, the user's nw
+-- save: 70 to 115 ms a weighing, thousands of buildings within 1,600 tiles, in one tick). Kept CENSUS_FOR, as its
+-- reading of the ways is (WAYS_FOR); a stale one serves while the next is read.
+local CENSUS_BIG, CENSUS_CHUNKS = 1500, 12   -- past this many it is read in slices; chunks read a tick
+-- Its foes' buildings it could go for, counted by the engine's own tally (LuaForce.get_entity_count, by name), not a search:
+-- the search within its reach cost 7 ms (the spike guard). Their names, once a load.
+local draw_names
+local function force_draws(force)
+  if not draw_names then
+    draw_names = {}
+    for name in pairs(prototypes.get_entity_filtered{{filter = "type", type = herd.DRAW}}) do draw_names[#draw_names + 1] = name end
+    table.sort(draw_names)
+  end
+  local n = 0
+  for _, name in ipairs(draw_names) do n = n + force.get_entity_count(name) end
+  return n
+end
+local CENSUS_FOR = WAYS_FOR
+local function census_add(cells, force, e, pos)
+  local cx, cy = math.floor(e.position.x / 64), math.floor(e.position.y / 64)
+  local key = string.format("%s|%d,%d", force.name, cx, cy)
+  local c = cells[key]
+  if not c then
+    c = {key = key, force = force.name, cx = cx, cy = cy, defence = 0, n = 0}
+    cells[key] = c
+  end
+  c.n = c.n + 1
+  if threat.profile(e.name) and threat.profile(e.name).kind ~= "artillery" and threat.firing(e) then
+    c.defence = c.defence + herd.price_of(e)
+  end
+  c.value = (c.value or 0) + valuemap.worth_of(e)
+  -- An artillery piece reaching its incubators: worth SHELLS for each (herd.shelling).
+  if e.type == "artillery-turret" or e.type == "artillery-wagon" then
+    local shelled = herd.shelling(e)
+    if shelled > 0 then c.value, c.shells = c.value + valuemap.SHELLS * shelled, (c.shells or 0) + shelled end
+  end
+  local d = d2(e.position, pos)
+  if not c.d or d < c.d then c.d, c.at = d, {x = e.position.x, y = e.position.y} end
+end
+-- A cell's walls and units (what its guns do not show: its defence's extra), read with the census on a big base and kept
+-- with it (each weighing read them again for every cell, two searches each, 20 ms a weighing, the spike guard).
+local function cell_detail(surface, c)
+  c.walls = surface.count_entities_filtered{area = {{c.cx * 64, c.cy * 64}, {c.cx * 64 + 64, c.cy * 64 + 64}},
+    type = WALL_TYPES, force = c.force}
+  local extra = c.walls / B.mind.per_wall * B.mind.per_turret
+  c.units = 0
+  for _, u in ipairs(surface.find_entities_filtered{position = {c.cx * 64 + 32, c.cy * 64 + 32}, radius = GARRISON_REACH,
+    type = {"unit", "spider-unit"}, force = c.force}) do
+    c.units = c.units + 1
+    extra = extra + (know.price("biotech", c.force, u.name) or UNIT_DEFENCE * B.mind.per_turret)
+  end
+  c.extra0 = extra
+end
+local CENSUS_DETAIL = 6   -- cells' walls and units read a step
+function farm.census_step(f)
+  local job = f.census_job
+  if not job then return end
+  local s = game.surfaces[f.surface]
+  if job.keys then
+    local last = math.min(#job.keys, job.ki + CENSUS_DETAIL - 1)
+    for i = job.ki, last do cell_detail(s, job.cells[job.keys[i]]) end
+    job.ki = last + 1
+    if job.ki > #job.keys then
+      f.census, f.census_job = {tick = game.tick, cells = job.cells, pos = job.pos, detailed = true}, nil
+    end
+    return
+  end
+  local last = math.min(#job.chunks, job.i + CENSUS_CHUNKS - 1)
+  for i = job.i, last do
+    local q = job.chunks[i]
+    local area = {{q[1] * 32, q[2] * 32}, {q[1] * 32 + 32, q[2] * 32 + 32}}
+    for _, force in ipairs(job.forces) do
+      if force.valid then
+        for _, e in ipairs(s.find_entities_filtered{area = area, force = force, type = herd.DRAW}) do
+          if d2(e.position, job.pos) <= job.reach * job.reach then census_add(job.cells, force, e, job.pos) end
+        end
+      end
+    end
+  end
+  job.i = last + 1
+  if job.i > #job.chunks then
+    job.keys, job.ki = {}, 1
+    for key in pairs(job.cells) do job.keys[#job.keys + 1] = key end
+    table.sort(job.keys)
+  end
+end
+local function census(surface, pos, f)
+  local mind = B.mind
+  -- (Kept only when read in slices: a small base's is read again each weighing, as before.)
+  local kept = f.census and f.census.detailed and f.census
+  if kept and game.tick - kept.tick < CENSUS_FOR and kept.pos.x == pos.x and kept.pos.y == pos.y then return kept.cells end
+  local forces = foes()
+  -- Big: a census counted no further than CENSUS_BIG (the engine stops there), read in slices from now.
+  local big = f.census_big ~= nil
+  for _, force in ipairs(big and {} or forces) do
+    if force_draws(force) >= CENSUS_BIG then big = true break end
+  end
+  if big and not storage.biotech_time_parts then
+    f.census_big = f.census_big or game.tick
+    if not f.census_job then
+      local chunks, n = {}, math.ceil(mind.reach / 32)
+      local px, py = math.floor(pos.x / 32), math.floor(pos.y / 32)
+      for dx = -n, n do for dy = -n, n do
+        if dx * dx + dy * dy <= (n + 1) * (n + 1) and surface.is_chunk_generated({px + dx, py + dy}) then
+          chunks[#chunks + 1] = {px + dx, py + dy}
+        end
+      end end
+      f.census_job = {chunks = chunks, i = 1, cells = {}, pos = {x = pos.x, y = pos.y}, reach = mind.reach, forces = forces}
+    end
+    -- (The last one while the next is read; none yet: nothing to weigh.)
+    return kept and kept.cells or nil
+  end
+  local cells = {}
+  for _, force in ipairs(forces) do
+    for _, e in ipairs(surface.find_entities_filtered{position = pos, radius = mind.reach, force = force, type = herd.DRAW}) do
+      census_add(cells, force, e, pos)
+    end
+  end
+  f.census = nil
+  return cells
+end
 local function target_from(surface, pos, f, n, opts)
   local mind = B.mind
   opts = opts or {}
-  local cells = {}
-  for _, force in ipairs(foes()) do
-    for _, e in ipairs(surface.find_entities_filtered{position = pos, radius = mind.reach, force = force, type = herd.DRAW}) do
-      local cx, cy = math.floor(e.position.x / 64), math.floor(e.position.y / 64)
-      local key = string.format("%s|%d,%d", force.name, cx, cy)
-      local c = cells[key]
-      if not c then
-        c = {key = key, force = force.name, cx = cx, cy = cy, defence = 0, n = 0}
-        cells[key] = c
-      end
-      c.n = c.n + 1
-      if threat.profile(e.name) and threat.profile(e.name).kind ~= "artillery" and threat.firing(e) then
-        c.defence = c.defence + herd.price_of(e)
-      end
-      c.value = (c.value or 0) + valuemap.worth_of(e)
-      -- An artillery piece reaching its incubators: worth SHELLS for each (herd.shelling).
-      if e.type == "artillery-turret" or e.type == "artillery-wagon" then
-        local shelled = herd.shelling(e)
-        if shelled > 0 then c.value, c.shells = c.value + valuemap.SHELLS * shelled, (c.shells or 0) + shelled end
-      end
-      local d = d2(e.position, pos)
-      if not c.d or d < c.d then c.d, c.at = d, {x = e.position.x, y = e.position.y} end
-    end
-  end
+  local _t0 = prof.start("tf.census")
+  local cells = census(surface, pos, f)
+  prof.stop(_t0)
+  if not cells then return nil, nil, nil, "reading" end
   local tried = trials()
   local ranked = {}
   -- The way in counts (there and back): a cell with no gun of its own inside a ring of them read as
@@ -594,9 +721,12 @@ local function target_from(surface, pos, f, n, opts)
   -- What reaching each place costs (costmap: its fire, its walls, the deaths its waves met there, and the walk from here to
   -- the base's edge), read over the base in one search and kept WAYS_FOR or until a wave ends (its rays read a megabase's
   -- way in as free over water and through minefields, and it sent waves of 25 to 42 that all died; 2026-10-27).
+  local _t1 = prof.start("tf.ways")
   local ways, covers = ways_from(surface, pos, f, cells)
+  prof.stop(_t1)
   -- (Its reading still being read in slices: nothing weighed yet, farm.ways_job_step.)
   if not ways then return nil, nil, nil, "reading" end
+  local _t2 = prof.start("tf.cells")
   local field = math.max(n or 0, opts.field or 0)
   for _, c in pairs(cells) do
     c.entry = ways[c.key] or NO_WAY
@@ -604,20 +734,16 @@ local function target_from(surface, pos, f, n, opts)
     c.cover = covers[c.key] or 0
     local raw = c.entry
     c.entry = herd.way_cost(raw, c.cover, opts.bursters, openable, c.force)
-    local guns = c.defence
+    -- (Its guns' price as the census read it, kept apart: the weighing sets c.defence, and a kept census's would compound.)
+    c.guns0 = c.guns0 or c.defence
+    local guns = c.guns0
     do
-      c.walls = surface.count_entities_filtered{area = {{c.cx * 64, c.cy * 64}, {c.cx * 64 + 64, c.cy * 64 + 64}},
-        type = WALL_TYPES, force = c.force}
-      local extra = c.walls / mind.per_wall * mind.per_turret
-      -- Its units, each at what that kind has cost it (know.price, learned at its breaches like a turret's), UNIT_DEFENCE of a
-      -- turret before it knows: at a fifth of a turret each, a corporation's camp of railgunners and tanks read as cheap, and
-      -- it sent three waves of 94 to 179 there that died nearly to the last (railgunners had cost it 40 each; 2026-10-27).
-      c.units = 0
-      for _, u in ipairs(surface.find_entities_filtered{position = {c.cx * 64 + 32, c.cy * 64 + 32}, radius = GARRISON_REACH,
-        type = {"unit", "spider-unit"}, force = c.force}) do
-        c.units = c.units + 1
-        extra = extra + (know.price("biotech", c.force, u.name) or UNIT_DEFENCE * mind.per_turret)
-      end
+      -- Its walls and units (cell_detail): its units each at what that kind has cost it (know.price, learned at its breaches
+      -- like a turret's), UNIT_DEFENCE of a turret before it knows: at a fifth of a turret each, a corporation's camp of
+      -- railgunners and tanks read as cheap, and it sent three waves of 94 to 179 there that died nearly to the last
+      -- (railgunners had cost it 40 each; 2026-10-27). Read with the census on a big base, else now.
+      if not (f.census and f.census.detailed and c.extra0) then cell_detail(surface, c) end
+      local extra = c.extra0
       -- (Its own guns too, opened in the share its bursters open the way's: the guns covering where it breaks in are its
       -- own where the place is the wall; counted whole, a siege's odds stayed nothing at every wall, and none was laid.)
       local function defence_at(entry, k) return math.max(guns * (1 - herd.opened(c.cover, k, openable, c.force)), 2 * entry) + extra end
@@ -663,6 +789,7 @@ local function target_from(surface, pos, f, n, opts)
     if a.entry ~= b.entry then return a.entry < b.entry end
     return a.key < b.key
   end)
+  prof.stop(_t2)
   local why = {}
   for k = 1, math.min(3, #ranked) do
     local c = ranked[k]
@@ -1453,7 +1580,9 @@ local function send(f, tick)
   if not siege and not f.debug_size and not f.debug_now then
     local evo = game.forces[B.force].get_evolution_factor(s)
     choice.at, choice.rival = target, rival and rival[1] or nil
+    local _s0 = prof.start("send.menu")
     op = menu(f, choice, B.mind.orders ~= false and not storage.biotech_no_orders and unlocked(evo)["lp-bred-big-burster"], s)
+    prof.stop(_s0)
   end
   -- A cut: its wave goes for the feed (herd.lua targets: first), as many as pay its way there and back.
   local cut
@@ -1627,10 +1756,12 @@ local function send(f, tick)
     local keep = herd.PROBE_N * shared.BREEDS["lp-runt"].cost + (siege and siege.mines or 0) * shared.BREEDS["lp-sweeper"].cost
     -- (A siege's herd the culture's mix tilted as a raid's, chance: filtered by what beat the last wave there, the user's
     -- fort's lasers and flamethrowers left cinders alone, and its sieges were 270 of them; the siege lab.)
+    local _s1 = prof.start("send.compose")
     local names = compose(f, s, (siege and cap_of(f) or cap) - #units, want, have,
       total > 0 and function(name) return fit_of(name, lesson.killers, total) end or nil,
       math.max(0, (cul and cul.biomass or 0) - keep),
       siege and siege.need and {need = siege.need, have = herd.strength(units), least = shared.WAVE_MIN - #units} or nil)
+    prof.stop(_s1)
     for _, name in ipairs(names) do units[#units + 1] = name end
     if not origin then
       for _, id in ipairs(f.pens) do
@@ -1666,7 +1797,9 @@ local function send(f, tick)
   -- back there first, its first legs failed; the fed lab fort, 2026-10-30.)
   local from = origin and origin.pen and origin.pen.valid and origin.pen.position or f.pos
   if f.ways and f.ways.shared then herd.shared = f.ways.shared end
+  local _s2 = prof.start("send.plan")
   local plan = herd.plan(s, from, target, rival or players(), #units)
+  prof.stop(_s2)
   -- (A siege with its rams and screen pays the crossing, not the standing at the wall: siege_size.)
   local screened = siege and big > 0 and (siege.fodder or 0) > 0
   local base = plan and math.max(0, plan.cost - (screened and (plan.standing or 0) or 0))
@@ -1717,7 +1850,9 @@ local function send(f, tick)
   end
   f.siege = nil
   -- It goes: what was a name is hatched now.
+  local _s3 = prof.start("send.hatch")
   units = hatch(f, s, units)
+  prof.stop(_s3)
   -- A strike: its cutters, as many as pay the way to the feed, sent first; the rest the strike, held at its mark till the
   -- feed falls (wait_cut).
   local wait_cut
@@ -1768,11 +1903,13 @@ local function send(f, tick)
   end
   trace(string.format("farm %d weighs: %s", f.id, choice.why))
   trials()[choice.key] = {tick = tick, defence = choice.defence}
+  local _s4 = prof.start("send.launch")
   herd.launch(origin, target, {units = units, farm = f.id, forces = rival, no_probe = no_probe, deep = f.debug_deep,
     choice = choice and choice.top, plan = plan, sweep = sweep_n,
     fodder = siege and (siege.fodder or 0) > 0 and {name = herd.FODDER, n = siege.fodder} or nil, trust = trust, spread = spread,
     cut = cut and not strike and {e = cut.e, worth = cut.price, starves = cut.starves} or nil, wait_cut = wait_cut,
     sig = herd.place_sig(s, rival or players(), plan and plan.target or target)})
+  prof.stop(_s4)
   f.debug_deep, f.debug_now = nil, nil
   trace(string.format("farm %d sends %d at %.0f,%.0f%s", f.id, #units, target.x, target.y,
     plan and (plan.mines or 0) > 0 and string.format(", a sweep of %d for the %d mines on its way in", sweep_n, plan.mines) or ""))
@@ -1796,6 +1933,84 @@ local function clear_for_seed(s, p)
     and not shelled(s, p)
 end
 
+-- Its seed site looked for in steps (farm.seed_step, a step a tick: the spawners within SEED_FARTHEST found by chunks,
+-- then weighed one a step, nearest first, then bare ground; read at once, 51 ms on the user's nw save, the spike guard).
+-- Done: f.seed_job.done, with dest and food (the nearest field within SEED_FAR first, as seed_site(SEED_FAR) then
+-- seed_site(SEED_FARTHEST)).
+local SEED_CHUNKS = 12
+function farm.seed_step(f)
+  local job = f.seed_job
+  if not job or job.done then return end
+  local s = game.surfaces[f.surface]
+  if job.phase == "scan" then
+    local last = math.min(#job.chunks, job.i + SEED_CHUNKS - 1)
+    for i = job.i, last do
+      local q = job.chunks[i]
+      for _, sp in ipairs(s.find_entities_filtered{area = {{q[1] * 32, q[2] * 32}, {q[1] * 32 + 32, q[2] * 32 + 32}},
+        type = "unit-spawner", force = "enemy"}) do
+        local d = d2(sp.position, f.pos)
+        if d <= SEED_FARTHEST * SEED_FARTHEST then job.sp[#job.sp + 1] = {sp.position.x, sp.position.y, d} end
+      end
+    end
+    job.i = last + 1
+    if job.i > #job.chunks then
+      table.sort(job.sp, function(a, b) if a[3] ~= b[3] then return a[3] < b[3] end return a[1] < b[1] end)
+      job.phase, job.j, job.weighed = "weigh", 1, 0
+    end
+    return
+  end
+  if job.phase == "weigh" then
+    local q = job.sp[job.j]
+    -- (Within SEED_FAR weighed first, SEED_WEIGHED at most; none there, on out to SEED_FARTHEST, SEED_WEIGHED more.)
+    local far = job.pass == 2 and SEED_FARTHEST or SEED_FAR
+    if q and q[3] > far * far and job.pass ~= 2 then
+      if job.fed or job.near then q = nil else job.pass, job.weighed = 2, 0 end
+    end
+    if q and job.weighed < SEED_WEIGHED then
+      job.j = job.j + 1
+      local p = {x = q[1], y = q[2]}
+      if q[3] >= SEED_NEAR * SEED_NEAR and clear_for_seed(s, p)
+        and s.count_entities_filtered{type = "unit-spawner", force = "enemy", position = p, radius = FIELD} >= FIELD_MIN then
+        job.weighed = job.weighed + 1
+        if not job.near then job.near = p end
+        local food = creep.food(s, p, FED_R)
+        if food >= FED_MIN and (not job.ff or food > job.ff) then job.fed, job.ff = p, food end
+      end
+      return
+    end
+    if job.fed or job.near then
+      job.done, job.dest, job.food = true, job.fed or job.near, job.fed and job.ff or nil
+      return
+    end
+    job.phase, job.k = "bare", 0
+    return
+  end
+  -- Bare ground, sixteen ways at three distances, four a step.
+  for _ = 1, 4 do
+    if job.k >= 48 then
+      if job.best then job.best.bare = true end
+      job.done, job.dest, job.food = true, job.best, job.bf
+      return
+    end
+    local a = math.floor(job.k / 3) * math.pi / 8
+    local r = ({SEED_NEAR, (SEED_NEAR + SEED_FARTHEST) / 2, SEED_FARTHEST})[job.k % 3 + 1]
+    job.k = job.k + 1
+    local p = {x = f.pos.x + math.cos(a) * r, y = f.pos.y + math.sin(a) * r}
+    local t = s.is_chunk_generated({math.floor(p.x / 32), math.floor(p.y / 32)}) and s.get_tile(p.x, p.y)
+    if t and not t.collides_with("water_tile") and t.name ~= "out-of-map" and clear_for_seed(s, p) then
+      local food = creep.food(s, p, FED_R)
+      if food >= FED_MIN and (not job.bf or food > job.bf) then job.best, job.bf = p, food end
+    end
+  end
+end
+local function seed_job_start(f, s)
+  local chunks, n = {}, math.ceil(SEED_FARTHEST / 32)
+  local px, py = math.floor(f.pos.x / 32), math.floor(f.pos.y / 32)
+  for dx = -n, n do for dy = -n, n do
+    if dx * dx + dy * dy <= (n + 1) * (n + 1) and s.is_chunk_generated({px + dx, py + dy}) then chunks[#chunks + 1] = {px + dx, py + dy} end
+  end end
+  f.seed_job = {phase = "scan", chunks = chunks, i = 1, sp = {}}
+end
 local function seed_site(f, s, far)
   local near, nd, fed, ff = nil, nil, nil, nil
   local weighed = 0
@@ -1854,12 +2069,16 @@ local function seed(f, tick)
   -- Its carrier from its growth's pool (creep.earn: breeding no longer spends what it saves).
   if (cul.growth or 0) < SEED_BANK then f.saving = true; return why(string.format("saving, %.0f of %d", cul.growth or 0, SEED_BANK)) end
   f.saving = nil
-  f.seed_tried = tick
   local s = game.surfaces[f.surface]
   -- The nearest field SEED_NEAR to SEED_FAR out, else out to SEED_FARTHEST (a fresh map's nests are sparse: none within
-  -- 600 of a culture on two seeds of three hours).
-  local dest, food = seed_site(f, s, SEED_FAR)
-  if not dest then dest, food = seed_site(f, s, SEED_FARTHEST) end
+  -- 600 of a culture on two seeds of three hours). Looked for in steps (farm.seed_step); not found yet, next time.
+  if not (f.seed_job and f.seed_job.done) then
+    if not f.seed_job then seed_job_start(f, s) end
+    return
+  end
+  local dest, food = f.seed_job.dest, f.seed_job.food
+  f.seed_job = nil
+  f.seed_tried = tick
   if not dest then
     f.saving = nil
     return trace(string.format("farm %d: mature, but no wild field or fed ground to seed within %d", f.id, SEED_FARTHEST))
@@ -2197,6 +2416,8 @@ end
 function farm.tick(tick)
   -- (Its reading in slices, a step a tick: farm.ways_job_step.)
   for _, f in pairs(st().list) do if f.ways_job then local _sp = prof.start("farm.ways_job"); farm.ways_job_step(f); prof.stop(_sp) end end
+  for _, f in pairs(st().list) do if f.census_job then local _sp = prof.start("farm.census"); farm.census_step(f); prof.stop(_sp) end end
+  for _, f in pairs(st().list) do if f.seed_job and not f.seed_job.done then local _sp = prof.start("farm.seed_step"); farm.seed_step(f); prof.stop(_sp) end end
   -- (Its reading's sieges and cuts, one a second between its steps: farm.ways_step.)
   if tick % 60 == 30 then
     for _, f in pairs(st().list) do if f.ways and f.ways.todo and #f.ways.todo > 0 then local _sp = prof.start("farm.ways_step"); farm.ways_step(f); prof.stop(_sp) end end
@@ -2211,13 +2432,13 @@ function farm.tick(tick)
       if rec and rec.pen.valid then table.insert(eat[id], rec.pen) end
     end
   end
-  creep.drink(10, eat)
+  local _q0 = prof.start("farm.drink"); creep.drink(10, eat); prof.stop(_q0)
   for id, f in pairs(s.list) do
     local left = {}
     local surface = game.surfaces[f.surface]
     -- Its substrate (older saves: built now) and its technicians' rounds.
-    cell.site(id, surface, f.pos)
-    cell.tick(id, surface, f.pens, tick)
+    local _q1 = prof.start("farm.cell"); cell.site(id, surface, f.pos)
+    cell.tick(id, surface, f.pens, tick); prof.stop(_q1)
     local hired = cell.hire(id, surface, f.pens, tick, creep.of(id))
     if hired then trace(string.format("farm %d: buys a technician (%d now, %d incubators)", f.id, hired, #f.pens)) end
     evolve(f, surface)
@@ -2225,7 +2446,7 @@ function farm.tick(tick)
     -- Its order, once a minute: what it wants for the next wave, against what its incubators hold.
     local want, have
     if tick % 3600 == 300 then
-      want = order(f, surface)
+      local _q2 = prof.start("farm.order"); want = order(f, surface); prof.stop(_q2)
       local key = want and serpent.line(want) or nil
       if key ~= f.want_key then
         f.want_key = key
@@ -2246,6 +2467,7 @@ function farm.tick(tick)
         end
       end
     end
+    local _q3 = prof.start("farm.pens")
     for _, pid in ipairs(f.pens) do
       local rec = herd.pen(pid)
       if rec and rec.pen.valid then
@@ -2286,6 +2508,7 @@ function farm.tick(tick)
         cell.forget(pid)
       end
     end
+    prof.stop(_q3)
     f.pens = left
     if hatching() then f.short = nil
     elseif have then f.short = short(want, have) elseif tick % 3600 == 300 then f.short = nil end
@@ -2310,14 +2533,17 @@ function farm.tick(tick)
       -- And its incubators breed to its order alone till it is filled (by chance, mediums took all above one burster's
       -- price between its orders' minutes).
       if f.siege and f.short then f.reserve = math.huge end
-      breeding(f, cul.biomass > f.reserve)
+      local _q4 = prof.start("farm.breeding"); breeding(f, cul.biomass > f.reserve); prof.stop(_q4)
     end
     -- The creep takes the wild nest it reaches; with none near, it grows an incubator of its own (creep.bud).
     -- (Held by the siege lab, biotech_pens_hold: its waves grow with its incubators, farm.cap_of, and a culture budding one a
     -- trial sent 60, 67, 75 ... 97, no two trials alike.)
+    local _q5 = prof.start("farm.take")
     local most = pens_max(f, surface)
+    local _c0 = prof.start("take.bud")
     local take = not storage.biotech_pens_hold and #left < most and cell.keeps_up(id, f.pens, tick)
       and creep.bud(id, tick, math.floor(creep.TUMORS_MAX * most / PENS_MAX))
+    prof.stop(_c0)
     if take then
       -- A wild spawner to take, or {found = position} (an engine object raises on an unknown key: asked by type).
       local spot = take.object_name == nil and take.found
@@ -2326,14 +2552,14 @@ function farm.tick(tick)
         local pen = surface.create_entity{name = "lp-pen", position = spot, force = B.force}
         pid = pen and herd.add_pen(pen)
       else
-        pid = herd.capture(take)
+        local _c1 = prof.start("take.capture"); pid = herd.capture(take); prof.stop(_c1)
       end
       local rec = pid and herd.pen(pid)
       if rec then
         rec.farm = f.id
         table.insert(f.pens, pid)
-        if not spot then creep.plant(surface, rec.pen.position, f.id) end
-        cell.build(pid, rec.pen, f.id, f.pos)
+        local _c2 = prof.start("take.plant"); if not spot then creep.plant(surface, rec.pen.position, f.id) end; prof.stop(_c2)
+        local _c3 = prof.start("take.cell"); cell.build(pid, rec.pen, f.id, f.pos); prof.stop(_c3)
         f.taken = (f.taken or 0) + 1
         f.grown = spot and (f.grown or 0) + 1 or f.grown
         f.last_take = tick
@@ -2344,7 +2570,8 @@ function farm.tick(tick)
           rec.pen.position.y, #f.pens))
       end
     end
-    local up = #left > 0 and uproots(f, tick)
+    prof.stop(_q5)
+    local _q6 = prof.start("farm.uproots"); local up = #left > 0 and uproots(f, tick); prof.stop(_q6)
     if up then
       for _, pid in ipairs(f.pens) do
         cell.forget(pid)
@@ -2360,10 +2587,14 @@ function farm.tick(tick)
       -- wave, cap_of: one at a time, a wave's 800-tile march held the next 17 minutes, 49,000 banked, the user's nw save.)
       local gap = gap_of(f, surface)
       local out = herd.out(id)
-      local free = not out or (gap < WAVE_GAP and herd.out_units(id) < cap_of(f))
+      -- (Not while a siege is laid: its bursters and herd are bred for one wave, and a wave beside it took them, farm siege.)
+      local free = not out or (gap < WAVE_GAP and not f.siege and herd.out_units(id) < cap_of(f))
       -- (Weighed since its last wave and sent nothing: not again within its gap, the time its income takes to pay a wave.
       -- Waves free to go, it weighed every 10 s, about 100 ms each, the user's nw save.)
       if f.weighed_at and f.weighed_at > f.last_wave and tick - f.weighed_at < gap and not f.escalate_retry then free = false end
+      -- (Not before its first wave's time, first_at: with its gap by its income, the first came 2.2 minutes after its
+      -- landing, farm.)
+      if tick < (f.first_at or 0) then free = false end
       if not storage.herd_off and free and tick - f.last_wave >= tune.sooner("biotech", gap) then local _sp = prof.start("farm.send"); send(f, tick); prof.stop(_sp) end
       if not storage.seed_off then local _sp = prof.start("farm.seed"); seed(f, tick); carry(f, tick); prof.stop(_sp) end
     end

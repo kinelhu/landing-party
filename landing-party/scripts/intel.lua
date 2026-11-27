@@ -157,7 +157,11 @@ function ops.init(b)
 end
 
 -- Record what a sensor at pos sees within r: per cell, the most valuable structure and the turrets by it.
-local function sense(b, surface, pos, r)
+-- A sensor's look, in two parts: its foes' structures within r found, by cell (sense_find), and each cell weighed
+-- (sense_cell: its defence, exposure, anti-air, way in; each a search). The scan works them a few a tick (scan_step: a
+-- radar over a factory found many cells, 19 ms a sensor, the spike guard); the rest call sense, both at once.
+local function sense_find(b, surface, pos, r)
+  local out = {}
   local f = game.forces[b.force]
   for _, other in ipairs(enemies(f)) do
     local cells = {}
@@ -178,7 +182,12 @@ local function sense(b, surface, pos, r)
         c.loot = (c.loot or 0) + ((ops.STEAL_WORTH or {})[e.type] or 0)
       end
     end
-    for key, c in pairs(cells) do
+    for key, c in pairs(cells) do out[#out + 1] = {key = key, c = c, other = other} end
+  end
+  table.sort(out, function(p, q) if p.key ~= q.key then return p.key < q.key end return p.other.name < q.other.name end)
+  return out
+end
+local function sense_cell(b, surface, key, c, other)
       local t = b.intel.targets[key] or {tried = 0, cool = 0}
       t.pos, t.kind, t.value, t.seen, t.owner, t.drills, t.loot = c.pos, c.kind, c.value, game.tick, c.owner, c.drills, c.loot
       t.defence, t.dmg = ops.weigh(surface, c.pos, other, nil, b.corp)
@@ -193,8 +202,9 @@ local function sense(b, surface, pos, r)
         and surface.count_entities_filtered{position = c.pos, radius = 60, force = other, type = TURRETS, limit = 1} == 0
         and surface.count_entities_filtered{position = c.pos, radius = 30, force = other, type = TYPES, limit = 8} < 8
       b.intel.targets[key] = t
-    end
-  end
+end
+local function sense(b, surface, pos, r)
+  for _, it in ipairs(sense_find(b, surface, pos, r)) do sense_cell(b, surface, it.key, it.c, it.other) end
 end
 
 -- A sensor sweep over the cells it covers: what is gone is forgotten.
@@ -226,18 +236,35 @@ end
 
 -- (Its sensors read SCAN_STEP a tick, not all in one: a camp of dozens of radars before the player's factory read them
 -- in one tick, 100 to 131 ms every 2 minutes on the user's nw game, "huge stutters". Each sensor reads as before.)
-local SCAN_STEP = 2
+local SCAN_CELLS = 4   -- cells weighed a step (sense_cell); a sensor's find is a step of its own
 local function scan_step(b)
   local q = b.scan_queue
   if not q then return end
   local surface = game.surfaces[b.surface]
-  for _ = 1, SCAN_STEP do
-    local s = table.remove(q)
-    if not s then break end
+  local it = q[#q]
+  if not it then b.scan_queue, b.scan_since = nil, nil return end
+  if it.kind == "sensor" then
+    -- A sensor: its find now, then its cells, then its forget, as items in its place.
+    table.remove(q)
+    local s = it.e
     if s.valid then
       local r = SENSORS[shared.kind_of(s.name)] or 100
-      sense(b, surface, s.position, r)
-      forget(b, s.position, r, b.scan_since)
+      local pos = {x = s.position.x, y = s.position.y}
+      q[#q + 1] = {kind = "forget", pos = pos, r = r}
+      local found = sense_find(b, surface, pos, r)
+      for i = #found, 1, -1 do q[#q + 1] = {kind = "cell", key = found[i].key, c = found[i].c, other = found[i].other} end
+    end
+  else
+    for _ = 1, SCAN_CELLS do
+      it = q[#q]
+      if not it or it.kind ~= "cell" then break end
+      table.remove(q)
+      if it.other.valid then sense_cell(b, surface, it.key, it.c, it.other) end
+    end
+    it = q[#q]
+    if it and it.kind == "forget" then
+      table.remove(q)
+      forget(b, it.pos, it.r, b.scan_since)
     end
   end
   if #q == 0 then b.scan_queue, b.scan_since = nil, nil end
@@ -251,7 +278,7 @@ local function scan(b)
   for _, r in ipairs(b.radars or {}) do if r.valid then table.insert(sensors, r) end end
   -- (Read last first, table.remove: the lander first of all.)
   local q = {}
-  for i = #sensors, 1, -1 do q[#q + 1] = sensors[i] end
+  for i = #sensors, 1, -1 do q[#q + 1] = {kind = "sensor", e = sensors[i]} end
   b.scan_queue, b.scan_since = q, game.tick
   scan_step(b)
 end

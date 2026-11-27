@@ -15,6 +15,7 @@
 -- in the chunk) is counted to the culture whose tumor laid them; farm.lua spends it on breeding.
 local shared = require("__landing-party__.shared")
 local tune = require("__landing-party__.scripts.tune")
+local prof = require("__landing-party__.scripts.prof")
 local costmap = require("__landing-party__.scripts.costmap")
 
 local creep = {}
@@ -229,6 +230,7 @@ local function bonus(s, pos)
 end
 
 function creep.tick(tick)
+  creep.land_step()
   if tick % CHECK ~= 17 then return end
   local s = st()
   for id, rec in pairs(s.tumors) do
@@ -489,6 +491,20 @@ end
 -- an incubator of its own (found). Returns the spawner to take, {found = position}, or nil.
 -- tumors: its tumors at most (its farm's, by its incubators at most: at 40 a culture's creep held 15 incubators, and one
 -- allowed 28 stopped there; farm bigpens).
+-- A culture's land map read a step (creep.bud's), and kept once done.
+local LAND_BLOCKS, LAND_CELLS = 1, 24
+function creep.land_step()
+  for _, c in pairs(st().cultures or {}) do
+    if c.land_job then
+      local m = costmap.step(c.land_job, {blocks = LAND_BLOCKS, cells = LAND_CELLS})
+      if m then
+        -- (Kept in storage: its numbers only, what costmap.cost and costmap.path read.)
+        c.land = {map = {x0 = m.x0, y0 = m.y0, size = m.size, w = m.w, h = m.h, cost = m.cost, came = m.came}, tick = game.tick}
+        c.land_job = nil
+      end
+    end
+  end
+end
 function creep.bud(id, tick, tumors)
   local s = st()
   local c = s.cultures and s.cultures[id]
@@ -506,6 +522,7 @@ function creep.bud(id, tick, tumors)
   -- Nests it found out of reach (STALL buds toward one brought the creep no nearer: across water) are left out; with
   -- none left, it grows its own (found).
   c.blocked = c.blocked or {}
+  local _b1 = prof.start("bud.nests")
   local nests = {}
   for _, n in ipairs(surface.find_entities_filtered{type = "unit-spawner", force = "enemy", position = c.pos, radius = HEDGE}) do
     -- (By a camp: read again with its reading of the ground, LAND_FOR.)
@@ -518,18 +535,25 @@ function creep.bud(id, tick, tumors)
     end
     if not c.blocked[n.unit_number] and not bt.near then nests[#nests + 1] = n end
   end
-  if #nests == 0 then return found(c, id, surface, mine, tick) end
+  prof.stop(_b1)
+  if #nests == 0 then local _b2 = prof.start("bud.found"); local r = found(c, id, surface, mine, tick); prof.stop(_b2); return r end
   -- Over land: the walk from its middle to each nest, round water (a cost map of the ground, no fire: costmap). In a
   -- straight line, its creep went for nests across a lake arm from a megabase's shore, budded along the waterline for half
   -- an hour and took none (2026-10-27).
   c.land = c.land or {}
   local land = c.land.map
-  if not land or tick - c.land.tick >= LAND_FOR then
-    local m = costmap.read(surface, c.pos, HEDGE + 2 * R_MAX, {"player"}, {from = c.pos, cell = LAND_CELL})
-    -- (Kept in storage: its numbers only, what costmap.cost and costmap.path read.)
-    land = {x0 = m.x0, y0 = m.y0, size = m.size, w = m.w, h = m.h, cost = m.cost, came = m.came}
-    c.land = {map = land, tick = tick}
+  -- (Read in slices, creep.land_step a tick, the last one serving meanwhile: read whole here it took up to 23 ms, the spike
+  -- guard, the user's nw save. None yet, the first read whole.)
+  -- (None yet: the first read in slices too, and no bud till it is: read whole, a new culture's first took 20 ms.)
+  if not land then
+    if not c.land_job then
+      c.land_job = costmap.start(surface, c.pos, HEDGE + 2 * R_MAX, {"player"}, {from = c.pos, cell = LAND_CELL, sliced = true})
+    end
+    return nil
+  elseif tick - c.land.tick >= LAND_FOR and not c.land_job then
+    c.land_job = costmap.start(surface, c.pos, HEDGE + 2 * R_MAX, {"player"}, {from = c.pos, cell = LAND_CELL, sliced = true})
   end
+  local _b3 = prof.start("bud.weigh")
   local best, bs, path
   for _, n in ipairs(nests) do
     for _, rec in ipairs(mine) do
@@ -550,7 +574,8 @@ function creep.bud(id, tick, tumors)
       c.blocked[n.unit_number] = true; ctrace(n, "no walk to it")
     end
   end
-  if not best then return found(c, id, surface, mine, tick) end
+  prof.stop(_b3)
+  if not best then local _b4 = prof.start("bud.found"); local r = found(c, id, surface, mine, tick); prof.stop(_b4); return r end
   path = costmap.path(land, best.position) or {}
   -- Its next step: the first point of that walk its creep does not cover yet, budded from the tumor nearest it.
   local k, to
