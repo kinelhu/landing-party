@@ -117,7 +117,9 @@ local function fill(b, role, entity)
     end
   end
   ::blocks::
+  local _fs = prof.start("fill.slot")
   local slot, block = layout.slot(b, role, entity)
+  prof.stop(_fs)
   if slot then
     slot.queued = true
     -- A settlement's first fabricator goes first: nothing makes parts without one (seed 4242's camp spent its last on

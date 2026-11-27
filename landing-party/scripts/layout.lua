@@ -840,54 +840,71 @@ function layout.slot(b, role, entity)
 end
 
 -- Found a hub: near the outpost furthest from every hub when one is far, else a step from the newest hub.
+-- A new hub's ground looked for FOUND_TRIES spots a call, where it left off (b.found_job: its target and place on its
+-- rings; all of up to 500 at once took 22 ms, the spike guard on the user's nw save). Nil meanwhile: the planner asks
+-- again at its next plan.
+local FOUND_TRIES = 48
 function layout.found(b, near)
   -- near: the role of a block to open by the newest hub (a first fabricator's), not a compound at the doctrine's reach.
   local surface = game.surfaces[b.surface]
   local doc = layout.DOCTRINES[b.doctrine]
   local last = b.hubs[#b.hubs]
-  local far, fd = nil, 90
-  for _, m in ipairs(b.modules) do
-    if m.kind == "mining" then
-      local d = math.huge
-      for _, h in ipairs(b.hubs) do
-        d = math.min(d, math.sqrt((m.center[1] - h.x) ^ 2 + (m.center[2] - h.y) ^ 2))
-      end
-      if d > fd then far, fd = m, d end
-    end
-  end
-  local tx, ty
-  if near then
-    local a = 2 * math.pi * rng.next(b.rng)
-    tx, ty = last.x + 2 * PITCH * math.cos(a), last.y + 2 * PITCH * math.sin(a)
-  elseif far then
-    -- Between the outpost and the network: a third of the way back towards the lander.
-    tx = far.center[1] + (b.origin.x - far.center[1]) / 3
-    ty = far.center[2] + (b.origin.y - far.center[2]) / 3
-  else
-    local a = 2 * math.pi * rng.next(b.rng)
-    tx, ty = last.x + doc.reach * math.cos(a), last.y + doc.reach * math.sin(a)
-  end
-  for pass = 1, 2 do
-  for r = 0, 60, 4 do
-    local steps = math.max(1, math.floor(2 * math.pi * r / 6))
-    for k = 0, steps - 1 do
-      local a = 2 * math.pi * k / steps
-      local x0, y0 = math.floor(tx + r * math.cos(a)), math.floor(ty + r * math.sin(a))
-      -- (Out of the guns' reach first; under them only when no other ground is left.)
-      if layout.area_free(surface, x0, y0, S, S) and (pass == 2 or not layout.under_guns(b, x0, y0, S, S)) then
-        local hub = new_hub(b, x0, y0)
-        if hub.lots then
-          local block = town_compound(b, hub)
-          if near and near ~= "launch" then block = town_role(b, hub, near) or block
-          elseif near == "launch" then block = town_launch(b, hub, open) or block end
-          return block, hub
+  local job = b.found_job
+  if not (job and job.near == (near or false)) then
+    local far, fd = nil, 90
+    for _, m in ipairs(b.modules) do
+      if m.kind == "mining" then
+        local d = math.huge
+        for _, h in ipairs(b.hubs) do
+          d = math.min(d, math.sqrt((m.center[1] - h.x) ^ 2 + (m.center[2] - h.y) ^ 2))
         end
-        local block = open(b, hub, near or "compound", x0, y0, S, S, {{0, 0}})
+        if d > fd then far, fd = m, d end
+      end
+    end
+    local tx, ty
+    if near then
+      local a = 2 * math.pi * rng.next(b.rng)
+      tx, ty = last.x + 2 * PITCH * math.cos(a), last.y + 2 * PITCH * math.sin(a)
+    elseif far then
+      -- Between the outpost and the network: a third of the way back towards the lander.
+      tx = far.center[1] + (b.origin.x - far.center[1]) / 3
+      ty = far.center[2] + (b.origin.y - far.center[2]) / 3
+    else
+      local a = 2 * math.pi * rng.next(b.rng)
+      tx, ty = last.x + doc.reach * math.cos(a), last.y + doc.reach * math.sin(a)
+    end
+    job = {near = near or false, tx = tx, ty = ty, pass = 1, r = 0, k = 0}
+    b.found_job = job
+  end
+  local tries = 0
+  while job.pass <= 2 do
+    local r = job.r
+    local steps = math.max(1, math.floor(2 * math.pi * r / 6))
+    local a = 2 * math.pi * job.k / steps
+    job.k = job.k + 1
+    if job.k >= steps then
+      job.k, job.r = 0, job.r + 4
+      if job.r > 60 then job.r, job.pass = 0, job.pass + 1 end
+    end
+    local x0, y0 = math.floor(job.tx + r * math.cos(a)), math.floor(job.ty + r * math.sin(a))
+    -- (Out of the guns' reach first; under them only when no other ground is left.)
+    if layout.area_free(surface, x0, y0, S, S) and (job.pass == 2 or not layout.under_guns(b, x0, y0, S, S)) then
+      b.found_job = nil
+      local hub = new_hub(b, x0, y0)
+      if hub.lots then
+        local block = town_compound(b, hub)
+        if near and near ~= "launch" then block = town_role(b, hub, near) or block
+        elseif near == "launch" then block = town_launch(b, hub, open) or block end
         return block, hub
       end
+      local block = open(b, hub, near or "compound", x0, y0, S, S, {{0, 0}})
+      return block, hub
     end
+    tries = tries + 1
+    if tries >= FOUND_TRIES then return nil end
   end
-  end
+  -- Round all its rings, both passes, and none.
+  b.found_job = nil
 end
 
 -- Serenity's spread (planner "spread"; the user: "organic looking bases that look menacing, like metastases on the map"):
