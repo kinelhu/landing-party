@@ -26,6 +26,9 @@ script.on_event(defines.events.on_cargo_pod_finished_descending, pods.on_landed)
 script.on_event(defines.events.on_unit_added_to_group, army.on_unit_added_to_group)
 local stance = require("__landing-party__.scripts.stance")
 local dev = require("__landing-party__.scripts.dev")
+local devpanel = require("__landing-party__.scripts.devpanel")
+devpanel.install(dev)
+dev.set_panel(devpanel.toggle)
 local layout = require("__landing-party__.scripts.layout")
 local rd = require("__landing-party__.scripts.rd")
 local know = require("__landing-party__.scripts.know")
@@ -200,6 +203,7 @@ local TICKERS = {
   {"know", function(t) know.tick(t) end},
   {"director", function(t) director.tick(t) end},
   {"director_gui", function(t) director_gui.tick(t) end},
+  {"devpanel", function(t) devpanel.tick(t) end},
   {"lifeline", function(t) lifeline.tick(t) end},
   {"squadgui", function(t) if t % 60 == 40 then squadgui.tick() end end},
   {"paving", function(t) paving.tick() end},
@@ -397,6 +401,7 @@ script.on_event(defines.events.on_gui_click, function(e)
   if e.element and e.element.valid and e.element.name == "lp_army_retire" then retire(e.player_index) end
   if cards.on_click(e) then command.gui_tick() end
   director_gui.on_click(e)
+  devpanel.on_click(e)
   squadgui.on_click(e)
   if e.element and e.element.valid and (e.element.name == "lp_army_all" or e.element.name == "lp_army_idle") then
     cards.select_army(e.player_index, e.element.name == "lp_army_idle"); cards.refresh(e.player_index); command.gui_tick()
@@ -409,6 +414,10 @@ script.on_event(defines.events.on_selected_entity_changed, function(e)
   if p then command.on_hover(p) end
 end)
 script.on_event(defines.events.on_gui_opened, function(e) squadgui.on_opened(e) end)
+-- The debug panel (scripts/devpanel.lua): its lists, its tabs, its key.
+script.on_event({defines.events.on_gui_selection_state_changed}, function(e) devpanel.on_selection(e) end)
+script.on_event(defines.events.on_gui_selected_tab_changed, function(e) devpanel.on_tab(e) end)
+script.on_event("lp-debug-panel", function(e) devpanel.on_key(e) end)
 -- The selection's cards and control groups (scripts/cards.lua).
 cards.on_select = function(pi) command.rings(pi) end
 cards.ammo_of = command.ammo_of
@@ -1658,6 +1667,7 @@ remote.add_interface("landing-party", {
   -- Tests: what a corporation pays for a unit kind (shared.unit_cost), scenario director targets' pricing check.
   debug_unit_cost = function(corp, kind) return shared.unit_cost(corp, kind) end,
   director_lines = function() return director_gui.lines() end,
+  panel_lines = function(id, density) return devpanel.lines(id, density) end,
   -- Tests and visits: what the director reads of a player force, beside a fuller reading (director.readings).
   debug_readings = function(owner) return director.readings(owner) end,
   -- Tests: the cap on operations against a player at once, as ops reads it (the director's surge raises it).

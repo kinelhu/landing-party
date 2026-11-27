@@ -46,8 +46,8 @@ digraph ai {
     "lifeline" [label="lifeline\n155 lines", width=0.97, fillcolor="#eef2f7"];
   }
   subgraph cluster_5 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n957 lines", width=1.86, fillcolor="#eef2f7"];
-    "construction" [label="construction\n500 lines", width=1.36, fillcolor="#eef2f7"];
+    "base" [label="base\n959 lines", width=1.87, fillcolor="#eef2f7"];
+    "construction" [label="construction\n507 lines", width=1.36, fillcolor="#eef2f7"];
     "planner" [label="planner\n512 lines", width=1.37, fillcolor="#eef2f7"];
     "layout" [label="layout\n1847 lines", width=2.85, fillcolor="#f7dede"];
     "wfc" [label="wfc\n380 lines", width=1.22, fillcolor="#d9f0d9"];
@@ -64,13 +64,13 @@ digraph ai {
     "belts" [label="belts\n86 lines", width=0.90, fillcolor="#d9f0d9"];
   }
   subgraph cluster_6 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "army" [label="army\n1508 lines", width=2.48, fillcolor="#f7dede"];
-    "ops" [label="ops\n2590 lines", width=3.68, fillcolor="#f7dede"];
+    "army" [label="army\n1514 lines", width=2.48, fillcolor="#f7dede"];
+    "ops" [label="ops\n2593 lines", width=3.68, fillcolor="#f7dede"];
     "routing" [label="routing\n431 lines", width=1.28, fillcolor="#eef2f7"];
     "intel" [label="intel\n438 lines", width=1.29, fillcolor="#eef2f7"];
     "airraid" [label="airraid\n127 lines", width=0.94, fillcolor="#eef2f7"];
     "cannon" [label="cannon\n373 lines", width=1.21, fillcolor="#eef2f7"];
-    "siege" [label="siege\n2262 lines", width=3.31, fillcolor="#f7dede"];
+    "siege" [label="siege\n2261 lines", width=3.31, fillcolor="#f7dede"];
     "assault" [label="assault\n142 lines", width=0.96, fillcolor="#eef2f7"];
     "strip" [label="strip\n241 lines", width=1.07, fillcolor="#eef2f7"];
     "answers" [label="answers\n138 lines", width=0.95, fillcolor="#d9f0d9"];
@@ -78,7 +78,7 @@ digraph ai {
     "strike" [label="strike\n68 lines", width=0.88, fillcolor="#eef2f7"];
     "jammer" [label="jammer\n77 lines", width=0.89, fillcolor="#eef2f7"];
     "dome" [label="dome\n475 lines", width=1.33, fillcolor="#eef2f7"];
-    "orbital" [label="orbital\n413 lines", width=1.26, fillcolor="#eef2f7"];
+    "orbital" [label="orbital\n412 lines", width=1.26, fillcolor="#eef2f7"];
     "scorcher" [label="scorcher\n224 lines", width=1.05, fillcolor="#d9f0d9"];
     "stun" [label="stun\n145 lines", width=0.96, fillcolor="#eef2f7"];
     "fall" [label="fall\n101 lines", width=0.91, fillcolor="#eef2f7"];
@@ -96,9 +96,9 @@ digraph ai {
     "marker" [label="marker\n70 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_8 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n4545 lines", width=3.80, fillcolor="#f7dede"];
+    "herd" [label="herd\n4546 lines", width=3.80, fillcolor="#f7dede"];
     "herd_learn" [label="herd_learn\n253 lines", width=1.08, fillcolor="#eef2f7"];
-    "farm" [label="farm\n2916 lines", width=3.80, fillcolor="#f7dede"];
+    "farm" [label="farm\n2918 lines", width=3.80, fillcolor="#f7dede"];
     "creep" [label="creep\n641 lines", width=1.51, fillcolor="#eef2f7"];
     "cell" [label="cell\n438 lines", width=1.29, fillcolor="#eef2f7"];
   }
@@ -116,9 +116,10 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_11 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1749 lines", width=2.74, fillcolor="#f7dede"];
-    "dev" [label="dev\n625 lines", width=1.49, fillcolor="#eef2f7"];
-    "watch" [label="watch\n153 lines", width=0.97, fillcolor="#d9f0d9"];
+    "control" [label="control\n1759 lines", width=2.75, fillcolor="#f7dede"];
+    "dev" [label="dev\n633 lines", width=1.50, fillcolor="#eef2f7"];
+    "devpanel" [label="devpanel\n524 lines", width=1.38, fillcolor="#eef2f7"];
+    "watch" [label="watch\n161 lines", width=0.98, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n197 lines", width=1.02, fillcolor="#eef2f7"];
     "prof" [label="prof\n31 lines", width=0.83, fillcolor="#d9f0d9"];
   }

@@ -7575,6 +7575,19 @@ scenarios.dev = function()
     check("dev: /lp dry emptied the trooper and it raised its alert", S.dry_before ~= nil and not S.dry_before.dry
       and a and a.dry and a.ammo == 0 and a.alerted, serpent.line({before = S.dry_before, after = a}))
   end)
+  -- The debug panel's text (devpanel.lua, 2026-11-27): a camp's card names its army, its operation or its next decision
+  -- and its works; its stream holds its decisions; the operations density keeps fewer lines than all of them.
+  schedule(120 + 60 * 50, function()
+    local id = S.s
+    local all = lp("panel_lines", id, 3)
+    local few = lp("panel_lines", id, 1)
+    local text = all and table.concat(all.card, " | ") or ""
+    info("dev: panel card " .. text)
+    check("dev: the debug panel reads a camp (its army, its operation or next decision, its works)", all ~= nil
+      and text:find("army: strength", 1, true) ~= nil and (text:find("operation:", 1, true) or text:find("next decision", 1, true)) ~= nil
+      and text:find("works: parts", 1, true) ~= nil and #all.stream > 0 and #few.stream <= #all.stream,
+      string.format("%d lines, %d at operations' density", all and #all.stream or -1, few and #few.stream or -1))
+  end)
   -- (/lp land comes by pod as the faction's own landings do, since 2026-11-04: its pod 7 s, its ground waited for first.)
   schedule(120 + 60 * 60, function()
     for _, id in ipairs(lp("bases")) do

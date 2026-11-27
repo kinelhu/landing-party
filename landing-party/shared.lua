@@ -1043,6 +1043,23 @@ end
 -- The event stream (the user, 2026-11-14: "We need to monitor everything that happens meaningfully"): one line of JSON an
 -- event to script-output/landing-party/events.jsonl, only while tracing (sims and visits; never a real game's unless
 -- /lp-trace): the director's beats and its state a minute, notices, landings, falls, departures, stand-downs, losses.
+-- A log line kept (a camp's b.log, Synthexis's storage.farm_log): `keep` lines, LOG_WATCHED while the debug panel shows the
+-- camp (scripts/devpanel.lua: storage.lp_watch). Trimmed by halves past half again as many, so a line costs no shift of all.
+shared.LOG_KEEP, shared.LOG_WATCHED = 30, 300
+function shared.keep_log(log, line, keep)
+  log[#log + 1] = line
+  local n = #log
+  if n > keep + math.floor(keep / 2) then
+    local cut = n - keep
+    for i = 1, keep do log[i] = log[i + cut] end
+    for i = n, keep + 1, -1 do log[i] = nil end
+  end
+end
+function shared.camp_log(b, line)
+  b.log = b.log or {}
+  shared.keep_log(b.log, line, storage.lp_watch and storage.lp_watch[b.id] and shared.LOG_WATCHED or shared.LOG_KEEP)
+end
+
 function shared.event(kind, fields)
   if not storage.trace then return end
   local e = fields or {}

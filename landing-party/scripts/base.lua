@@ -50,8 +50,7 @@ local function force(b) return game.forces[b.force] end
 local function trace(b, text)
   local line = string.format("%8d base %d  %s", game.tick, b.id, text)
   if storage.trace then helpers.write_file("landing-party/decisions.txt", line .. "\n", true) end
-  table.insert(b.log, line)
-  if #b.log > 30 then table.remove(b.log, 1) end
+  shared.camp_log(b, line)
 end
 base.trace = trace
 

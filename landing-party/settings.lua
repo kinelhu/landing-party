@@ -9,6 +9,10 @@ data:extend{
 data:extend{
   {type = "bool-setting", name = "lp-chat-notices", setting_type = "runtime-global", default_value = false, order = "a"},
 }
+-- The debug panel (scripts/devpanel.lua; the user, 2026-11-27): its key opens it for an admin with this on.
+data:extend{
+  {type = "bool-setting", name = "lp-debug-panel", setting_type = "runtime-per-user", default_value = false, order = "z"},
+}
 
 -- The levers (the user, 2026-11-08: "expose some levers for the players to customize the difficulty, not just single
 -- presets. That's how vanilla does it with biters"). All runtime-global, so an admin can change them in a running game.

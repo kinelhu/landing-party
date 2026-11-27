@@ -66,6 +66,9 @@ local veterancy = require("__landing-party__.scripts.veterancy")
 local cannon = require("__landing-party__.scripts.cannon")
 
 local dev = {}
+-- (The debug panel's toggle, set by control.lua: devpanel requires nothing of this, this nothing of it.)
+local panel_toggle
+function dev.set_panel(f) panel_toggle = f end
 
 local function standing(b) return b and not b.fallen and b.lander and b.lander.valid end
 
@@ -124,6 +127,11 @@ function dev.run(player, args)
   local id = tonumber(args[#args])
   if what == "list" or what == nil then
     list(player)
+  elseif what == "panel" then
+    -- The debug panel (devpanel.lua; its key Ctrl + Shift + L with its setting on).
+    if not player.gui then return player.print("the panel wants a player") end
+    local open = panel_toggle and panel_toggle(player)
+    player.print(open and "debug panel open" or "debug panel closed") -- notice-ok: the dev tool's reply to its caller
   elseif what == "director" then
     -- The director's debug panel (director_gui.lua).
     local open = director_gui.toggle(player)
@@ -602,7 +610,7 @@ function dev.run(player, args)
     storage.trace = not storage.trace
     player.print("trace to script-output/landing-party/decisions.txt: " .. tostring(storage.trace))
   else
-    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | stun [r] | kill <unit> [n] | chartcheck | clear [r] | parade | squad [n] | dozers [n] | bombers [n] | prism [n] | flak [n] | spread | ranks | provoke | era <n> | trace")
+    player.print("/lp panel | list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | stun [r] | kill <unit> [n] | chartcheck | clear [r] | parade | squad [n] | dozers [n] | bombers [n] | prism [n] | flak [n] | spread | ranks | provoke | era <n> | trace")
   end
 end
 

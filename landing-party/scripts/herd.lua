@@ -281,10 +281,11 @@ end
 herd.hostiles = hostiles
 
 local function log(w, text)
-  if storage.trace then
-    helpers.write_file("landing-party/decisions.txt", string.format("%8d %s  wave %d: %s\n", game.tick, "biotech", w.id,
-      text), true)
-  end
+  local line = string.format("%8d %s  wave %d: %s", game.tick, "biotech", w.id, text)
+  if storage.trace then helpers.write_file("landing-party/decisions.txt", line .. "\n", true) end
+  -- (Kept for the debug panel, scripts/devpanel.lua.)
+  storage.farm_log = storage.farm_log or {}
+  shared.keep_log(storage.farm_log, line, 200)
 end
 
 -- Pens -------------------------------------------------------------------------------------------------------------

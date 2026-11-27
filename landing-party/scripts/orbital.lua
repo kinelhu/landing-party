@@ -44,8 +44,7 @@ local SHADOW = {
 local function trace(b, msg)
   local line = string.format("%8d base %d  orbital strike: %s", game.tick, b.id, msg)
   if storage.trace then helpers.write_file("landing-party/decisions.txt", line .. "\n", true) end
-  table.insert(b.log, line)
-  if #b.log > 30 then table.remove(b.log, 1) end
+  shared.camp_log(b, line)
 end
 
 local function foes(b)

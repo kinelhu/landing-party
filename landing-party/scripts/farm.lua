@@ -143,9 +143,11 @@ local function corp_forces()
 end
 
 local function trace(text)
-  if storage.trace then
-    helpers.write_file("landing-party/decisions.txt", string.format("%8d %s  %s\n", game.tick, "biotech", text), true)
-  end
+  local line = string.format("%8d %s  %s", game.tick, "biotech", text)
+  if storage.trace then helpers.write_file("landing-party/decisions.txt", line .. "\n", true) end
+  -- (Kept for the debug panel, scripts/devpanel.lua.)
+  storage.farm_log = storage.farm_log or {}
+  shared.keep_log(storage.farm_log, line, 200)
 end
 
 -- The nest field for its pod (the user, 2026-10-26: "shouldn't we tie this to pollution cloud coverage to ensure a new

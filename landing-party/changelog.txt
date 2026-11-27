@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.2
+Date: 2026-11-27
+  Features:
+    - A debug panel for admins (setting "Debug panel", then Ctrl + Shift + L, or /lp panel): each camp's state, what holds it and its decisions as they come, Synthexis's farms and waves, the director, the dev tools as buttons, a jump to any camp, operation, farm or wave, and a snapshot to a file for bug reports.
+---------------------------------------------------------------------------------------------------
 Version: 0.3.1
 Date: 2026-11-27
   Bugfixes:

@@ -7,10 +7,10 @@ digraph layers {
   "Knowledge and strategy (per faction)" [label="Knowledge and strategy (per faction)\n2 modules, 316 lines", fillcolor="#eef2f7"];
   "The director (above every faction)" [label="The director (above every faction)\n2 modules, 2464 lines\ndirector 2334", fillcolor="#f7dede"];
   "Corporation" [label="Corporation\n10 modules, 3688 lines\nfaction 1207", fillcolor="#f7dede"];
-  "Settlement" [label="Settlement\n16 modules, 6824 lines\nlayout 1847", fillcolor="#f7dede"];
-  "Army and operations" [label="Army and operations\n22 modules, 10728 lines\narmy 1508, ops 2590, siege 2262", fillcolor="#f7dede"];
+  "Settlement" [label="Settlement\n16 modules, 6833 lines\nlayout 1847", fillcolor="#f7dede"];
+  "Army and operations" [label="Army and operations\n22 modules, 10735 lines\narmy 1514, ops 2593, siege 2261", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1607 lines", fillcolor="#eef2f7"];
-  "The biotech" [label="The biotech\n5 modules, 8793 lines\nherd 4545, farm 2916", fillcolor="#f7dede"];
+  "The biotech" [label="The biotech\n5 modules, 8796 lines\nherd 4546, farm 2918", fillcolor="#f7dede"];
   "The map" [label="The map\n1 module, 76 lines", fillcolor="#eef2f7"];
   "The player's army" [label="The player's army\n8 modules, 3381 lines\ncommand 2165", fillcolor="#f7dede"];
   "Army and operations" -> "Corporation" [label="3", penwidth=1.8];

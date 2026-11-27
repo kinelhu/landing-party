@@ -235,8 +235,7 @@ local CORRIDOR_LOOK = 60 * 60   -- ticks between an armed camp's corridor strike
 local function base_trace(b, msg)
   local line = string.format("%8d base %d  %s", game.tick, b.id, msg)
   if storage.trace then helpers.write_file("landing-party/decisions.txt", line .. "\n", true) end
-  table.insert(b.log, line)
-  if #b.log > 30 then table.remove(b.log, 1) end
+  shared.camp_log(b, line)
 end
 local function howitzer_apart(hn, mn)
   local function width(name)

@@ -439,6 +439,8 @@ data:extend({
     item_to_spawn = "lp-command-tool", consuming = "game-only"},
   -- Retire the selection (scripts/command.lua: home to a barracks, its order again).
   {type = "custom-input", name = "lp-retire", key_sequence = "ALT + R", consuming = "game-only"},
+  -- The debug panel (scripts/devpanel.lua): for admins with its per-player setting on.
+  {type = "custom-input", name = "lp-debug-panel", key_sequence = "CONTROL + SHIFT + L", consuming = "none"},
 })
 -- Control groups (scripts/cards.lua): CONTROL + N keeps the selection as group N, ALT + N selects it again.
 for n = 1, 9 do
