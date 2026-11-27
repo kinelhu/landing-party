@@ -1668,6 +1668,7 @@ remote.add_interface("landing-party", {
   debug_unit_cost = function(corp, kind) return shared.unit_cost(corp, kind) end,
   director_lines = function() return director_gui.lines() end,
   panel_lines = function(id, density) return devpanel.lines(id, density) end,
+  panel_farms = function() return devpanel.farm_lines() end,
   -- Tests and visits: what the director reads of a player force, beside a fuller reading (director.readings).
   debug_readings = function(owner) return director.readings(owner) end,
   -- Tests: the cap on operations against a player at once, as ops reads it (the director's surge raises it).

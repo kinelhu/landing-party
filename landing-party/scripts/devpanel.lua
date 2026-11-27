@@ -18,6 +18,7 @@ local pool = require("__landing-party__.scripts.pool")
 local army = require("__landing-party__.scripts.army")
 local creep = require("__landing-party__.scripts.creep")
 local farm = require("__landing-party__.scripts.farm")
+local herd = require("__landing-party__.scripts.herd")
 local director_gui = require("__landing-party__.scripts.director_gui")
 
 local panel = {}
@@ -188,11 +189,13 @@ local function farm_card(f)
   local tick, out = game.tick, {}
   local c = creep.of(f.id) or {}
   local pens = 0
-  for _, p in pairs(f.pens or {}) do if p.pen and p.pen.valid then pens = pens + 1 end end
+  -- (f.pens holds pen ids: herd.pen's records.)
+  for _, id in ipairs(f.pens or {}) do local r = herd.pen(id); if r and r.pen and r.pen.valid then pens = pens + 1 end end
   out[#out + 1] = string.format("[font=default-bold]farm %d[/font] at %d,%d; %d incubators; biomass %d; income %.1f a minute",
     f.id, f.pos.x, f.pos.y, pens, c.biomass or 0, (f.income or 0) * 3600)
-  out[#out + 1] = string.format("last wave %s ago%s; wave cap %d", mmss(tick - (f.last_wave or tick)),
-    f.first_at and tick < f.first_at and ("; first wave in " .. mmss(f.first_at - tick)) or "", farm.cap_of(f))
+  -- (Before its first wave, its last_wave is backdated: no wave yet, its first's clock.)
+  out[#out + 1] = string.format("%s; wave cap %d", f.first_at and tick < f.first_at and ("no wave yet; first in "
+    .. mmss(f.first_at - tick)) or ("last wave " .. mmss(tick - (f.last_wave or tick)) .. " ago"), farm.cap_of(f))
   if f.siege then
     out[#out + 1] = string.format("siege laid at %s: %d of %d", f.siege.at and string.format("%d,%d", f.siege.at.x or f.siege.at[1],
       f.siege.at.y or f.siege.at[2]) or "?", f.siege.k or 0, f.siege.n or 0)
@@ -511,6 +514,14 @@ function panel.tick(tick)
 end
 
 function panel.install(d) dev = d end
+
+-- (Tests: Synthexis's tab, its farms' cards and its waves, without a player; remote panel_farms.)
+function panel.farm_lines()
+  local o = {}
+  for _, f in ipairs(farms()) do o[#o + 1] = farm_card(f) end
+  for _, w in ipairs(waves()) do o[#o + 1] = {wave_line(w)} end
+  return o
+end
 
 -- (Tests: a camp's card and its last decisions, a farm's card, without a player; remote panel_lines.)
 function panel.lines(id, density)

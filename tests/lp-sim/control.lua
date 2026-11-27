@@ -7585,7 +7585,9 @@ scenarios.dev = function()
     info("dev: panel card " .. text)
     check("dev: the debug panel reads a camp (its army, its operation or next decision, its works)", all ~= nil
       and text:find("army: strength", 1, true) ~= nil and (text:find("operation:", 1, true) or text:find("next decision", 1, true)) ~= nil
-      and text:find("works: parts", 1, true) ~= nil and #all.stream > 0 and #few.stream <= #all.stream,
+      and text:find("works: parts", 1, true) ~= nil and #all.stream > 0 and #few.stream <= #all.stream
+      -- (Synthexis's cards too: farm_card read its pens as records, they are ids, and the tab crashed, the user's first look.)
+      and type(all.farms) == "table",
       string.format("%d lines, %d at operations' density", all and #all.stream or -1, few and #few.stream or -1))
   end)
   -- (/lp land comes by pod as the faction's own landings do, since 2026-11-04: its pod 7 s, its ground waited for first.)
@@ -19469,6 +19471,19 @@ scenarios.farm = function()
     if mix == "late" then lp("debug_setting", "lp-biotech-arrival-evolution", 0.95) end
     if mix == "smallwaves" then lp("debug_setting", "lp-biotech-wave-max", 24) end
     if mix == "unlearned" then lp("debug_setting", "lp-biotech-learning", false) end
+    -- The debug panel's Synthexis tab, read once its farm stands (devpanel.farm_lines; caught: its pens read as records,
+    -- they are ids, and the tab crashed on the user's first look, 2026-11-27).
+    for t = 3 * 3600, 4 * 3600, 3600 do
+      schedule(t, function()
+        local o = lp("panel_farms") or {}
+        local text = o[1] and table.concat(o[1], " | ") or ""
+        if t == 3 * 3600 then info("farm: panel " .. text) end
+        if t == 4 * 3600 and mix ~= "late" and mix ~= "off" then
+          check("farm: the debug panel reads its farm (incubators, biomass, its last wave)", text:find("incubators", 1, true) ~= nil
+            and (text:find("last wave", 1, true) or text:find("no wave yet", 1, true)) ~= nil, text)
+        end
+      end)
+    end
     local o = lp("stats", storage.id).origin
     local ux, uy = 0, 0
     if math.abs(o.x) > math.abs(o.y) then ux = o.x > 0 and -1 or 1 else uy = o.y > 0 and -1 or 1 end
