@@ -37,7 +37,8 @@ local LOOK = 2                  -- ticks between looks for shells
 local ALERT_TICKS = 10 * 60 * 60
 local COLOR = {r = 0.55, g = 0.8, b = 0.85}
 local PROJECTOR_BACK = 30 * 60 * 60
-local LOOK_PROJECTORS = 60 * 60
+local LOOK_PROJECTORS = 60 * 60 / 8   -- (each LOOK_PROJECTORS a slice of its hubs, PROJ_HUBS: all once a minute or so)
+local PROJ_HUBS = 2
 
 local function trace(b, msg) if base.trace then base.trace(b, "dome: " .. msg) end end
 
@@ -77,8 +78,11 @@ end
 -- Its whole, in shells: debug_tune's, or HOLD of the guns' fire (counted every LOOK_GUNS).
 local function full(b, d)
   if storage.dome_charge then return storage.dome_charge end
-  if not d.whole or game.tick >= (d.counted or 0) + LOOK_GUNS then
+  -- (One count a tick across all domes, the rest on the old till their turn: counted together each minute, a camp's
+  -- 16 projectors and its dome took 8 ms in one tick, the spike guard on the user's nw save.)
+  if not d.whole or (game.tick >= (d.counted or 0) + LOOK_GUNS and storage.dome_counted ~= game.tick) then
     d.whole, d.counted = math.max(1, math.floor(HOLD * fire_rate(b, d) + 0.5)), game.tick
+    storage.dome_counted = game.tick
   end
   return d.whole
 end
@@ -256,7 +260,13 @@ end
 -- Its hubs' projectors: placed, or put back, where none stands; each dome's reach follows its hub's blocks.
 local function projectors(b, tick)
   b.domes = b.domes or {}
-  for _, hub in ipairs(b.hubs or {}) do
+  -- (A slice of its hubs a call, in turn: all of them at once each minute, with their domes' counts, took 8 ms.)
+  local hubs = b.hubs or {}
+  local from = (b.proj_cursor or 0) % math.max(1, #hubs) + 1
+  local last = math.min(#hubs, from + PROJ_HUBS - 1)
+  b.proj_cursor = last >= #hubs and 0 or last
+  for hi = from, last do
+    local hub = hubs[hi]
     if hub.id > 1 then
       local key = "hub" .. hub.id
       local d = b.domes[key]
