@@ -490,7 +490,10 @@ end
 local function ways_from(surface, pos, f, cells)
   local ended = storage.herd and storage.herd.log and #storage.herd.log or 0
   local kept = f.ways
-  if kept and game.tick - kept.tick < WAYS_FOR and kept.ended == ended then
+  -- (A reading read in slices is kept its WAYS_FOR whatever waves end meanwhile: read again at each wave's end, with its
+  -- waves going while others were out it spent most of its time reading, the user's nw game, 2026-11-27: "Took a lot of
+  -- time". A small one is read again at a wave's end, as before.)
+  if kept and game.tick - kept.tick < WAYS_FOR and (kept.ended == ended or (kept.shared and kept.shared.sliced)) then
     if kept.shared then herd.shared = kept.shared end
     return kept.by, kept.cover or {}
   end

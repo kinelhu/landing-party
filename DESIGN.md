@@ -272,7 +272,10 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - After 0.3.1, from the user's nw game (2026-11-26):
   - Eight scenarios flip with the seed whatever the code (tap natural fails on 777 and 4242 before and after; airraid
     grubstake on 777 both ways; plate grubstake fails on 12345 after, passes on 777 both ways, two of its units dying in a
-    fight; the 2493451a full regression: 10 of 426, these and director armyhold): attackmove (its bad mode on 3 of 9 seeds before stands, 6 of 9
+    fight; director armylate (777 fails before and after, 4242 passes both, 12345 flipped in the 0.3.1 batch) and
+    director recallfar (777 fails before; on 12345 posted garrison tanks pass the test's guns and answer them in the
+    truce); nests on 12345 since the 0.3.1 regression, its one raid of 4 on three spawners lost where 2 came home, 777,
+    4242 and 101 passing; the 2493451a full regression: 10 of 426, these and director armyhold): attackmove (its bad mode on 3 of 9 seeds before stands, 6 of 9
     with), nestclear tech (fails on 777 before), line turret and watchdog army (both fail on 4242 before and after),
     director repel (passes 3 of 4 seeds before, 2 of 4 after, failing on different ones). The camps' decisions the same
     line for line where checked: the engine's shared random stream. Next: checks over several seeds, or bounds that
@@ -9074,3 +9077,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   way on foot mark the target (t.no_foot) and it is weighed by air alone; such targets with little anti-air ask for an
   air squad of 8 first (army.air_want); an air raid's ladder is its own ("air"), not the ground raid's that failed there
   (scenario airplan, tilted, seen failing both ways: no air raid without the ladder's split, 5 fliers without the plan).
+- The corporations' infantry took acid whole (2026-11-27, the user's nw game: "columns of KH infantry melt in an
+  instant to a handful of vanilla spitters"): only the player's trained troopers took their armour's acid resistance
+  (player.lua). Scenario acid, 30 Kessler-Hayashi infantry against 4 behemoth spitters: 1 alive at 8 s, all dead at
+  12 s, 1 spitter killed. Each infantry kind now resists acid as the armour it is drawn in (units.lua: the mech armour
+  70%, heavy 40%): 14 alive at 8 s, all dead by 30 s. Behemoth acid pools stack under infantry that stand to shoot, so a
+  column still loses to behemoths; against big spitters 21 of 30 live (18 before). A sealed plate (warden's physical
+  plate and 20% more acid, node `sealed` after `warden`, on 10 acid kills) takes it to 90%: 25 live against big spitters,
+  the column holds a few seconds more against behemoths. Assumed, not tested: that a camp buys it in a real game. The
+  check: acid's 8 of 30 alive at 8 s (seen failing at 1 with the resistance taken out).
+- A full camp's war, too wide (the 0.3.1 regression, 2026-11-27): pacing by replacement gave any camp whose raid lost
+  nothing its next at once, and young camps went from raid to raid on what they saw first, a rival's drill for the
+  player's machines (dismantle, ability loot and prospector, leader failed); now a full camp's alone. And b.army_full
+  counted a camp of 8 at its cap of 8 as full; now only at the ceiling (ARMY_MAX times its strength lever). The paving
+  cap (256 tiles a build step, every 90 ticks) held all building behind a big floor and the line's relays came late
+  (line, its variants): floors at the head are paved 256 a tick between steps.

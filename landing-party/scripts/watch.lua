@@ -12,9 +12,11 @@ local shared = require("__landing-party__.shared")
 local watch = {}
 
 local EVERY = 600
+local STUCK_PARTS = 4   -- stuck: a camp's units looked at in this many parts an EVERY
 local ECONOMY_TICKS = 10 * 3600
 local QUEUE_TICKS = 5 * 3600
 local STUCK_TICKS, STUCK_MOVE = 3 * 3600, 3
+local TREES_TICKS, TREES_R = 30 * 60, 4   -- unmoved this long among trees: those within TREES_R go down
 local ARMY_TICKS = 10 * 3600
 
 local function st()
@@ -61,17 +63,25 @@ local function queue(b, tick, trace, reserve)
   end
 end
 
-local function stuck(b, tick, trace, units)
+local function stuck(b, tick, trace, units, part)
   local w = st()
   local caught, kinds, cx, cy = 0, {}, 0, 0
   for _, u in pairs(units) do
-    if u.valid and u.unit_number then
+    -- (A quarter of its units a call, by number, part: all of them at once took 2.4 to 3.6 ms, the spike guard.)
+    if u.valid and u.unit_number and (not part or u.unit_number % STUCK_PARTS == part) then
       local c = u.commandable
       local cmd = c and c.command
       local rec = w.units[u.unit_number]
       local p = u.position
       if not rec or (p.x - rec.x) ^ 2 + (p.y - rec.y) ^ 2 > STUCK_MOVE * STUCK_MOVE or not (cmd and MOVING[cmd.type]) then
         w.units[u.unit_number] = {x = p.x, y = p.y, t = tick}
+      elseif tick - rec.t > TREES_TICKS and not rec.trees then
+        -- Unmoved under orders among trees: the trees round it go down, as a crew's truck cuts its lane (crew.lua). Its
+        -- weapons may not reach them: a flak buggy shoots fliers alone, and those landed by a lander in a forest stood
+        -- there (the user's nw game, 2026-11-27: "flak buggies ... get stuck in trees. Their attacks cant damage trees").
+        rec.trees = true
+        local s = u.surface
+        for _, t in ipairs(s.find_entities_filtered{position = p, radius = TREES_R, type = "tree"}) do t.die() end
       elseif tick - rec.t > STUCK_TICKS and not rec.told then
         rec.told = true
         caught = caught + 1
@@ -110,15 +120,25 @@ end
 
 -- deps: {trace, units(b) (its roster's units), strength(b), cap(b), price(b), reserve(b)}.
 function watch.tick(tick, deps)
-  if tick % EVERY ~= 0 or not storage.trace then return end
+  -- Its stuck units in every game, their trees cleared (stuck): a quarter of a camp's units each EVERY / STUCK_PARTS,
+  -- the camps staggered, so each unit is looked at once an EVERY. Its alarms and the rest only while tracing.
+  local step = EVERY / STUCK_PARTS
+  for _, b in pairs(storage.bases or {}) do
+    if (tick + b.id * 7) % step == 0 and not b.fallen and b.lander and b.lander.valid then
+      stuck(b, tick, deps.trace, deps.units(b), math.floor((tick + b.id * 7) / step) % STUCK_PARTS)
+    end
+  end
+  if tick % EVERY ~= 0 then return end
   local w = st()
+  local traced = storage.trace
   for _, b in pairs(storage.bases or {}) do
     if not b.fallen and b.lander and b.lander.valid then
-      local reserve = deps.reserve(b)
-      economy(b, tick, deps.trace)
-      queue(b, tick, deps.trace, reserve)
-      stuck(b, tick, deps.trace, deps.units(b))
-      army_(b, tick, deps.trace, deps.strength(b), deps.cap(b), deps.price(b), reserve)
+      if traced then
+        local reserve = deps.reserve(b)
+        economy(b, tick, deps.trace)
+        queue(b, tick, deps.trace, reserve)
+        army_(b, tick, deps.trace, deps.strength(b), deps.cap(b), deps.price(b), reserve)
+      end
     end
   end
   -- Units gone: forgotten.

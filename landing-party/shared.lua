@@ -187,6 +187,9 @@ shared.CORPS = {
         trigger = {killer = {"artillery-turret", "artillery-wagon"}, min = 3}},
       {id = "warden", branch = "line", era = 1, cost = 1500, plates = {["lp-infantry"] = "physical"},
         trigger = {damage = "physical", min = 10}},
+      -- Against acid (spitters, worms, Synthexis): warden's armour sealed.
+      {id = "sealed", branch = "line", era = 2, requires = "warden", cost = 1500, plates = {["lp-infantry"] = "sealed"},
+        trigger = {damage = "acid", min = 10}},
       -- Against fliers (the player's robots, a rival's harriers): the Skyguard.
       {id = "skyguard", branch = "line", era = 1, cost = 900, unit = {kind = "lp-skyguard", weight = 2},
         trigger = {killer = shared_fliers, min = 6}},
@@ -290,7 +293,11 @@ end
 -- health (PLATE_HEALTH) and that resistance. Named "<variant>-<plate>"; kind_of strips it.
 shared.PLATED = {"lp-infantry", "lp-tank", "lp-walker", "lp-harrier", "lp-buggy"}
 shared.PLATES = {physical = {type = "physical", percent = 25, decrease = 2}, fire = {type = "fire", percent = 70},
-  laser = {type = "laser", percent = 40}}
+  laser = {type = "laser", percent = 40},
+  -- The physical plate sealed against acid (also: further resistances, plates.lua): its node follows warden's, so a kind
+  -- that wears one plate keeps its armour against jaws (the user's nw game, 2026-11-27: Kessler-Hayashi's infantry melted
+  -- to behemoth spitters; scenario acid).
+  sealed = {type = "physical", percent = 25, decrease = 2, also = {{type = "acid", percent = 20}}}}
 shared.PLATE_HEALTH = 1.15
 -- Fliers shot down fall (scripts/fall.lua; the user, 2026-11-09: "could we make fliers spin out and fall to the ground
 -- instead of disappearing where they stand upon death?"): by the wreck a death leaves, the flier's own still (its sheet's

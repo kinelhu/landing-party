@@ -540,7 +540,7 @@ local construction_ = require("__landing-party__.scripts.construction").install(
   BUILD_TICKS = BUILD_TICKS, OCCUPIERS = OCCUPIERS, OCCUPY_RADIUS = OCCUPY_RADIUS, REBUILD_DELAY = REBUILD_DELAY,
   REBUILD_TILES_PER_SECOND = REBUILD_TILES_PER_SECOND, army = army, base = base, clear_area = clear_area,
   force = force, join = join, register = register, site = site, trace = trace})
-local build, rebuild = construction_.build, construction_.rebuild
+local build, rebuild, pave_step = construction_.build, construction_.rebuild, construction_.pave_step
 -- Planner: scripts/planner.lua (split from here, 2026-10-18).
 local planner_ = require("__landing-party__.scripts.planner").install(ops, {
   DEFENCE_RADIUS = DEFENCE_RADIUS, FAB_FEED_PER_MIN = FAB_FEED_PER_MIN, REACHES = REACHES,
@@ -820,6 +820,7 @@ function base.tick(tick)
       if b.wfc_job and tick % 60 == 17 then layout.wfc_step(b) end
       -- (A district's site looked for a step a tick, layout.district_step.)
       if b.district_job then layout.district_step(b) end
+      if tick % BUILD_TICKS ~= 0 and not withdrawing and b.queue[1] and b.queue[1].tiles then pave_step(b) end
       if tick % BUILD_TICKS == 0 and not withdrawing then
         local _sb = prof.start("base.build"); build(b); prof.stop(_sb)
         -- The fortress's own jobs go faster; everything else at the usual pace (a burst for all once

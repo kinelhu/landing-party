@@ -142,6 +142,13 @@ local function make_infantry(name, color, armor)
   -- the engine's own remnants, gone after their usual time.
   u.corpse = "small-remnants"
   u.resistances = {{type = "physical", decrease = 2, percent = 10}}
+  -- Its armour's acid resistance, as the player's trained troopers take theirs (player.lua): a column of Kessler-
+  -- Hayashi's mech-armoured infantry took spitters' acid whole, 30 gone in 8 s to 4 behemoth spitters, 1 of them killed
+  -- (the user's nw game, 2026-11-27: "columns of KH infantry melt in an instant to a handful of vanilla spitters";
+  -- scenario acid). Its other resistances not (player.lua: they would cancel the corporations' own guns).
+  for _, r in ipairs(armor and data.raw.armor[armor] and data.raw.armor[armor].resistances or {}) do
+    if r.type == "acid" then table.insert(u.resistances, {type = "acid", decrease = r.decrease, percent = r.percent}) end
+  end
   tint(u.run_animation, {}, color)
   tint(u.attack_parameters.animation, {}, color)
   return u

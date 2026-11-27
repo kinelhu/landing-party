@@ -16,40 +16,40 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
-| `herd` | 4504 | attempt, burstfx, costmap, feeds, firemap, ground, herd_learn, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
-| `ops` | 2550 | airraid, answers, assault, attempt, cuts, ground, intel, jammer, know, perimeter, pool, power, ram, rd, routing, siege, stance, strip, tactics, threat, tune, veterancy | army, base, control, cordon, crew, dev, director, dome, faction, jumper, ledger, prospect, prowl, skim, standing, tap, war | base.claim_map, cordon.cordon_check, cordon.cordon_step, war.corridor | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
-| `farm` | 2521 | achievements, cell, costmap, creep, feeds, firemap, herd, know, pods, rng, tactics, threat, tune, valuemap | control, dev, director |  | 60, 600, 3600, 36000 |  | biotech_time_parts, carrying, farms |
+| `herd` | 4545 | attempt, burstfx, costmap, feeds, firemap, ground, herd_learn, know, prof, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
+| `farm` | 2916 | achievements, cell, costmap, creep, feeds, firemap, herd, know, pods, prof, rng, tactics, threat, tune, valuemap | control, dev, director |  | 60, 600, 3600, 36000 |  | biotech_time_parts, carrying, farms |
+| `ops` | 2590 | airraid, answers, assault, attempt, cuts, ground, intel, jammer, know, perimeter, pool, power, prof, ram, rd, routing, siege, stance, strip, tactics, threat, tune, veterancy | army, base, control, cordon, crew, dev, director, dome, faction, jumper, ledger, prospect, prowl, skim, standing, tap, war | base.claim_map, cordon.cordon_check, cordon.cordon_step, war.corridor | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `director` | 2334 | army, command, faction, farm, jammer, ops, pods, pool, rd, rng, stance, valuemap, war | control, director_gui |  | 60, 300, 3600 |  | director, director_force, ev_minute, truces |
-| `siege` | 2174 | achievements, assault, attempt, costmap, firemap, know, orbital, pods, tactics, threat, valuemap | ops |  |  |  | threat_last, unit_owner, ways_dumped |
-| `command` | 2162 | paving | control, dev, director, intel, squadgui |  | 10, 30, 60, 120 |  | cmd |
-| `layout` | 1789 | blocks, rng, site, threat, wfc | base, control, faction |  |  |  |  |
-| `control` | 1668 | achievements, aim, army, bait, base, belts, biters, burstfx, cannon, cards, cell, command, cordon, costmap, creep, crew, dev, director, director_gui, dome, faction, fall, farm, feeds, firemap, herd, jammer, jumper, know, landfx, layout, ledger, lifeline, lights, map, marker, oplog, ops, orbital, pact, paving, phases, pods, pool, prospect, prowl, ram, rd, rng, road, roads, scanner, scorcher, separate, site, skim, squadgui, stance, standing, strike, studies, stun, tactics, tap, threat, tune, valuemap, veterancy, war, watch |  |  | 60 | ai_command_completed, built_entity, cargo_pod_finished_descending, entity_damaged, entity_died, entity_spawned, gui_click, gui_opened, player_alt_reverse_selected_area, player_alt_selected_area, player_built_tile, player_display_resolutichanged, player_display_scale_changed, player_mined_tile, player_reverse_selected_area, player_selected_area, post_entity_died, research_finished, research_reversed, robot_built_entity, robot_built_tile, robot_mined_tile, rocket_launched, script_path_request_finished, script_trigger_effect, selected_entity_changed, space_platform_built_tile, space_platform_mined_tile, technology_effects_reset, tick, unit_added_to_group, script_raised_built, script_raised_set_tiles | air_off, arena_surfaces, armed, army_off, bases, belts_always, berth_off, biotech_no_gun_rank, biotech_no_herd_through, biotech_no_hold, biotech_no_keep_line, biotech_no_muster, biotech_no_orders, biotech_no_ranks, biotech_off, biotech_old_stock, biotech_pens_hold, biotech_rank_doubles, biotech_slow_rams, biotech_through_rank, biotech_unlearned, choice_off, cmd, cordon_off, corps, crews_off, cuts_off, director_force, director_tune, dome_charge, domes, drop_debug, drop_off, dump_ways, era_override, ev_minute, focus_off, gates_off, grow_to_line_off, grudge_fast, guard_memory_off, guard_mines_off, guard_projector_off, guard_refuse, hazard_hold, hazard_off, herd_off, history_off, hq_fast, kh_tactics_off, kh_way, labs_off, ladder_fast, landfx_off, last_raze, leader_off, ledger_off, march_trace, mature_blocks, merit, next_id, next_ore_off, night_off, notices, ops_off, owner, pact_off, parity_off, paving_prof, perimeter_fast, phases_fast, player_razed, pods_off, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, prowl, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, ring_fill, rings, road_haul, road_lapse, seed_salt, sever_off, siege_tier, siting_off, skim_off, sneak_off, stores_off, strangle_off, strike_cap_off, strikes_off, strip_fast, sweeps_off, tap_step, tesla_off, trace, truces, tune_ahead, tune_levers, unit_owner, way_in, wfc_core_off, yard_off |
+| `siege` | 2262 | achievements, assault, attempt, costmap, firemap, know, orbital, pods, tactics, threat, valuemap | ops |  |  |  | threat_last, unit_owner, ways_dumped |
+| `command` | 2165 | paving | control, dev, director, intel, squadgui |  | 10, 30, 60, 120 |  | cmd |
+| `layout` | 1847 | blocks, prof, rng, site, threat, wfc | base, control, faction |  |  |  |  |
+| `control` | 1749 | achievements, aim, army, bait, base, belts, biters, burstfx, cannon, cards, cell, command, cordon, costmap, creep, crew, dev, director, director_gui, dome, faction, fall, farm, feeds, firemap, herd, jammer, jumper, know, landfx, layout, ledger, lifeline, lights, map, marker, oplog, ops, orbital, pact, paving, phases, pods, pool, prof, prospect, prowl, ram, rd, rng, road, roads, scanner, scorcher, separate, site, skim, squadgui, stance, standing, strike, studies, stun, tactics, tap, threat, tune, valuemap, veterancy, war, watch |  |  |  | ai_command_completed, built_entity, cargo_pod_finished_descending, chunk_generated, entity_damaged, entity_died, entity_spawned, gui_click, gui_opened, player_alt_reverse_selected_area, player_alt_selected_area, player_built_tile, player_display_resolutichanged, player_display_scale_changed, player_mined_tile, player_reverse_selected_area, player_selected_area, post_entity_died, research_finished, research_reversed, robot_built_entity, robot_built_tile, robot_mined_tile, rocket_launched, script_path_request_finished, script_trigger_effect, selected_entity_changed, space_platform_built_tile, space_platform_mined_tile, technology_effects_reset, tick, unit_added_to_group, script_raised_built, script_raised_set_tiles | air_off, arena_surfaces, armed, army_off, bases, belts_always, berth_off, biotech_no_gun_rank, biotech_no_herd_through, biotech_no_hold, biotech_no_keep_line, biotech_no_muster, biotech_no_orders, biotech_no_ranks, biotech_off, biotech_old_stock, biotech_pens_hold, biotech_rank_doubles, biotech_slow_rams, biotech_through_rank, biotech_unlearned, choice_off, cmd, cordon_off, corps, crews_off, cuts_off, director_force, director_tune, dome_charge, domes, drop_debug, drop_off, dump_ways, era_override, ev_minute, focus_off, gates_off, grow_to_line_off, grudge_fast, guard_memory_off, guard_mines_off, guard_projector_off, guard_refuse, hazard_hold, hazard_off, herd_off, history_off, hq_fast, kh_tactics_off, kh_way, labs_off, ladder_fast, landfx_off, last_raze, leader_off, ledger_off, march_trace, mature_blocks, merit, next_id, next_ore_off, night_off, notices, ops_off, owner, pact_off, parity_off, paving_prof, perimeter_fast, phases_fast, player_razed, pods_off, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, prowl, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, ring_fill, rings, road_haul, road_lapse, seed_salt, sever_off, siege_tier, siting_off, skim_off, sneak_off, spike_prof, stands_off, stores_off, strangle_off, strike_cap_off, strikes_off, strip_fast, sweeps_off, tap_step, tesla_off, trace, truces, tune_ahead, tune_levers, unit_owner, way_in, wfc_core_off, yard_off |
+| `army` | 1508 | airraid, know, ops, pool, prof, rd, rng, tune | base, control, dev, director, faction, war |  | 60, 300, 600 |  | engine_grouped, engine_ungrouped, rails_ungrouped |
 | `faction` | 1207 | army, base, costmap, firemap, landfx, layout, names, ops, pact, pods, rd, site, threat, valuemap, war | control, dev, director, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |
-| `army` | 1123 | airraid, know, ops, pool, rd, rng, tune | base, control, dev, director, faction, war |  | 60, 300, 600 |  | engine_grouped, engine_ungrouped, rails_ungrouped |
-| `base` | 950 | army, blocks, chart, construction, landfx, layout, lights, modules, names, ops, planner, rng, site, tune | control, cordon, crew, dev, dome, faction, jumper, ledger, lifeline, pact, prospect, prowl, road, skim, tap, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, ops.siege_goal, war.footing | 7, 60, 120, 3600, 7200 |  | lab_look, next_id, wrecks |
-| `war` | 705 | army, base, lights, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, director, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
+| `base` | 957 | army, blocks, chart, construction, landfx, layout, lights, modules, names, ops, planner, prof, rng, site, tune | control, cordon, crew, dev, dome, faction, jumper, ledger, lifeline, pact, prospect, prowl, road, skim, tap, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, ops.siege_goal, war.footing | 7, 60, 120, 3600, 7200 |  | lab_look, next_id, wrecks |
+| `war` | 706 | army, base, lights, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, director, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `rd` | 674 | know, tune | army, control, director, faction, ops, planner, war | ops.era |  |  | corps |
+| `creep` | 641 | costmap, prof, tune | control, farm, studies |  |  |  | creep |
 | `dev` | 625 | army, base, burstfx, cannon, cards, command, director_gui, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap, veterancy | control |  |  |  | chartcheck, cordon_off, dev_cannon, dev_platform, era_override, hq_fast, merit, ram_trace, trace |
 | `costmap` | 620 | firemap, threat | airraid, control, creep, faction, farm, herd, siege |  |  |  |  |
-| `creep` | 614 | costmap, tune | control, farm, studies |  |  |  | creep |
 | `crew` | 550 | base, ops, standing | control |  | 30 |  | crew_owner |
-| `planner` | 484 | rd | base |  |  |  |  |
+| `planner` | 512 | prof, rd | base |  |  |  | lab_coming |
+| `construction` | 500 | prof | base |  |  |  |  |
+| `dome` | 475 | base, lights, ops, threat | control |  | 60, 3600 |  | dome_alert, dome_counted, pdomes |
 | `cards` | 471 | veterancy | control, dev | command.ammo_of, command.round_of |  |  | cards, cmd |
-| `construction` | 471 | (leaf) | base |  |  |  |  |
-| `dome` | 465 | base, lights, ops, threat | control |  | 60, 3600 |  | dome_alert, pdomes |
 | `ram` | 454 | (leaf) | control, dev, ops |  | 3, 6 |  | ram_breaches, ram_charges, ram_crushed, ram_early, ram_followers, ram_moved, rams |
 | `cell` | 438 | pods | control, farm |  |  |  | cell_sites, cells |
+| `intel` | 438 | command, know, threat | ops |  |  |  |  |
 | `routing` | 431 | threat | ops |  |  |  | corridors |
+| `prospect` | 423 | base, chart, ops, pool, standing, studies | control, cordon |  | 60, 600, 3600 |  | prospect_failed |
 | `skim` | 422 | base, ops, stance, tune | control |  | 60, 600 |  |  |
+| `veterancy` | 415 | threat | airraid, cards, control, dev, ops |  |  |  | merit, promoted, vet_due, vet_stats |
 | `orbital` | 413 | achievements, threat, tune | cannon, control, dev, siege, strike |  | 10, 30 |  | cannon_impacts, cannon_shocks, kh_shadows, kh_strikes, orbital_build_off, orbital_builds, orbital_builds_stopped |
 | `cordon` | 412 | base, ops, prospect | control |  |  |  |  |
-| `prospect` | 408 | base, chart, ops, pool, standing, studies | control, cordon |  | 60, 600, 3600 |  | prospect_failed |
-| `veterancy` | 408 | threat | airraid, cards, control, dev, ops |  |  |  | merit, promoted, vet_due, vet_stats |
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |
 | `tap` | 375 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
 | `cannon` | 373 | orbital, threat | control, dev |  | 30, 60 |  | cannon_barrel, cannon_last, cannon_next_pl, cannon_recoil, cannon_recoil_max, cannon_recoils, cannon_shells, cannon_silhouette, cannon_strikes |
 | `prowl` | 367 | base, ops, pool, threat | control |  |  |  | prowl_paths |
-| `intel` | 348 | command, know, threat | ops |  |  |  |  |
 | `perimeter` | 331 | tune | ops |  |  |  |  |
 | `ledger` | 317 | base, ops, standing | control |  | 60, 600 |  |  |
 | `jumper` | 314 | base, ops, rng, threat, tune, war | control, dev |  | 60, 600 |  |  |
@@ -67,19 +67,19 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `valuemap` | 233 | firemap | control, director, faction, farm, herd, oplog, siege |  |  |  |  |
 | `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |
 | `scorcher` | 224 | (leaf) | control |  | 3600 |  | scorch, scorch_bursts, scorch_by, tesla_aim, tesla_aims, tesla_drains, tesla_held, tesla_holds, tesla_seen |
-| `firemap` | 206 | threat | airraid, control, costmap, faction, farm, herd, herd_learn, siege, valuemap |  |  |  |  |
+| `firemap` | 209 | threat | airraid, control, costmap, faction, farm, herd, herd_learn, siege, valuemap |  |  |  |  |
 | `oplog` | 197 | attempt, valuemap | control |  |  |  | oplog |
 | `site` | 180 | modules | base, control, faction, layout |  |  |  |  |
+| `separate` | 179 | rng | control |  |  |  | sep |
 | `power` | 175 | threat | feeds, ops |  |  |  |  |
 | `lifeline` | 155 | base, pods, threat | control |  | 3600 |  | orbitals |
+| `watch` | 153 | (leaf) | control |  |  |  | watch |
 | `stun` | 145 | rng | control, dev |  | 3600 |  | stun, stun_arc_rng, stun_by, stun_first, stun_gap, stun_rng, stunned, stuns |
 | `road` | 143 | base, standing | control |  | 60 |  |  |
 | `assault` | 142 | attempt, tactics, threat | ops, siege |  |  |  |  |
 | `pool` | 142 | (leaf) | army, control, cuts, director, ops, prospect, prowl, tap, war |  |  |  |  |
-| `watch` | 141 | (leaf) | control |  |  |  | watch |
 | `answers` | 138 | (leaf) | ops |  |  |  |  |
 | `wfc_serenity` | 134 | (leaf) |  |  |  |  |  |
-| `separate` | 131 | rng | control |  |  |  | sep |
 | `director_gui` | 130 | director | control, dev |  | 60 |  |  |
 | `airraid` | 127 | attempt, costmap, firemap, know, threat, veterancy | army, ops |  |  |  |  |
 | `chart` | 116 | (leaf) | base, map, prospect |  |  |  |  |
@@ -107,6 +107,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `ground` | 38 | (leaf) | herd, ops |  |  |  |  |
 | `biters` | 36 | (leaf) | control |  |  |  | evo_refunds, nests_cleared |
 | `achievements` | 34 | (leaf) | control, farm, orbital, siege |  |  |  | lp_achieved |
+| `prof` | 31 | (leaf) | army, base, construction, control, creep, farm, herd, layout, ops, planner |  |  |  |  |
 | `unit_prior` | 29 | (leaf) | threat |  |  |  |  |
 | `lights` | 28 | (leaf) | base, control, dome, jammer, pact, war |  |  |  |  |
 | `roads` | 28 | (leaf) | control |  |  |  |  |
@@ -165,20 +166,22 @@ From `stance.may`, run on the mod's own tables. Yes: allowed. No: forbidden. A d
 |---|---|---|
 | aggression | `answers` | `b.next_answer = game.tick + tune.sooner(b.corp, ANSWER_COOLDOWN)` |
 | strength | `army` | `n = math.max(1, math.floor(n * tune.strength(b.corp) + 0.5))` |
+| strength | `army` | `n = math.min(n, math.floor(ARMY_MAX * tune.strength(b.corp) + 0.5))` |
 | aggression | `farm` | `last_wave = game.tick - tune.sooner("biotech", WAVE_GAP) + tune.sooner("biotech", FIRST_WAVE), landed = game.t` |
 | aggression | `farm` | `last_wave = game.tick - tune.sooner("biotech", WAVE_GAP) + tune.sooner("biotech", FIRST_WAVE), landed = game.t` |
-| aggression | `farm` | `if not storage.herd_off and not herd.out(id) and tick - f.last_wave >= tune.sooner("biotech", WAVE_GAP) then s` |
+| aggression | `farm` | `first_at = game.tick + tune.sooner("biotech", FIRST_WAVE)}` |
+| aggression | `farm` | `if not storage.herd_off and free and tick - f.last_wave >= tune.sooner("biotech", gap) then local _sp = prof.s` |
 | aggression | `farm` | `f.last_wave = game.tick - tune.sooner("biotech", WAVE_GAP)` |
-| aggression | `farm` | `if f.last_wave and tick + within - f.last_wave >= tune.sooner("biotech", WAVE_GAP) then return true end` |
+| aggression | `farm` | `if f.last_wave and tick + within - f.last_wave >= tune.sooner("biotech", gap_of(f, game.surfaces[f.surface])) ` |
 | aggression | `jumper` | `b.next_jump = game.tick + (storage.jump_cooldown or tune.sooner(b.corp, COOLDOWN))` |
 | aggression | `ops` | `if op.kind == "siege" then b.next_siege = game.tick + (op.clearance and 2 * 3600 or tune.sooner(b.corp, SIEGE_` |
-| aggression | `ops` | `b.next_op = game.tick + tune.sooner(b.corp, (outcome == "done" or outcome == "spent" or outcome == "claimed") ` |
+| aggression | `ops` | `local gap = tune.sooner(b.corp, (outcome == "done" or outcome == "spent" or outcome == "claimed") and GAP_DONE` |
 | aggression | `orbital` | `b.strike_next = game.tick + tune.sooner(b.corp, COOL)` |
 | aggression | `perimeter` | `b.perimeter_next = tick + tune.sooner(b.corp, every)` |
 | aggression | `skim` | `b.next_skim = game.tick + (cool or (storage.skim_cooldown or tune.sooner(b.corp, COOLDOWN)))` |
 | aggression | `stance` | `local m = (game.tick - t0) / 3600 * (storage.ladder_fast and 10 or 1) * (corp and tune.aggression(corp) or 1)` |
 | aggression | `tap` | `b.next_tap = game.tick + (storage.tap_cooldown or tune.sooner(b.corp, COOLDOWN))` |
 | aggression | `war` | `local streak = math.max(2, math.floor(FAIL_STREAK * tune.aggression(b.corp) + 0.5))` |
-| aggression | `war` | `if tick - since >= span * tune.aggression(b.corp) or losing then` |
+| aggression | `war` | `if (tick - since >= span * tune.aggression(b.corp) or losing) and not b.army_full then` |
 
 Presets: very-low 0.5, low 0.75, normal 1, high 1.5, very-high 2.

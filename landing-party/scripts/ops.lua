@@ -1025,7 +1025,10 @@ local function finish(b, outcome, trace, army)
   -- Paced by what it can replace: the time its parts income takes to build again what it lost, at the mean price of its
   -- mix, with the gap above at most (the prior it was, flat; the user, 2026-11-27: "not fun"; a camp of 527 at home
   -- waited out its gaps). Its army at its cap, its next at once.
-  if b.army_full or (b.rate_parts or 0) > 0 then
+  -- (A full camp's alone: for any camp, a raid that lost nothing had its next at once, and a young camp went from one
+  -- raid to the next on whatever it saw first, a rival's drill for the player's machines: dismantle, ability loot,
+  -- leader, the 0.3.1 regression.)
+  if b.army_full and (b.rate_parts or 0) > 0 then
     local m, sum, n = army.mix(b), 0, 0
     for name, w in pairs(m) do sum, n = sum + w * shared.unit_cost(b.corp, name), n + w end
     local price = n > 0 and sum / n or 0

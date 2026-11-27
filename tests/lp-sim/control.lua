@@ -713,6 +713,66 @@ scenarios.path = function()
 end
 
 -- Cost: params.units infantry, idle or wandering (params.move), far from everything.
+-- Acid (a spike, the user's nw game 2026-11-27: "columns of KH infantry melt in an instant to a handful of vanilla
+-- spitters"): LP_UNITS infantry (default 30) in a column, LP_MIX "kind:count" spitters (default behemoth:4) 24 tiles
+-- off; each second the infantry alive and the damage taken by type.
+scenarios.acid = function()
+  schedule(600, function()
+    flatten(-60, -60, 60, 60)
+    S.inf, S.dmg = {}, {}
+    local n = (params.units or 0) > 0 and params.units or 30
+    for k = 0, n - 1 do
+      -- (LP_MOVE=true: the sealed plate's infantry.)
+      local u = surface().create_entity{name = params.move and "lp-infantry-sealed" or "lp-infantry", force = FORCE,
+        position = {-10 + (k % 3) * 1.2, -20 + math.floor(k / 3) * 1.2}}
+      if u then table.insert(S.inf, u) end
+    end
+    local kind, spit = (params.mix or ""):match("^(%a+):(%d+)$")
+    params.kind, params.spit = kind or "behemoth", tonumber(spit) or 4
+    for k = 1, params.spit do
+      surface().create_entity{name = params.kind .. "-spitter", force = "enemy", position = {14, -12 + k * 3}}
+    end
+    for _, u in ipairs(S.inf) do
+      u.commandable.set_command{type = defines.command.go_to_location, destination = {14, -6}, distraction = defines.distraction.by_enemy}
+    end
+    S.t0 = game.tick
+    local r = prototypes.entity[params.move and "lp-infantry-sealed" or "lp-infantry"].resistances or {}
+    info("acid: infantry resists acid " .. (r.acid and (r.acid.percent * 100) .. "%, " .. r.acid.decrease or "none") ..
+      "; spitter's range " .. prototypes.entity[params.kind .. "-spitter"].attack_parameters.range)
+    info("acid: " .. #S.inf .. " infantry against " .. (params.spit or 4) .. " " .. (params.kind or "behemoth") .. " spitters")
+  end)
+  script.on_event(defines.events.on_entity_damaged, function(e)
+    if e.entity.force.name == FORCE then local t = e.damage_type.name; S.dmg[t] = (S.dmg[t] or 0) + e.final_damage_amount end
+  end)
+  for t = 660, 600 + 60 * 40, 60 do
+    schedule(t, function()
+      local alive = 0
+      for _, u in ipairs(S.inf or {}) do if u.valid then alive = alive + 1 end end
+      local spit = #surface().find_entities_filtered{force = "enemy", type = "unit"}
+      local d = {}
+      for k, v in pairs(S.dmg or {}) do d[#d + 1] = k .. " " .. math.floor(v) end
+      table.sort(d)
+      local shooting, near = 0, 0
+      for _, u in ipairs(S.inf or {}) do
+        if u.valid then
+          local c = u.commandable.distraction_command or u.commandable.command
+          if c and c.type == defines.command.attack then shooting = shooting + 1 end
+        end
+      end
+      local hp = 0
+      for _, sp in ipairs(surface().find_entities_filtered{force = "enemy", type = "unit"}) do hp = hp + sp.health end
+      info(string.format("acid t+%ds: attacking %d, spitters' health %d", math.floor((game.tick - S.t0) / 60), shooting, hp))
+      info(string.format("acid t+%ds: infantry %d alive, spitters %d; damage %s", math.floor((game.tick - S.t0) / 60), alive, spit, table.concat(d, ", ")))
+      -- (Caught: the corporations' infantry took acid whole, their armour's resistance given to the player's troopers
+      -- alone: 1 of 30 alive at 8 s, 14 with it. The default fight only: behemoth:4, 30 infantry, unplated.)
+      if game.tick - S.t0 == 480 and not params.move and params.kind == "behemoth" and params.spit == 4 and #S.inf == 30 then
+        check("acid: infantry resist acid as their armour does (8 of 30 or more alive at 8 s against 4 behemoth spitters)",
+          alive >= 8, alive .. " alive")
+      end
+    end)
+  end
+end
+
 scenarios.cost = function()
   schedule(600, function()
     flatten(-150, -150, -50, -50)

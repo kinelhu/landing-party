@@ -1440,7 +1440,13 @@ function army.tick(b, tick, trace)
   -- Its army at its cap (b.army_full): the planner spreads not (its line steps still: held, its cordon's arcs were never
   -- recovered, cordon), and it does not stand down, its surplus going to war (the user, 2026-11-27: "make spreading inattractive in the AI planner vs actually turning
   -- agressive"; on nw a camp of 527 at home spread over the map).
-  if tick % 300 == 10 then b.army_full = strength(b) >= cap(b) end
+  -- Full: at its cap, and its cap the ceiling (ARMY_MAX times its strength lever). At any cap, a young camp of 8 counted
+  -- as full: it raided a rival's drill where it went for the player's machines and never stood down (dismantle, ability
+  -- loot, leader, the 0.3.1 regression).
+  if tick % 300 == 10 then
+    local c = cap(b)
+    b.army_full = c >= math.floor(ARMY_MAX * tune.strength(b.corp) + 0.5) and strength(b) >= c
+  end
   if tick % 300 == 75 then local _sp = prof.start("army.pool.tick"); pool.tick(b); prof.stop(_sp) end
   -- Raids are operations now (scripts/ops.lua): chosen from intel, sized, staged, aborted when losing.
   local _sp = prof.start("ops.tick"); ops.tick(b, tick, trace, army); prof.stop(_sp)
