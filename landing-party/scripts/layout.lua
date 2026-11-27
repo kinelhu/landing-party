@@ -1460,6 +1460,23 @@ function layout.curtain(b)
     #b.curtain.segments))
 end
 
+-- A new cluster's ground clear: no player's building within SPREAD_CLEAR, no other camp's claim (and SPREAD_CLEAR / 2),
+-- and a rival corporation's camp no nearer than its mind's spread_rival (Kessler-Hayashi's clusters grew towards
+-- Grubstake's camps in its way to the player, the user's nw game, 2026-11-27; scenario apart, its mix clear).
+function layout.spread_clear(b, surface, cx, cy)
+  for _, f in ipairs(shared.player_forces()) do
+    if surface.count_entities_filtered{position = {cx, cy}, radius = SPREAD_CLEAR, force = f, limit = 1} > 0 then return false end
+  end
+  local apart = not storage.rival_apart_off and (shared.CORPS[b.corp].mind or {}).spread_rival or 0
+  for _, o in pairs(storage.bases) do
+    if o ~= b and not o.fallen and o.surface == b.surface and o.claim_radius then
+      local d2 = (o.origin.x - cx) ^ 2 + (o.origin.y - cy) ^ 2
+      if d2 < (o.claim_radius + SPREAD_CLEAR / 2) ^ 2 or (o.corp ~= b.corp and d2 < apart * apart) then return false end
+    end
+  end
+  return true
+end
+
 function layout.spread(b)
   local surface = game.surfaces[b.surface]
   local ox, oy = b.origin.x, b.origin.y
@@ -1496,14 +1513,7 @@ function layout.spread(b)
     local r = rmin + rng.next(b.rng) * (rmax - rmin)
     local x0, y0 = math.floor(ox + r * math.cos(a) - S / 2), math.floor(oy + r * math.sin(a) - S / 2)
     local cx, cy = x0 + S / 2, y0 + S / 2
-    local clear = true
-    for _, f in ipairs(shared.player_forces()) do
-      if surface.count_entities_filtered{position = {cx, cy}, radius = SPREAD_CLEAR, force = f, limit = 1} > 0 then clear = false end
-    end
-    for _, o in pairs(storage.bases) do
-      if o ~= b and not o.fallen and o.surface == b.surface and o.claim_radius
-        and (o.origin.x - cx) ^ 2 + (o.origin.y - cy) ^ 2 < (o.claim_radius + SPREAD_CLEAR / 2) ^ 2 then clear = false end
-    end
+    local clear = layout.spread_clear(b, surface, cx, cy)
     -- A tile set: the cluster is one compound laid out whole (layout.wfc_compound), centred where the block would be.
     if clear and WFC_TILES[b.corp] and not storage.wfc_off then
       local side = WFC_CELLS * WFC_TILES[b.corp].size

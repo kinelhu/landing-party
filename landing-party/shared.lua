@@ -235,8 +235,12 @@ shared.CORPS = {
       -- a prior, as Synthexis's per_turret: no prototype says how far a spawner's waves come). At 200 its camp stood on fed
       -- nw and nwa; spawners by their biters' sight alone, nwa's fell nine minutes after landing (2026-11-02).
       ground = 200,
-      -- Where it lands (faction.site): a clear way to the player first; rivals do not move it.
-      site = {ore = 1, approach = 1.5, density = 0.5, rival = 0}},
+      -- Where it lands (faction.site): a clear way to the player first, and away from its rivals (the user's nw game,
+      -- 2026-11-27: its camps came down all round Grubstake's, in its way to the player; "Grubstake and biters have a sort
+      -- of symbiotic relationship ... it's the opposite for KH"; rival 0 before). Scenario apart.
+      site = {ore = 1, approach = 1.5, density = 0.5, rival = 2, rival_near = 500},
+      -- Its new clusters (layout.spread) founded no nearer a rival corporation's camp than this. A named prior.
+      spread_rival = 200},
     arrives = "late",
     temper = {provoked_only = true, hostile = true, cuts = true, bills = true, answers = {loss = "raid", trespass = "siege"}},
     -- Clean: its drills emit nothing (Grubstake's pollute).

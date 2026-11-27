@@ -9095,3 +9095,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   counted a camp of 8 at its cap of 8 as full; now only at the ceiling (ARMY_MAX times its strength lever). The paving
   cap (256 tiles a build step, every 90 ticks) held all building behind a big floor and the line's relays came late
   (line, its variants): floors at the head are paved 256 a tick between steps.
+- Kessler-Hayashi landed beside Grubstake (the user's nw game, 2026-11-27: its camps came down all round Grubstake's, in its
+  way to the player): its site weight for rivals was 0, and a weight could not have moved it anyway: the landing search
+  takes the first ring with a usable site, and a ring held one to four (scenario apart: weights of 0, 1.5, then 2 to 500
+  tiles gave the same sites, digit for digit). Now a site within its mind's site.rival_near (500) of a rival camp is
+  refused on the first sweep of the rings, as a nest field is: on 12345 a landing 229 tiles from Grubstake's camp lands at
+  661, on 101 one at 458 at 1,105; 777 and 4242 were already past 500. Its new clusters (layout.spread_clear) refuse
+  ground within spread_rival (200) of a rival camp: apart clear, refused at 150 tiles, allowed at 400, allowed at 150 with
+  the rule off. A camp set 150 tiles from Grubstake's razed it; growth over 45 minutes founded one cluster at most, so
+  the rule is checked directly. Assumed, not tested: the effect on nw's own spread over hours.

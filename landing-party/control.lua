@@ -825,6 +825,7 @@ remote.add_interface("landing-party", {
     if t.dome_charge ~= nil then storage.dome_charge = t.dome_charge end
     -- (The siting rule off, scenario guns LP_MIX=off: its blocks planned under the player's artillery as before 0.2.488.)
     if t.siting_off ~= nil then storage.siting_off = t.siting_off or nil end
+    if t.rival_apart_off ~= nil then storage.rival_apart_off = t.rival_apart_off or nil end
     -- (The arrival history's match of the player's research off, scenario parity LP_MIX=off: as before 0.2.490.)
     if t.parity_off ~= nil then storage.parity_off = t.parity_off or nil end
     -- (Construction refuses arcguard's flamers, and the planner forgets the refusals: scenario arcguard LP_MIX=evorefuse,
@@ -1644,6 +1645,21 @@ remote.add_interface("landing-party", {
     return burstfx.windup(unit)
   end,
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,
+  -- Tests: a corporation's mind (shared.CORPS[corp].mind: its priors).
+  corp_mind = function(corp) return shared.CORPS[corp] and shared.CORPS[corp].mind end,
+  -- Tests: a new cluster's ground clear for a camp at a point (layout.spread_clear; scenario apart, its mix clear).
+  spread_clear = function(id, x, y)
+    local b = storage.bases[id]
+    return b and layout.spread_clear(b, game.surfaces[b.surface], x, y)
+  end,
+  -- Tests: a camp's corporation, origin and clusters (scenario apart).
+  camp_where = function(id)
+    local b = storage.bases[id]
+    if not b or b.fallen then return nil end
+    local hubs = {}
+    for _, h in ipairs(b.hubs or {}) do hubs[#hubs + 1] = {x = h.x, y = h.y, spread = h.spread} end
+    return {corp = b.corp, origin = {x = b.origin.x, y = b.origin.y}, hubs = hubs}
+  end,
   achieved = function() return storage.lp_achieved or {} end,
   pact_state = function() return storage.pact_state end,
   director = function() return director.state() end,

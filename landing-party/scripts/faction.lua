@@ -147,7 +147,11 @@ local function site_score(w, surface, spot, n, density, from, corp)
     end
   end
   return (w.ore or 0) * math.min(3, n / SITE_MIN_ORE) - (w.approach or 0) * approach(surface, spot, from) / APPROACH_MAX
-    - (w.density or 0) * density / DENSE_MAX + (w.rival or 0) * rival / 1000
+    - (w.density or 0) * density / DENSE_MAX
+    -- Its rivals' camps: up to w.rival_near tiles (1,000 before), each tile nearer worth less, none further out (counted to
+    -- 1,000, a site 200 tiles from Grubstake's camp lost little to one at 600, and Kessler-Hayashi landed as near:
+    -- scenario apart).
+    + (storage.rival_apart_off and 0 or (w.rival or 0)) * math.min(rival, w.rival_near or 1000) / (w.rival_near or 1000)
 end
 
 -- The way's map for a landing (faction.site, faction.request): what reaching `from` costs over land from each cell (water
@@ -471,7 +475,21 @@ function faction.site(surface, from, distance, count, outer)
         local n = surface.count_entities_filtered{position = c, radius = 60, type = "resource", name = site.ORES,
           limit = 3 * SITE_MIN_ORE + 1}
         if n <= SITE_MIN_ORE then refuse("little ore") end
-        if n > SITE_MIN_ORE then
+        -- Near a rival corporation's camp (its mind's site.rival_near), refused on the first sweep of the rings, as a
+        -- nest field is: its next ring tried first (the user's nw game, 2026-11-27: Kessler-Hayashi's camps came down
+        -- all round Grubstake's; weighed alone, a ring held one to four sites and none moved, scenario apart).
+        local near_rival = false
+        if n > SITE_MIN_ORE and weigh and weigh.rival_near and not faction.dense_ok and not storage.rival_apart_off then
+          for _, o in pairs(storage.bases or {}) do
+            if o.corp ~= faction.site_corp and not o.fallen and o.lander and o.lander.valid and o.surface == surface.index
+              and (o.lander.position.x - spot[1]) ^ 2 + (o.lander.position.y - spot[2]) ^ 2 < weigh.rival_near ^ 2 then
+              near_rival = true
+              break
+            end
+          end
+          if near_rival then refuse("near a rival") end
+        end
+        if n > SITE_MIN_ORE and not near_rival then
           refuse("usable")
           if faction.under_guns and not weigh then
             local g = guns_on(spot)

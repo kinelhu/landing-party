@@ -773,6 +773,103 @@ scenarios.acid = function()
   end
 end
 
+-- Apart (the user's nw game, 2026-11-27: Kessler-Hayashi's camps came down all round Grubstake's, in its way to the player;
+-- "Would probably make some more sense for Grubstake and KH land far away from each other"): Grubstake lands, then three
+-- Kessler-Hayashi camps by the real landing (asynchronous: their sites weighed, faction.site_score), each its own site.
+-- How near each lands to Grubstake's camp, and (LP_MIX=spread) a Kessler-Hayashi camp set 150 tiles from Grubstake's and
+-- fed to grow: how near its new clusters come (layout.spread, mind.spread_rival). LP_MIX=off and spreadoff: both rules
+-- off (storage.rival_apart_off), what they were.
+scenarios.apart = function()
+  local mix = params.mix or ""
+  local off = mix == "off" or mix == "spreadoff"
+  local spread = mix == "spread" or mix == "spreadoff"
+  -- LP_MIX=clear and clearoff: the spread's ground rule itself (layout.spread_clear): a Kessler-Hayashi camp and
+  -- Grubstake's, a point 150 tiles from Grubstake's camp on the far side from the other, free of everything else.
+  if mix == "clear" or mix == "clearoff" then
+    schedule(60, function()
+      lp("debug_tune", {raids_off = true, rival_apart_off = mix == "clearoff"})
+      local g = lp("arrive", 1, {x = 0, y = 0}, 300, {corp = "grubstake"})
+      local kh
+      for _, id in ipairs(lp("bases")) do if (lp("camp_where", id) or {}).corp == "serenity" then kh = id end end
+      local gw, kw = g and lp("camp_where", g), kh and lp("camp_where", kh)
+      if not (gw and kw) then return check("apart: clear, both camps stand", false, tostring(g) .. " " .. tostring(kh)) end
+      local dx, dy = gw.origin.x - kw.origin.x, gw.origin.y - kw.origin.y
+      local len = math.max(1, math.sqrt(dx * dx + dy * dy))
+      local px, py = gw.origin.x + dx / len * 150, gw.origin.y + dy / len * 150
+      local far = {gw.origin.x + dx / len * 400, gw.origin.y + dy / len * 400}
+      local near_ok, far_ok = lp("spread_clear", kh, px, py), lp("spread_clear", kh, far[1], far[2])
+      info(string.format("apart: clear at 150 tiles from Grubstake %s, at 400 %s", tostring(near_ok), tostring(far_ok)))
+      if mix == "clear" then
+        check("apart: a Kessler-Hayashi cluster is not founded 150 tiles from Grubstake's camp, is at 400", near_ok == false
+          and far_ok == true, tostring(near_ok) .. ", " .. tostring(far_ok))
+      else
+        check("apart: clearoff, at 150 tiles it was clear (what it was)", near_ok == true, tostring(near_ok))
+      end
+    end)
+    return
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, rival_apart_off = off})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, 300, {corp = "grubstake"})
+    -- (The run's own camp stood before Grubstake came: not a Kessler-Hayashi choice, left out.)
+    S.before = {}
+    for _, id in ipairs(lp("bases")) do S.before[id] = true end
+    local g = S.g and lp("camp_where", S.g)
+    info("apart: Grubstake " .. tostring(S.g) .. (g and string.format(" at %d,%d", g.origin.x, g.origin.y) or ""))
+    if spread and g then
+      -- Its rival set 250 tiles off it, on the far side from spawn.
+      local len = math.max(1, math.sqrt(g.origin.x ^ 2 + g.origin.y ^ 2))
+      -- (At a set spot 150 tiles out: its clusters toward Grubstake's would come within 200.)
+      local at = {g.origin.x + g.origin.x / len * 150, g.origin.y + g.origin.y / len * 150}
+      S.k = lp("arrive", 1, {x = at[1], y = at[2]}, 0, {corp = "serenity", at = at})
+      if S.k then for _ = 1, 3 do lp("debug_depot", S.k, 4000) end end
+    end
+  end)
+  if not spread then
+    for i, t in ipairs({300, 3000, 6000}) do
+      schedule(t, function() lp("arrive_async", 1, {x = 0, y = 0}, 300 + 100 * i, {corp = "serenity"}) end)
+    end
+  else
+    for t = 3600, END - 600, 3600 do
+      schedule(t, function() if S.k then lp("debug_parts", S.k, 6000) end end)
+    end
+  end
+  schedule(END - 300, function()
+    local g = S.g and lp("camp_where", S.g)
+    if not g then return check("apart: Grubstake landed", false, "") end
+    local dists, near = {}, math.huge
+    for _, id in ipairs(lp("bases")) do
+      local b = lp("camp_where", id)
+      if b and b.corp == "serenity" and (spread or not S.before[id]) then
+        if spread then
+          for _, h in ipairs(b.hubs or {}) do
+            if h.spread then
+              local d = math.sqrt((h.x - g.origin.x) ^ 2 + (h.y - g.origin.y) ^ 2)
+              dists[#dists + 1] = math.floor(d); near = math.min(near, d)
+            end
+          end
+        else
+          local d = math.sqrt((b.origin.x - g.origin.x) ^ 2 + (b.origin.y - g.origin.y) ^ 2)
+          dists[#dists + 1] = math.floor(d); near = math.min(near, d)
+        end
+      end
+    end
+    info(string.format("apart: %s from Grubstake's camp: %s", spread and "clusters" or "camps", table.concat(dists, ", ")))
+    metric("apart_near", near < math.huge and math.floor(near) or -1)
+    metric("apart_n", #dists)
+    -- Its landings at least 90% of rival_near off Grubstake's camp (seen failing off: 229 on 12345); its clusters at
+    -- least spread_rival.
+    local mind = (lp("corp_mind", "serenity") or {})
+    local want = spread and (mind.spread_rival or 200) or 0.9 * ((mind.site or {}).rival_near or 500)
+    if not off then
+      check(string.format("apart: Kessler-Hayashi's %s %d tiles or more from Grubstake's camp", spread and "clusters" or
+        "landings", want), #dists > 0 and near >= want, table.concat(dists, ", "))
+    else
+      check("apart: off, what it was (measured)", #dists > 0, table.concat(dists, ", "))
+    end
+  end)
+end
+
 scenarios.cost = function()
   schedule(600, function()
     flatten(-150, -150, -50, -50)
