@@ -12,6 +12,7 @@ local shared = require("__landing-party__.shared")
 local watch = {}
 
 local EVERY = 600
+local STUCK_PARTS = 4   -- stuck: a camp's units looked at in this many parts an EVERY
 local ECONOMY_TICKS = 10 * 3600
 local QUEUE_TICKS = 5 * 3600
 local STUCK_TICKS, STUCK_MOVE = 3 * 3600, 3
@@ -62,11 +63,12 @@ local function queue(b, tick, trace, reserve)
   end
 end
 
-local function stuck(b, tick, trace, units)
+local function stuck(b, tick, trace, units, part)
   local w = st()
   local caught, kinds, cx, cy = 0, {}, 0, 0
   for _, u in pairs(units) do
-    if u.valid and u.unit_number then
+    -- (A quarter of its units a call, by number, part: all of them at once took 2.4 to 3.6 ms, the spike guard.)
+    if u.valid and u.unit_number and (not part or u.unit_number % STUCK_PARTS == part) then
       local c = u.commandable
       local cmd = c and c.command
       local rec = w.units[u.unit_number]
@@ -118,9 +120,16 @@ end
 
 -- deps: {trace, units(b) (its roster's units), strength(b), cap(b), price(b), reserve(b)}.
 function watch.tick(tick, deps)
+  -- Its stuck units in every game, their trees cleared (stuck): a quarter of a camp's units each EVERY / STUCK_PARTS,
+  -- the camps staggered, so each unit is looked at once an EVERY. Its alarms and the rest only while tracing.
+  local step = EVERY / STUCK_PARTS
+  for _, b in pairs(storage.bases or {}) do
+    if (tick + b.id * 7) % step == 0 and not b.fallen and b.lander and b.lander.valid then
+      stuck(b, tick, deps.trace, deps.units(b), math.floor((tick + b.id * 7) / step) % STUCK_PARTS)
+    end
+  end
   if tick % EVERY ~= 0 then return end
   local w = st()
-  -- (Its stuck units in every game, their trees cleared, stuck; its alarms and the rest only while tracing.)
   local traced = storage.trace
   for _, b in pairs(storage.bases or {}) do
     if not b.fallen and b.lander and b.lander.valid then
@@ -130,7 +139,6 @@ function watch.tick(tick, deps)
         queue(b, tick, deps.trace, reserve)
         army_(b, tick, deps.trace, deps.strength(b), deps.cap(b), deps.price(b), reserve)
       end
-      stuck(b, tick, deps.trace, deps.units(b))
     end
   end
   -- Units gone: forgotten.
