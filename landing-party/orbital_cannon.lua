@@ -7,7 +7,7 @@
 -- strike. Graphics provisional (the assembling machine 3 and the radar, tinted) until the cannon's model is rendered.
 local shared = require("shared")
 local util = require("util")
-local SHEETS = require("graphics.sheets")
+local SHEETS = require("__landing-party-graphics__.graphics.sheets")
 -- A rendered sheet's layer (tools/blender/orbital_cannon.py, targeting_array.py; the barracks' way, player.lua).
 local function layer(key, file, speed, extra)
   local S = SHEETS[key]

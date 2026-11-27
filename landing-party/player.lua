@@ -19,7 +19,7 @@ barracks.allowed_effects = nil
 -- Its own body, rendered in Blender (tools/blender/player_army.py barracks, sheet.py): a training plant, an assembler's
 -- chamfered block in warm steel, a roll-up bay door; training, its roof fans turn, the strip over its door runs and its
 -- amber lamp sweeps (16 frames). (An olive hangar with sandbags and a flag first, 2026-11-03: "less Army Men", the user.)
-local SHEETS = require("graphics.sheets")
+local SHEETS = require("__landing-party-graphics__.graphics.sheets")
 do
   local S = SHEETS["player/barracks"]
   local function bk(file, extra)

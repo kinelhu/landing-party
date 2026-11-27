@@ -1,7 +1,7 @@
 -- Prototypes: the faction's machines are retinted vanilla ones, never craftable by the player.
 local shared = require("shared")
 -- Frame sizes and shifts of the rendered sheets (tools/blender/sheets_lua.py writes it from each sheet.json).
-local SHEETS = require("graphics.sheets")
+local SHEETS = require("__landing-party-graphics__.graphics.sheets")
 
 local function watts(w) return tostring(math.abs(w) / 1000) .. "kW" end
 local function one_second(w) return tostring(math.abs(w) / 1000) .. "kJ" end

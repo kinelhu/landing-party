@@ -4,7 +4,7 @@
 -- Grubstake's are smelly, cheap and many; Serenity's precise and few. Loaded after corps.lua, so each corporation's own
 -- prototypes carry its own (Grubstake's are copies of Serenity's, made before this).
 local shared = require("shared")
-local SHEETS = require("graphics.sheets")
+local SHEETS = require("__landing-party-graphics__.graphics.sheets")
 -- The player's devices modelled (tools/blender/player_buildings.py; the user, 2026-11-10: "I still see some gross
 -- recolors"): three had been drawn in the world with their items' icons, the bait as an empty barrel, the trade post a
 -- tinted steel chest. A still body and shadow and its lights' frames (an entity that can animate), or the lights' first

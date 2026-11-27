@@ -69,7 +69,7 @@ do
   -- Its own model (tools/blender/turning_buildings.py; the user, 2026-11-10: "I still see some gross recolors"): an
   -- armoured ring for its base, its twin-barrelled flak head in 64 directions for every state (it does not rise out of
   -- the ground as the laser turret does), no laser's energy glow.
-  local SHEETS = require("graphics.sheets")
+  local SHEETS = require("__landing-party-graphics__.graphics.sheets")
   local function part(p, extra)
     local K = SHEETS["player/flak-turret/" .. p]
     local l = {filename = "__landing-party-graphics__/graphics/player/flak-turret/" .. p .. "/body.png", width = K.width, height = K.height,

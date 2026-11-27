@@ -1126,7 +1126,7 @@ data:extend({skyguard, flak_buggy})
 -- direction, so the weapon faces where the hull does: 64 directions, one frame each. The module's sheet carries the
 -- shadow of both. Frame sizes and shifts from each sheet.json. Only Grubstake fields them, so the kinds' own copies
 -- draw them too.
-local SHEETS = require("graphics.sheets")
+local SHEETS = require("__landing-party-graphics__.graphics.sheets")
 -- A unit drawn from rendered layers (tools/blender: buggy.py, crawler.py): parts, bottom first, each {sheet, files}, under
 -- graphics/<root>/<sheet>. One frame a direction, or an animated part's few (the buggy's antenna, the crawler's tracks):
 -- the single-frame layers repeat to match. The direction count from the first part's sheet.

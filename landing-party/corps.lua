@@ -70,8 +70,8 @@ data:extend(out)
 -- Each corporation's own recoloured art (scripts/make_sprites.py; the user, 2026-10-14: "more refined recolored
 -- sprites ... instead of just tinting the full thing"): every layer of its prototypes whose vanilla file has a recolour
 -- in graphics/manifest.lua points at it and drops its whole-sprite tint. What has none keeps the tint.
-local manifest = require("graphics.manifest")
-local SHEETS_ALL = require("graphics.sheets")
+local manifest = require("__landing-party-graphics__.graphics.manifest")
+local SHEETS_ALL = require("__landing-party-graphics__.graphics.sheets")
 local function sheet_key(f) return f:match("^__landing%-party__/graphics/(.+)/[a-z]+%.png$") end
 local function repoint(t, files, seen)
   if type(t) ~= "table" or seen[t] then return end
@@ -127,7 +127,7 @@ end
 -- Each corporation's own models (tools/blender/faction_works.py; phase 2 of the graphics pass, the user, 2026-11-10: "I
 -- still see some gross recolors. Why not use blender again?"; the landers alone keep their repaint): a kind with a sheet
 -- under graphics/<corp>/<dir> (sheets.lua) draws it in place of the repainted vanilla art, each corporation its own build.
-local SHEETS = require("graphics.sheets")
+local SHEETS = require("__landing-party-graphics__.graphics.sheets")
 local function sheet_layer(key, file, extra)
   local S = SHEETS[key]
   local l = {filename = "__landing-party-graphics__/graphics/" .. key .. "/" .. file .. ".png", width = S.width, height = S.height,
