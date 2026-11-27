@@ -270,9 +270,6 @@ above in the same commit; when one is dropped, move it to Dropped below with the
 - The uplink fortress that varies (one fixed template).
 - A new corporation landing after both are gone (`withdrawing` is never cleared); the rivals' war on each other.
 - After 0.3.1, from the user's nw game (2026-11-26):
-  - A squad on hold still chases what distracts it: director armyhold on 777 went out 154 tiles after a lone
-    Kessler-Hayashi railgunner at a hub's stand (23 with stands off; 190 once before, command.lua). Next: the hold's leash
-    enforced while it is distracted.
   - Eight scenarios flip with the seed whatever the code (tap natural fails on 777 and 4242 before and after; airraid
     grubstake on 777 both ways; plate grubstake fails on 12345 after, passes on 777 both ways, two of its units dying in a
     fight; the 2493451a full regression: 10 of 426, these and director armyhold): attackmove (its bad mode on 3 of 9 seeds before stands, 6 of 9

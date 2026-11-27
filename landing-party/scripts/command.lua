@@ -1505,7 +1505,10 @@ local function lead()
         local lr = p.reach or (ENGAGE + HERE)
         if d2 > lr * lr then
           -- (Beyond its leash, back fighting only what hits it: walking back distracted by enemies, a holding squad
-          -- pulled out by squad aggro followed a passing force to 71 tiles, director armyhold, 0.2.462.)
+          -- pulled out by squad aggro followed a passing force to 71 tiles, director armyhold, 0.2.462.) Caught in a
+          -- fight out there, its order given again at once, each pass: kept 10 s (REISSUE_TICKS) while it chased, a
+          -- squad on hold went 154 tiles after a railgunner, director armyhold 777, 0.3.1.
+          if u.commandable.distraction_command then t.key = nil end
           order(t, stay(p.pos, 6, defines.distraction.by_damage), string.format("back:%d,%d", p.pos.x, p.pos.y))
         elseif d2 > 12 * 12 then
           order(t, stay(p.pos, 6, defines.distraction.by_enemy), string.format("hold:%d,%d", p.pos.x, p.pos.y))
