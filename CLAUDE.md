@@ -38,12 +38,18 @@ at milestones, asked for.
   slowest variants of families another still runs; `LP_NIGHTLY=1` keeps it). About 6 to 35 minutes. `--area=biotech,ops` names areas instead; the table is in `regress.sh` (`area_of_scenario`,
   `areas_of_file`), and a new scenario or module goes in it. A change to the test harness alone selects nothing: name
   its areas. `LP_DRY=1` lists the runs without making them; every regression ends with its time and its slowest runs.
+- **A failure new in a full regression: run it again on the last release's tree and this one, side by side on the same
+  machine (`~/lp-bis/c<sha>` on the Studio), before bisecting or fixing.** At 0.3.2, 7 of 13 new failures failed on
+  0.3.1's tree too. And read what a failing check counts before blaming the code: 0.3.1's "lamps fell behind" was a
+  ratio check meeting a post half-built, and its code "fix" broke three scenarios.
 - **Whole list: `scripts/regress.sh [seed]`** (240 runs, about 37 minutes) at milestones; `--full` adds the long
   growth scenarios (about 40): before commits that touch growth. Scenarios that strike run from forks.
 - First-contact timelines: `scripts/contact.sh [seed]` (three player variants, 2 hours, about 5 minutes;
   plots and event lists in `docs/sim/contact-<seed>-v<variant>/`). A design instrument, not a regression.
 - **In-game looks: `/lp` dev tools** (`landing-party/scripts/dev.lua`; `/lp help`) force raids, sieges, strips,
-  perimeter steps and landings on demand. Prefer them to saves timed so an event happens after loading. The
+  perimeter steps and landings on demand. The debug panel (`/lp panel` or Ctrl + Shift + L, setting "Debug panel",
+  `scripts/devpanel.lua`) shows each camp's state and decisions live, Synthexis's farms, the director, the `/lp` verbs as
+  buttons and a jump to any camp or operation. Prefer them to saves timed so an event happens after loading. The
   playground: `LP_MIX=tour scripts/showcase.sh 12345 20`, then `scripts/play-showcase.sh tour`. A new mechanic
   worth looking at gets a `/lp` verb, and a check in scenario `dev`.
 - **Filming: the toolkit lives at `~/Dev/factorio-film`** (`FILM_HOME`; its README has every film param, the plugin
